@@ -34,7 +34,7 @@ export interface PaketImLaeufer {
 /** Nachrichten DMS → Läufer. */
 export type AnLaeufer =
   /** pakete: neue bzw. geänderte Pakete (werden neu geladen); behalten: unveränderte, schon geladene (#403). Alle anderen fallen weg. */
-  | { art: 'pakete'; pakete: PaketImLaeufer[]; behalten?: string[]; grenzen: Grenzen }
+  | { art: 'pakete'; pakete: PaketImLaeufer[]; behalten?: string[]; grenzen: Grenzen; angehalten?: string[] }
   /** vorrang: vor die wartenden Aufrufe (z. B. Vektor eines Suchbegriffs, #442 – jemand wartet darauf). */
   | { art: 'aufruf'; nr: number; paket: string; eingang: { art: 'ereignis' | 'aktion'; json: string }; vorrang?: boolean }
   | { art: 'antwort'; nr: number; antwort: Hostantwort };
@@ -255,6 +255,8 @@ interface Geladen {
   daten: Map<string, Uint8Array>;
 }
 let pakete = new Map<string, Geladen>();
+/** Angehaltene Pakete (#1563): zweite Sicherung – kämen sie durch einen Fehler doch zum Laufen, kein Netz. */
+let angehalten = new Set<string>();
 let grenzen: Grenzen = { speicherMB: 256, sekunden: 120, parallel: 2 };
 let laufend = 0;
 const warteschlange: Array<Extract<AnLaeufer, { art: 'aufruf' }>> = [];
@@ -295,6 +297,9 @@ function lade(liste: PaketImLaeufer[], behalten: string[] = []) {
     })),
   });
 }
+
+/** Netz gesperrt: angehaltenes Paket (#1563, zweite Sicherung) oder Adresse nicht erlaubt (#807). */
+const netzGesperrt = (g: Geladen, url: string) => angehalten.has(g.info.id) || !netzErlaubt(url, g.info.netz, g.info.adressen);
 
 /** Liegt url unter der Adresse e (gleicher Ursprung, gleicher Pfad oder darunter)? */
 function unter(u: URL, e: string): boolean {
@@ -402,7 +407,7 @@ async function netz(
     return fehlerAntwort(-1, t('meldungen.prozess.ungueltige-methode'));
   }
   // Abgelehnt (#807): steht als Warnung im Protokoll des Pakets – nur der Host, nichts hinausgegangen.
-  if (!netzErlaubt(url, g.info.netz, g.info.adressen)) {
+  if (netzGesperrt(g, url)) {
     log({ methode, url, status: null, hin: 0, zurueck: 0, abgelehnt: true });
     return fehlerAntwort(-2, t('meldungen.prozess.netz-gesperrt-steht-weder', { url }));
   }
@@ -698,7 +703,11 @@ async function fuehreAus(a: Aufrufnachricht) {
 process.on('message', (m: AnLaeufer) => {
   if (m.art === 'pakete') {
     grenzen = m.grenzen;
-    lade(m.pakete, m.behalten);
+    angehalten = new Set(m.angehalten ?? []);
+    lade(
+      m.pakete.filter((p) => !angehalten.has(p.id)),
+      (m.behalten ?? []).filter((id) => !angehalten.has(id)),
+    );
     return;
   }
   if (m.art === 'aufruf') {

@@ -37,6 +37,7 @@ export async function graubild(pdf: Buffer, nr: number, dpi: number, farbe = fal
       execFile(
         'pdftoppm',
         [
+          '-cropbox',
           ...(farbe ? [] : ['-gray']),
           '-r',
           String(dpi),

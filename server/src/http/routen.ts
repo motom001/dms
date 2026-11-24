@@ -21,6 +21,7 @@ import { anmeldungRouten, notfallRouten } from '../anmeldung/anmeldung.routen';
 import { kontenRouten, apiSchluesselRouten } from '../konten/konten.routen';
 import { typenRouten, typenArchivRouten, berechtigungenRouten } from '../mappentypen/mappentypen.routen';
 import { werkbankRouten, werkbankUebersichtRouten, werkbankEinstellungenRouten } from '../werkbank/werkbank.routen';
+import { darfRouten } from '../werkbank/darf.routen';
 import { exportRouten } from '../ausgang/ausgang.routen';
 import { datenschutzRouten, abrufRouten } from '../datenschutz/datenschutz.routen';
 import { notfallkontakteRouten } from '../notfallkontakte/notfallkontakte.routen';
@@ -93,6 +94,7 @@ const BEREICHE: Array<(k: RoutenKontext) => Route[]> = [
   sicherungRouten,
   betriebRouten,
   werkbankUebersichtRouten,
+  darfRouten,
   berechtigungenRouten,
   systemRouten,
   postfaecherRouten,

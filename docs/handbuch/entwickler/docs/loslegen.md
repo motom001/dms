@@ -2,8 +2,8 @@
 
 ## Voraussetzungen
 
-- **Node.js 24** (LTS) und npm
-- **Docker** (für PostgreSQL 17; oder eine eigene PostgreSQL-Installation)
+- **Node.js 26** (LTS) und npm
+- **Docker** (für PostgreSQL 18; oder eine eigene PostgreSQL-Installation)
 - optional **poppler-utils** für die Textebene von PDFs, Vorschaubilder und Schwärzen (die Texterkennung ist ein Paket, siehe [Pakete mit Code](pakete-code.md#texterkennung))
 - optional **Python 3** mit `mkdocs-material` für die Handbücher
 
@@ -33,7 +33,7 @@ Das `Dockerfile` hat zwei Ziele (#208):
 | Ziel | Image | Inhalt |
 | --- | --- | --- |
 | `dms` (Standard) | `ghcr.io/motom001/dms` | nur Ablago; PostgreSQL läuft daneben (empfohlen) |
-| `komplett` | `ghcr.io/motom001/dms-komplett` | Ablago und PostgreSQL 17 in einem Container, Start über `deploy/komplett/start.sh` (tini) |
+| `komplett` | `ghcr.io/motom001/dms-komplett` | Ablago und PostgreSQL 18 in einem Container, Start über `deploy/komplett/start.sh` (tini) |
 
 ```sh
 docker build -t dms .                                  # schlank

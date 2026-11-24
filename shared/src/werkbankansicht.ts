@@ -27,8 +27,9 @@ export const VORLAGEN = Object.fromEntries(STUFEN.map((v) => [v, vorlage(v)])) a
 
 /**
  * Gruppen der Leiste (#68), nach Aufgaben statt nach Technik (#354, neu geordnet #717/#725): je etwa 7 ± 2 Bereiche.
- * Datenschutz (#1184) ist eine kleine eigene Gruppe: Auskünfte, Löschkonzept, Löschprotokoll – nur bei beruflicher
- * Nutzung in der Leiste (`NUR_BERUFLICH`). Die Kennung der Gruppe wird nirgends gespeichert – gespeichert sind nur Bereiche.
+ * Datenschutz (#1184) ist eine kleine eigene Gruppe: Auskünfte, Löschkonzept, Löschprotokoll. Ob sie in der Leiste steht,
+ * entscheidet seit #1319 nur die Stufe (ab Selbständig) bzw. die eigenen Ein- und Ausblendungen – nicht mehr zusätzlich
+ * das Merkmal „beruflich genutzt“. Die Kennung der Gruppe wird nirgends gespeichert – gespeichert sind nur Bereiche.
  */
 const GRUPPENFOLGE = ['ablage', 'benutzer', 'datenschutz', 'post', 'sichern', 'einstellungen', 'wartung'] as const;
 export type Gruppe = (typeof GRUPPENFOLGE)[number];
@@ -256,15 +257,6 @@ export const UMGEZOGEN_ABSCHNITT: Readonly<Record<string, string>> = {
   wartungsmodus: 'wartungsmodus',
   nutzung: 'nutzung',
 };
-
-/**
- * Gruppen, die nur bei beruflicher Nutzung in der Leiste stehen (#1184): Datenschutz gehört nicht zur rein privaten
- * Ablage. Am Merkmal „beruflich genutzt“ (#1170), zusätzlich zur Stufe (ab Selbständig, #987). Die Seiten bleiben über
- * ihre Adresse erreichbar – ausgeblendet ist nicht abgeschaltet.
- */
-export const NUR_BERUFLICH: ReadonlySet<Gruppe> = new Set<Gruppe>(['datenschutz']);
-export const inLeiste = (gruppe: Gruppe | null, m: { beruflich: boolean } | null | undefined) =>
-  !gruppe || !NUR_BERUFLICH.has(gruppe) || !!m?.beruflich;
 
 /**
  * Umgezogene Abschnitte (#1184): alte Adresse samt Sprungmarke → neue Seite. Das Löschprotokoll war ein Abschnitt des

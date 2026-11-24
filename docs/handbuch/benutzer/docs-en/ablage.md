@@ -2,7 +2,7 @@
 
 ## Views {#ansichten}
 
-On the left are the **views**. At the very top are fixed entries, each with an icon: [Advanced search](#erweiterte-suche), [Start](startseite.md), [To do](eingang.md), [New post](post.md), your [favourites](#favoriten) and the [Bin](#papierkorb) (as long as it is on or something is in it). Below the divider – without icons – are the views an administrator has set up, for example *Contract*, *Invoice*, *Contract partner* or *Notice within the next 12 months*. The number after it says how many folders the view currently shows. The Library doesn't wait for the numbers: until they're there, "…" briefly appears in their place. For **To do** and **New post** the number is bold while something is waiting for you; every number is shown at 0 too – quiet grey. Then the list really is empty.
+On the left are the **views**. At the very top are fixed entries, each with an icon: [Advanced search](#erweiterte-suche), [Start](startseite.md), [To do](eingang.md), [New post](post.md), your [favourites](#favoriten) and the [Bin](#papierkorb) (as long as it is on or something is in it). Below the divider are the views an administrator has set up – with the icon chosen for them, or without, for example *Contract*, *Invoice*, *Contract partner* or *Notice within the next 12 months*. The number after it says how many folders the view currently shows. The Library doesn't wait for the numbers: until they're there, "…" briefly appears in their place. For **To do** and **New post** the number is bold while something is waiting for you; every number is shown at 0 too – quiet grey. Then the list really is empty.
 
 A click on a view shows its folders in the list. An administrator can set which views you see; a view that is hidden for you is also missing, together with its folders, from the parent view. You still find folders via the search if you may read them.
 
@@ -24,7 +24,7 @@ On the phone, instead of the list there is a button with the current view, e.g. 
 
 The list is also more compact on the phone: the header fits in one line; you search with the magnifier at the top of the header ([Search](#suchen)).
 
-- **Views can have sub-views.** An arrow ▸ in front shows this; a click on it expands or collapses them. Your device remembers what is collapsed.
+- **Views can have sub-views.** An arrow ▸ in front shows this; a click on it expands or collapses them – also when a view inside is currently selected; the collapsed view is then marked as selected. Opening a sub-view expands its group. Your device remembers what is collapsed.
 - **A view with sub-views shows everything together:** *Finances*, for example, shows all open invoices *and* this year's payments.
 - **Some views filter:** *Open invoices* only shows invoices that are not yet paid. Ablago recalculates values like "today" or "yourself" every time it is opened – so a view *Notice within the next 12 months* is always up to date.
 - **If a view shows several folder types**, *Title* and *Folder type* are in front, and there is no button for creating. You then create new folders in the view of the individual folder type.
@@ -37,7 +37,7 @@ The list shows the view's folders, sorted by title. It first loads 100 folders a
 
 With **+** and the name of the folder type at the top right, e.g. **+ Invoice**, you create a new folder of this folder type (see [Folders](mappen.md)). If the button is missing, folders of this folder type may not be created in the Library – that is the case for *User*, for example. Next to it, **⋯** opens **Export all …** (all folders of the view, with your search and sorting) and – if you may edit views in the Workbench – **Edit view**. In the list of a folder type without a view of its own it says **Edit folder type**: it takes you to the folder type in the Workbench if you may edit folder types. Deleting and sending work through the selection (see below).
 
-Above the list it says how many folders it contains. If all have the same folder type, the number names it, e.g. “12 × Contract”; in views with different folder types it says “12 folders”.
+Above the list it says how many folders it contains. If all have the same folder type, the number names it, e.g. “12 Contracts” – or “12 × Contract” if no plural is entered for the folder type; in views with different folder types it says “12 folders”.
 
 ### Compact or as a table {#kompakt-oder-als-tabelle}
 

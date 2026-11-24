@@ -15,6 +15,7 @@ import {
   SCHLUESSEL,
   TIPP_BEREICHE,
   type Anker,
+  type Herkunft,
   type Pfad,
   type Rundgang,
   type Tipp,
@@ -127,6 +128,7 @@ export const tippDaten = (x: Tipp): TippDaten => ({
   fuer: x.fuer,
   ...(x.ziel ? { ziel: x.ziel } : {}),
   ...(x.rundgang ? { rundgang: x.rundgang } : {}),
+  ...(x.handbuch ? { handbuch: x.handbuch } : {}),
   ...(x.typ ? { typ: x.typ } : {}),
 });
 const gleich = (a: TippDaten, b: TippDaten) => JSON.stringify(tippDatenAus(a)) === JSON.stringify(tippDatenAus(b));
@@ -138,6 +140,7 @@ export function tippDatenAus(x: unknown): TippDaten {
   const bereich = TIPP_BEREICHE.includes(o.bereich as never) ? (o.bereich as TippDaten['bereich']) : 'mappen';
   const ziel = s(o.ziel),
     rundgang = s(o.rundgang),
+    handbuch = s(o.handbuch),
     typ = s(o.typ);
   return {
     text: typeof o.text === 'string' ? o.text.trim() : '',
@@ -145,6 +148,7 @@ export function tippDatenAus(x: unknown): TippDaten {
     fuer: o.fuer === 'verwalten' ? 'verwalten' : 'lesen',
     ...(ziel ? { ziel } : {}),
     ...(rundgang ? { rundgang } : {}),
+    ...(handbuch ? { handbuch } : {}),
     ...(typ ? { typ } : {}),
   };
 }
@@ -195,6 +199,7 @@ export function tippsMitWerkbank(
     const basis: Tipp = { ...x };
     delete basis.ziel;
     delete basis.rundgang;
+    delete basis.handbuch;
     delete basis.typ;
     return { ...basis, ...tippDaten(p.tipp), schluessel: x.schluessel };
   });
@@ -226,7 +231,7 @@ function zeileVon(doc: Document, lc: LineCounter, pfad: Pfad): number | null {
  */
 export function pruefeRundgangDatei(
   yaml: string,
-  o: { anker: readonly Anker[]; typ: (kennung: string) => TypInfo | null },
+  o: { anker: readonly Anker[]; typ: (kennung: string) => TypInfo | null; herkunft?: Herkunft },
 ): { fehler: ZeilenFehler[]; rundgang: Rundgang | null; roh: Record<string, unknown> | null } {
   if (yaml.length > RUNDGANG_DATEI_MAX)
     return {
@@ -250,7 +255,7 @@ export function pruefeRundgangDatei(
     return { fehler: [{ zeile: null, text: t('werkbank.rundgaenge.fehler.einer') }], rundgang: null, roh: null };
   const js = doc.toJS({ maxAliasCount: 0 }) as unknown;
   const roh = (liste ? (js as unknown[])[0] : js) as Record<string, unknown>;
-  const r = pruefeRundgaenge([roh], { herkunft: EIGEN, anker: o.anker, typ: o.typ });
+  const r = pruefeRundgaenge([roh], { herkunft: o.herkunft ?? EIGEN, anker: o.anker, typ: o.typ });
   const fehler = r.fehler.map((text, i) => ({
     zeile: zeileVon(doc, lc, liste ? r.orte[i] : r.orte[i].slice(1)),
     text: text.replace(/^Rundgang (\d+|„[^“]*“)(, |: )/, ''),
@@ -273,6 +278,8 @@ export function rundgangAlsYaml(r: Rundgang): string {
     titel: r.titel,
     beschreibung: r.beschreibung,
     start: r.start,
+    ...(r.seite ? { seite: r.seite } : {}),
+    ...(r.leise ? { leise: true } : {}),
     fuer: r.fuer,
     ...(oeffne ? { oeffne } : {}),
     ...(r.ersatz ? { ersatz: r.ersatz } : {}),
@@ -356,9 +363,18 @@ export class RundgaengeWerkbank {
     throw new Fachfehler(409, t('werkbank.rundgaenge.fehler.konflikt'), { konflikt: true });
   }
 
-  async pruefe(yaml: unknown) {
+  /**
+   * `herkunft` nur fürs Ausprobieren (#1533): Ein Rundgang von Ablago oder aus einem Paket wird mit seiner Herkunft
+   * geprüft, sonst scheitert er an Regeln, die nur für eigene gelten (`erste_anmeldung`, `nach_installation`).
+   * Gespeichert wird immer als eigener.
+   */
+  async pruefe(yaml: unknown, herkunft?: unknown) {
     if (typeof yaml !== 'string') throw new Fachfehler(422, t('werkbank.rundgaenge.fehler.yaml', { grund: '–' }));
-    return pruefeRundgangDatei(yaml, await this.o.pruefung());
+    const h =
+      typeof herkunft === 'string' && (herkunft === 'ablago' || /^paket:[a-z0-9][a-z0-9_-]*$/.test(herkunft))
+        ? (herkunft as Herkunft)
+        : EIGEN;
+    return pruefeRundgangDatei(yaml, { ...(await this.o.pruefung()), herkunft: h });
   }
 
   /** Neu (`alt` = null) oder ändern; `stand` = `geaendert`, wie gelesen. Liefert den gespeicherten Eintrag. */

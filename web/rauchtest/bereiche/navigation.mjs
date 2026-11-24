@@ -6,12 +6,22 @@
  */
 import assert from 'node:assert/strict';
 import '../einrichtung.mjs';
-import { api, BASIS, benutzermenue, JONAS, keineWaagerechteRolle, LENA, rauchtest, sitzung, verwalten } from '../hilfen.mjs';
+import {
+  api,
+  BASIS,
+  benutzermenue,
+  JONAS,
+  keineWaagerechteRolle,
+  LENA,
+  rauchtest,
+  rundgaengeGesehen,
+  sitzung,
+  verwalten,
+} from '../hilfen.mjs';
 import { axePruefen, tippflaechenPruefen } from '../muster.mjs';
 
-/** Jonas hat den ersten Rundgang schon gesehen – sonst läge er beim Alleinstart über allen Tests (werkbank.mjs prüft ihn). */
-const ohneErstenRundgang = async () =>
-  api('POST', '/api/entdecken/rundgaenge/ablago', { cookie: await sitzung(JONAS), body: { stand: 'gesehen' } });
+/** Jonas hat die ersten Rundgänge schon gesehen – sonst lägen sie beim Alleinstart über allen Tests (werkbank.mjs prüft sie). */
+const ohneErstenRundgang = async () => rundgaengeGesehen(await sitzung(JONAS));
 
 /* ---------- #1283: Assistent an derselben Stelle, nach dem Rollen ans Ende verdeckt er nichts ---------- */
 
@@ -190,11 +200,11 @@ rauchtest('Handy: Mein Konto mit „Zurück zur Ablage“, Tippflächen (#1302)'
   assert.deepEqual(zuKlein, [], `Zu kleine Tippflächen:\n${zuKlein.join('\n')}`);
 });
 
-/* ---------- #1300, #1301: erster Rundgang ---------- */
+/* ---------- #1300, #1301, #1522: Rundgang der Ablage in Leserichtung ---------- */
 
 for (const handy of [false, true])
   rauchtest(
-    `${handy ? 'Handy' : 'Rechner'}: Rundgang „Ablago in sechs Schritten“ – Karte an festem Platz, Schluss beim Assistenten (#1300, #1301)`,
+    `${handy ? 'Handy' : 'Rechner'}: Rundgang „Deine Ablage im Überblick“ – Karte an festem Platz, Leserichtung, Schluss beim Assistenten (#1300, #1301, #1522)`,
     { als: JONAS, handy, timeout: 60_000 },
     async (s) => {
       await ohneErstenRundgang();
@@ -202,32 +212,47 @@ for (const handy of [false, true])
       await s
         .getByRole('region', { name: 'Rundgänge' })
         .getByRole('listitem')
-        .filter({ hasText: 'Ablago in sechs Schritten' })
+        .filter({ hasText: 'Deine Ablage im Überblick' })
         .getByRole('button', { name: 'Rundgang starten' })
         .click();
       const rundgang = s.getByRole('dialog');
       const karte = s.locator('dialog.rundgang .rg-karte');
       const lagen = [];
-      for (let i = 1; i <= 6; i++) {
-        await rundgang.getByText(`Schritt ${i} von 6`).waitFor();
+      const licht = [];
+      const anzahl = 7;
+      for (let i = 1; i <= anzahl; i++) {
+        await rundgang.getByText(`Schritt ${i} von ${anzahl}`).waitFor();
         await s.waitForTimeout(500);
         const b = await karte.boundingBox();
         // Unterkante und Mitte: Die Höhe hängt vom Text ab, der Platz nicht.
         lagen.push(`${Math.round(b.x + b.width / 2)},${Math.round(b.y + b.height)}`);
-        if (i === 1) {
-          // Schritt 1: eine Skizze, nichts darin sieht bedienbar aus.
-          const skizze = rundgang.getByRole('img', { name: /^Skizze von Ablago/ });
-          await skizze.getByText('Skizze').waitFor();
-          assert.equal(await skizze.evaluate((el) => getComputedStyle(el).cursor), 'default');
-        }
-        if (i < 6) await rundgang.getByRole('button', { name: 'Weiter' }).click();
+        const l = await s.locator('.rg-licht').boundingBox();
+        if (l) licht.push(l);
+        if (i < anzahl) await rundgang.getByRole('button', { name: 'Weiter' }).click();
       }
       assert.equal(new Set(lagen).size, 1, `Die Karte wandert: ${lagen.join(' | ')}`);
+      // #1522: Leserichtung – erst die Kopfzeile von links nach rechts, dann die Spalten darunter von links nach rechts
+      // bis zum Assistenten unten rechts.
+      if (!handy) {
+        assert.equal(licht.length, anzahl, 'jeder Schritt hebt etwas hervor');
+        const x = (von, bis) => licht.slice(von, bis).map((l) => Math.round(l.x));
+        for (const reihe of [x(0, 4), x(4, 7)])
+          assert.deepEqual(
+            [...reihe].sort((a, b) => a - b),
+            reihe,
+            `nicht von links nach rechts: ${reihe.join(', ')}`,
+          );
+        const kopfUnten = Math.max(...licht.slice(0, 4).map((l) => l.y + l.height));
+        assert.ok(
+          licht.slice(4).every((l) => l.y >= kopfUnten - 8),
+          'die Spalten kommen nach der Kopfzeile',
+        );
+      }
       // Der letzte Schritt hebt den Assistenten hervor, der Schlusssatz nennt „Tipps“ im Assistenten.
       await rundgang.getByRole('heading', { name: 'Hilfe ist immer da' }).waitFor();
-      const licht = await s.locator('.rg-licht').boundingBox();
+      const zuletzt = await s.locator('.rg-licht').boundingBox();
       const knopf = await s.locator('[data-anker="assistent"]').boundingBox();
-      assert.ok(licht.x <= knopf.x && licht.x + licht.width >= knopf.x + knopf.width, 'Hervorhebung nicht am Assistenten');
+      assert.ok(zuletzt.x <= knopf.x && zuletzt.x + zuletzt.width >= knopf.x + knopf.width, 'Hervorhebung nicht am Assistenten');
       await rundgang.getByText(/im Assistenten unter „Tipps“/).waitFor();
       assert.equal(await rundgang.getByText(/auf der Startseite/).count(), 0);
       await rundgang.getByRole('button', { name: 'Fertig' }).click();

@@ -32,7 +32,16 @@ export interface Wiederherstellungslauf {
   gestartet: string;
   beendet?: string;
   fehler?: string;
+  /** Probe (#1383): alle Schritte erledigt, nur das Ergebnis ließ sich nicht speichern (Grund in `fehler`). */
+  ergebnisNichtGespeichert?: boolean;
+  /** #1530: Die Sicherung des jetzigen Stands davor ist gescheitert – die Oberfläche fragt „Trotzdem ohne Sicherung?“. */
+  vorherGescheitert?: boolean;
+  /** #1530: ohne Sicherung des jetzigen Stands (abgewählt). */
+  ohneVorher?: boolean;
 }
+
+/** Sicherung des jetzigen Stands vor einer Wiederherstellung (#1530): ihr Ende, oder abgewählt. */
+export type Vorher = { fertig: Promise<Metadaten | null> } | 'ohne' | null;
 
 /** Was nach dem Neustart als Abschlussmeldung erscheint. */
 export interface Abschluss {

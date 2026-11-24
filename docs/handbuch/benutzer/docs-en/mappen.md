@@ -48,11 +48,13 @@ If something isn't right – a required field is empty, a number too large, a nu
 
 ### Fill in from document { #aus-dokument-ausfullen }
 
-If you have a **business card**, a till receipt or a letter in front of you, you don't have to type it out: at the top of the folder (new or existing) there is **Fill in from document** – for some folder types with its own name, e.g. **Scan business card**.
+If you have a **business card**, a till receipt or a letter in front of you, you don't have to type it out: in a saved folder, **Fill in from document** is always in the menu **Folder ▾** – for every folder type, organisations included, whether the folder already has documents or not; for some folder types with its own name, e.g. **Scan business card**. In a new folder it is a button above the form.
 
-**If the folder already contains a document with text**, the button opens the page [Take over document](post.md#zuordnen): the document in the middle (with several, you choose which one at the top), this folder on the right, **Back to the folder** at the top. Suggestions, coloured frames at the places found, dragging, clicking and selecting work there as for post; you save with **Save folder**. For a new photo or file, **Photo or file …** is next to it – then it works as follows:
+**In a saved folder** it opens the review view [Take over document](post.md#zuordnen): the document in the middle, this folder on the right, **Back to the folder** at the top. At the top you choose the document – separated into **This folder** and **Linked folders** (e.g. the invoice on a contract; only documents you may see). Next to it, **Upload new document** (on the phone also **Take photo**) uploads a file; Ablago then asks whether it should **also be saved in the folder**. *Save in the folder* puts it into the documents tab, with text recognition and frames; *Only for filling in* only reads it, the suggestions appear on the right and the file is not saved. Suggestions, coloured frames at the places found, dragging, clicking and selecting work there as for post; only this folder is filled in, saved with **Save folder**. This way you can also complete a quickly created organisation from a letter later.
 
-1. Tap the button. On the phone, **Take photo** opens the camera directly; **Another photo** adds e.g. the back. On the computer you choose a file – a photo, a PDF or a vCard (`.vcf`). In an existing folder, a document already in it works too.
+**In a new folder** it works like this:
+
+1. Tap the button. On the phone, **Take photo** opens the camera directly; **Another photo** adds e.g. the back. On the computer you choose a file – a photo, a PDF or a vCard (`.vcf`).
 2. **Recognise details.** Ablago reads the text (offline, without AI) and looks for matching details: name, position, phone, mobile, email, website, address, date, amount, numbers.
 3. **Understood – please check and save.** Empty fields are now filled in as a **suggestion**; below it, it says how certain the value is and at which passage of text it was. **Undo** empties the field again. If a field is already filled in, your value stays – below it, **In the document** shows the other value with **Take over**; **Take over all alternatives** does this for all of them.
 4. **Links**, e.g. *Organisation* for a person: if the company already exists (recognised by name, website or email domain), it is suggested. If it doesn't exist yet, **Create "Organisation" with these details** creates it after a confirmation.
@@ -80,7 +82,7 @@ Which fields recognition fills in is set by the administrator on the folder type
 | Amount | number and currency, e.g. `98,00 EUR`; a credit note or refund with a minus (`-25,00`) – this works where the field says "Enter it with a minus" |
 | Period | number and unit, e.g. `3` and *months* for a notice period |
 | Percentage | the number, e.g. `19` or `7,5` – "19%" works too |
-| Date | via the calendar or as a date |
+| Date | type it (day, month, year) or pick it in the calendar – a click into the field or on the calendar icon opens it, with the week number before each week |
 | Yes/no | tick the box |
 | Choice list | choose a value (or several) from the list |
 | Link | search for and choose another folder (see below) |
@@ -89,7 +91,7 @@ Which fields recognition fills in is set by the administrator on the folder type
 
 Some text fields have a **format**: email, phone, website, IBAN or postcode. On the phone the matching keyboard then appears, and Ablago rejects obviously wrong entries – such as letters in a phone number – with a hint about what to do. Next to an email address, phone number or website there is a button with which you write, call or open the page straight away. An IBAN is shown in groups of four; a German postcode has exactly 5 digits; for other countries you enter the country. Some date fields have limits; a birthday, for example, may not be in the future. What is already saved stays until you change the field.
 
-**Fields that grow with you:** some fields and sections only appear when they fit – if you choose the contract type *Rent*, for example, the section *Rent* appears straight away. If you later choose something else, it disappears again, but the values you entered don’t: in its place it says “Section Rent is hidden – 3 values stay saved · **show**”. A click on *show* brings it back. Hidden fields are not required. This is only tidiness in the form: exports and data access requests contain all values. What is shown when is set by the administration on the folder type.
+**Fields that grow with you:** some fields and sections only appear when they fit – if you choose the contract type *Rent*, for example, the section *Rent* appears straight away. If you later choose something else, it disappears again, but the values you entered don’t: in its place it says “Section Rent is hidden – 3 values stay saved · **show**”. A click on *show* brings it back. Hidden fields are not required. When you **create** a folder, a hidden field gets no value – no suggestion and no default either; recognised values in it are only saved if you reveal it with *show*. A yes/no field set to “No” does not count as entered in the history. This is only tidiness in the form: exports and data access requests contain all values. What is shown when is set by the administration on the folder type.
 
 **Calculated fields:** A package works out some values itself, for example *Cancel by* or the *status* of a contract. You cannot change such fields; underneath it says "calculated by Verträge". Change the details they come from instead (start, term, notice period …) – the package then calculates again. If it says "no longer calculated", the package no longer calculates it; the value stays until the administration releases the field.
 

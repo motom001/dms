@@ -4,7 +4,7 @@
  * (`kontext.ts`). Beide müssen sich gleich verhalten.
  */
 import type { Repo } from '..';
-import { speicherKontext } from './kontext';
+import { schnappschuss, speicherKontext } from './kontext';
 import { speicherAblaeufe, speicherAblaufvorlagen } from './ablaeufe';
 import { speicherAufgaben, speicherFaelle } from './aufgaben';
 import { speicherAuskunft } from './auskunft';
@@ -32,8 +32,15 @@ import { speicherSynonyme, speicherWoerter } from './woerter';
 export function speicherRepo(): Repo {
   const sp = speicherKontext();
   return {
-    transaktion(f) {
-      return f(this);
+    // Wie PostgreSQL (#1385): scheitert die Transaktion, ist der Speicher danach wie vorher.
+    async transaktion(f) {
+      const zurueck = schnappschuss(sp);
+      try {
+        return await f(this);
+      } catch (e) {
+        zurueck();
+        throw e;
+      }
     },
     ...speicherTypen(sp),
     ...speicherPassung(sp),

@@ -5,7 +5,7 @@
  * Vektor ab; der Kern vergleicht nur (Kosinus) und filtert nach den Rechten des Aufrufers.
  *
  * Speicher: float4-Array in PostgreSQL (Tabelle `vektoren`, Migration 047) – ohne Erweiterung, denn pgvector
- * steckt nicht im Image postgres:17, das die Vorlagen für NAS benutzen. Verglichen wird im Kern über einen
+ * steckt nicht im Image postgres (17 und 18), das die Vorlagen für NAS benutzen. Verglichen wird im Kern über einen
  * Zwischenspeicher je Modell (8 Bit je Wert), den der Dienst im Hintergrund lädt, sobald das Modell bekannt ist.
  * Messung mit 256 Dimensionen auf amd64 (2 Kerne), test/vektoren-messen.ts, Einzelheiten im Administratorhandbuch:
  *   10 000 Dokumente:  Kosinus in SQL (unnest) 305 ms, Zwischenspeicher 4 ms (4 MB, Laden 0,4 s)

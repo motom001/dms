@@ -99,3 +99,52 @@ export function startseitenKennung(env: Umgebung = process.env, lesen: Lesen = l
   return { stand: dienstbenutzer(env, lesen), ...rechtefehler(env, lesen) };
 }
 export type StartseitenKennung = ReturnType<typeof startseitenKennung>;
+
+/** Docker- und Podman-Volumes liegen auf dem Rechner unter …/volumes/<name>/_data; alles andere ist ein Bind-Mount. */
+const BENANNTES_VOLUME = /\/volumes\/[^/]+\/_data(\/|$)/;
+
+/**
+ * Eingebundene Datenordner auf einem Bind-Mount (#1449): `/data` und die Ordner darunter (files, geheim, sicherung,
+ * export), die selbst eingehängt sind und deren Quelle kein benanntes Volume ist – also ein Ordner des NAS. Aus
+ * /proc/self/mountinfo (Feld 4: Pfad in der Quelle, Feld 5: Einhängepunkt).
+ */
+export function datenAufBindMount(mountinfo: string, wurzel = '/data'): string[] {
+  const punkte = new Map<string, string>();
+  for (const z of mountinfo.split('\n')) {
+    const f = z.split(' ');
+    if (f.length > 5) punkte.set(f[4].replace(/\\040/g, ' '), f[3].replace(/\\040/g, ' '));
+  }
+  return [wurzel, ...NAMEN.map((n) => `${wurzel}/${n}`)].filter((p) => {
+    const quelle = punkte.get(p);
+    return quelle !== undefined && !BENANNTES_VOLUME.test(quelle);
+  });
+}
+
+/**
+ * Hinweis „PUID/PGID fehlen“ (#1449): Das Start-Skript hat Ablago ohne PUID/PGID die Vorgabe 1000:1000 gegeben (die
+ * Ordner gehörten root oder einem Systembenutzer) und Datenordner liegen auf einem Bind-Mount – dann gehören sie danach
+ * 1000:1000, und der Zugriff über die Dateifreigabe des NAS kann verloren gehen. Mit PUID/PGID, wie der Besitzer der
+ * Ordner oder außerhalb des Images (`docker run --user`): null.
+ */
+export function kennungHinweis(
+  k: Pick<Dienstbenutzer, 'herkunft' | 'benutzer' | 'gruppe'>,
+  mountinfo: string | null,
+  wurzel = '/data',
+): { ordner: string[]; benutzer: number; gruppe: number } | null {
+  const h = k.herkunft;
+  if (!h || !mountinfo || k.benutzer === null || k.gruppe === null) return null;
+  if (h.benutzer === 'gesetzt' || h.gruppe === 'gesetzt' || (h.benutzer !== 'vorgabe' && h.gruppe !== 'vorgabe')) return null;
+  const ordner = datenAufBindMount(mountinfo, wurzel);
+  return ordner.length ? { ordner, benutzer: k.benutzer, gruppe: k.gruppe } : null;
+}
+
+/** Für die Übersicht der Werkbank: Hinweis aus Umgebung und /proc/self/mountinfo. */
+export function kennungHinweisJetzt(env: Umgebung = process.env, lesen: Lesen = lies) {
+  let mountinfo: string | null;
+  try {
+    mountinfo = lesen('/proc/self/mountinfo');
+  } catch {
+    mountinfo = null;
+  }
+  return kennungHinweis(dienstbenutzer(env, lesen), mountinfo, env.DMS_DATEN_WURZEL || '/data');
+}

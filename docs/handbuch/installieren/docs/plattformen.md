@@ -23,10 +23,21 @@ Jede Zeile nennt die **Ablago-Version und das Datum** der letzten Prüfung bzw. 
 
 **Was die GitHub-Rechner prüfen:**
 
-- **x64:** alle automatischen Tests mit PostgreSQL 17, das Image `dms` und `dms-komplett`, die Vorlagen für Synology, UGREEN, QNAP, TrueNAS, Unraid und den Raspberry Pi (starten, Ablago antwortet, Einrichtungsassistent beginnt richtig). Dazu kommt ein wöchentlicher [Lasttest](https://help.ablago.app/admin/aktuell/verkraftet/); die Messwerte stehen in [#576](https://github.com/motom001/dms/issues/576).
+- **x64:** alle automatischen Tests mit PostgreSQL 18, das Image `dms` und `dms-komplett`, die Vorlagen für Synology, UGREEN, QNAP, TrueNAS, Unraid und den Raspberry Pi (starten, Ablago antwortet, Einrichtungsassistent beginnt richtig). Dazu kommt ein wöchentlicher [Lasttest](https://help.ablago.app/admin/aktuell/verkraftet/); die Messwerte stehen in [#576](https://github.com/motom001/dms/issues/576).
 - **arm64:** auf einem echten ARM-Rechner (nicht nachgebildet) die Images `dms` und `dms-komplett` bauen und probehalber starten, die Werkzeuge im Image.
 
 Die Vorlagen laufen dabei auf einem gewöhnlichen Linux mit Docker, nicht auf dem NAS selbst. Ob die Oberfläche eines NAS (Container Manager, App Center …) mitspielt, zeigt erst ein echtes Gerät.
+
+### Datenbank: PostgreSQL { #postgresql }
+
+| Hauptversion | Stand | Wo |
+| --- | --- | --- |
+| **18** | **geprüft:** alle automatischen Tests, die Vorlagen, `dms-komplett` (seit Ablago 0.306) | Vorlagen, `dms-komplett`, App aus dem [TrueNAS-Katalog](truenas.md) |
+| 17 | **nicht mehr geprüft** (seit Ablago 0.306; bis 0.305 alle Tests). Ablago startet und schreibt einen Hinweis ins Protokoll. Geprüft bleibt nur der Umzug: Sicherung auf 17 ziehen, auf 18 einspielen, Daten gleich. | ältere Installationen mit zwei Containern |
+| 16 | nicht geprüft; Ablago startet mit Hinweis im Protokoll | eigene Datenbank |
+| 15 und älter | Ablago startet nicht und nennt den Grund | – |
+
+Wie du von 17 auf 18 umziehst, steht unter [Aktualisieren → PostgreSQL 18](https://help.ablago.app/admin/aktuell/aktualisieren/#postgresql-18). Sicherungen von Ablago lassen sich zwischen 17 und 18 in beide Richtungen einspielen.
 
 **Der Raspberry Pi 5** soll als nächstes Gerät „vom Projekt getestet“ werden. Dafür sucht das Projekt noch ein Gerät, siehe [Was das Projekt braucht (#589)](https://github.com/motom001/dms/issues/589).
 
@@ -35,6 +46,8 @@ Die Vorlagen laufen dabei auf einem gewöhnlichen Linux mit Docker, nicht auf de
 | Gerät | Architektur | Stufe | Letzte Meldung | Hinweis |
 | --- | --- | --- | --- | --- |
 | *noch keine Meldung* | | | | |
+
+Ein gebrauchter Mini-PC, Thin Client oder ein altes Notebook ist oft die günstigste Wahl – worauf du achten solltest, steht unter [Gebrauchte Hardware](gebrauchte-hardware.md).
 
 Meldungen sind ein **Hinweis, keine Zusage**. Das Projekt prüft sie auf Plausibilität – passen die Werte zu ähnlichen Geräten, gibt es Widersprüche? –, nicht auf Wahrheit, und fragt bei Auffälligem nach. Entscheidungen stützen wir nie allein auf Meldungen; sie können aber Anlass sein, ein Gerät für „vom Projekt getestet“ zu suchen.
 

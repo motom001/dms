@@ -52,8 +52,25 @@ describe('Werkbank → Rundgänge: Prüfen (#941)', () => {
     assert.match(pruefeRundgangDatei(neun, o).fehler[0].text, /9 Schritte, höchstens 8/);
     assert.match(
       pruefeRundgangDatei(GUT.replace('schritte:', 'start: erste_anmeldung\nschritte:'), o).fehler[0].text,
-      /nur für Ablagos eigenen Rundgang/,
+      /nur für Ablagos eigene Rundgänge/,
       'eigene starten nie von selbst',
+    );
+  });
+
+  it('Ausprobieren (#1533): Rundgang aus einem Paket bzw. von Ablago wird mit seiner Herkunft geprüft, gespeichert nur als eigener', async () => {
+    const e = speicherEinstellungen();
+    const speicher = { lies: () => e.lies(WERKBANK_EINSTELLUNG), schreibe: (x: unknown) => e.schreibe(WERKBANK_EINSTELLUNG, x) };
+    const w = new RundgaengeWerkbank({ speicher, pruefung });
+    const paket = GUT.replace('schritte:', 'start: nach_installation\nschritte:');
+    assert.match((await w.pruefe(paket)).fehler[0].text, /nur für Rundgänge aus Paketen/, 'ohne Herkunft wie bisher');
+    assert.deepEqual((await w.pruefe(paket, 'paket:haushalt')).fehler, [], 'Paket-Rundgang lässt sich ausprobieren');
+    const ablago = GUT.replace('schritte:', 'start: erste_anmeldung\nschritte:');
+    assert.deepEqual((await w.pruefe(ablago, 'ablago')).fehler, [], 'Ablagos Rundgang lässt sich ausprobieren');
+    assert.equal((await w.pruefe(paket, 'paket:../x')).fehler.length, 1, 'unbekannte Herkunft gilt als eigen');
+    await assert.rejects(
+      w.speichere(null, { yaml: paket, herkunft: 'paket:haushalt' }, 'lena@example.org'),
+      (x: unknown) => x instanceof Fachfehler && x.status === 422,
+      'gespeichert wird immer als eigener',
     );
   });
 
@@ -114,11 +131,12 @@ describe('Werkbank → Rundgänge: speichern, an/aus, in „Ablago entdecken“ 
     const eigen = s.rundgaenge.find((r) => r.schluessel === 'eigen:urlaub');
     assert.equal(eigen?.herkunft, 'eigen');
     assert.equal(eigen?.start, 'manuell');
-    assert.equal(s.starten, 'ablago');
+    assert.ok(s.beimBesuch.some((x) => x.schluessel === 'ablago'));
+    assert.ok(!s.beimBesuch.some((x) => x.schluessel === 'eigen:urlaub'));
     await w.schalte('rundgang', 'ablago', false);
     await w.schalte('rundgang', 'eigen:urlaub', false);
     s = await ent.stand(lena);
-    assert.equal(s.starten, null, 'Ablagos Rundgang ausgeschaltet: startet nicht');
+    assert.ok(!s.beimBesuch.some((x) => x.schluessel === 'ablago'), 'Ablagos Rundgang ausgeschaltet: startet nicht');
     assert.ok(!s.rundgaenge.some((r) => r.schluessel === 'eigen:urlaub' || r.schluessel === 'ablago'));
     assert.ok(!s.tipps.some((x) => x.rundgang === 'ablago'), 'kein Tipp, der einen ausgeschalteten Rundgang startet');
     const liste = await w.liste((await ent.quellen({ alle: true })).rundgaenge, () => undefined, new Map());

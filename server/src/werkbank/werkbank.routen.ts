@@ -11,8 +11,12 @@ import { t } from '../sprache/sprache';
 import { darfBereich, darfVerwalten, hatGesamt } from '../../../shared/src/verwaltungsrecht';
 import { uebersicht } from '../system/system';
 import { werkzeugAbschirmung } from '../prozesse/hintergrund';
-import { gatewayBeobachtung } from '../http/gateway';
-import { MODULE, protokoll, STUFEN, type Stufe } from '../protokoll/protokoll';
+import { gatewayBeobachtung, gegenstellenBeobachtung } from '../http/gateway';
+import { proxyNetzHinweis } from '../http/proxy';
+import { kennungHinweisJetzt } from '../einrichtung/dienstbenutzer';
+import { MODULE, STUFEN, type Stufe } from '../protokoll/protokoll';
+import { protokollStand, setzeDebugAlle } from '../protokoll/alleprozesse';
+import { debugAbgleich, debugWerkbank } from '../protokoll/debugmodus';
 import { werkbankZahlen } from './werkbankzahlen';
 import { BeispielAblage } from '../beispiele/beispielablage';
 import { akzeptanzAufheben, akzeptierteMeldungen, meldungAkzeptieren } from './meldungen';
@@ -23,14 +27,47 @@ import { KOERPER_SPIELRAUM, LOGO_MAX } from '../grundlagen/grenzen';
 import { L, ok, leer, b, ich, grenzenUndEngpaesse, ZWEITE_ABGELEHNT, nurEigeneBereiche } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
 import type { Route } from '../http/routen-typen';
+import { darfHinweisGesehen, darfUebersicht } from './darf.routen';
+import { DARF_HINWEIS } from '../pakete/index';
+import { liesDateienErgebnis } from '../mappen';
+import { liesLauf, liesPruefplan, speicherePruefplan } from './dateien-pruefplan';
 
 export function werkbankRouten(k: RoutenKontext): Route[] {
-  return [...beispielUndProtokollRouten(k), ...designRouten(k), ...logoRouten(k), ...texterkennungRouten(k)];
+  return [...beispielUndProtokollRouten(k), ...designRouten(k), ...logoRouten(k), ...texterkennungRouten(k), ...pruefplanRouten(k)];
+}
+
+/** Zeitplan für „Alle Dateien prüfen“ (#1316): Plan, letztes Ergebnis und ein angefangener Lauf (setzt nach Neustart fort). */
+function pruefplanRouten(k: RoutenKontext): Route[] {
+  const { dienst, x } = k;
+  const stand = async () => {
+    const e = dienst.kern.einstellungen;
+    const s = x.sicherung ? await x.sicherung.plan() : null;
+    return {
+      plan: e ? await liesPruefplan(e) : null,
+      ergebnis: await liesDateienErgebnis(e),
+      lauf: e ? await liesLauf(e) : null,
+      sicherung: s?.aktiv ? s.uhrzeit : null,
+    };
+  };
+  return [
+    { methode: 'GET', pfad: '/api/werkbank/wartung/dateien/plan', zugang: 'admin', handler: async () => ok(await stand()) },
+    {
+      methode: 'PUT',
+      pfad: '/api/werkbank/wartung/dateien/plan',
+      zugang: 'admin',
+      handler: async (a) => {
+        if (!dienst.kern.einstellungen) throw new Fachfehler(409, t('meldungen.dienst.pruefplan.takt'));
+        const s = x.sicherung ? await x.sicherung.plan() : null;
+        await speicherePruefplan(dienst.kern.einstellungen, a.body, s?.aktiv ? s.uhrzeit : null, ich(a).email);
+        return ok(await stand());
+      },
+    },
+  ];
 }
 
 /** Beispiel-Ablage (#988), Protokoll und Debug-Modus. */
 function beispielUndProtokollRouten(k: RoutenKontext): Route[] {
-  const { dienst, pakete, wer } = k;
+  const { dienst, pakete, wer, x } = k;
   const beispielAblage = () => new BeispielAblage(pakete, () => dienst.kern.repo.listePakete());
   return [
     /* ---------- Beispiel-Ablage (#988) ---------- */
@@ -55,22 +92,26 @@ function beispielUndProtokollRouten(k: RoutenKontext): Route[] {
       handler: async (a) => {
         const q = a.query;
         const stufe = (STUFEN as readonly string[]).includes(q.stufe ?? '') ? (q.stufe as Stufe) : undefined;
-        const eintraege = protokoll.eintraege({
-          seit: Number(q.seit) || undefined,
-          stufe,
-          modul: q.modul || undefined,
-          benutzer: q.benutzer || undefined,
-          anfrage: q.anfrage || undefined,
-          suche: q.suche?.slice(0, 200) || undefined,
-          max: Math.min(2000, Number(q.max) || 500),
-        });
+        // Alle Prozesse (#1490): mit mehreren nach Zeit gemischt, jeder Eintrag mit seinem Prozess.
+        const s = await protokollStand(
+          x.verbund,
+          {
+            stufe,
+            modul: q.modul || undefined,
+            benutzer: q.benutzer || undefined,
+            anfrage: q.anfrage || undefined,
+            suche: q.suche?.slice(0, 200) || undefined,
+            max: Math.min(2000, Number(q.max) || 500),
+          },
+          q.seit?.slice(0, 2000) || undefined,
+        );
         return ok({
-          eintraege,
-          letzte: protokoll.letzteNr,
-          gespeichert: protokoll.anzahl,
-          debug: protokoll.debugStand,
+          eintraege: s.eintraege,
+          letzte: s.letzte,
+          gespeichert: s.gespeichert,
+          debug: s.debug,
           module: MODULE,
-          jeModul: protokoll.jeModul(),
+          jeModul: s.jeModul,
         });
       },
     },
@@ -80,10 +121,14 @@ function beispielUndProtokollRouten(k: RoutenKontext): Route[] {
       zugang: 'admin',
       handler: async (a) => {
         const an = !!b(a).an;
-        const r = protokoll.setzeDebug(an);
+        // Mit Zeitpunkt in der Datenbank (#1528): gilt auch für Prozesse, die danach neu starten, und endet nach 24 Stunden.
+        if (dienst.kern.einstellungen) await debugWerkbank(dienst.kern.einstellungen, an, ich(a).email);
+        // Für alle laufenden Prozesse sofort (#1490); „aus“ beendet hier auch LOG_LEVEL=debug, die anderen folgen beim Abgleich.
+        let r = await setzeDebugAlle(x.verbund, an);
+        if (dienst.kern.einstellungen && !an) r = await debugAbgleich(dienst.kern.einstellungen);
         L.system.warn(
           an
-            ? `Debug-Modus eingeschaltet bis ${new Date(r.bis!).toLocaleTimeString('de-DE', { timeZone: zeitzone() })}`
+            ? `Debug-Modus eingeschaltet bis ${new Date(r.bis!).toLocaleString('de-DE', { timeZone: zeitzone() })}`
             : 'Debug-Modus ausgeschaltet',
         );
         return ok(r);
@@ -341,6 +386,8 @@ function uebersichtRouten(k: RoutenKontext): Route[] {
             mail: !!x.betrieb?.mailer(),
             adresse: x.betrieb ? !!x.betrieb.ansicht().adresse : true,
             texterkennung: x.texterkennung ? await sicher(() => x.texterkennung!.zaehler()) : null,
+            // #1550: Abbrüche wegen der Zeitgrenze in den letzten 24 Stunden, sobald sie sich häufen (sonst 0).
+            texterkennungZeitgrenze: x.texterkennung ? ((await sicher(() => x.texterkennung!.zeitgrenzeHaeufung())) ?? 0) : 0,
             // #459: Ist ein Paket für die Texterkennung installiert? Sonst Hinweis „Texterkennung ist jetzt ein Paket“.
             texterkennungPaket: !!(await sicher(() => dienst.volltexte.texterkennungPaket())),
             // #1329: poppler findet für nicht eingebettete Schriften keinen Ersatz – Seiten-, Vorschaubilder und Archivfassung ohne Text.
@@ -354,6 +401,11 @@ function uebersichtRouten(k: RoutenKontext): Route[] {
             eingangsordner: x.eingangsordner?.vorhanden ? await sicher(() => x.eingangsordner!.meldungen()) : null,
             // #877: Dokumentdateien, die beim Lesen fehlten (und noch fehlen) – Volume vergessen, Datei gelöscht, Platte defekt.
             dateienFehlen: (await sicher(() => dienst.dateienFehlen.fehlendeDateien())) ?? 0,
+            // #1316: Letzter Lauf von „Alle Dateien prüfen“ (auch nach Zeitplan) mit Befund.
+            dateienBefund: await sicher(async () => {
+              const e = await liesDateienErgebnis(dienst.kern.einstellungen);
+              return e?.abweichungen ? e : null;
+            }),
             // #719: Wer im Alltag die Aufgaben ohne Empfänger bekommt; `moeglich` = aktive Benutzer ohne Admin-Rechte.
             aufgabenEmpfaenger: await sicher(async () => ({
               benutzerId: (await dienst.ohneEmpfaenger.alltagsEmpfaenger()).wirksam,
@@ -394,6 +446,10 @@ async function uebersichtHinweise(k: RoutenKontext, sicher: Sicher) {
     // Notfallcode benutzt (#815): bis jemand mit „Gesamte Verwaltung“ den Hinweis als gelesen markiert.
     // Heimnetz nicht bestimmbar (#1355): Anfragen mit der Gateway-Adresse des eigenen Netzes in den letzten 24 Stunden.
     heimnetzGateway: await gatewayBeobachtung.stand(dienst.kurzzustand),
+    // Ganzes Netz in TRUST_PROXY statt der Adresse des Proxys (#1465): Anfragen direkt vom Gateway, das ein Netz abdeckt.
+    trustProxyNetz: proxyNetzHinweis(x.proxy, await gegenstellenBeobachtung.stand(dienst.kurzzustand)),
+    // PUID/PGID fehlen, Datenordner auf einem Bind-Mount (#1449): die Ordner gehören jetzt der Vorgabe 1000:1000.
+    kennungHinweis: kennungHinweisJetzt(),
     notfallcodeBenutzt: x.notfallcode
       ? ((await sicher(() => x.notfallcode!.offen()))?.map((n) => ({
           id: n.id,
@@ -480,6 +536,8 @@ async function uebersichtBetrieb(k: RoutenKontext, sicher: Sicher, anb: Anbindun
     postfachAnmeldung: x.postfaecher ? ((await sicher(() => x.postfaecher!.anmeldungFehlt())) ?? []) : [],
     // Bewusst akzeptierte Meldungen (#816): wer, wann, Begründung; die Übersicht stellt sie unten zusammen.
     akzeptiert: (await sicher(() => akzeptierteMeldungen(dienst.kern.einstellungen))) ?? {},
+    // Was Ablago darf (#1562) und empfohlene Pakete (#1511).
+    ...((await sicher(() => darfUebersicht(dienst))) ?? {}),
   };
 }
 
@@ -541,7 +599,8 @@ function meldungenRouten(k: RoutenKontext): Route[] {
           if (!e) throw new Fachfehler(500, t('werkbank.uebersicht.akzeptiert.ohne-speicher'));
           await e.schreibe(ZWEITE_ABGELEHNT, { von: ich(a).name || ich(a).email, am: new Date().toISOString() });
           L.werkbank.info('Empfehlung „zweite Person mit Verwaltungsrecht“ abgelehnt', { meldung: k, von: ich(a).email });
-        } else if (k.startsWith('notfallzugang.benutzt:')) await nf().gelesen(k.slice('notfallzugang.benutzt:'.length), ich(a));
+        } else if (k === DARF_HINWEIS) await darfHinweisGesehen(dienst, ich(a).email);
+        else if (k.startsWith('notfallzugang.benutzt:')) await nf().gelesen(k.slice('notfallzugang.benutzt:'.length), ich(a));
         else throw new Fachfehler(400, t('werkbank.uebersicht.akzeptiert.ungueltig'));
         return leer;
       },
@@ -571,7 +630,12 @@ function systemuebersichtRouten(k: RoutenKontext): Route[] {
         // Dokumentwerkzeuge getrennt und begrenzt (#1354): Benutzer und Grenzen, gemessen (dms status, Probe im Image).
         const abschirmung = await sicher(() => werkzeugAbschirmung());
         return ok({
-          ...(await uebersicht(system, x.betrieb?.kurz(), await gatewayBeobachtung.stand(k.dienst.kurzzustand))),
+          ...(await uebersicht(
+            system,
+            x.betrieb?.kurz(),
+            await gatewayBeobachtung.stand(k.dienst.kurzzustand),
+            x.wartung?.stand.stufe ?? null,
+          )),
           ordner: sp?.ordner ?? null,
           variablen: x.ordner?.ueberfluessig ?? [],
           werkzeuge,

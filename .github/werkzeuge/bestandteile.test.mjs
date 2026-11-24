@@ -141,6 +141,36 @@ test('Weboberfläche: Abhängigkeiten aus dem Lockfile, verschachtelt aufgelöst
   assert.ok(web.every((b) => b.art === 'npm (Oberfläche)' && b.varianten.length === 2 && b.architekturen.length === 2));
 });
 
+test('Weboberfläche aus dem Bündel (#1470): nur, was Code ins Bündel bringt – yargs nicht, qrcode und react schon', () => {
+  const lock = {
+    packages: {
+      'node_modules/react': { version: '19.3.1', license: 'MIT' },
+      'node_modules/qrcode': { version: '1.5.4', license: 'MIT', dependencies: { dijkstrajs: '^1', pngjs: '^5', yargs: '^15' } },
+      'node_modules/dijkstrajs': { version: '1.0.3', license: 'MIT' },
+      'node_modules/pngjs': { version: '5.0.0', license: 'MIT' },
+      'node_modules/yargs': { version: '15.4.1', license: 'MIT', dependencies: { cliui: '^6' } },
+      'node_modules/cliui': { version: '6.0.0', license: 'ISC' },
+    },
+  };
+  const buendel = {
+    quelle: 'vite',
+    pakete: [
+      { name: 'dijkstrajs', version: '1.0.3' },
+      { name: 'qrcode', version: '1.5.4' },
+      { name: 'react', version: '19.3.1' },
+    ],
+  };
+  const web = webBibliotheken(lock, { dependencies: { react: '^19', qrcode: '^1' } }, buendel);
+  assert.deepEqual(web.map((b) => b.name).sort(), ['dijkstrajs', 'qrcode', 'react']);
+  assert.ok(!web.some((b) => b.name === 'yargs' || b.name === 'cliui'));
+  const qrcode = web.find((b) => b.name === 'qrcode');
+  assert.deepEqual([qrcode.ebene, qrcode.lizenz, qrcode.herkunft], [1, 'MIT', 'im Bündel']);
+  assert.deepEqual(qrcode.braucht, ['dijkstrajs@1.0.3'], 'nur, was auch im Bündel steckt');
+  assert.deepEqual(web.find((b) => b.name === 'dijkstrajs').durch, ['qrcode']);
+  // Ohne Bündel (Release von Hand) bleibt es beim Lockfile.
+  assert.ok(webBibliotheken(lock, { dependencies: { react: '^19', qrcode: '^1' } }).some((b) => b.name === 'yargs'));
+});
+
 test('Schriften und Handbuch: Version aus der Schrift und aus requirements.txt', () => {
   assert.match(schriftVersion(readFileSync('server/schriften/NotoSans-Regular.ttf')), /^\d+\.\d{3}$/);
   assert.equal(pipVersion('mkdocs==1.6.1 \\\nmkdocs-material==9.8.1 \\\n    --hash=sha256:x', 'mkdocs-material'), '9.8.1');
@@ -348,7 +378,7 @@ test('SPDX und CycloneDX: gültiger Aufbau, eindeutige Kennungen, Images mit Dig
 
 test('Jedes Paket aus „apk add“ im Dockerfile hat einen Eintrag „Wozu“', () => {
   const pakete = apkPakete(readFileSync('Dockerfile', 'utf8'));
-  assert.ok(pakete.includes('poppler-utils') && pakete.includes('postgresql17'), 'apk add im Dockerfile nicht gefunden');
+  assert.ok(pakete.includes('poppler-utils') && pakete.includes('postgresql18'), 'apk add im Dockerfile nicht gefunden');
   const wozu = JSON.parse(readFileSync('.github/werkzeuge/bestandteile-wozu.json', 'utf8')).pakete;
   assert.deepEqual(
     pakete.filter((p) => !wozu[p]),
@@ -383,6 +413,16 @@ test('Gesamtlauf: aus dem Ordner der Stücklisten entstehen Text und drei Anhän
       },
     ]),
   );
+  writeFileSync(
+    join(ordner, 'bestandteile-buendel.json'),
+    JSON.stringify({
+      quelle: 'vite',
+      pakete: [
+        { name: 'qrcode', version: '1.5.4' },
+        { name: 'react', version: '19.3.1' },
+      ],
+    }),
+  );
   main([
     '--stand',
     ordner,
@@ -409,6 +449,10 @@ test('Gesamtlauf: aus dem Ordner der Stücklisten entstehen Text und drei Anhän
       `Art fehlt: ${art}`,
     );
   assert.equal(zeilen.find((b) => b.name === 'node').version, '24.11.1');
+  const web = zeilen.filter((b) => b.art === 'npm (Oberfläche)');
+  assert.ok(web.some((b) => b.name === 'qrcode') && web.some((b) => b.name === 'react'), 'qrcode und react aus dem Bündel');
+  assert.ok(!web.some((b) => b.name === 'yargs'), 'yargs (Kommandozeile von qrcode) steckt nicht im Bündel');
+  assert.ok(web.every((b) => b.herkunft === 'im Bündel'));
   assert.equal(JSON.parse(readFileSync(join(aus, DATEIEN.spdx), 'utf8')).spdxVersion, 'SPDX-2.3');
   assert.equal(JSON.parse(readFileSync(join(aus, DATEIEN.cdx), 'utf8')).specVersion, '1.5');
 });

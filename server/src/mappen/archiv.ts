@@ -28,6 +28,40 @@ export function archivnummerAus(v: unknown): string | null {
   return t || null;
 }
 
+/** Stand eines (unterbrochenen) Laufs von „Alle Dateien prüfen“ (#1316): zuletzt geprüfter Prüfwert und Befunde. */
+export interface DateienPruefstand {
+  ab: string | null;
+  abweichungen: Array<{ sha256: string; grund: string }>;
+  fehlend: string[];
+}
+/** Zeitplan-Lauf (#1316): fortsetzen, drosseln, Stand merken, abbrechbar, nach dem Ende aufräumen. */
+export interface DateienPruefOptionen {
+  stand?: DateienPruefstand;
+  drossel?: () => Promise<void>;
+  merke?: (stand: DateienPruefstand, geprueft: number, dateien: number) => Promise<void>;
+  /** Nach Zeitplan: abbrechbar, und so im letzten Ergebnis vermerkt. */
+  zeitplan?: boolean;
+  fertig?: () => Promise<void>;
+}
+/**
+ * Letztes vollständiges Ergebnis (#1316, von Hand oder nach Zeitplan): mit Befund ein Hinweis auf der Startseite der
+ * Werkbank und in der täglichen Zusammenfassung; ein Lauf ohne Befund nimmt ihn wieder weg.
+ */
+export interface DateienPruefergebnis {
+  am: string;
+  dateien: number;
+  abweichungen: number;
+  fehlend: number;
+  zeitplan: boolean;
+}
+const ERGEBNIS = 'dateien_pruefen_ergebnis';
+export async function liesDateienErgebnis(e: { lies(k: string): Promise<unknown> } | undefined): Promise<DateienPruefergebnis | null> {
+  const v = e ? ((await e.lies(ERGEBNIS)) as DateienPruefergebnis | null) : null;
+  return v && typeof v.am === 'string' ? v : null;
+}
+/** So oft (je so viele Dateien) hält ein Zeitplan-Lauf seinen Stand fest. */
+const MERKEN_JE = 25;
+
 /** Etikettenformat des Aufkleberbogens (Schlüssel von ETIKETTEN in aufkleber.ts). */
 type Etikett = string;
 
@@ -39,7 +73,15 @@ export interface MappenArchivAnschluss {
     aufkleberPdf(nummern: string[], etikett: Etikett, start: number, praefix: string): Promise<Buffer>;
   };
   /** Aufträge im Hintergrund (auftrag.ts). */
-  auftraege: { starte(art: string, titel: string, arbeit: (fortschritt: Fortschritt) => Promise<unknown>, phasen?: PhasenPlan[]): Auftrag };
+  auftraege: {
+    starte(
+      art: string,
+      titel: string,
+      arbeit: (fortschritt: Fortschritt, signal?: AbortSignal) => Promise<unknown>,
+      phasen?: PhasenPlan[],
+      opt?: { abbrechbar?: boolean },
+    ): Auftrag;
+  };
   /** Fehlende Dateien für den Hinweis der Übersicht merken (#877; Dokumente, noch im Dienst). */
   schreibeFehlendeDateien(shas: string[]): Promise<unknown>;
 }
@@ -179,33 +221,43 @@ export class MappenArchiv {
     return erg.sort((a, b) => a.aufbewahrenBis.localeCompare(b.aufbewahrenBis) || a.titel.localeCompare(b.titel, 'de'));
   }
 
-  /** Integrität (#212): jede Datei gegen ihren Prüfwert; als Auftrag im Hintergrund. */
-  pruefeDateien(von: string) {
+  /**
+   * Integrität (#212): jede Datei gegen ihren Prüfwert; als Auftrag im Hintergrund. Mit Zeitplan (#1316) zusätzlich:
+   * `stand` setzt einen unterbrochenen Lauf fort (Prüfwerte sortiert, weiter nach `ab`), `drossel` bremst vor jeder
+   * Datei, `merke` hält den Stand fest, und der Auftrag ist abbrechbar.
+   */
+  pruefeDateien(von: string, opt: DateienPruefOptionen = {}) {
     return this.auftraege.starte(
       'dateien-pruefen',
       'Alle Dateien prüfen',
-      async (fortschritt) => {
+      async (fortschritt, signal) => {
         const alle = await this.repo.alleDateien();
-        const shas = [...new Set(alle.map((x) => x.sha256))];
-        const abweichungen: Array<{ sha256: string; grund: string; dokumente: typeof alle }> = [];
-        const fehlend: string[] = [];
-        for (const [i, sha] of shas.entries()) {
-          let grund: string | null = null;
-          try {
-            const s = await this.dateien.lies(sha);
-            const h = createHash('sha256');
-            if (Buffer.isBuffer(s)) h.update(s);
-            else for await (const teil of s) h.update(teil as Buffer);
-            if (h.digest('hex') !== sha) grund = t('meldungen.dienst.inhalt-veraendert');
-          } catch {
-            grund = t('meldungen.dienst.datei-fehlt');
-            fehlend.push(sha);
+        const shas = [...new Set(alle.map((x) => x.sha256))].sort();
+        const st: DateienPruefstand = opt.stand ?? { ab: null, abweichungen: [], fehlend: [] };
+        let i = st.ab ? shas.findIndex((x) => x > st.ab!) : 0;
+        if (i < 0) i = shas.length;
+        let abgebrochen = false;
+        for (; i < shas.length; i++) {
+          if (signal?.aborted) {
+            abgebrochen = true;
+            break;
           }
-          if (grund) abweichungen.push({ sha256: sha, grund, dokumente: alle.filter((x) => x.sha256 === sha) });
+          await opt.drossel?.();
+          const sha = shas[i];
+          const grund = await this.pruefeDatei(sha);
+          if (grund) st.abweichungen.push({ sha256: sha, grund });
+          if (grund === t('meldungen.dienst.datei-fehlt')) st.fehlend.push(sha);
+          st.ab = sha;
           fortschritt(i + 1, shas.length);
+          if (opt.merke && (i + 1) % MERKEN_JE === 0) await opt.merke(st, i + 1, shas.length);
+        }
+        const abweichungen = st.abweichungen.map((a) => ({ ...a, dokumente: alle.filter((x) => x.sha256 === a.sha256) }));
+        if (abgebrochen) {
+          protokoll.modul('werkbank').info('Dateien prüfen: abgebrochen', { von, geprueft: i, dateien: shas.length });
+          return { dateien: shas.length, geprueft: i, abweichungen, abgebrochen: true };
         }
         // Hinweis der Übersicht (#877): Die Prüfung kennt jetzt alle fehlenden Dateien.
-        await this.schreibeFehlendeDateien(fehlend).catch(() => {});
+        await this.schreibeFehlendeDateien(st.fehlend).catch(() => {});
         const log = protokoll.modul('werkbank');
         if (abweichungen.length)
           log.error('Dateien prüfen: Abweichungen gefunden', {
@@ -219,12 +271,35 @@ export class MappenArchiv {
         void nachweis('unveraenderbarkeit.pruefung', {
           dateien: shas.length,
           abweichungen: abweichungen.length,
-          fehlend: fehlend.length,
+          fehlend: st.fehlend.length,
           von,
         });
+        const ergebnis: DateienPruefergebnis = {
+          am: new Date().toISOString(),
+          dateien: shas.length,
+          abweichungen: abweichungen.length,
+          fehlend: st.fehlend.length,
+          zeitplan: !!opt.zeitplan,
+        };
+        await this.kern.einstellungen?.schreibe(ERGEBNIS, ergebnis);
+        await opt.fertig?.();
         return { dateien: shas.length, abweichungen };
       },
       [{ key: 'dateien', name: 'Dateien prüfen', einheit: 'Dateien' }],
+      { abbrechbar: !!opt.zeitplan },
     );
+  }
+
+  /** Eine Datei gegen ihren Prüfwert: null = in Ordnung, sonst der Grund. */
+  private async pruefeDatei(sha: string): Promise<string | null> {
+    try {
+      const s = await this.dateien.lies(sha);
+      const h = createHash('sha256');
+      if (Buffer.isBuffer(s)) h.update(s);
+      else for await (const teil of s) h.update(teil as Buffer);
+      return h.digest('hex') !== sha ? t('meldungen.dienst.inhalt-veraendert') : null;
+    } catch {
+      return t('meldungen.dienst.datei-fehlt');
+    }
   }
 }

@@ -43,13 +43,13 @@
       "varianten": ["dms", "dms-komplett"],
       "en": "Substitute font for further characters."
     },
-    "postgresql17": {
+    "postgresql18": {
       "wozu": "Datenbank im Container, nur in dms-komplett (nur innerhalb des Containers erreichbar).",
       "issues": [208],
       "varianten": ["dms-komplett"],
       "en": "Database inside the container, only in dms-komplett (reachable only within the container)."
     },
-    "postgresql17-contrib": {
+    "postgresql18-contrib": {
       "wozu": "Erweiterungen pg_trgm und unaccent für die unscharfe Suche und die Suche in Wortteilen.",
       "issues": [208],
       "varianten": ["dms-komplett"],

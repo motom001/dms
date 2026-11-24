@@ -144,9 +144,11 @@ function useAusDokument() {
   // Nach dem Speichern (#1043): Positionen der E-Rechnung anlegen, Mappen, die dazugehören, verknüpfen – abwählbar.
   const [adPositionen, setAdPositionen] = useState<(NonNullable<TypVorschlaege['positionen']> & { an: boolean }) | null>(null);
   const [adDazu, setAdDazu] = useState<Array<NonNullable<TypVorschlaege['dazu']>[number] & { an: boolean }>>([]);
+  // Hier angelegte Mappen (#1485): Id → Feld, aus dem heraus sie angelegt wurde; spätere Vorschläge nur für dieses Feld.
+  const angelegtAus = useRef(new Map<string, string>());
   return {
     ...{ adOffen, setAdOffen, vorschlaege, setVorschlaege, adNeu, setAdNeu, adMeldung, setAdMeldung },
-    ...{ adPositionen, setAdPositionen, adDazu, setAdDazu },
+    ...{ adPositionen, setAdPositionen, adDazu, setAdDazu, angelegtAus },
   };
 }
 
@@ -297,8 +299,6 @@ export function useFormularKern(p: FormularProps) {
   const bruecke = useBruecke();
   // Auf der Seite „Dokument übernehmen“ (#934) steht „Aus Dokument ausfüllen“ nicht – das Dokument ist schon da.
   const knopf = r.nurLesen || bruecke || imFenster ? null : ausDokumentKnopf(typ);
-  // Hat die Mappe ein Dokument mit Text, öffnet der Knopf die Seite mit diesem Dokument in der Mitte (#934); sonst der Dialog (Foto, Datei).
-  const mitText = mappe ? (details?.dokumente ?? []).filter((x) => x.ocr?.stand === 'fertig') : [];
   const ad = useAusDokument();
   const b = useBekannt(details, w.roh);
   const ae = useAenderungen(p, w, ad);
@@ -307,7 +307,7 @@ export function useFormularKern(p: FormularProps) {
   const reg = register.find((x) => x.key === w.aktiv) ?? register[0];
   const a = useAnzeige(typ, w.roh, d, b.bekannt);
   const ab = useAbschnitte(typ, p.start, d, a);
-  return { p, d, ich, register, ...r, sperreErklaerung, ...w, bruecke, knopf, mitText, ...ad, ...b, ...ae, registerId, reg, ...a, ...ab };
+  return { p, d, ich, register, ...r, sperreErklaerung, ...w, bruecke, knopf, ...ad, ...b, ...ae, registerId, reg, ...a, ...ab };
 }
 
 export type Kern = ReturnType<typeof useFormularKern>;

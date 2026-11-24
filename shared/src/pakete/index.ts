@@ -28,3 +28,5 @@ export * from './schnittstellen';
 export * from './code';
 export * from './rechtepunkte';
 export * from './ablauf';
+export * from './stufe';
+export * from './bestand';

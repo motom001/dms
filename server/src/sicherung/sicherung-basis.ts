@@ -1,6 +1,6 @@
 /** Sicherung (#1278 aus sicherung.ts): Grundklasse – Einstellungen, Liste der Sicherungen, Speicherplatz und Speicherort. */
 import { join } from 'node:path';
-import { statfs, readdir, stat, readFile, rm, mkdir } from 'node:fs/promises';
+import { statfs, readdir, stat, readFile, rm, mkdir, writeFile, rename } from 'node:fs/promises';
 import {
   type SicherungsQuellen,
   type Lauf,
@@ -18,6 +18,7 @@ import {
   type SchlankeMetadaten,
   istSchlank,
   dateienUnter,
+  bereinigeWozu,
 } from './sicherung-hilfen';
 import type { EntfernteSicherungen } from './sicherung-entfernt';
 import { Fachfehler } from '../grundlagen/fehler';
@@ -27,6 +28,7 @@ import type { Abrufbar } from '../http/teilabruf';
 import { oeffneStrom } from '../dateien/dateispeicher';
 import { sha256Von } from './sicherungsformat';
 import { aufVolume, geraetVon } from '../geheimnisse/tresor';
+import { hochrechnung } from '../../../shared/src/sicherungsplan';
 
 export abstract class SicherungBasis {
   /** Was die Klasse Sicherung setzt (Felder und Konstruktor, sicherung.ts) bzw. weiter oben in der Kette steht. */
@@ -63,7 +65,7 @@ export abstract class SicherungBasis {
   /** Ein einziger Lauf zur Zeit (Sicherung, Prüfung, später Wiederherstellung). */
   belege(art: Lauf['art'], titel: string): Lauf {
     if (this.laeuft()) throw new Fachfehler(409, t('meldungen.sicherung.es-laeuft-bereits-bitte', { titel: this.lauf!.titel }));
-    if (titel !== 'Sicherung vor der Wiederherstellung' && this.sperre())
+    if (titel !== t('meldungen.sicherung.sicherung-vor-der-wiederherstellung') && this.sperre())
       throw new Fachfehler(409, t('meldungen.sicherung.gerade-laeuft-eine-wiederherstellung'));
     this.lauf = { art, titel, status: 'laeuft', schritt: 'Vorbereiten', bytes: 0, gesamt: 0, gestartet: this.jetzt().toISOString() };
     return this.lauf;
@@ -123,6 +125,34 @@ export abstract class SicherungBasis {
     } catch {
       return true;
     }
+  }
+
+  /**
+   * Reicht der Platz für die nächste Sicherung voraussichtlich (#1509, #1530)? Geschätzt wird mit der Größe der letzten
+   * Sicherung (sonst Dateien und Datenbank heute); danach muss noch der Mindest-Speicherplatz frei bleiben – Ablago und
+   * Datenbank liegen meist auf demselben Speicher, eine volle Platte legte auch die Datenbank lahm.
+   */
+  async platzFuerNaechste(liste?: Eintragsliste[]): Promise<{ reicht: boolean; frei: number | null; geschaetzt: number; mindest: number }> {
+    const mindest = (await this.plan()).mindestFreiGB * GB;
+    const geschaetzt = await this.geschaetzteGroesse(liste);
+    let frei: number | null = null;
+    try {
+      await mkdir(this.ordner, { recursive: true });
+      const f = await statfs(this.ordner);
+      frei = f.bavail * f.bsize;
+    } catch {
+      /* nicht feststellbar: dann nicht verhindern */
+    }
+    return { reicht: frei === null || frei - geschaetzt >= mindest, frei, geschaetzt, mindest };
+  }
+
+  /** Geschätzte Größe der nächsten Sicherung: die letzte vollständige, sonst Dateien und Datenbank heute. */
+  async geschaetzteGroesse(liste?: Eintragsliste[]): Promise<number> {
+    const letzte = (liste ?? (await this.liste())).find((x) => x.meta)?.bytes;
+    if (letzte !== undefined) return letzte;
+    let bytes = 0;
+    for await (const f of dateienUnter(this.dateiOrdner)) bytes += f.groesse;
+    return bytes + (await this.q.daten.groesse().catch(() => 0));
   }
 
   /**
@@ -262,6 +292,26 @@ export abstract class SicherungBasis {
     return { inhalt, dateiname: `${name}.json` };
   }
 
+  /**
+   * „Wozu?“ nachträglich ändern (#1529): steht in den Angaben neben der Sicherung (`<name>.json`) und geht so mit ihr
+   * mit – beim Herunterladen, Zurückholen und Wiederherstellen. Leer entfernt den Namen.
+   */
+  async setzeWozu(name: string, eingabe: unknown, von: string): Promise<string | null> {
+    const wozu = bereinigeWozu(eingabe);
+    this.pfad(name);
+    const datei = join(this.ordner, `${name}.json`);
+    const text = await readFile(datei, 'utf8').catch(() => null);
+    if (!text) throw new Fachfehler(404, t('meldungen.sicherung.zu-dieser-sicherung-fehlen'));
+    const j = JSON.parse(text) as Record<string, unknown>;
+    if (wozu) j.wozu = wozu;
+    else delete j.wozu;
+    const teil = join(this.ordner, `.${name}.json.teil`);
+    await writeFile(teil, `${JSON.stringify(j, null, 2)}\n`, { mode: 0o600 });
+    await rename(teil, datei);
+    log.info('„Wozu?“ einer Sicherung geändert', { name, von, wozu });
+    return wozu;
+  }
+
   /** Protokoll (#975): wer welche Sicherung heruntergeladen hat – bei Weiterlesen nach Abbruch mit der Stelle. */
   merkeHerunterladen(name: string, von: string, bereich: { start: number; ende: number } | null, groesse: number) {
     if (!bereich) log.info('Sicherung heruntergeladen', { name, von, bytes: groesse });
@@ -328,12 +378,8 @@ export abstract class SicherungBasis {
       /* nicht feststellbar */
     }
     const plan = await this.plan();
-    const a = plan.aufbewahrung;
-    // Jede Sicherung ist vollständig; Zahl der höchstens aufbewahrten Sicherungen.
-    const stueck =
-      plan.nurNeueste && (await this.nurNeuesteMoeglich(liste))
-        ? 1
-        : (plan.haeufigkeit === 'taeglich' ? a.taeglich : 0) + a.woechentlich + a.monatlich;
+    // Jede Sicherung ist vollständig; Zahl der höchstens aufbewahrten Sicherungen (shared/src/sicherungsplan.ts, #1509).
+    const hoch = hochrechnung(plan, plan.nurNeueste && (await this.nurNeuesteMoeglich(liste)), dateienBytes + datenbankBytes);
     const letzte = liste.find((x) => x.meta)?.bytes ?? dateienBytes + datenbankBytes;
     const mindest = plan.mindestFreiGB * GB;
     return {
@@ -344,7 +390,7 @@ export abstract class SicherungBasis {
       anzahl: liste.length,
       frei,
       gesamt,
-      hochrechnung: { stueck, bytes: stueck * (dateienBytes + datenbankBytes) },
+      hochrechnung: hoch,
       mindestBytes: mindest,
       knapp: frei !== null && (frei < mindest || frei < 2 * letzte),
     };

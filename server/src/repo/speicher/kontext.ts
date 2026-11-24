@@ -137,3 +137,36 @@ export function speicherKontext() {
 }
 
 export type SpeicherKontext = ReturnType<typeof speicherKontext>;
+
+/** Tiefe Kopie für den Schnappschuss: Maps, Sets, Listen und einfache Objekte; Puffer und Daten bleiben, wie sie sind. */
+function tief(v: unknown): unknown {
+  if (v instanceof Map) return new Map([...v].map(([k, x]) => [k, tief(x)]));
+  if (v instanceof Set) return new Set([...v].map(tief));
+  if (Array.isArray(v)) return v.map(tief);
+  if (v && typeof v === 'object' && Object.getPrototypeOf(v) === Object.prototype)
+    return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, tief(x)]));
+  return v;
+}
+
+/**
+ * Transaktion im Arbeitsspeicher (#1385, wie PostgreSQL): Stand vorher merken; scheitert die Transaktion, kommt er
+ * zurück – an denselben Maps, Sets und Listen, weil die Teile des Speichers sie festhalten.
+ */
+export function schnappschuss(z: object): () => void {
+  const o = z as Record<string, unknown>;
+  const alt = new Map<string, unknown>();
+  for (const [k, v] of Object.entries(o)) if (typeof v !== 'function') alt.set(k, tief(v));
+  return () => {
+    for (const [k, v] of alt) {
+      const jetzt = o[k];
+      if (jetzt instanceof Map && v instanceof Map) {
+        jetzt.clear();
+        for (const [a, b] of v) jetzt.set(a, b);
+      } else if (jetzt instanceof Set && v instanceof Set) {
+        jetzt.clear();
+        for (const a of v) jetzt.add(a);
+      } else if (Array.isArray(jetzt) && Array.isArray(v)) jetzt.splice(0, jetzt.length, ...(v as unknown[]));
+      else o[k] = v;
+    }
+  };
+}

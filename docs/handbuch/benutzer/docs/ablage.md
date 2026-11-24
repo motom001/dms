@@ -2,7 +2,7 @@
 
 ## Ansichten
 
-Links stehen die **Ansichten**. Ganz oben stehen fest, jeweils mit einem Symbol: [Erweiterte Suche](#erweiterte-suche), [Start](startseite.md), [Zu erledigen](eingang.md), [Neue Post](post.md), deine [Favoriten](#favoriten) und der [Papierkorb](#papierkorb) (solange er an ist oder etwas darin liegt). Unter dem Trenner stehen – ohne Symbol – die Ansichten, die ein Administrator eingerichtet hat – zum Beispiel *Vertrag*, *Rechnung*, *Vertragspartner* oder *Kündigung in den nächsten 12 Monaten*. Die Zahl dahinter sagt, wie viele Mappen die Ansicht gerade zeigt. Die Ablage wartet nicht auf die Zahlen: Bis sie da sind, steht an ihrer Stelle kurz „…“. Bei **Zu erledigen** und **Neue Post** steht die Zahl fett, solange dort etwas auf dich wartet; alle Zahlen stehen auch bei 0 da – leise grau. Dann ist die Liste wirklich leer.
+Links stehen die **Ansichten**. Ganz oben stehen fest, jeweils mit einem Symbol: [Erweiterte Suche](#erweiterte-suche), [Start](startseite.md), [Zu erledigen](eingang.md), [Neue Post](post.md), deine [Favoriten](#favoriten) und der [Papierkorb](#papierkorb) (solange er an ist oder etwas darin liegt). Unter dem Trenner stehen die Ansichten, die ein Administrator eingerichtet hat – mit dem Symbol, das er gewählt hat, oder ohne – zum Beispiel *Vertrag*, *Rechnung*, *Vertragspartner* oder *Kündigung in den nächsten 12 Monaten*. Die Zahl dahinter sagt, wie viele Mappen die Ansicht gerade zeigt. Die Ablage wartet nicht auf die Zahlen: Bis sie da sind, steht an ihrer Stelle kurz „…“. Bei **Zu erledigen** und **Neue Post** steht die Zahl fett, solange dort etwas auf dich wartet; alle Zahlen stehen auch bei 0 da – leise grau. Dann ist die Liste wirklich leer.
 
 Ein Klick auf eine Ansicht zeigt ihre Mappen in der Liste. Welche Ansichten du siehst, kann ein Administrator festlegen; eine Ansicht, die für dich verborgen ist, fehlt samt ihrer Mappen auch in der Elternansicht. Mappen findest du trotzdem über die Suche, wenn du sie lesen darfst.
 
@@ -24,7 +24,7 @@ Am Handy steht statt der Liste ein Knopf mit der aktuellen Ansicht, z. B. **Ansi
 
 Auch die Liste ist am Handy kompakter: Die Kopfzeile passt in eine Zeile; gesucht wird über die Lupe oben in der Kopfzeile ([Suchen](#suchen)).
 
-- **Ansichten können Unteransichten haben.** Ein Pfeil ▸ davor zeigt das; ein Klick darauf klappt sie auf oder zu. Dein Gerät merkt sich, was zugeklappt ist.
+- **Ansichten können Unteransichten haben.** Ein Pfeil ▸ davor zeigt das; ein Klick darauf klappt sie auf oder zu – auch, wenn darin gerade eine Ansicht gewählt ist; dann ist die zugeklappte Ansicht als gewählt markiert. Öffnest du eine Unteransicht, klappt ihr Bereich auf. Dein Gerät merkt sich, was zugeklappt ist.
 - **Eine Ansicht mit Unteransichten zeigt alles zusammen:** *Finanzen* zeigt zum Beispiel alle offenen Rechnungen *und* die Zahlungen dieses Jahres.
 - **Manche Ansichten filtern:** *Offene Rechnungen* zeigt nur Rechnungen, die noch nicht bezahlt sind. Werte wie „heute“ oder „du selbst“ rechnet Ablago bei jedem Öffnen neu – eine Ansicht *Kündigung in den nächsten 12 Monaten* ist also immer aktuell.
 - **Zeigt eine Ansicht mehrere Mappentypen**, stehen *Titel* und *Mappentyp* vorn, und es gibt keinen Knopf zum Anlegen. Neue Mappen legst du dann in der Ansicht des einzelnen Mappentyps an.
@@ -37,7 +37,7 @@ Die Liste zeigt die Mappen der Ansicht, nach Titel sortiert. Sie lädt zunächst
 
 Mit **+** und dem Namen des Mappentyps oben rechts, etwa **+ Rechnung**, legst du eine neue Mappe dieses Mappentyps an (siehe [Mappen](mappen.md)). Fehlt der Knopf zum Anlegen, dürfen von diesem Mappentyp in der Ablage keine Mappen angelegt werden – bei *Benutzer* zum Beispiel ist das so. Daneben öffnet **⋯** **Alle … exportieren …** (alle Mappen der Ansicht, mit deiner Suche und Sortierung) und – wenn du in der Werkbank Ansichten bearbeiten darfst – **Ansicht bearbeiten**. In der Liste eines Mappentyps ohne eigene Ansicht steht dort **Mappentyp bearbeiten**: Es führt zum Mappentyp in der Werkbank, wenn du Mappentypen bearbeiten darfst. Löschen und Versenden gehen über die Auswahl (siehe unten).
 
-Über der Liste steht, wie viele Mappen sie enthält. Haben alle denselben Mappentyp, nennt die Zahl ihn, etwa „12 × Vertrag“; in Ansichten mit verschiedenen Mappentypen heißt es „12 Mappen“.
+Über der Liste steht, wie viele Mappen sie enthält. Haben alle denselben Mappentyp, nennt die Zahl ihn, etwa „12 Verträge“ – oder „12 × Vertrag“, wenn für den Mappentyp keine Mehrzahl eingetragen ist; in Ansichten mit verschiedenen Mappentypen heißt es „12 Mappen“.
 
 ### Kompakt oder als Tabelle
 

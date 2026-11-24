@@ -6,7 +6,8 @@ import { ANSICHT_FORMEN } from './ansichtsymbol-formen';
  * immer `aria-hidden` – die Bedeutung trägt die Beschriftung daneben. Statt Emoji, die je nach
  * System bunt gezeichnet werden. Nur die genutzten Symbole liegen hier, nichts wird aus dem Netz geladen.
  *
- * Formen aus Lucide (https://lucide.dev, lucide-static 0.460.0), ISC-Lizenz:
+ * Formen aus Lucide (https://lucide.dev, lucide-static 0.460.0; die Ansichtssymbole in ansichtsymbol-formen.ts seit
+ * #1519 aus 1.76.0, Hinweis in NOTICE), ISC-Lizenz:
  * Copyright (c) for portions of Lucide are held by Cole Bemis 2013-2022 as part of Feather (MIT).
  * All other copyright (c) for Lucide are held by Lucide Contributors 2022.
  * Permission to use, copy, modify, and/or distribute this software for any purpose with or without

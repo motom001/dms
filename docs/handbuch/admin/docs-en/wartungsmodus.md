@@ -53,6 +53,25 @@ At the chosen start – or immediately with **Sign everyone out now** or [Lock r
     - the scheduled [backup](sicherung.md) and the test restore,
     - fetching from the [mailboxes](postfaecher.md) and the [Intake folder](eingangsordner.md).
 
+## Nothing goes in or out {#nichts-geht-rein-oder-raus}
+
+While maintenance mode is active, Ablago fetches nothing from outside and sends nothing out. So you can back up, restore or start a copy as a [test system from a snapshot](snapshots.md#prufen) in peace. [System health](speicherplatz.md) and the [overview](uebersicht.md) then show "Maintenance mode: nothing goes in or out".
+
+For each kind it is fixed what happens to what would be due during this time:
+
+| What | In maintenance mode | After switching off |
+| --- | --- | --- |
+| Fetching the [mailboxes](postfaecher.md) | rests; **Fetch now** reports "rests" | is caught up – the mails stay on the mail server until then |
+| [Intake folder](eingangsordner.md) | rests | is caught up – the files stay in the folder until then |
+| [Sending email](e-mail-versand.md) (notifications, summary, reminders, test mail) | **skipped** – the [log](fehlersuche.md#protokoll) shows "E-Mail ausgelassen (Wartungsmodus)" | not caught up; deadlines and the daily summary run at the next regular time |
+| Deliveries to the outside (webhook targets of [automations](automatisierungen.md)) | rest, stay in the queue | are caught up |
+| Calls from outside (addresses of automations) | **rejected** with 503 – the sender should try again later | – |
+| [Packages](pakete.md): deliveries of events | rest, stay in the queue | are caught up |
+| Packages: actions and interfaces | **rejected** ("No packages run during maintenance") | please try again afterwards |
+| Schedule of [automations](automatisierungen.md) ("date in N days") | rests | missed days are caught up (as after a restart) |
+
+Maintenance mode survives a restart. A test system that starts from a snapshot in which the mode was on therefore stays quiet until you end it there.
+
 Under **Signed-in sessions** you see who is currently signed in with which device and when they were last active.
 
 ## Switching off {#ausschalten}

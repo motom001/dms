@@ -34,7 +34,7 @@ Some providers have a catalogue of ready-made open-source apps: pick one, choose
 Container platforms run the server for you; you only specify which image should run and get an address with HTTPS.
 
 - **Simplest way:** one container with [`ghcr.io/motom001/dms-komplett`](komplett.md) – Ablago and the database together, without a password. Many platforms allow only one container or make a second one awkward; `dms-komplett` is meant for exactly that.
-- **With two containers** (`dms` and `postgres:17`) if the platform supports Compose projects or several services: as under [Docker Compose](docker.md).
+- **With two containers** (`dms` and `postgres:18`) if the platform supports Compose projects or several services: as under [Docker Compose](docker.md).
 - **Persistent storage is a must:** the folders `/data/files`, `/data/geheim`, `/data/sicherung` and `/data/postgres` must be on volumes that survive a restart and an update. Otherwise your data is gone with the next update.
 - **Port:** Ablago listens on `3000` in the container.
 

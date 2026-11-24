@@ -2,6 +2,11 @@
  * Wiederherstellen (#107) und Probe-Wiederherstellung (#109) gegen PostgreSQL:
  * Sicherung anlegen, auf einem leeren System wiederherstellen, Mappen/Dokumente/Prüfwort
  * vergleichen; auf dem laufenden System; Abbrüche lassen den alten Stand unverändert.
+ *
+ * Verbindungen (#1462): Jedes System und jede frische Verbindung hat einen kleinen Pool und wird nach ihrem Test
+ * geschlossen (`afterEach`). Nur die Quelle aus dem ersten Test bleibt offen, bis der Test „auf dem laufenden System“
+ * sie zum letzten Mal braucht; spätere Tests nehmen von ihr nur Sicherungsordner und Schlüssel. So hält die Datei
+ * höchstens etwa 10 Verbindungen gleichzeitig statt bis zu 46.
  */
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
@@ -9,7 +14,7 @@ import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { after, before, describe, it } from 'node:test';
+import { after, afterEach, before, describe, it } from 'node:test';
 import { readdir } from 'node:fs/promises';
 
 const url = process.env.TEST_DATABASE_URL;
@@ -21,13 +26,22 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
   type Sql = any;
   let haupt: Sql;
   const offen: Sql[] = [];
+  /** Verbindungen, die über das Ende ihres Tests hinaus gebraucht werden (die Quelle bis zum dritten Test). */
+  const behalten = new Set<Sql>();
+  /** Plätze je Pool: genug für Sicherung (Schnappschuss) und Wiederherstellung, klein genug für die Summe (#1462). */
+  const PLAETZE = 3;
   const dbs = [`dms_wh_quelle_${process.pid}`, `dms_wh_ziel_${process.pid}`, `dms_wh_wechsel_${process.pid}`, `dms_wh_fassq_${process.pid}`, `dms_wh_fassz_${process.pid}`, `dms_wh_aussen_${process.pid}`, `dms_wh_kennq_${process.pid}`, `dms_wh_kennz_${process.pid}`, `dms_wh_hookq_${process.pid}`, `dms_wh_hookz_${process.pid}`];
   const urlVon = (db: string) => { const u = new URL(url!); u.pathname = `/${db}`; return u.toString(); };
 
   before(async () => {
     const { verbinde } = await import('../src/datenbank/db');
-    haupt = verbinde(url!);
+    haupt = verbinde(url!, 1);
     for (const db of dbs) { await haupt.unsafe(`DROP DATABASE IF EXISTS ${db}`); await haupt.unsafe(`CREATE DATABASE ${db}`); }
+  });
+  /** Nach jedem Test: alle Verbindungen schließen, die kein späterer Test braucht (#1462). */
+  afterEach(async () => {
+    for (const s of offen.splice(0).filter((x) => !behalten.has(x))) await s.end({ timeout: 5 }).catch(() => {});
+    offen.push(...behalten);
   });
   after(async () => {
     for (const s of offen) await s.end().catch(() => {});
@@ -47,7 +61,7 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
     const { Tresor } = await import('../src/geheimnisse/tresor');
     const { Sicherung } = await import('../src/sicherung/sicherung');
     const { Wiederherstellung } = await import('../src/sicherung/wiederherstellung');
-    const sql = verbinde(urlVon(db));
+    const sql = verbinde(urlVon(db), PLAETZE);
     offen.push(sql);
     await migriere(sql, opt.migrationen ?? MIGRATIONEN, () => {});
     await sql`INSERT INTO haushalte (id, name) VALUES (${HAUSHALT}, 'Test') ON CONFLICT DO NOTHING`;
@@ -90,7 +104,7 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
   /** Frische Verbindung (nach dem Umschalten der Schemas). */
   async function frisch(db: string) {
     const { verbinde } = await import('../src/datenbank/db');
-    const s = verbinde(urlVon(db)); offen.push(s); return s;
+    const s = verbinde(urlVon(db), 2); offen.push(s); return s;
   }
   const zaehle = async (s: Sql) => ({
     mappen: Number((await s`SELECT count(*)::int AS n FROM mappen`)[0].n),
@@ -103,6 +117,7 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
 
   it('stellt eine Sicherung auf einem frischen System wieder her – mit Schlüssel vom Notfallblatt', async () => {
     quelle = await system(dbs[0], { mitDaten: true, mitSchluessel: true });
+    behalten.add(quelle.sql);
     const vorher = await zaehle(quelle.sql);
     const meta = (await (await quelle.sicherung.starte('manuell', 'anna@example.org')).fertig)!;
     assert.ok(meta, JSON.stringify(quelle.sicherung.aktuellerLauf()));
@@ -213,6 +228,8 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
     const liste = await q.sicherung.liste();
     assert.ok(liste.some((x) => x.meta?.art === 'vor-wiederherstellung'), 'Sicherung vor der Wiederherstellung liegt bereit');
     quelle = { ...q, sql: neu };
+    // Ab hier brauchen spätere Tests von der Quelle nur Sicherungsordner und Schlüssel, keine Verbindung.
+    behalten.clear();
   });
 
   it('Abbruch – veränderte Datei, falscher Schlüssel, neuere Sicherung – lässt den alten Stand unverändert', async () => {
@@ -371,7 +388,13 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
       } else {
         // Bisheriges Endergebnis bleibt: „fehler“ mit dem Grund, an dem das Merken scheiterte.
         assert.equal(lauf.fehler, 'Datenbank weg', scheitert);
+        // #1383: Aufgeräumt ist richtig, gescheitert ist nur das Speichern – kein Schritt steht auf „fehler“, der Lauf
+        // sagt es eigens (die Werkbank zeigt dazu einen Hinweis).
+        assert.equal(lauf.schritte.find((x) => x.name === 'Aufräumen')?.status, 'ok', `${scheitert}: ${JSON.stringify(lauf.schritte)}`);
+        assert.deepEqual(lauf.schritte.filter((x) => x.status !== 'ok' && x.status !== 'hinweis'), [], scheitert);
+        assert.equal(lauf.ergebnisNichtGespeichert, true, scheitert);
       }
+      if (scheitert === 'nie') assert.equal(lauf.ergebnisNichtGespeichert, undefined);
       if (scheitert === 'beim Erfolg') assert.equal((await q.sicherung.liste()).find((x) => x.name === sicherungsName)?.probe?.ok, false);
       assert.equal((await q.sql`SELECT nspname FROM pg_namespace WHERE nspname LIKE 'dms_wh_%'`).length, 0, `${scheitert}: aufgeräumt`);
     }
@@ -384,6 +407,9 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
       assert.equal(ergebnis, false);
       assert.equal(q.w.laeuft(), false);
       assert.match(lauf.fehler ?? '', /Schlüssel/, String(scheitert));
+      // #1383: Hier scheitert ein Schritt selbst, nicht nur das Speichern.
+      assert.equal(lauf.ergebnisNichtGespeichert, undefined, String(scheitert));
+      assert.ok(lauf.schritte.some((x) => x.status === 'fehler'), String(scheitert));
     }
   });
 

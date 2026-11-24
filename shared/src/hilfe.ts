@@ -191,6 +191,8 @@ export const HILFE = {
   'werkbank.datenbank': admin('installation/', 'Lange Datenbankzugriffe', 'lange-datenbankzugriffe'),
   'werkbank.technik': admin('fehlersuche/', 'Technik', 'technik'),
   'werkbank.werkzeuge': admin('fehlersuche/', 'Eingebaute Werkzeuge', 'werkzeuge'),
+  // #1449: Benutzer von Ablago und der Dokumentwerkzeuge, PUID/PGID.
+  'werkbank.ohne-root': admin('aktualisieren/', 'Ohne Administratorrechte', 'ohne-root'),
   // Startseite „Ablago startet …“ (#802): im Fehlerfall zum Protokoll des Containers.
   'start.fehler': admin('fehlersuche/', 'Container-Logs', 'container-logs'),
   'werkbank.demo': admin('demo/', 'Lasttest-Daten'),

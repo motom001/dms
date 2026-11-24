@@ -38,7 +38,9 @@ export async function vorbereiten(bisher: Bisher) {
   const { ordner } = ordnerPruefung;
   // Kennung des Stands ohne erkennbare Version (#1067): Zufallswert der Installation, vor jedem Startmodus.
   setzeStandSalz(ordner.geheim);
-  const version = env.DMS_VERSION ?? 'Entwicklung';
+  // Version für den Abgleich der Fassungen beim Start (#1447): im Image die Release-Version (DMS_VERSION, beim Bau
+  // gesetzt), in der Entwicklung „Entwicklung“. Leer (eigener Bau ohne Angabe) zählt wie nicht gesetzt.
+  const version = env.DMS_VERSION || 'Entwicklung';
   // Mehrere Prozesse (#745): Rolle dieses Prozesses. Mit einem Prozess (Vorgabe) ist er Leiter und erledigt alles selbst.
   const prozessEinstellung = prozesseAus(env);
   const verbund = await verbundFuerProzess();
@@ -47,7 +49,7 @@ export async function vorbereiten(bisher: Bisher) {
   teileZwischenspeicher(verbund.anzahl);
   if (leiter)
     // Im Protokoll dieselbe Version wie auf der Lasttest-Seite und in der Werkbank (#1251, Nachtrag): DMS_VERSION, sonst
-    // package.json – das Image setzt DMS_VERSION nicht, dort stand bisher „Entwicklung“.
+    // package.json. Seit #1447 setzt das Image DMS_VERSION selbst.
     log.info(`Ablago startet (Version ${eigeneVersion()})`, {
       node: process.version,
       port: cfg.port,

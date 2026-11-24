@@ -6,6 +6,8 @@ import { Speicherleiste, useEntwurf } from '../../Speicherleiste';
 import { NOTFALLBLATT_SEITE } from '../../../../shared/src/werkbankansicht';
 import { Feld, HakenFeld, Schalter, KnopfLink } from '../../bausteine';
 import { TAGE } from './hilfen';
+import { bytes } from '../sicherungFormat';
+import { hochrechnung } from '../../../../shared/src/sicherungsplan';
 
 type SetzeP = (p: SicherungsPlan) => void;
 
@@ -14,12 +16,15 @@ export function Zeitplan({
   notfallblatt,
   mitNotfallblatt,
   nurNeuesteMoeglich,
+  groesseJe,
   gespeichert,
 }: {
   plan: SicherungsPlan;
   notfallblatt: boolean;
   mitNotfallblatt: boolean;
   nurNeuesteMoeglich: boolean;
+  /** Größe einer Sicherung heute (Dateien und Datenbank) für den Speicherbedarf unter der Aufbewahrung (#1509). */
+  groesseJe: number;
   gespeichert(): void;
 }) {
   const [p, setP] = useState(plan);
@@ -76,7 +81,7 @@ export function Zeitplan({
         </p>
       )}
       {zeitFelder(p, setP)}
-      {aufbewahrung(p, setP, nurNeuesteMoeglich)}
+      {aufbewahrung(p, setP, nurNeuesteMoeglich, groesseJe)}
       {meldung && (
         <p className={meldung.art === 'gut' ? 'gutertext' : 'fehlertext'} role="status">
           {meldung.text}
@@ -116,7 +121,7 @@ function zeitFelder(p: SicherungsPlan, setP: SetzeP) {
 }
 
 /** Aufbewahrung: „Lokal nur die neueste“ (#1194), Zahl je Art, Mindest-Speicherplatz. */
-function aufbewahrung(p: SicherungsPlan, setP: SetzeP, nurNeuesteMoeglich: boolean) {
+function aufbewahrung(p: SicherungsPlan, setP: SetzeP, nurNeuesteMoeglich: boolean, groesseJe: number) {
   const a = p.aufbewahrung;
   // #1194: Nur mit erfolgreicher Kopie außer Haus wählbar und wirksam; ein schon gesetzter Haken lässt sich immer abwählen.
   const nurNeueste = !!p.nurNeueste && nurNeuesteMoeglich;
@@ -196,6 +201,17 @@ function aufbewahrung(p: SicherungsPlan, setP: SetzeP, nurNeuesteMoeglich: boole
           />
         </Feld>
       </div>
+      <Speicherbedarf p={p} nurNeueste={nurNeueste} groesseJe={groesseJe} />
     </>
+  );
+}
+
+/** Speicherbedarf (#1509): dieselbe Hochrechnung wie unter „Speicherplatz“, rechnet beim Ändern der Zahlen mit. */
+function Speicherbedarf({ p, nurNeueste, groesseJe }: { p: SicherungsPlan; nurNeueste: boolean; groesseJe: number }) {
+  const h = hochrechnung(p, nurNeueste, groesseJe);
+  return (
+    <p className="leise klein" aria-live="polite">
+      {t('werkbank.sicherung.bedarf', { anzahl: h.stueck, bytes: bytes(h.bytes) })}
+    </p>
   );
 }

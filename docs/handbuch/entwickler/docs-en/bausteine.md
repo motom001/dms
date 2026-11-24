@@ -39,7 +39,19 @@ Buttons mean the same everywhere, and nothing startles without need (#1210). Who
 
 **Checked** in three places: type checking requires symbol and confirmation for `art="gefahr"` and allows no kind `link` on `Knopf` (`web/src/bausteine/knopf/typpruefung.ts`). ESLint forbids colour classes via `className` on the button (`ablago/knopf-farben`) and elements that look like a button through the class `knopf` or `textknopf` (`ablago/bausteine`, #1269; [Style and dependencies](stil.md#regeln)). The smoke tests report, on every page they visit, create buttons without “+”, danger buttons without a confirmation, solid red outside a confirmation, anything that looks like a link but has no target, and every small element with a border that is neither button nor link nor field (principle 8) ([Smoke test and screenshots](#rauchtest)).
 
+For users, the user manual explains the same rules on one page: [What buttons look like](https://help.ablago.app/benutzer/aktuell/en/knoepfe/) (#1524). Its pictures (`knoepfe-*`, light and dark) are taken by `musterAufnehmen` (`web/rauchtest/muster.mjs`) from single cards of the pattern page – when a building block changes, they stay right by themselves.
+
 ![Pattern page, area “Button”: kinds, danger at rest, on hover and focus, the confirmation, disabled in two forms and the opened explanation](bilder/muster-knopf.png){ loading=lazy }
+
+## Pattern: note in the overview { #hinweis-uebersicht }
+
+All notes under "Notes" in the workbench overview follow one pattern (#1511, entry in the pattern catalogue). New notes are created in `web/src/werkbank/uebersicht/hinweise.tsx` or `hinweise-betrieb.tsx` as a `Hinweis` and keep to it:
+
+- **Structure:** title in bold, then one or two sentences. Below, **one** main button with the action (verb and object, e.g. "Set up email", "Install package") and next to it, as a secondary button, **"Acknowledge"** (`Akzeptieren.tsx`). Acknowledged notes are collapsed at the bottom under "Consciously accepted (n)".
+- **"No, thanks"** only where the note asks a real yes/no question (e.g. "second person with administration rights?"); plus the variant **"Read"** for red messages you can only acknowledge. Both via `erledigen`. A note that only comes once (e.g. after an update) closes with `erledigen: "Acknowledge"`.
+- **List in a note:** several identical actions are rows in **one** note, not several notes – per row a name, one sentence and the same secondary button with equal width below each other, then a link to all (`eigeneKnoepfe`, example "Recommended packages"). No tiles, no pictures. If the list is empty, the note disappears completely.
+- **Migration notes** ("… is now a package") only for installations that come from an older version (`umstieg` in the overview response), never after a fresh setup.
+- After an action, the overview reloads its notes by itself when you come back (#1513); completed notes disappear without "Reload".
 
 ## On a phone { #handy }
 
@@ -103,6 +115,7 @@ The workflow **Handbuch** takes the same screenshots in the jobs `bilder (de)` a
 | [Tile](bausteine-kachel.md) | A way with a number, the same on start page and workbench overview; green with a tick only when empty means “done” |
 | [Package chip](bausteine-paketchip.md) | Origin from a package: icon and name after the name, tooltip with version, link to the package page |
 | [Inputs with a unit](bausteine-einheit.md) | Period (number and unit, singular/plural) and percentage (number with “%”) for the field kinds period and percentage |
+| [Date](bausteine-datum.md) | Date field for typing with a calendar of its own including week numbers (ISO 8601); a click into the field opens it, the keyboard stays direct |
 | [Table](bausteine-tabelle.md) | Rows with columns, each leading to a page; wide a table, narrow a list with the first two columns (field kind table) |
 | [Search](bausteine-suche.md) | The search field of all lists and the pattern “list in the middle: search field on top, filters below” with number of results, places found and package filter |
 | [Toggle](bausteine-umschalter.md) | Segmented button: two to four equal choices, exactly one on – such as “Ask · Tips · Manual” in the assistant |

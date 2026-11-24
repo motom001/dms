@@ -60,6 +60,15 @@ export function ausDokumentWege(z: Kern, setze: (k: string, v: Roh) => void) {
       const f = typ.felder.find((x) => x.key === k);
       // Ausgeblendete Felder (#655) bekommen nichts – den Vorschlag sähe niemand.
       if (!f || z.geschuetzt[k] !== undefined || z.ausgeblendet.has(k) || v.aus) continue;
+      // Eben angelegte Mappe (#1485): nur in dem Feld, aus dem heraus sie angelegt wurde – nicht z. B. auch in „an“.
+      if (f.typ === 'referenz' && [v.wert].flat().some((id) => typeof id === 'string' && (z.angelegtAus.current.get(id) ?? k) !== k))
+        continue;
+      // „an“ nie dieselbe Mappe wie „von“ (#1485) – weder wie der Vorschlag noch wie der eingetragene Wert.
+      if (
+        k === 'an' &&
+        [r.vorschlaege.von?.wert, z.roh.von].some((x) => x !== undefined && JSON.stringify([x].flat()) === JSON.stringify([v.wert].flat()))
+      )
+        continue;
       const vorschlag = zuRoh(f, v.wert);
       if (istLeer(ausRoh(f, z.roh[k]))) {
         werte[k] = vorschlag;
@@ -139,6 +148,7 @@ function neuAnlegenWeg(z: Kern, setze: (k: string, v: Roh) => void) {
       return;
     try {
       const m = await mappenApi.mappeAnlegen({ typId: ziel.id, werte: n.werte });
+      z.angelegtAus.current.set(m.id, k);
       z.merke(m.id, { titel: m.titel ?? '', typId: m.typId });
       const vorher = z.roh[k];
       setze(k, f.mehrfach ? [m.id] : m.id);

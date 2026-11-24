@@ -1,6 +1,6 @@
 # Rundgänge
 
-Ein **Rundgang** zeigt Schritt für Schritt Stellen an der echten Oberfläche – Ablagos eigener bei der ersten Anmeldung, Rundgänge aus Paketen (etwa „Verträge im Überblick“) und eigene, die du hier schreibst. Alle stehen für die Personen, die sie nutzen dürfen, unter [Ablago entdecken](https://help.ablago.app/benutzer/aktuell/entdecken/).
+Ein **Rundgang** zeigt Schritt für Schritt Stellen an der echten Oberfläche – Ablagos eigene beim ersten Besuch einer Seite (Ablage, Mappe, Werkbank; Mein Konto nur mit einem stillen Hinweis), Rundgänge aus Paketen (etwa „Verträge im Überblick“) und eigene, die du hier schreibst. Alle stehen für die Personen, die sie nutzen dürfen, unter [Ablago entdecken](https://help.ablago.app/benutzer/aktuell/entdecken/).
 
 Du findest sie unter **Werkbank → Ablage aufbauen → Rundgänge**. Der Bereich steht ab der Stufe **Betrieb** in der Leiste (siehe [Werkbank anpassen](uebersicht.md#werkbank-anpassen)); in kleineren Stufen blendest du ihn über „Werkbank anpassen“ ein. Hast du schon eigene Rundgänge geschrieben oder einen mitgelieferten ausgeschaltet, bleibt er nach dem Update eingeblendet. Die Rundgänge selbst laufen in jeder Stufe – es geht nur um den Bereich in der Werkbank. Bearbeiten darf, wer den Bereich verwaltet.
 
@@ -8,15 +8,15 @@ Du findest sie unter **Werkbank → Ablage aufbauen → Rundgänge**. Der Bereic
 
 ## Die Liste
 
-In der Mitte stehen **alle** Rundgänge: von Ablago, aus Paketen und eigene – mit Herkunft, wann sie starten (*bei der ersten Anmeldung*, *nach der Installation angeboten*, *von Hand* …), für wen sie sind und wie viele Schritte sie haben. Oben suchst du in Titel, Beschreibung und Paket und filterst nach Herkunft. Ausgeschaltete stehen blasser mit dem Vermerk *ausgeschaltet*.
+In der Mitte stehen **alle** Rundgänge: von Ablago, aus Paketen und eigene – mit Herkunft, wann sie starten (*beim ersten Besuch der Seite*, *nach der Installation angeboten*, *von Hand* …), für wen sie sind und wie viele Schritte sie haben. Oben suchst du in Titel, Beschreibung und Paket und filterst nach Herkunft. Ausgeschaltete stehen blasser mit dem Vermerk *ausgeschaltet*.
 
 ## Ein- und ausschalten
 
-Rechts oben am gewählten Rundgang steht der Schalter. Er gilt **für alle** und wirkt sofort: Ein ausgeschalteter Rundgang steht für niemanden mehr unter „Ablago entdecken“, wird nicht als Tipp angeboten und startet nicht von selbst – auch Ablagos eigener Rundgang bei der ersten Anmeldung. So schaltest du zum Beispiel die Rundgänge eines Pakets ab.
+Rechts oben am gewählten Rundgang steht der Schalter. Er gilt **für alle** und wirkt sofort: Ein ausgeschalteter Rundgang steht für niemanden mehr unter „Ablago entdecken“, wird nicht als Tipp angeboten und startet nicht von selbst – auch Ablagos eigene Rundgänge beim ersten Besuch einer Seite. So schaltest du zum Beispiel die Rundgänge eines Pakets ab.
 
 ## Rundgänge von Ablago und aus Paketen ansehen
 
-Ein Klick zeigt die Datei des Rundgangs (mit den Texten in deiner Sprache). Ändern kannst du sie nicht; mit **Als eigenen kopieren** entsteht eine Kopie zum Bearbeiten. **Ausprobieren** startet den Rundgang in einem neuen Fenster, nur für dich.
+Ein Klick zeigt die Datei des Rundgangs (mit den Texten in deiner Sprache). Ändern kannst du sie nicht; **Als eigenen kopieren** legt gleich eine Kopie an – ausgeschaltet, mit `start: manuell` und ohne `seite` – und öffnet sie zum Bearbeiten. **Ausprobieren** startet den Rundgang in einem neuen Fenster, nur für dich; **Fertig – zurück zum Entwurf** schließt es am Ende wieder.
 
 Rundgänge und Tipps aus Paketen erscheinen in der Sprache jeder Person, wenn das Paket sie mitbringt, sonst auf Deutsch. Gibt es sie nur in einer Sprache oder fehlen in einer Übersetzung Texte, sagt es die Vorschau beim Installieren als Hinweis.
 

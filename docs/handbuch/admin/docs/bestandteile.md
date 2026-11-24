@@ -25,7 +25,7 @@ Ablago besteht nicht nur aus eigenem Code: Im Image stecken Alpine Linux mit ein
 
 Die Links in der Tabelle führen immer zur **stabilen Version** (`:stabil`) – bei GitHub ist das das Release mit der Markierung *Latest*. Für eine bestimmte Version ersetzt du `latest/download` durch `download/v<Version>`, z. B. `…/releases/download/v0.291.0/ablago-bestandteile.csv`. Releases von vor dieser Funktion haben keine Anhänge; bis die erste Version mit Liste stabil ist, führen die Links ins Leere.
 
-Die Spalten der CSV: *Art*, *Name*, *Version*, *Lizenz*, *Varianten* (`dms`, `dms-komplett`), *Architekturen*, *Herkunftspaket* (bei Alpine das Quellpaket, aus dem das Paket gebaut ist), *Quelle* und, seit #1412, der Baum:
+Die Spalten der CSV: *Art*, *Name*, *Version*, *Lizenz*, *Varianten* (`dms`, `dms-komplett`), *Architekturen*, *Herkunftspaket* (bei Alpine das Quellpaket, aus dem das Paket gebaut ist; bei der Oberfläche „im Bündel“), *Quelle* und, seit #1412, der Baum:
 
 - *Ebene:* 0 = Ablago selbst, 1 = direkt eingebunden, 2 und mehr = mitgebracht.
 - *Eingebracht durch:* die Pakete der Ebene 1, über die ein mitgebrachtes Paket kommt, z. B. `poppler-utils` oder `fastify`. Alpine-Pakete, die keins der eigens installierten Programme braucht, kommen mit dem *Basis-Image (node, Alpine)*.
@@ -42,14 +42,14 @@ In SPDX stehen die Abhängigkeiten als Beziehungen `DEPENDS_ON` (Werkzeuge der E
 | npm (Server) | Stückliste des fertigen Images (Trivy) | Fastify, nodemailer, pdf-lib |
 | Ablago selbst | Stückliste und Repository | Server, Weboberfläche, der Commit des Releases |
 | Laufzeit | Node-Version aus dem Image | Node.js |
-| npm (Oberfläche) | `package-lock.json` | React, qrcode – im Image zu einer Datei gebündelt, daher für Trivy unsichtbar |
+| npm (Oberfläche) | Bau der Oberfläche (Vite) | React, qrcode – im Image zu einer Datei gebündelt, daher für Trivy unsichtbar |
 | Schrift, Oberfläche | Repository | Noto Sans und Noto Sans Mono (eigene PDFs), Lucide (Symbole) |
 | Handbuch | Repository | Texte und Bilder des Offline-Handbuchs, Material for MkDocs |
 | npm (Werkzeug) | `package-lock.json`, `web/rauchtest/package-lock.json` | TypeScript, Vite, ESLint, Playwright – nur Entwicklung und Test, nicht im Image |
 
 Zwei Grenzen:
 
-- **Bibliotheken der Oberfläche** stammen aus der `package-lock.json`, nicht aus dem fertigen Bündel. Die Liste kann deshalb etwas zu viel enthalten (z. B. Teile einer Bibliothek, die nur auf der Kommandozeile gebraucht werden), aber nichts auslassen, was eingebunden ist.
+- **Bibliotheken der Oberfläche** stammen aus dem Bau der Oberfläche: Gezählt wird jedes npm-Paket, das Code ins fertige Bündel bringt, mit Version und Lizenz aus der `package-lock.json`. Was ein Paket nur für seine Kommandozeile mitbringt (z. B. `yargs` bei `qrcode`), steht nicht in der Liste.
 - **Lizenzen** übernimmt die Liste so, wie die Pakete sie angeben. Wo ein Paket keine angibt, steht *ohne erkannte Lizenz*. Den Quelltext eines Alpine-Pakets findest du über den Verweis auf pkgs.alpinelinux.org (Herkunftspaket und Zweig von Alpine); von dort führt ein Link zum Bauskript in aports.
 
 ## Wie die Liste entsteht
@@ -57,7 +57,7 @@ Zwei Grenzen:
 Bei jeder neuen Version, nachdem beide Images gebaut und zusammengeführt sind:
 
 1. **Stückliste je Image und Architektur:** Trivy liest die fertigen Images aus der Registry (`dms` und `dms-komplett`, je amd64 und arm64), dazu kommen die Digests und die Node-Version aus dem Image.
-2. **Ergänzungen:** was Trivy nicht sehen kann – die Bibliotheken der Oberfläche, Schriften, das Offline-Handbuch und Ablago selbst.
+2. **Ergänzungen:** was Trivy nicht sehen kann – die Bibliotheken der Oberfläche (aus dem Bau der Oberfläche im selben Lauf, gleicher Produktivbau wie im Image), Schriften, das Offline-Handbuch und Ablago selbst.
 3. **Baum:** Ebene und Herkunft für npm aus den Lockfiles, für Alpine aus der Paketdatenbank im Image (Beziehungen in der Stückliste von Trivy); der Zweck der direkt eingebundenen Pakete aus `bestandteile-wozu.json`.
 4. **Zusammenführen und vergleichen:** Gleiche Bestandteile aus allen Varianten und Architekturen werden zu einer Zeile; verglichen wird mit der CSV am vorigen Release, nur was im Image steckt.
 5. **Release:** Die Übersicht kommt in den Release-Text, die drei Dateien als Anhänge.

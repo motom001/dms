@@ -65,6 +65,8 @@ export interface UmbauAuftrag {
   /** Id der Mappe einer Vorgabe (`{ vorgabe: … }` in `setzen`). */
   vorgabeId: (verweis: string) => Promise<string | null>;
   von: { id: string | null; email: string | null };
+  /** Registerschlüssel, die das Paket an seinem Typ mitbringt (#1476); undefined = unbekannt, dann bleibt jedes Register. */
+  paketRegister?: (schluessel: string) => string[] | undefined;
 }
 
 export interface UmbauErgebnis {
@@ -240,6 +242,36 @@ async function verschiebeDokumente(d: UmbauDienst, g: GeplanterSchritt, ziel: Ma
   }
 }
 
+/**
+ * Zugeordnete Dokumentregister aufräumen (#1476): Ein Register, das der Schritt einem anderen zuordnet (`register:
+ * { alt: neu }`), verschwindet, wenn das Paket es nicht mitbringt und danach nichts mehr darin liegt – auch nichts im
+ * Papierkorb (einzelne Dokumente dieses Registers oder gelöschte Mappen des Typs mit Dokumenten). Sonst bleibt es.
+ */
+async function raeumeRegisterAuf(d: UmbauDienst, g: GeplanterSchritt, zielId: string, a: UmbauAuftrag) {
+  const mit = g.eigenerZiel ? a.paketRegister?.(g.eigenerZiel) : undefined;
+  if (!mit) return;
+  const repo = d.kern.repo;
+  const typ = await repo.holeTyp(zielId);
+  const zugeordnet = Object.entries(g.schritt.register).filter(([alt, neu]) => alt !== neu && !mit.includes(alt));
+  const kandidaten = (typ?.register ?? []).filter((r) => r.art === 'dokumente' && zugeordnet.some(([alt]) => alt === r.key));
+  if (!typ || !kandidaten.length) return;
+  const ids = (await d.mappen.listeMappen(zielId)).map((m) => m.id);
+  const belegt = new Set([
+    ...(await repo.dokumenteVon(ids)).map((x) => x.registerKey),
+    ...(ids.length ? await repo.papierkorbDokumente({ mappeIds: ids }) : []).map((x) => x.registerKey),
+  ]);
+  const geloescht = (await repo.papierkorb({ typId: zielId })).map((x) => x.id);
+  if (geloescht.length && (await repo.papierkorbInhalt(geloescht)).some((x) => x.dokumente.length)) return;
+  const weg = kandidaten.filter((r) => !belegt.has(r.key)).map((r) => r.key);
+  if (!weg.length) return;
+  await repo.aendereTyp(zielId, { ...typ, register: typ.register.filter((r) => !weg.includes(r.key)) });
+  log.info('Paket-Umbau: leere Register entfernt', {
+    typ: typ.name,
+    register: weg.join(', '),
+    schritt: `${g.schritt.von} → ${g.schritt.nach}`,
+  });
+}
+
 /** Ein Feld, das auf den alten Typ zeigt, zeigt danach auf den Zieltyp (Verweisziele, Tabellen); null = unverändert. */
 function feldUmgeleitet(f: Feld, altId: string, neuId: string, feld: (k: string) => string): Feld | null {
   if (f.typ === 'referenz' && altId !== neuId && zieleVon(f).includes(altId))
@@ -347,6 +379,7 @@ export async function fuehreUmbauAus(d: UmbauDienst, a: UmbauAuftrag): Promise<U
     const umbenannt = umbenennung(g.felder);
     const { ziel, mitnehmen } = await bereiteZielVor(d, g, roh, umbenannt);
     const anzahl = await zieheMappenUm(d, g, { ziel, mitnehmen, a, typVon });
+    await raeumeRegisterAuf(d, g, ziel.id, a);
     await leiteUm(d, g, ziel.id, umbenannt, erg.sichten);
     if (ziel.id !== g.alt.id) await schraenkeEin(d, g, ziel.id);
     const weg = await gibAb(d, g, a, quellen);

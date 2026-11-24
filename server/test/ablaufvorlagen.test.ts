@@ -535,14 +535,17 @@ if (url) {
       const { pgRepo } = await import('../src/repo/pg');
       const { pgKontoRepo } = await import('../src/konten/konto-repo');
       const db = await eigeneDatenbank('ablaufvorlagen_umstellung', { migrieren: false });
-      // Stand vor 105. Die Tabelle der Fassungen (#1006) und die Spalte in_suche (#1220) kommen dazu, weil der heutige Code
-      // beim Anlegen von Typ und Mappe Fassungen und in_suche schreibt.
+      // Stand vor 105. Die Tabelle der Fassungen (#1006) und die Spalten in_suche (#1220) und mehrzahl (#1446) kommen dazu,
+      // weil der heutige Code beim Anlegen von Typ und Mappe Fassungen, in_suche und mehrzahl schreibt.
       const vorher = mkdtempSync(join(tmpdir(), 'migrationen-'));
       try {
         for (const f of readdirSync(MIGRATIONEN).filter(
           (x) =>
             x.endsWith('.sql') &&
-            (x < '105' || (x.endsWith('_fassungen.sql') && !x.includes('ablaufvorlage')) || x.endsWith('_typ_in_suche.sql')),
+            (x < '105' ||
+              (x.endsWith('_fassungen.sql') && !x.includes('ablaufvorlage')) ||
+              x.endsWith('_typ_in_suche.sql') ||
+              x.endsWith('_typ_mehrzahl.sql')),
         ))
           copyFileSync(join(MIGRATIONEN, f), join(vorher, f));
         await migriere(db.sql, vorher, () => {});

@@ -28,6 +28,18 @@ export function berechnetAenderung(
   return r;
 }
 
+/**
+ * Übernahme beim Umbau (#1476): Felder des übernommenen Typs, die bisher ein anderes Paket berechnet und die das
+ * aufnehmende Paket selbst als berechnet mitbringt (`berechnetVon` = seine Id in den Daten des Pakets) – sie gehören
+ * danach ihm. Sonst bliebe die Angabe beim abgebenden Paket, und das neue Paket dürfte die Werte nicht schreiben.
+ */
+export function berechnetUebernommen(daten: { felder?: unknown }, alt: Pick<Mappentyp, 'felder'>, paketId: string): string[] {
+  const neu = Array.isArray(daten.felder) ? (daten.felder as Array<Partial<Feld>>) : [];
+  return alt.felder
+    .filter((g) => g.berechnetVon && g.berechnetVon !== paketId && neu.some((f) => f.key === g.key && f.berechnetVon === paketId))
+    .map((g) => g.key);
+}
+
 /** Felder, die das Paket für die Erkennung markiert und die im DMS (gleiche Kennung, gleiche Feldart) noch ohne Einstellung sind (#336). */
 export function erkennungNeu(
   t: PaketTyp,
@@ -128,14 +140,15 @@ export function formatNeu(
 
 /**
  * Beschriftungen eines Paket-Updates (#728) für einen vorhandenen Typ: fehlende je Sprache, Teil und Option ergänzen –
- * am Typ, an vorhandenen Feldern und Registern. Was der Administrator schon beschriftet hat, bleibt. Optionen nur für
+ * am Typ, an vorhandenen Feldern und Registern. Die Mehrzahl (#1446) genauso: nur, wenn der Typ noch keine hat. Was der Administrator schon beschriftet hat, bleibt. Optionen nur für
  * feste Werte, die es im Feld gibt; neue Felder bringen ihre Beschriftungen ohnehin mit.
  */
 export function beschriftungenNeu(
   t: PaketTyp,
-  vorhanden: Pick<Mappentyp, 'beschriftungen' | 'felder' | 'register'>,
-): { typ: Pick<Mappentyp, 'beschriftungen' | 'felder' | 'register'>; anzahl: number } {
-  let anzahl = 0;
+  vorhanden: Pick<Mappentyp, 'beschriftungen' | 'felder' | 'register' | 'mehrzahl'>,
+): { typ: Pick<Mappentyp, 'beschriftungen' | 'felder' | 'register' | 'mehrzahl'>; anzahl: number } {
+  const mehrzahl = t.mehrzahl && !vorhanden.mehrzahl?.trim() ? t.mehrzahl : undefined;
+  let anzahl = mehrzahl ? 1 : 0;
   const texte = (b: unknown): number =>
     typeof b === 'string' ? 1 : b && typeof b === 'object' ? Object.values(b).reduce((n: number, x) => n + texte(x), 0) : 0;
   const misch = <T extends object>(
@@ -188,7 +201,7 @@ export function beschriftungenNeu(
     });
     return { ...r, ...(b ? { beschriftungen: b } : {}), ...(abschnitte ? { abschnitte } : {}) };
   });
-  return { typ: { ...(beschriftungen ? { beschriftungen } : {}), felder, register }, anzahl };
+  return { typ: { ...(beschriftungen ? { beschriftungen } : {}), ...(mehrzahl ? { mehrzahl } : {}), felder, register }, anzahl };
 }
 
 /**

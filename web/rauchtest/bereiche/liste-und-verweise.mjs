@@ -7,7 +7,19 @@
  */
 import assert from 'node:assert/strict';
 import '../einrichtung.mjs';
-import { ABLAGE_BEREICHE, api, BASIS, JONAS, keineWaagerechteRolle, LENA, rauchtest, schemaWechseln, sitzung } from '../hilfen.mjs';
+import {
+  ABLAGE_BEREICHE,
+  api,
+  BASIS,
+  JONAS,
+  keineWaagerechteRolle,
+  LENA,
+  rauchtest,
+  rundgaengeGesehen,
+  schemaWechseln,
+  sitzung,
+  verwalten,
+} from '../hilfen.mjs';
 import { axePruefen, tippflaechenPruefen } from '../muster.mjs';
 
 /* ---------- #1285: Listenansicht ---------- */
@@ -109,6 +121,54 @@ rauchtest('Listenansicht: „Mappentyp bearbeiten“ in der Liste eines Mappenty
   await s.waitForURL(new RegExp(`/werkbank/typen/${typ.id}$`));
 });
 
+// Mehrzahl (#1446): in der Werkbank eintragen – danach „2 Rauchtest-Leitern“ statt
+// „2 × Rauchtest-Leiter“; eine Mappe bleibt „1 Rauchtest-Leiter“.
+rauchtest('Mappentyp: Mehrzahl in der Werkbank, Liste zeigt „2 Rauchtest-Leitern“ (#1446)', { als: LENA }, async (s) => {
+  const verwaltung = await sitzung(LENA);
+  await api('POST', '/api/konto/verwaltung', { cookie: verwaltung, body: { passwort: LENA.passwort } });
+  const typ = (
+    await api('POST', '/api/typen', {
+      cookie: verwaltung,
+      body: {
+        name: 'Rauchtest-Leiter',
+        schluessel: 'rauchtest_leiter',
+        titelVorlage: '{name}',
+        felder: [{ key: 'name', label: 'Name', typ: 'text', pflicht: true }],
+      },
+    })
+  ).daten;
+  const leiter = (await api('POST', '/api/mappen', { cookie: verwaltung, body: { typId: typ.id, werte: { name: 'Stehleiter' } } })).daten;
+  const liste = s.getByRole('region', { name: 'Mappen' });
+  await s.goto(BASIS + `/ablage/${typ.id}`);
+  await liste.getByText('1 Rauchtest-Leiter', { exact: true }).waitFor();
+  await api('POST', '/api/mappen', { cookie: verwaltung, body: { typId: typ.id, werte: { name: 'Anlegeleiter' } } });
+  await s.reload();
+  await liste.getByText('2 × Rauchtest-Leiter', { exact: true }).waitFor();
+  // Werkbank → Mappentyp → Grunddaten: Mehrzahl eintragen und speichern.
+  await verwalten(s);
+  await s.goto(BASIS + `/werkbank/typen/${typ.id}#grunddaten`);
+  const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
+  await bearbeitung.getByRole('heading', { name: 'Rauchtest-Leiter', level: 1 }).waitFor();
+  const mehrzahl = bearbeitung.getByRole('textbox', { name: /^Mehrzahl/ });
+  await mehrzahl.fill('Rauchtest-Leitern');
+  const pfad = (r) => new URL(r.url()).pathname;
+  const gespeichert = s.waitForResponse((r) => r.request().method() === 'PUT' && /^\/api\/typen\//.test(pfad(r)));
+  await bearbeitung.getByRole('button', { name: 'Mappentyp speichern' }).click();
+  await gespeichert;
+  await bearbeitung.getByText('Mappentyp gespeichert.').waitFor();
+  await bearbeitung.getByRole('button', { name: 'Mappentyp speichern', disabled: true }).waitFor();
+  const gelesen = (await api('GET', '/api/typen', { cookie: verwaltung })).daten.find((x) => x.id === typ.id);
+  assert.equal(gelesen.mehrzahl, 'Rauchtest-Leitern');
+  await s.getByRole('button', { name: 'Verwaltung beenden' }).click();
+  await s.getByRole('region', { name: 'Du verwaltest gerade Ablago.' }).waitFor({ state: 'detached' });
+  await s.goto(BASIS + `/ablage/${typ.id}`);
+  await liste.getByText('2 Rauchtest-Leitern', { exact: true }).waitFor();
+  // Eine Mappe: Einzahl.
+  await api('DELETE', `/api/mappen/${leiter.id}?grund=nicht_noetig`, { cookie: verwaltung });
+  await s.reload();
+  await liste.getByText('1 Rauchtest-Leiter', { exact: true }).waitFor();
+});
+
 // Export aller Treffer (#1335): Die Treffer kommen nur als Ids, die Mappen lädt der Export einmal – in der Datei steht
 // jede Mappe der Liste genau einmal, in der Reihenfolge der Liste.
 rauchtest('Listenansicht: „Alle exportieren“ als CSV, jede Mappe genau einmal (#1335)', { als: LENA }, async (s) => {
@@ -146,13 +206,14 @@ rauchtest('Listenansicht: „Alle exportieren“ als CSV, jede Mappe genau einma
 
 rauchtest('Listenansicht: „Ansicht bearbeiten“ nur mit Recht in der Werkbank (#1285)', { als: JONAS }, async (s) => {
   const cookie = await sitzung(JONAS);
-  // Ohne den ersten Rundgang – er läge beim Alleinstart über der Liste (werkbank.mjs prüft ihn).
-  await api('POST', '/api/entdecken/rundgaenge/ablago', { cookie, body: { stand: 'gesehen' } });
+  // Ohne die ersten Rundgänge – sie lägen beim Alleinstart über der Liste (werkbank.mjs prüft sie).
+  await rundgaengeGesehen(cookie);
   const typen = (await api('GET', '/api/typen', { cookie })).daten;
   const vertrag = typen.find((x) => x.name === 'Vertrag');
   await s.goto(BASIS + `/ablage/${vertrag.id}`);
   const liste = s.getByRole('region', { name: 'Mappen' });
-  await liste.getByText(/^\d+ × Vertrag$/).waitFor();
+  // Der Beispiel-Mappentyp „Vertrag“ hat seine Mehrzahl (#1446).
+  await liste.getByText(/^\d+ Verträge$/).waitFor();
   const mehr = liste.getByRole('button', { name: /^Weitere Aktionen: / });
   if (await mehr.count()) {
     await mehr.click();

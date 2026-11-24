@@ -94,7 +94,7 @@ export async function pruefeSchriften(): Promise<boolean | undefined> {
     const stderr = await new Promise<string | null>((ok) => {
       execFile(
         'pdftoppm',
-        ['-r', '20', '-gray', join(dir, 'probe.pdf'), join(dir, 's')],
+        ['-cropbox', '-r', '20', '-gray', join(dir, 'probe.pdf'), join(dir, 's')],
         { timeout: 20_000, maxBuffer: AUSGABE_KLEIN },
         (e, _o, err) => {
           ok(e && (e as NodeJS.ErrnoException).code === 'ENOENT' ? null : String(err ?? ''));

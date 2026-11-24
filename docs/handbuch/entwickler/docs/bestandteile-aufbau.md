@@ -49,7 +49,7 @@ Ablago bindet nur wenige Pakete **direkt** ein (**Ebene 1**). Was diese brauchen
 
 ### Weboberfläche { #weboberflaeche }
 
-Die Bibliotheken der Oberfläche bündelt Vite beim Bauen in eine Datei; im Image stehen sie nicht als eigene Pakete. Die Liste kommt deshalb aus `package-lock.json` und kann etwas mehr enthalten, als im Bündel landet.
+Die Bibliotheken der Oberfläche bündelt Vite beim Bauen in eine Datei; im Image stehen sie nicht als eigene Pakete. Diese Seite zeigt den Baum aus `package-lock.json` und kann deshalb mehr enthalten, als im Bündel landet (z. B. die Kommandozeile von `qrcode`). Die Liste am Release nimmt nur, was wirklich im Bündel steckt.
 
 | Paket | Wozu | Lizenz | Bringt mit |
 | --- | --- | --- | ---: |
@@ -78,8 +78,8 @@ Die Bibliotheken der Oberfläche bündelt Vite beim Bauen in eine Datei; im Imag
 | `fontconfig` | Findet die Ersatzschriften für PDFs, die ihre Schriften nicht einbetten. | `dms`, `dms-komplett` |
 | `font-liberation` | Ersatzschriften, metrisch passend für Helvetica/Arial, Times und Courier (Seiten- und Vorschaubilder, Archivfassung). | `dms`, `dms-komplett` |
 | `font-dejavu` | Ersatzschrift für weitere Zeichen. | `dms`, `dms-komplett` |
-| `postgresql17` | Datenbank im Container, nur in dms-komplett (nur innerhalb des Containers erreichbar). | `dms-komplett` |
-| `postgresql17-contrib` | Erweiterungen pg_trgm und unaccent für die unscharfe Suche und die Suche in Wortteilen. | `dms-komplett` |
+| `postgresql18` | Datenbank im Container, nur in dms-komplett (nur innerhalb des Containers erreichbar). | `dms-komplett` |
+| `postgresql18-contrib` | Erweiterungen pg_trgm und unaccent für die unscharfe Suche und die Suche in Wortteilen. | `dms-komplett` |
 | `tini` | Erster Prozess im Container: gibt Signale weiter und beendet Ablago (und in dms-komplett PostgreSQL) sauber. | `dms`, `dms-komplett` |
 | `su-exec` | Startet PostgreSQL unter einem eigenen Benutzer statt als root (dms-komplett). | `dms`, `dms-komplett` |
 | `setpriv` | Startet Ablago und die Dokumentwerkzeuge als eigene Benutzer statt als root, mit „no new privileges“ (aus util-linux). | `dms`, `dms-komplett` |
@@ -102,11 +102,11 @@ Diese Pakete braucht nur, wer Ablago baut oder prüft (`devDependencies` und das
 | `@eslint-community/eslint-plugin-eslint-comments` | Entwicklung | Regeln für Ausnahmen per Kommentar (mit Begründung). | MIT | 76 |
 | `@eslint/js` | Entwicklung | Grundregeln für ESLint. | MIT | 76 |
 | `@types/node` | Entwicklung | Typen für Node.js. | MIT | 1 |
-| `@types/nodemailer` | Entwicklung | Typen für nodemailer. | MIT | 1 |
-| `@types/qrcode` | Entwicklung | Typen für qrcode. | MIT | 1 |
+| `@types/nodemailer` | Entwicklung | Typen für nodemailer. | MIT | 2 |
+| `@types/qrcode` | Entwicklung | Typen für qrcode. | MIT | 2 |
 | `@types/react` | Entwicklung | Typen für React. | MIT | 1 |
 | `@types/react-dom` | Entwicklung | Typen für react-dom. | MIT | 1 |
-| `@vitejs/plugin-react` | Entwicklung | React-Unterstützung für Vite. | MIT | 75 |
+| `@vitejs/plugin-react` | Entwicklung | React-Unterstützung für Vite. | MIT | 76 |
 | `axe-core` | Test | Prüft die Barrierefreiheit in den Rauchtests. | MPL-2.0 | 0 |
 | `dependency-cruiser` | Entwicklung | Prüft Grenzen und Kreise zwischen den Ordnern; Abhängigkeitsbild. | MIT | 42 |
 | `esbuild` | Entwicklung | Bündelt den Server für das Image. | MIT | 26 |
@@ -119,11 +119,11 @@ Diese Pakete braucht nur, wer Ablago baut oder prüft (`devDependencies` und das
 | `tsx` | Entwicklung | TypeScript direkt ausführen: Entwicklungsserver, Tests, Werkzeuge. | MIT | 27 |
 | `typescript` | Entwicklung | Typprüfung für Server, Oberfläche und shared. | Apache-2.0 | 0 |
 | `typescript-eslint` | Entwicklung | ESLint für TypeScript. | MIT | 91 |
-| `vite` | Entwicklung | Baut und bündelt die Weboberfläche; Entwicklungsserver. | MIT | 75 |
+| `vite` | Entwicklung | Baut und bündelt die Weboberfläche; Entwicklungsserver. | MIT | 76 |
 
 <!-- mitgebracht:anfang -->
 
-Zusammen 305 Pakete, die nur für Entwicklung und Test installiert werden.
+Zusammen 307 Pakete, die nur für Entwicklung und Test installiert werden.
 
 <!-- mitgebracht:ende -->
 
@@ -138,11 +138,11 @@ Zusammen 305 Pakete, die nur für Entwicklung und Test installiert werden.
 ??? note "@types/node bringt 1 Paket mit"
     undici-types
 
-??? note "@types/nodemailer bringt 1 Paket mit"
-    undici-types
+??? note "@types/nodemailer bringt 2 Pakete mit"
+    @types/node, undici-types
 
-??? note "@types/qrcode bringt 1 Paket mit"
-    undici-types
+??? note "@types/qrcode bringt 2 Pakete mit"
+    @types/node, undici-types
 
 ??? note "@types/react bringt 1 Paket mit"
     csstype
@@ -150,8 +150,8 @@ Zusammen 305 Pakete, die nur für Entwicklung und Test installiert werden.
 ??? note "@types/react-dom bringt 1 Paket mit"
     csstype
 
-??? note "@vitejs/plugin-react bringt 75 Pakete mit"
-    @emnapi/core, @emnapi/runtime, @emnapi/wasi-threads, @esbuild/aix-ppc64, @esbuild/android-arm, @esbuild/android-arm64, @esbuild/android-x64, @esbuild/darwin-arm64, @esbuild/darwin-x64, @esbuild/freebsd-arm64, @esbuild/freebsd-x64, @esbuild/linux-arm, @esbuild/linux-arm64, @esbuild/linux-ia32, @esbuild/linux-loong64, @esbuild/linux-mips64el, @esbuild/linux-ppc64, @esbuild/linux-riscv64, @esbuild/linux-s390x, @esbuild/linux-x64, @esbuild/netbsd-arm64, @esbuild/netbsd-x64, @esbuild/openbsd-arm64, @esbuild/openbsd-x64, @esbuild/openharmony-arm64, @esbuild/sunos-x64, @esbuild/win32-arm64, @esbuild/win32-ia32, @esbuild/win32-x64, @napi-rs/wasm-runtime, @oxc-project/types, @rolldown/binding-android-arm-eabi, @rolldown/binding-android-arm64, @rolldown/binding-darwin-arm64, @rolldown/binding-darwin-x64, @rolldown/binding-freebsd-x64, @rolldown/binding-linux-arm-gnueabihf, @rolldown/binding-linux-arm64-gnu, @rolldown/binding-linux-arm64-musl, @rolldown/binding-linux-ppc64-gnu, @rolldown/binding-linux-s390x-gnu, @rolldown/binding-linux-x64-gnu, @rolldown/binding-linux-x64-musl, @rolldown/binding-openharmony-arm64, @rolldown/binding-wasm32-wasi, @rolldown/binding-win32-arm64-msvc, @rolldown/binding-win32-x64-msvc, @rolldown/pluginutils, @tybys/wasm-util, detect-libc, fdir, fsevents, jiti, lightningcss, lightningcss-android-arm64, lightningcss-darwin-arm64, lightningcss-darwin-x64, lightningcss-freebsd-x64, lightningcss-linux-arm-gnueabihf, lightningcss-linux-arm64-gnu, lightningcss-linux-arm64-musl, lightningcss-linux-x64-gnu, lightningcss-linux-x64-musl, lightningcss-win32-arm64-msvc, lightningcss-win32-x64-msvc, nanoid, picocolors, picomatch, postcss, rolldown, source-map-js, tinyglobby, tslib, undici-types, yaml
+??? note "@vitejs/plugin-react bringt 76 Pakete mit"
+    @emnapi/core, @emnapi/runtime, @emnapi/wasi-threads, @esbuild/aix-ppc64, @esbuild/android-arm, @esbuild/android-arm64, @esbuild/android-x64, @esbuild/darwin-arm64, @esbuild/darwin-x64, @esbuild/freebsd-arm64, @esbuild/freebsd-x64, @esbuild/linux-arm, @esbuild/linux-arm64, @esbuild/linux-ia32, @esbuild/linux-loong64, @esbuild/linux-mips64el, @esbuild/linux-ppc64, @esbuild/linux-riscv64, @esbuild/linux-s390x, @esbuild/linux-x64, @esbuild/netbsd-arm64, @esbuild/netbsd-x64, @esbuild/openbsd-arm64, @esbuild/openbsd-x64, @esbuild/openharmony-arm64, @esbuild/sunos-x64, @esbuild/win32-arm64, @esbuild/win32-ia32, @esbuild/win32-x64, @napi-rs/wasm-runtime, @oxc-project/types, @rolldown/binding-android-arm-eabi, @rolldown/binding-android-arm64, @rolldown/binding-darwin-arm64, @rolldown/binding-darwin-x64, @rolldown/binding-freebsd-x64, @rolldown/binding-linux-arm-gnueabihf, @rolldown/binding-linux-arm64-gnu, @rolldown/binding-linux-arm64-musl, @rolldown/binding-linux-ppc64-gnu, @rolldown/binding-linux-s390x-gnu, @rolldown/binding-linux-x64-gnu, @rolldown/binding-linux-x64-musl, @rolldown/binding-openharmony-arm64, @rolldown/binding-wasm32-wasi, @rolldown/binding-win32-arm64-msvc, @rolldown/binding-win32-x64-msvc, @rolldown/pluginutils, @tybys/wasm-util, @types/node, detect-libc, fdir, fsevents, jiti, lightningcss, lightningcss-android-arm64, lightningcss-darwin-arm64, lightningcss-darwin-x64, lightningcss-freebsd-x64, lightningcss-linux-arm-gnueabihf, lightningcss-linux-arm64-gnu, lightningcss-linux-arm64-musl, lightningcss-linux-x64-gnu, lightningcss-linux-x64-musl, lightningcss-win32-arm64-msvc, lightningcss-win32-x64-msvc, nanoid, picocolors, picomatch, postcss, rolldown, source-map-js, tinyglobby, tslib, undici-types, yaml
 
 ??? note "dependency-cruiser bringt 42 Pakete mit"
     acorn, acorn-jsx, acorn-jsx-walk, acorn-loose, acorn-walk, ansi-styles, chalk, color-convert, color-name, commander, enhanced-resolve, es-errors, function-bind, global-directory, graceful-fs, has-flag, hasown, ignore, ini, interpret, is-core-module, is-installed-globally, is-path-inside, json5, kleur, minimist, path-parse, picomatch, prompts, rechoir, regexp-tree, resolve, safe-regex, semver, sisteransi, strip-bom, supports-color, supports-preserve-symlinks-flag, tapable, tsconfig-paths, tsconfig-paths-webpack-plugin, watskeburt
@@ -177,7 +177,7 @@ Zusammen 305 Pakete, die nur für Entwicklung und Test installiert werden.
 ??? note "typescript-eslint bringt 91 Pakete mit"
     @cacheable/memory, @cacheable/utils, @eslint-community/eslint-utils, @eslint-community/regexpp, @eslint/config-array, @eslint/config-helpers, @eslint/core, @eslint/object-schema, @eslint/plugin-kit, @humanfs/core, @humanfs/node, @humanfs/types, @humanwhocodes/module-importer, @humanwhocodes/retry, @isaacs/nonrecursive-glob-match, @keyv/bigmap, @keyv/serialize, @types/esrecurse, @types/estree, @types/json-schema, @typescript-eslint/eslint-plugin, @typescript-eslint/parser, @typescript-eslint/project-service, @typescript-eslint/scope-manager, @typescript-eslint/tsconfig-utils, @typescript-eslint/type-utils, @typescript-eslint/types, @typescript-eslint/typescript-estree, @typescript-eslint/utils, @typescript-eslint/visitor-keys, acorn, acorn-jsx, ajv, balanced-match, brace-expansion, cacheable, cross-spawn, debug, deep-is, escape-string-regexp, eslint-scope, eslint-visitor-keys, espree, esquery, esrecurse, estraverse, esutils, fast-deep-equal, fast-json-stable-stringify, fast-levenshtein, fdir, file-entry-cache, find-up, flat-cache, flatted, glob-parent, hashery, hookified, ignore, imurmurhash, is-extglob, is-glob, isexe, jiti, json-schema-traverse, json-stable-stringify-without-jsonify, keyv, levn, locate-path, minimatch, ms, natural-compare, optionator, p-limit, p-locate, path-exists, path-key, picomatch, prelude-ls, punycode, qified, semver, shebang-command, shebang-regex, tinyglobby, ts-api-utils, type-check, uri-js, which, word-wrap, yocto-queue
 
-??? note "vite bringt 75 Pakete mit"
-    @emnapi/core, @emnapi/runtime, @emnapi/wasi-threads, @esbuild/aix-ppc64, @esbuild/android-arm, @esbuild/android-arm64, @esbuild/android-x64, @esbuild/darwin-arm64, @esbuild/darwin-x64, @esbuild/freebsd-arm64, @esbuild/freebsd-x64, @esbuild/linux-arm, @esbuild/linux-arm64, @esbuild/linux-ia32, @esbuild/linux-loong64, @esbuild/linux-mips64el, @esbuild/linux-ppc64, @esbuild/linux-riscv64, @esbuild/linux-s390x, @esbuild/linux-x64, @esbuild/netbsd-arm64, @esbuild/netbsd-x64, @esbuild/openbsd-arm64, @esbuild/openbsd-x64, @esbuild/openharmony-arm64, @esbuild/sunos-x64, @esbuild/win32-arm64, @esbuild/win32-ia32, @esbuild/win32-x64, @napi-rs/wasm-runtime, @oxc-project/types, @rolldown/binding-android-arm-eabi, @rolldown/binding-android-arm64, @rolldown/binding-darwin-arm64, @rolldown/binding-darwin-x64, @rolldown/binding-freebsd-x64, @rolldown/binding-linux-arm-gnueabihf, @rolldown/binding-linux-arm64-gnu, @rolldown/binding-linux-arm64-musl, @rolldown/binding-linux-ppc64-gnu, @rolldown/binding-linux-s390x-gnu, @rolldown/binding-linux-x64-gnu, @rolldown/binding-linux-x64-musl, @rolldown/binding-openharmony-arm64, @rolldown/binding-wasm32-wasi, @rolldown/binding-win32-arm64-msvc, @rolldown/binding-win32-x64-msvc, @rolldown/pluginutils, @tybys/wasm-util, detect-libc, fdir, fsevents, jiti, lightningcss, lightningcss-android-arm64, lightningcss-darwin-arm64, lightningcss-darwin-x64, lightningcss-freebsd-x64, lightningcss-linux-arm-gnueabihf, lightningcss-linux-arm64-gnu, lightningcss-linux-arm64-musl, lightningcss-linux-x64-gnu, lightningcss-linux-x64-musl, lightningcss-win32-arm64-msvc, lightningcss-win32-x64-msvc, nanoid, picocolors, picomatch, postcss, rolldown, source-map-js, tinyglobby, tslib, undici-types, yaml
+??? note "vite bringt 76 Pakete mit"
+    @emnapi/core, @emnapi/runtime, @emnapi/wasi-threads, @esbuild/aix-ppc64, @esbuild/android-arm, @esbuild/android-arm64, @esbuild/android-x64, @esbuild/darwin-arm64, @esbuild/darwin-x64, @esbuild/freebsd-arm64, @esbuild/freebsd-x64, @esbuild/linux-arm, @esbuild/linux-arm64, @esbuild/linux-ia32, @esbuild/linux-loong64, @esbuild/linux-mips64el, @esbuild/linux-ppc64, @esbuild/linux-riscv64, @esbuild/linux-s390x, @esbuild/linux-x64, @esbuild/netbsd-arm64, @esbuild/netbsd-x64, @esbuild/openbsd-arm64, @esbuild/openbsd-x64, @esbuild/openharmony-arm64, @esbuild/sunos-x64, @esbuild/win32-arm64, @esbuild/win32-ia32, @esbuild/win32-x64, @napi-rs/wasm-runtime, @oxc-project/types, @rolldown/binding-android-arm-eabi, @rolldown/binding-android-arm64, @rolldown/binding-darwin-arm64, @rolldown/binding-darwin-x64, @rolldown/binding-freebsd-x64, @rolldown/binding-linux-arm-gnueabihf, @rolldown/binding-linux-arm64-gnu, @rolldown/binding-linux-arm64-musl, @rolldown/binding-linux-ppc64-gnu, @rolldown/binding-linux-s390x-gnu, @rolldown/binding-linux-x64-gnu, @rolldown/binding-linux-x64-musl, @rolldown/binding-openharmony-arm64, @rolldown/binding-wasm32-wasi, @rolldown/binding-win32-arm64-msvc, @rolldown/binding-win32-x64-msvc, @rolldown/pluginutils, @tybys/wasm-util, @types/node, detect-libc, fdir, fsevents, jiti, lightningcss, lightningcss-android-arm64, lightningcss-darwin-arm64, lightningcss-darwin-x64, lightningcss-freebsd-x64, lightningcss-linux-arm-gnueabihf, lightningcss-linux-arm64-gnu, lightningcss-linux-arm64-musl, lightningcss-linux-x64-gnu, lightningcss-linux-x64-musl, lightningcss-win32-arm64-msvc, lightningcss-win32-x64-msvc, nanoid, picocolors, picomatch, postcss, rolldown, source-map-js, tinyglobby, tslib, undici-types, yaml
 
 <!-- mitgebracht:ende -->

@@ -20,6 +20,7 @@ import {
   useListenSuche,
 } from '../bausteine';
 import { holeAnker, tippProbe, zielZeigen } from '../entdecken/werkzeuge';
+import { handbuchSeite } from '../entdecken/stand';
 import { Listenkopf } from '../Listenkopf';
 import { geheZu, Link, loeseWache } from '../ort';
 import { t } from '../sprache';
@@ -178,6 +179,9 @@ export function TippsRechts({ z, schluessel }: { z: TippsZustand; schluessel?: s
 }
 
 const LEER: TippDaten = { text: '', bereich: 'mappen', fuer: 'lesen' };
+/** Wohin der Satz führt: eine Stelle, ein Rundgang oder eine Handbuchseite (#1524). */
+type ZielArt = 'stelle' | 'rundgang' | 'handbuch';
+const artVon = (x: TippDaten): ZielArt => (x.rundgang ? 'rundgang' : x.handbuch ? 'handbuch' : 'stelle');
 
 function TippFormular({ z, stand, tipp }: { z: TippsZustand; stand: WerkbankTippsStand; tipp?: WerkbankTipp }) {
   const neu = !tipp;
@@ -185,13 +189,13 @@ function TippFormular({ z, stand, tipp }: { z: TippsZustand; stand: WerkbankTipp
   const start = tipp?.daten ?? LEER;
   const [basis, setBasis] = useState(start);
   const [d, setD] = useState<TippDaten>(start);
-  const [art, setArt] = useState<'stelle' | 'rundgang'>(start.rundgang ? 'rundgang' : 'stelle');
+  const [art, setArt] = useState<ZielArt>(artVon(start));
   const [fehler, setFehler] = useState<FeldFehler[]>([]);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
   const [sendet, setSendet] = useState(false);
   const zuruecksetzen = () => {
     setD(basis);
-    setArt(basis.rundgang ? 'rundgang' : 'stelle');
+    setArt(artVon(basis));
     setFehler([]);
     setMeldung(undefined);
   };
@@ -206,11 +210,12 @@ function TippFormular({ z, stand, tipp }: { z: TippsZustand; stand: WerkbankTipp
       .filter((f) => f.feld === feld)
       .map((f) => f.text)
       .join(' ') || undefined;
-  const ohneFeld = fehler.filter((f) => !f.feld || !['text', 'bereich', 'ziel', 'rundgang', 'typ', 'fuer'].includes(f.feld));
-  // Genau eines: Stelle oder Rundgang.
+  const ohneFeld = fehler.filter((f) => !f.feld || !['text', 'bereich', 'ziel', 'rundgang', 'handbuch', 'typ', 'fuer'].includes(f.feld));
+  // Genau eines: Stelle, Rundgang oder Handbuchseite.
   const daten = (): TippDaten => {
-    const { ziel, rundgang, ...rest } = d;
-    return art === 'stelle' ? { ...rest, ...(ziel ? { ziel } : {}) } : { ...rest, ...(rundgang ? { rundgang } : {}) };
+    const { ziel, rundgang, handbuch, ...rest } = d;
+    const gewaehlt = { stelle: { ziel }, rundgang: { rundgang }, handbuch: { handbuch } }[art];
+    return { ...rest, ...Object.fromEntries(Object.entries(gewaehlt).filter(([, v]) => v)) };
   };
 
   async function speichern() {
@@ -286,10 +291,23 @@ function TippFormular({ z, stand, tipp }: { z: TippsZustand; stand: WerkbankTipp
             <input type="radio" name="tipp-ziel" checked={art === 'rundgang'} onChange={() => setArt('rundgang')} />{' '}
             {t('werkbank.tipps.ui.ziel.rundgang')}
           </label>
+          <label className="haken">
+            <input type="radio" name="tipp-ziel" checked={art === 'handbuch'} onChange={() => setArt('handbuch')} />{' '}
+            {t('werkbank.tipps.ui.ziel.handbuch')}
+          </label>
         </FeldGruppe>
-        {art === 'stelle' ? (
+        {art === 'stelle' && (
           <ZielWahl d={d} stand={stand} typName={typ?.name} setze={setze} fehler={feldFehler('ziel')} setMeldung={setMeldung} />
-        ) : (
+        )}
+        {art === 'handbuch' && (
+          <Feld
+            beschriftung={t('werkbank.tipps.ui.handbuch')}
+            hinweis={t('werkbank.tipps.ui.handbuch.hinweis')}
+            fehler={feldFehler('handbuch')}>
+            <input value={d.handbuch ?? ''} onChange={(e) => setze({ handbuch: e.target.value || undefined })} />
+          </Feld>
+        )}
+        {art === 'rundgang' && (
           <Feld beschriftung={t('werkbank.tipps.ui.rundgang')} fehler={feldFehler('rundgang')}>
             <select value={d.rundgang ?? ''} onChange={(e) => setze({ rundgang: e.target.value || undefined })}>
               <option value="">{t('werkbank.tipps.ui.rundgang.waehlen')}</option>
@@ -402,7 +420,9 @@ function FuerWen({
 /** „Ausprobieren“: Ziel im neuen Fenster wie „Zeig es mir“; liefert eine Meldung, wenn das nicht geht. */
 async function probieren(x: TippDaten, stand: WerkbankTippsStand): Promise<string | undefined> {
   let ok = true;
-  if (x.rundgang) ok = tippProbe({ rundgang: x.rundgang });
+  const handbuch = handbuchSeite(x.handbuch);
+  if (handbuch) window.open(handbuch, '_blank', 'noopener');
+  else if (x.rundgang) ok = tippProbe({ rundgang: x.rundgang });
   else if (x.ziel && /^mappe\./.test(x.ziel) && (x.typ || anJederMappe(x.ziel))) {
     const p = (await tippsApi.mappe(x.typ ?? '*')).pfad;
     if (!p) return t('werkbank.tipps.ui.ausprobieren.keine-mappe');

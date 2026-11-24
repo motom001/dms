@@ -64,10 +64,12 @@ export interface TippDaten {
   text: string;
   bereich: TippBereich;
   fuer: Fuer;
-  /** Anker (genau eines von ziel und rundgang). */
+  /** Anker (genau eines von ziel, rundgang und handbuch). */
   ziel?: string;
   /** Voller Schlüssel eines Rundgangs, z. B. ablago, vertraege:kennenlernen, eigen:urlaub. */
   rundgang?: string;
+  /** Seite im mitgelieferten Handbuch, z. B. benutzer/knoepfe/ (#1524). */
+  handbuch?: string;
   /** Nur, wer diesen Mappentyp lesen darf (Kennung). */
   typ?: string;
 }

@@ -1,13 +1,22 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
-import { HANDBUCH_VERWEIS, oeffneTyp, OEFFNE_SEITEN, type Rundgang, type RundgangSchritt } from '../../../shared/src/entdecken';
+import {
+  HANDBUCH_VERWEIS,
+  oeffneTyp,
+  OEFFNE_LETZTE_MAPPE,
+  OEFFNE_SEITEN,
+  type Rundgang,
+  type RundgangSchritt,
+} from '../../../shared/src/entdecken';
 import type { Handbuch } from '../../../shared/src/hilfe';
 import { useHandbuch } from '../Hilfe';
 import { kontoApi } from '../api/konto';
+import { mappenApi } from '../api/mappen';
 import { geheZu } from '../ort';
 import { t } from '../sprache';
 import { Knopf } from '../bausteine';
 import { Symbol } from '../Symbol';
 import { DreiteilungBild } from './Bild';
+import { besuchSeiten } from './besuch';
 import { beendeRundgang, findeAnker, istSchmal, useAktiverRundgang, warteAufAnker, wenigBewegung } from './stand';
 
 /**
@@ -157,9 +166,10 @@ function Fuehrung({ rundgang, vonSelbst, probe }: { rundgang: Rundgang; vonSelbs
   const letzter = nr === schritte.length - 1;
   const s = aktuell.schritt;
   const text = schmal && s.textHandy ? s.textHandy : s.text;
+  const zumEntwurf = probeImEigenenFenster(probe);
   const ende = (stand: 'gesehen' | 'spaeter') => {
     beendeRundgang(stand);
-    if (zurueckNach.current) geheZu(zurueckNach.current);
+    nachDemEnde(zumEntwurf, zurueckNach.current);
   };
   const weiter = () => (letzter ? ende('gesehen') : setNr(nr + 1));
   const zurueck = () => setNr(Math.max(0, nr - 1));
@@ -234,7 +244,7 @@ function Fuehrung({ rundgang, vonSelbst, probe }: { rundgang: Rundgang; vonSelbs
               </Knopf>
             )}
             <Knopf ref={weiterKnopf} art="haupt" onClick={weiter}>
-              {letzter ? t('entdecken.fuehrung.fertig') : t('entdecken.fuehrung.weiter')}
+              {hauptText(letzter, zumEntwurf)}
             </Knopf>
           </div>
         </div>
@@ -244,11 +254,27 @@ function Fuehrung({ rundgang, vonSelbst, probe }: { rundgang: Rundgang; vonSelbs
 }
 
 /**
+ * Ausprobieren (#941) läuft in einem eigenen Fenster neben dem Editor. Am Ende schließt es sich, damit der
+ * ungespeicherte Entwurf im Fenster des Editors wieder vorn ist (#1533) – nur, wenn der Editor es geöffnet hat.
+ */
+const probeImEigenenFenster = (probe?: { pfad: string | null }) =>
+  !!probe && typeof window !== 'undefined' && !!window.opener && !window.opener.closed;
+
+function nachDemEnde(zumEntwurf: boolean, ziel: string | null) {
+  if (zumEntwurf) window.close();
+  else if (ziel) geheZu(ziel);
+}
+
+const hauptText = (letzter: boolean, zumEntwurf: boolean) =>
+  !letzter ? t('entdecken.fuehrung.weiter') : zumEntwurf ? t('entdecken.fuehrung.fertig-probe') : t('entdecken.fuehrung.fertig');
+
+/**
  * Vor dem ersten Schritt öffnen, was der Rundgang nennt: eine Seite, die erste lesbare Mappe eines Typs oder ein leeres
  * Formular. Liefert, wohin es am Ende zurückgeht (nur beim leeren Formular), oder 'ersatz', wenn es nichts zu öffnen gibt.
  */
 async function oeffneVorher(rundgang: Rundgang, probe?: { pfad: string | null }): Promise<string | null | 'ersatz'> {
   const o = rundgang.oeffne;
+  if (o && 'seite' in o && o.seite === OEFFNE_LETZTE_MAPPE) return oeffneLetzteMappe();
   if (o && 'seite' in o) {
     if (location.pathname !== OEFFNE_SEITEN[o.seite]) geheZu(OEFFNE_SEITEN[o.seite]);
     return null;
@@ -267,6 +293,21 @@ async function oeffneVorher(rundgang: Rundgang, probe?: { pfad: string | null })
   return zurueck;
 }
 
+/**
+ * `oeffne: { seite: mappe }` (#1523): Ist eine Mappe offen, bleibt sie. Sonst die zuletzt geöffnete; gibt es keine,
+ * erscheint der Ersatztext („Öffne eine Mappe …“).
+ */
+async function oeffneLetzteMappe(): Promise<null | 'ersatz'> {
+  if (besuchSeiten(location.pathname).includes('mappe')) return null;
+  const id = await mappenApi.startseite().then(
+    (x) => x.zuletzt[0]?.id ?? null,
+    () => null,
+  );
+  if (!id) return 'ersatz';
+  geheZu(`/ablage/start/${id}`);
+  return null;
+}
+
 /** Abstand der Karte zum unteren Rand: am Rechner 24 px; am Handy über dem Streifen des Assistenten (10 + 56 + 14 px). */
 const KARTE_UNTEN = 24;
 const KARTE_UNTEN_SCHMAL = 80;
@@ -274,15 +315,23 @@ const KARTE_UNTEN_SCHMAL = 80;
 /**
  * Wo die Karte steht (#1301): an einem festen Platz – am Rechner unten in der Mitte, am Handy unten über dem Assistenten,
  * in allen Schritten gleich; nur die Hervorhebung wandert. Liegt das Ziel trotzdem unter der Karte (es ließ sich nicht
- * weit genug rollen, z. B. eine feste Leiste unten), steht sie ausnahmsweise oben am selben waagrechten Platz.
+ * weit genug rollen, z. B. eine feste Leiste unten), steht sie ausnahmsweise direkt darüber (#1522; passt das nicht,
+ * oben) am selben waagrechten Platz. Ein Ziel,
+ * das ohnehin höher ist als der Platz über der Karte (eine ganze Spalte), bleibt teils verdeckt: Die Karte springt dafür
+ * nicht nach oben (#1522) – oben sieht man das Ziel und seine Hervorhebung trotzdem.
  */
 function lageDerKarte(r: DOMRect | null, schmal: boolean, kartenHoehe: number): CSSProperties {
   const unten = schmal ? KARTE_UNTEN_SCHMAL : KARTE_UNTEN;
   const breite = Math.min(440, innerWidth - 32);
   const waagrecht: CSSProperties = schmal ? {} : { left: Math.max(16, (innerWidth - breite) / 2) };
   const oben = innerHeight - unten - kartenHoehe - 8;
-  const verdeckt = !!r && r.top < innerHeight - unten && r.bottom > oben && (schmal || ueberlappt(r, waagrecht.left as number, breite));
-  return verdeckt ? { ...waagrecht, top: 16 } : { ...waagrecht, bottom: unten };
+  const passtDarueber = !!r && r.height <= oben - 16;
+  const verdeckt =
+    passtDarueber && r.top < innerHeight - unten && r.bottom > oben && (schmal || ueberlappt(r, waagrecht.left as number, breite));
+  if (!verdeckt) return { ...waagrecht, bottom: unten };
+  // Nur so weit nach oben wie nötig: direkt über das Ziel, damit die Karte nicht über den ganzen Bildschirm springt.
+  const darueber = innerHeight - r.top + 8;
+  return innerHeight - darueber - kartenHoehe >= 16 ? { ...waagrecht, bottom: darueber } : { ...waagrecht, top: 16 };
 }
 const ueberlappt = (r: DOMRect, links: number, breite: number) => r.right > links && r.left < links + breite;
 

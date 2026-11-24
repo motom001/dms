@@ -26,9 +26,16 @@ Jeder Eintrag gehört zu einem **Modul**, etwa *Benutzerkonten und Anmeldung* (`
 
 Filtern lässt sich nach Stufe, Modul, Benutzer und Text; **Live** aktualisiert die Liste alle zwei Sekunden. Ein Klick auf einen Eintrag zeigt alle Daten dazu, auch Benutzer und Anfrage-Kennung.
 
+Läuft Ablago mit [mehreren Prozessen](technik.md#mehrere-prozesse) (`DMS_PROZESSE`), hat jeder Prozess sein eigenes Protokoll. Die Werkbank holt die Einträge aller Prozesse und mischt sie nach Zeit; jeder Eintrag nennt dann seinen Prozess (*Prozess 1*, *Prozess 2*). Die Zahl „gespeichert“ zählt alle zusammen. Ausgaben und Fehler des Paket-Läufers und des Codes von Paketen stehen im Modul *Pakete* (`pakete`).
+
 ### Debug-Modus
 
-Schaltet für **eine Stunde** zusätzliche, ausführliche Meldungen ein – etwa jede einzelne Datenbankabfrage. Danach (oder nach einem Neustart) ist er von selbst wieder aus. Die Grundstufe stellt `LOG_LEVEL` ein (siehe [Installation](installation.md#einstellungen)).
+Schaltet für **24 Stunden** zusätzliche, ausführliche Meldungen ein – etwa jede einzelne Datenbankabfrage –, mit mehreren Prozessen in allen. Es gibt zwei Wege:
+
+- **Schalter in der Werkbank** unter **Werkbank → Protokoll**: gilt sofort für alle Prozesse, auch für einen, der zwischendurch neu startet. **Ausschalten** beendet ihn sofort.
+- **`LOG_LEVEL=debug`** in der Compose-Datei (siehe [Installation](installation.md#einstellungen)): Ablago schreibt dann schon ab der ersten Zeile des Starts ausführlich, in allen Prozessen – gut, wenn ein Fehler beim Start auftritt. Nach 24 Stunden schaltet Ablago von selbst zurück auf die normale Stufe und schreibt einen Hinweis ins Protokoll, dass du die Variable wieder entfernen solltest. Entfernst du sie und setzt sie später erneut, beginnen die 24 Stunden von vorn.
+
+Ob der Debug-Modus läuft, woher er kommt (Variable oder Werkbank) und bis wann, steht unter **Werkbank → Protokoll** über den Einträgen und im [Systemzustand](speicherplatz.md) unter **Einstellungen**, mit Datum und Uhrzeit. Ein langer Debug-Modus füllt das Protokoll schnell und kostet Rechenzeit; deshalb endet er immer von selbst.
 
 ### Container-Logs
 

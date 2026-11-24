@@ -14,9 +14,9 @@ Ablago runs at your home: on a NAS, a small home server or any computer with Doc
 | **Synology NAS** | [Container Manager](synology.md) | ☆☆ low: create folders, paste the template, enter a password |
 | **UGREEN NAS** (UGOS Pro) | [Docker → Project](ugreen.md) | ☆☆ low: as with Synology |
 | **QNAP NAS** | [Container Station](qnap.md) | ☆☆ low: as with Synology |
-| **TrueNAS** | [Apps → Custom App](truenas.md) | ☆☆ low: create a dataset, paste the template |
+| **TrueNAS** | [App catalogue or Custom App](truenas.md) | ☆ very low from the catalogue; ☆☆ low as a Custom App: create a dataset, paste the template |
 | **Unraid** | [Compose Manager](unraid.md) | ☆☆ low: install the plugin, paste the template |
-| **PC or mini PC** (Intel, AMD) | [Linux with Docker](linux.md) | ☆☆☆ medium: install Linux, a few commands |
+| **PC or mini PC** (Intel, AMD), also [used](gebrauchte-hardware.md) | [Linux with Docker](linux.md) | ☆☆☆ medium: install Linux, a few commands |
 | **Raspberry Pi** 4 or 5 | [Step by step for beginners](raspberry-pi.md): Raspberry Pi OS, Docker, Ablago with one command | ☆☆ low to ☆☆☆ medium: every click explained, a few commands to copy |
 | **Windows PC or Windows Server** | [Docker Desktop or Hyper-V](windows.md) | ☆☆☆ medium: install Docker Desktop or create a Linux VM |
 | **Proxmox**, XCP-ng, ESXi … | [Linux VM with Docker](proxmox.md) | ☆☆☆ medium: create a VM, then as with a PC |
@@ -33,10 +33,10 @@ Every way needs a device with **amd64** (Intel, AMD) or **arm64** (e.g. Raspberr
 
 Ablago comes in two variants. **We recommend two containers** – that is also how all guides and app stores here work.
 
-| | **Two containers** (recommended): `dms` + `postgres:17` | **One container**: `dms-komplett` |
+| | **Two containers** (recommended): `dms` + `postgres:18` | **One container**: `dms-komplett` |
 | --- | --- | --- |
 | Setup | Compose project or app store, one password for the database | one image, four folders, no password |
-| PostgreSQL updates | immediately, independent of Ablago: pull `postgres:17` again | with the next release (`:stabil` or a fixed version); `:main` is rebuilt weekly for testing |
+| PostgreSQL updates | immediately, independent of Ablago: pull `postgres:18` again | with the next release (`:stabil` or a fixed version); `:main` is rebuilt weekly for testing |
 | Operation | restart, monitor and back up Ablago and the database separately with standard tools | everything together; database not reachable from outside (intended) |
 | New major version of PostgreSQL | plannable, at your own pace | only via backup and restore |
 | App stores (umbrelOS, ZimaOS, CasaOS) | yes | no |
@@ -45,6 +45,8 @@ Ablago comes in two variants. **We recommend two containers** – that is also h
 **Why two containers?** One service per container is the usual Docker way. The database comes from the official PostgreSQL image and gets security updates as soon as they exist – regardless of when Ablago has a new release. If one of the two fails, it can be restarted and examined on its own. The price is a password and a Compose project; the templates here keep both as small as possible.
 
 **When one container?** When it needs to be quick (trying out, testing) or the environment allows only one container. You can switch between the two variants at any time via backup and restore, see [Growing and moving](https://help.ablago.app/admin/aktuell/en/wachsen/).
+
+**Which image?** The templates use `ghcr.io/motom001/dms` (two containers) or `ghcr.io/motom001/dms-komplett` (one container), each with the tag `:stabil`. For app catalogues that look for new versions themselves and always take the newest version tag (such as TrueNAS), there is `ghcr.io/motom001/ablago`: the same image as `dms`, but only with the versions that were promoted to `:stabil`. More under [Which image tag?](https://help.ablago.app/admin/aktuell/en/aktualisieren/#image-tag).
 
 ## What you get in every case {#was-du-in-jedem-fall-bekommst}
 

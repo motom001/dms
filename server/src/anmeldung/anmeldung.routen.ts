@@ -7,7 +7,7 @@ import { t } from '../sprache/sprache';
 import { hatGesamt } from '../../../shared/src/verwaltungsrecht';
 import { anmeldefehlerCode, type Anmeldefehler } from '../../../shared/src/anmeldefehler';
 import { eigeneVersion } from '../system/system';
-import { zeitzone } from '../../../shared/src/region';
+import { tagIn, zeitzone } from '../../../shared/src/region';
 import { istVerfuegbar, SPRACHEN_STANDARD } from '../../../shared/src/sprachwahl';
 import {
   L,
@@ -379,7 +379,7 @@ export function notfallRouten(k: RoutenKontext): Route[] {
         return {
           datei: {
             inhalt,
-            name: `Ablago-Notfallblatt-${new Date().toISOString().slice(0, 10)}.pdf`,
+            name: `Ablago-Notfallblatt-${tagIn(new Date())}.pdf`,
             mime: 'application/pdf',
             anzeigen: false,
             groesse: inhalt.length,

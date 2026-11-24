@@ -15,10 +15,12 @@ import {
   RUNDGANG_TEXT_MAX,
   rundgangFuer,
   startetVonSelbst,
+  beimBesuch,
   TIPP_TEXT_MAX,
   tippDesTages,
   tippHandlung,
   tippPasst,
+  type Herkunft,
   type Texte,
   type Tipp,
 } from '../../shared/src/entdecken';
@@ -54,15 +56,25 @@ describe('Format und Inhalt (Build-Test, #831, #832)', () => {
     for (const spr of ['de', 'en']) {
       const x = ladeAblago(ORDNER, texteIn(spr));
       assert.deepEqual(x.fehler, [], `${spr}:\n${x.fehler.join('\n')}`);
-      assert.equal(x.rundgaenge.length, 1);
+      // Leserichtung (#1512, #1522, #1523): oben von links nach rechts, dann die Spalten, zum Schluss unten rechts.
+      assert.deepEqual(Object.fromEntries(x.rundgaenge.map((r) => [r.schluessel, r.schritte.map((s) => s.schluessel)])), {
+        ablago: ['logo', 'suche', 'neu', 'konto', 'ansichten', 'liste', 'assistent'],
+        werkbank: ['logo', 'bereiche', 'menue', 'navigation', 'benutzer', 'uebersicht', 'anpassen', 'assistent'],
+        mappe: ['kopf', 'stern', 'menue', 'register', 'speichern'],
+        konto: ['zurueck', 'konto', 'sicherheit', 'darstellung', 'benachrichtigungen', 'abwesenheit', 'fehler'],
+      });
       assert.deepEqual(
-        x.rundgaenge[0].schritte.map((s) => s.schluessel),
-        // #1300: zum Schluss der Assistent.
-        ['dreiteilung', 'neu', 'suche', 'erledigen', 'konto', 'assistent'],
+        x.rundgaenge.map((r) => [r.schluessel, r.start, r.seite, !!r.leise]),
+        [
+          ['ablago', 'erster_besuch', 'ablage', false],
+          ['werkbank', 'erster_besuch', 'werkbank', false],
+          ['mappe', 'erster_besuch', 'mappe', false],
+          ['konto', 'erster_besuch', 'konto', true],
+        ],
       );
       assert.ok(x.tipps.length >= 15, `${spr}: rund 15 Tipps, sind ${x.tipps.length}`);
       for (const t of x.tipps) assert.ok(t.text.length <= TIPP_TEXT_MAX, `${spr} ${t.schluessel}: ${t.text.length} Zeichen`);
-      for (const s of x.rundgaenge[0].schritte) assert.ok(s.text.length <= RUNDGANG_TEXT_MAX);
+      for (const s of x.rundgaenge.flatMap((r) => r.schritte)) assert.ok(s.text.length <= RUNDGANG_TEXT_MAX);
     }
   });
 
@@ -130,7 +142,7 @@ describe('Format und Inhalt (Build-Test, #831, #832)', () => {
       ],
       { herkunft: 'paket:vertraege', anker: ANKER },
     );
-    assert.match(paket.fehler.join('\n'), /„erste_anmeldung“ gibt es nur für Ablagos eigenen Rundgang/);
+    assert.match(paket.fehler.join('\n'), /„erste_anmeldung“ gibt es nur für Ablagos eigene Rundgänge/);
     assert.equal(
       pruefeRundgaenge(
         [{ schluessel: 'vertraege', titel: 'Verträge', beschreibung: 'Kurz', schritte: [{ schluessel: 'a', titel: 'A', text: 'B' }] }],
@@ -177,6 +189,86 @@ describe('Format und Inhalt (Build-Test, #831, #832)', () => {
   });
 });
 
+describe('Tipp mit Handbuchseite (#1524)', () => {
+  const texte: Texte = () => 'Ein Tipp.';
+  const pruefe = (x: Record<string, unknown>) =>
+    pruefeTipps([{ schluessel: 't', bereich: 'mappen', ...x }], { herkunft: 'ablago', anker: ANKER, rundgaenge: ['ablago'], texte });
+
+  it('genau eines von ziel, rundgang und handbuch; nur Seiten im Benutzer- oder Administratorhandbuch', () => {
+    assert.deepEqual(pruefe({ handbuch: 'benutzer/knoepfe/' }).tipps[0]?.handbuch, 'benutzer/knoepfe/');
+    assert.deepEqual(pruefe({ handbuch: 'admin/pakete/#so-nutzt-du-es' }).fehler, []);
+    assert.match(
+      pruefe({ handbuch: 'benutzer/knoepfe/', ziel: 'neu' }).fehler.join('\n'),
+      /genau eines von „ziel“ \(Anker\), „rundgang“ oder „handbuch“/,
+    );
+    assert.match(pruefe({}).fehler.join('\n'), /genau eines von/);
+    for (const falsch of ['https://example.org/', 'entwickler/stil/', 'benutzer/../x', 7])
+      assert.match(pruefe({ handbuch: falsch }).fehler.join('\n'), /„handbuch“ muss eine Seite im Handbuch sein/, String(falsch));
+  });
+
+  it('Ablagos Tipps zeigen nur auf Seiten, die es im Handbuch gibt – auf Deutsch und Englisch', () => {
+    const tipps = ladeAblago(ORDNER, texteIn('de')).tipps.filter((x) => x.handbuch);
+    assert.ok(
+      tipps.some((x) => x.schluessel === 'knoepfe'),
+      'Tipp „So sehen Knöpfe aus“',
+    );
+    for (const x of tipps) {
+      const [h, ...rest] = x.handbuch!.split('#')[0].split('/');
+      const seite = rest.filter(Boolean).join('/') || 'index';
+      for (const ordner of ['docs', 'docs-en'])
+        assert.ok(
+          statSync(join(WURZEL, 'docs/handbuch', h, ordner, `${seite}.md`)).isFile(),
+          `${x.schluessel}: ${h}/${ordner}/${seite}.md`,
+        );
+    }
+  });
+});
+
+describe('Erster Besuch einer Seite (#1512, #1522, #1523)', () => {
+  const texte: Texte = (k) => (k.endsWith('.ort') ? 'Oben' : 'Text');
+  const roh = (x: Record<string, unknown>) => ({ schluessel: 'r', schritte: [{ schluessel: 'a', ziel: 'neu' }], ...x });
+  const pruefe = (x: Record<string, unknown>, herkunft: Herkunft = 'ablago') =>
+    pruefeRundgaenge([roh(x)], herkunft === 'ablago' ? { herkunft, anker: ANKER, texte } : { herkunft, anker: ANKER });
+
+  it('„seite“ ist Pflicht, „leise“ nur mit erster_besuch; Pakete haben es nicht', () => {
+    const gut = pruefe({ start: 'erster_besuch', seite: 'konto', leise: true });
+    assert.deepEqual(gut.fehler, []);
+    assert.deepEqual([gut.rundgaenge[0].seite, gut.rundgaenge[0].leise], ['konto', true]);
+    assert.match(pruefe({ start: 'erster_besuch' }).fehler.join('\n'), /„seite“ muss ablage, mappe, werkbank, konto sein/);
+    assert.match(pruefe({ start: 'erster_besuch', seite: 'keller' }).fehler.join('\n'), /„seite“ muss/);
+    assert.match(pruefe({ start: 'erster_besuch', seite: 'ablage', leise: 'ja' }).fehler.join('\n'), /„leise“ muss true oder false/);
+    assert.match(pruefe({ seite: 'ablage' }).fehler.join('\n'), /„seite“ gibt es nur mit „start: erster_besuch“/);
+    assert.match(pruefe({ start: 'manuell', leise: true }).fehler.join('\n'), /„leise“ gibt es nur mit/);
+    const paket = pruefe(
+      { titel: 'R', beschreibung: 'B', start: 'erster_besuch', seite: 'ablage', schritte: [{ schluessel: 'a', titel: 'A', text: 'B' }] },
+      'paket:p',
+    );
+    assert.match(paket.fehler.join('\n'), /„erster_besuch“ gibt es nur für Ablagos eigene Rundgänge/);
+    // Die Mappe-Seite: die geöffnete bzw. zuletzt geöffnete Mappe, sonst der Ersatztext.
+    assert.deepEqual(pruefe({ start: 'erster_besuch', seite: 'mappe', oeffne: { seite: 'mappe' } }).fehler, []);
+  });
+
+  it('steht aus, bis gesehen; nach „Später“ erst bei der nächsten Anmeldung', () => {
+    const r = ladeAblago(ORDNER, texteIn('de')).rundgaenge;
+    const an = '2026-11-23T09:00:00Z';
+    assert.deepEqual(beimBesuch(r, {}, an), [
+      { schluessel: 'ablago', seite: 'ablage', leise: false },
+      { schluessel: 'werkbank', seite: 'werkbank', leise: false },
+      { schluessel: 'mappe', seite: 'mappe', leise: false },
+      { schluessel: 'konto', seite: 'konto', leise: true },
+    ]);
+    const merker = { ablago: { stand: 'gesehen' as const }, mappe: { stand: 'spaeter' as const, am: '2026-11-23T10:00:00Z' } };
+    assert.deepEqual(
+      beimBesuch(r, merker, an).map((x) => x.schluessel),
+      ['werkbank', 'konto'],
+    );
+    assert.deepEqual(
+      beimBesuch(r, merker, '2026-11-24T08:00:00Z').map((x) => x.schluessel),
+      ['werkbank', 'mappe', 'konto'],
+    );
+  });
+});
+
 describe('Für die Person (#831, #832)', () => {
   const ablago = ladeAblago(ORDNER, texteIn('de'));
   const jonas = { verwalten: false, funktionen: new Set<never>() };
@@ -192,11 +284,15 @@ describe('Für die Person (#831, #832)', () => {
       ],
     };
     const fuerJonas = rundgangFuer(mitWerkbank, jonas)!;
-    assert.equal(fuerJonas.schritte.length, 6);
-    assert.doesNotMatch(fuerJonas.schritte[4].text, /Ablago verwalten/);
+    assert.equal(fuerJonas.schritte.length, 7);
+    assert.doesNotMatch(fuerJonas.schritte[3].text, /Ablago verwalten/);
     const fuerLena = rundgangFuer(mitWerkbank, lena)!;
-    assert.equal(fuerLena.schritte.length, 7);
-    assert.match(fuerLena.schritte[4].text, /„Ablago verwalten“/);
+    assert.equal(fuerLena.schritte.length, 8);
+    assert.match(fuerLena.schritte[3].text, /„Ablago verwalten“/);
+    // Der Rundgang der Werkbank ist nur für Verwaltende.
+    const werkbank = ablago.rundgaenge.find((x) => x.schluessel === 'werkbank')!;
+    assert.equal(rundgangFuer(werkbank, jonas), null);
+    assert.ok(rundgangFuer(werkbank, lena));
     assert.ok(!ablago.tipps.filter((x) => tippPasst(x, jonas)).some((x) => x.bereich === 'verwalten' || x.funktion));
     assert.ok(ablago.tipps.filter((x) => tippPasst(x, lena)).some((x) => x.bereich === 'verwalten'));
     assert.ok(ablago.tipps.filter((x) => tippPasst(x, lena)).some((x) => x.funktion === 'fragen'));
@@ -235,7 +331,9 @@ describe('Für die Person (#831, #832)', () => {
   });
 
   it('Rundgang von selbst: nur ohne Merker oder nach „Später“ und neuer Anmeldung', () => {
-    const r = ablago.rundgaenge[0];
+    // Ablagos Rundgänge starten seit #1512 beim ersten Besuch einer Seite; erste_anmeldung gibt es weiter.
+    const r = { ...ablago.rundgaenge[0], start: 'erste_anmeldung' as const };
+    assert.equal(startetVonSelbst(ablago.rundgaenge[0], {}, null), false, 'erster_besuch läuft über beimBesuch');
     assert.equal(startetVonSelbst(r, {}, '2026-11-07T10:00:00Z'), true);
     assert.equal(startetVonSelbst(r, { ablago: { stand: 'gesehen' } }, '2026-11-07T10:00:00Z'), false);
     assert.equal(startetVonSelbst(r, { ablago: { stand: 'spaeter', am: '2026-11-07T10:05:00Z' } }, '2026-11-07T10:00:00Z'), false);
@@ -268,12 +366,15 @@ describe('Server: Stand je Person und Merker (#831, #832)', () => {
     };
   }
 
-  it('liest Ablagos Dateien, filtert nach der Person und startet den Rundgang einmal von selbst', async () => {
+  it('liest Ablagos Dateien, filtert nach der Person und bietet jeden Rundgang beim ersten Besuch einmal an', async () => {
     assert.ok(entdeckenOrdner(), 'shared/entdecken gefunden');
     const { e, lena, jonas } = await aufbau({ fragen: true });
     const sl = await e.stand(lena),
       sj = await e.stand(jonas);
-    assert.equal(sl.starten, 'ablago');
+    assert.equal(sl.starten, null, 'seit #1512 nichts mehr bei der ersten Anmeldung, sondern beim ersten Besuch');
+    const seiten = (st: typeof sl) => st.beimBesuch.map((x) => `${x.schluessel}@${x.seite}${x.leise ? ' leise' : ''}`);
+    assert.deepEqual(seiten(sl), ['ablago@ablage', 'werkbank@werkbank', 'mappe@mappe', 'konto@konto leise']);
+    assert.deepEqual(seiten(sj), ['ablago@ablage', 'mappe@mappe', 'konto@konto leise'], 'die Werkbank nur für Verwaltende');
     assert.ok(sl.tipps.some((x) => x.bereich === 'verwalten') && !sj.tipps.some((x) => x.bereich === 'verwalten'));
     assert.ok(sj.tipps.find((x) => x.schluessel === 'suche_in_dokumenten')?.ziel?.seite === '/ablage/start');
     assert.equal(
@@ -286,15 +387,16 @@ describe('Server: Stand je Person und Merker (#831, #832)', () => {
     );
     assert.ok(sj.tipps.some((x) => x.clients));
     // In Vertretung startet nichts von selbst.
-    assert.equal((await e.stand(jonas, { vertretung: true })).starten, null);
+    assert.deepEqual((await e.stand(jonas, { vertretung: true })).beimBesuch, []);
+    const ablagoOffen = async (b: typeof jonas) => (await e.stand(b)).beimBesuch.some((x) => x.schluessel === 'ablago');
     await e.rundgang(jonas, 'ablago', 'spaeter');
-    assert.equal((await e.stand(jonas)).starten, null, 'nach „Später“ erst bei der nächsten Anmeldung');
-    assert.equal((await e.stand({ ...jonas, letzteAnmeldung: new Date(Date.now() + 60_000).toISOString() })).starten, 'ablago');
+    assert.equal(await ablagoOffen(jonas), false, 'nach „Später“ erst bei der nächsten Anmeldung');
+    assert.equal(await ablagoOffen({ ...jonas, letzteAnmeldung: new Date(Date.now() + 60_000).toISOString() }), true);
     await e.rundgang(jonas, 'ablago', 'gesehen');
     await e.rundgang(jonas, 'ablago', 'spaeter');
     assert.equal(
-      (await e.stand({ ...jonas, letzteAnmeldung: new Date(Date.now() + 120_000).toISOString() })).starten,
-      null,
+      await ablagoOffen({ ...jonas, letzteAnmeldung: new Date(Date.now() + 120_000).toISOString() }),
+      false,
       'gesehen bleibt gesehen',
     );
     await assert.rejects(e.rundgang(jonas, 'gibt_es_nicht', 'gesehen'));

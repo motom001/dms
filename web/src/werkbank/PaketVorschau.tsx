@@ -3,6 +3,7 @@ import type { PaketVorschau } from '../api/pakete';
 import { ApiFehler } from '../api/anfrage';
 import { hatGesamt } from '../../../shared/src/verwaltungsrecht';
 import { t as tx, t } from '../sprache';
+import { KnopfLink } from '../bausteine';
 import { AktionenVorschau } from './PaketAktionen';
 import { automatisierungHinweis, AutomatisierungenSchalter, GeaenderteAutomatisierungen } from './PaketAutomatisierungen';
 import { MitkommtAufklappen } from './PaketMitkommt';
@@ -111,6 +112,14 @@ export function VorschauBlock({
       <FremdeMappenVorschau v={v} />
       <AktionenVorschau aktionen={v.aktionen} update={v.update} />
       <HinweisListe art="schlecht" liste={z.probleme} />
+      {/* Über der Grenze von „Was Ablago darf“ (#1562): der Weg dorthin, Erlauben braucht eine frische Anmeldung. */}
+      {v.fehlercodes?.includes('darf') && (
+        <div className="knoepfe">
+          <KnopfLink to="/werkbank#was-ablago-darf" groesse="klein">
+            {t('werkbank.darf.erlauben')}
+          </KnopfLink>
+        </div>
+      )}
       <HinweisListe art="info" liste={v.hinweise ?? []} />
       {v.sprache && <SprachVorschau s={v.sprache} />}
       <EinstellungenHinweis v={v} />

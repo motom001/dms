@@ -9,8 +9,8 @@ Ablago fängt klein an und kann mitwachsen. Alle Umzüge laufen über denselben 
 | | **dms-komplett** (ein Container) | **dms** + eigene Datenbank (zwei Container oder mehr) |
 | --- | --- | --- |
 | Einrichten | ein Image, vier Ordner, fertig | Compose-Projekt oder App-Store, Datenbank-Passwort |
-| Datenbank | PostgreSQL 17 im Container, nur von innen erreichbar | eigener Container oder Server, frei wählbar |
-| Updates von PostgreSQL | mit dem nächsten Ablago-Image | sofort (`postgres:17` neu ziehen) |
+| Datenbank | PostgreSQL 18 im Container, nur von innen erreichbar | eigener Container oder Server, frei wählbar |
+| Updates von PostgreSQL | mit dem nächsten Ablago-Image | sofort (`postgres:18` neu ziehen) |
 | Gut für | Ausprobieren, Testen, Umgebungen mit nur einem Container | den Dauerbetrieb (empfohlen), eigene Datenbank-Verwaltung, Datenbank auf einem anderen Gerät |
 | App-Stores | – | umbrelOS, ZimaOS, CasaOS, TrueNAS, Unraid |
 
@@ -33,12 +33,14 @@ Das gilt für jeden Umzug: von zwei Containern zu `dms-komplett` und zurück, vo
 
 Eine Datenbank einer älteren Hauptversion (z. B. 17) lässt sich nicht einfach mit einer neueren (z. B. 18) starten.
 
-- **dms-komplett:** Bringt ein künftiges Image eine neue Hauptversion mit, startet der Container mit dem alten Ordner `postgres` bewusst nicht. Im Protokoll steht, welche Version die Datenbank hat und welche das Image. Dann:
-  1. Das bisherige Image (mit der alten Versionsnummer) noch einmal starten und eine Sicherung anlegen.
+- **dms-komplett:** Bringt ein neues Image eine neue Hauptversion mit (zuletzt Ablago 0.306: 17 → 18), startet der Container mit dem alten Ordner `postgres` bewusst nicht. Die Seite unter der gewohnten Adresse nennt den Grund und den Weg, im Protokoll steht, welche Version die Datenbank hat und welche das Image. Gelöscht wird nichts. Dann:
+  1. Das bisherige Image (mit der alten Versionsnummer; für PostgreSQL 17 ist das `dms-komplett:0.305.0`) noch einmal starten und eine Sicherung anlegen.
   2. Den Ordner `postgres` umbenennen (z. B. `postgres-17`) und einen leeren anlegen.
   3. Das neue Image starten und die Sicherung im Assistenten einspielen.
   4. Läuft alles, den alten Ordner löschen.
-- **Eigene Datenbank:** genauso. Neuen, leeren PostgreSQL-Container in der neuen Version starten, Ablago darauf zeigen lassen, Sicherung einspielen.
+- **Eigene Datenbank:** genauso. Neuen, leeren PostgreSQL-Container in der neuen Version starten, Ablago darauf zeigen lassen, Sicherung einspielen. Schritt für Schritt für 17 → 18, auch mit der Zeile `PGDATA`, die `postgres:18` braucht: [Aktualisieren → PostgreSQL 18](aktualisieren.md#postgresql-18).
+
+Ein Snapshot des Servers hilft hier nicht: Er enthält die Datenbank im Format der alten Hauptversion (siehe [Sichern mit Snapshots](snapshots.md#snapshot-oder-sicherung)).
 
 ## Wenn es mehr wird
 

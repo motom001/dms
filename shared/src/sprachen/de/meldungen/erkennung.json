@@ -43,6 +43,8 @@
   "texterkennung.aus-der-entsperrten-fassung": "aus der entsperrten Fassung",
   "texterkennung.die-texterkennung-ist-nicht": "Die Texterkennung ist nicht eingerichtet.",
   "texterkennung.vom-administrator-abgebrochen": "Vom Administrator abgebrochen.",
+  "texterkennung.zeitgrenze": "Fehlgeschlagen – Zeitgrenze: Der Auftrag lief länger als {minuten} Minuten und wurde abgebrochen. „Erneut versuchen“ reiht ihn wieder ein.",
+  "texterkennung.zeitgrenze-ungueltig": "Zeitgrenze bitte als ganze Zahl zwischen {min} und {max}.",
   "texterkennung.groesser-als-mb": "Größer als {MAX_MB} MB.",
   "texterkennung.uebernommen-gleicher-inhalt": "übernommen (gleicher Inhalt): {wert}",
   "texterkennung.fotos-und-bilder-liest": "Fotos und Bilder liest Ablago nicht sofort – ihren Text erkennt das Paket Texterkennung nach dem Speichern.",

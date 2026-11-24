@@ -230,8 +230,36 @@ export interface HerkunftPruefung {
 /** Ab so vielen Tagen warnt das DMS vor einem alten Katalogstand (Sammeldatei ohne Internet, #594). */
 export const KATALOG_ALT_TAGE = 90;
 
+/**
+ * Empfohlene Pakete (#460, #1511): im Einrichtungsassistenten vorgewählt und in der Übersicht der Werkbank als ein
+ * Hinweis „Empfohlene Pakete“, solange eines fehlt – in dieser Reihenfolge.
+ */
+export const EMPFOHLENE_PAKETE = ['texterkennung', 'benachrichtigungen'] as const;
+export type EmpfohlenesPaket = (typeof EMPFOHLENE_PAKETE)[number];
+
+/**
+ * Angehalten (#1563): Der Läufer startet das Paket nicht, es bekommt keine Ereignisse, Aufträge und Leistungen, seine
+ * Aktionen und Automatisierungen ruhen. Mappentypen, Mappen, Ansichten und Vorlagen bleiben nutzbar; Einstellungen und
+ * Geheimnisse bleiben gespeichert. `darf`: angehalten, weil „Was Ablago darf“ gesenkt wurde (#1562); `hand`: von Hand.
+ */
+export interface PaketAngehalten {
+  grund: 'darf' | 'hand';
+  /** Bei `darf`: was das Paket braucht, das nicht mehr erlaubt ist (Stufe aus dem Manifest). */
+  stufe?: 'vorlagen' | 'lokal' | 'netz';
+  am: string;
+  von: string;
+}
+
+/** Was einem beschädigten Paket fehlt (#1551): Schlüssel der eigenen Mappentypen bzw. Ansichten. */
+export interface FehlendeTeile {
+  typen: string[];
+  sichten: string[];
+}
+
 export interface InstalliertesPaket {
   id: string;
+  /** Angehalten (#1563); fehlt = läuft. */
+  angehalten?: PaketAngehalten;
   name: string;
   version: string;
   beschreibung: string;
@@ -274,6 +302,8 @@ export interface InstalliertesPaket {
   abhaengigkeiten: Record<string, string>;
   /** Einstellungen, wie das Paket sie beschreibt (#197); null = keine. */
   einstellungen?: import('../paketeinstellungen').Einstellungsbeschreibung | null;
+  /** Nur in der Antwort der Werkbank: beschädigt (#1551) – diese eigenen Mappentypen bzw. Ansichten fehlen. */
+  fehlt?: FehlendeTeile;
   /** Nur in der Antwort der Werkbank: Pflichtfelder der Einstellungen fehlen (#197). */
   einstellungenNoetig?: boolean;
   /** Nur in der Antwort der Werkbank: Sprachpaket (#731) – Übersetzung zu so viel Prozent vollständig (diese Version). */

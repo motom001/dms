@@ -24,6 +24,50 @@ export abstract class PaketEntfernen extends PaketEinstellungen {
   }
 
   /**
+   * Typen des Pakets löschen – Verweise untereinander in mehreren Runden. Ohne Fortschritt erst die Tabellen (#1030)
+   * herausnehmen und neu versuchen: Danach lassen sich Teil-Typen (#1031, z. B. Rechnungsposition) löschen, deren
+   * Verweis auf die übergeordnete Mappe der Typ braucht (#1521). Erst dann die übrigen Verweise im Kreis lösen; fällt
+   * dabei das Feld aus „Ist Teil einer anderen Mappe“ weg, ist der Typ danach eigenständig.
+   */
+  private async loescheTypen(p: InstalliertesPaket, typIds: string[]) {
+    let offen = [...typIds];
+    // Wie weit gelöst wird, wenn eine Runde nichts löschen konnte: 0 Tabellen, 1 Verweise im Kreis, 2 aufgeben.
+    let stufe = 0;
+    while (offen.length) {
+      let typen = await this.d.mappentypen.listeTypen();
+      offen = offen.filter((t) => typen.some((x) => x.id === t));
+      const fehler: string[] = [];
+      const vorher = offen.length;
+      for (const t of offen) await this.d.mappentypen.loescheTyp(t).catch((x: Error) => fehler.push(meldungen(x)));
+      const rest = new Set((await this.d.mappentypen.listeTypen()).map((x) => x.id));
+      offen = offen.filter((t) => rest.has(t));
+      if (!offen.length) break;
+      if (offen.length < vorher) {
+        stufe = 0;
+        continue;
+      }
+      if (stufe === 2) throw new Fachfehler(409, t('meldungen.pakete.laesst-sich-nicht-ganz', { name: p.name }), { gruende: fehler });
+      const bleibt = new Set(offen);
+      typen = await this.d.mappentypen.listeTypen();
+      // Tabellen zuerst: Solange eine Tabelle Mappen eines Typs über ein Feld zeigt, darf das Feld nicht weg.
+      if (stufe === 0 && (await this.ohneTabellenAuf(typen, bleibt))) {
+        stufe = 1;
+        continue;
+      }
+      stufe = 2;
+      for (const t of typen.filter((x) => bleibt.has(x.id))) {
+        const felder = ohneZiele(t, bleibt);
+        if (felder.length === t.felder.length && felder.every((f, i) => f === t.felder[i])) continue;
+        const register = t.register.map((r) =>
+          r.quellen ? { ...r, quellen: r.quellen.filter((q) => !bleibt.has(q.typId) || q.typId === t.id) } : r,
+        );
+        const teilWeg = !!t.teilVon && !felder.some((f) => f.key === t.teilVon);
+        await this.d.mappentypen.aendereTyp(t.id, { ...t, felder, register, ...(teilWeg ? { teilVon: null } : {}) });
+      }
+    }
+  }
+
+  /**
    * Vorgaben eines Pakets beim Entfernen (#1038): Was benutzt wird – Verweise anderer Mappen, Notizen, Dokumente, die
    * nicht vom Paket kommen –, bleibt. Unbenutzte in eigenen Typen gehen mit dem Typ; in Typen anderer Pakete erst nach
    * Rückfrage. Verweisen Vorgaben aufeinander, zählt nur, was von außen kommt (bis nichts mehr dazukommt).
@@ -103,6 +147,57 @@ export abstract class PaketEntfernen extends PaketEinstellungen {
   }
 
   /**
+   * Der Teil des Entfernens, der die Datenbank ändert: Beispiele, Vorgaben, Ansichten, Typen und der Eintrag des Pakets.
+   * Liefert die entfernten Vorgaben.
+   */
+  private async entferneDaten(
+    p: InstalliertesPaket,
+    x: {
+      bsp: { unveraendert: string[] };
+      vg: { eigenWeg: string[]; frage: VorgabeFrage[] };
+      vorgabenWahl?: 'entfernen' | 'behalten';
+      typIds: string[];
+    },
+    von: Handelnder,
+  ): Promise<string[]> {
+    if (x.bsp.unveraendert.length) await this.d.beispielMappen.entferneBeispielMappen(x.bsp.unveraendert, von.id);
+    const vorgabenWeg = await this.entferneVorgaben(
+      p,
+      [...x.vg.eigenWeg, ...(x.vorgabenWahl === 'entfernen' ? x.vg.frage.map((v) => v.id) : [])],
+      von,
+    );
+    // Untersichten zuerst, dann die Typen (Verweise untereinander: mehrere Runden).
+    const sichten: Sicht[] = await this.d.sichtenVerwaltung.listeSichten();
+    const tiefe = (sid: string): number => {
+      const s = sichten.find((v) => v.id === sid);
+      return s?.elternId ? 1 + tiefe(s.elternId) : 0;
+    };
+    for (const sid of Object.values(p.sichten)
+      .filter((v) => sichten.some((s) => s.id === v))
+      .sort((a, b) => tiefe(b) - tiefe(a)))
+      await this.d.sichtenVerwaltung.loescheSicht(sid);
+    await this.loescheTypen(p, x.typIds);
+    // Hinweise (#1034) gehen mit; berechnete Felder in Typen, die bleiben, behalten ihren letzten Wert.
+    await this.d.kern.repo.loeschePaket(p.id);
+    await this.d.suche.setzePaketSynonyme(p.id, []);
+    await this.d.kern.repo.loescheHinweiseVon(p.id);
+    return vorgabenWeg;
+  }
+
+  /** In einer Transaktion (#1521); scheitert sie, sagt die Meldung, dass nichts verändert ist. */
+  private async inEinerTransaktion<T>(p: InstalliertesPaket, f: () => Promise<T>): Promise<T> {
+    try {
+      return await this.d.kern.inTransaktion(f);
+    } catch (e) {
+      const f = e as Fachfehler;
+      log.warn('Paket nicht entfernt, nichts verändert', { paket: p.id, version: p.version, fehler: f.message });
+      const vorher = (f.details as { gruende?: string[] } | undefined)?.gruende ?? [];
+      const gruende = [...new Set([...vorher, ...(vorher.length ? [] : [meldungen(f)])])];
+      throw new Fachfehler(f.status ?? 500, t('meldungen.pakete.entfernen-abgebrochen', { name: p.name }), { gruende });
+    }
+  }
+
+  /**
    * Paket entfernen. Unveränderte Beispiel-Mappen (#878) gehen samt Dokumenten mit; geänderte bleiben – in eigenen
    * Mappentypen verhindern sie das Entfernen und stehen in den Gründen, in fremden bleiben sie und stehen im Ergebnis.
    * Vorgaben (#1038): benutzte bleiben (in eigenen Typen verhindern sie das Entfernen), unbenutzte in Typen anderer
@@ -167,55 +262,8 @@ export abstract class PaketEntfernen extends PaketEinstellungen {
       throw new Fachfehler(409, t('meldungen.pakete.vorgaben.entfernen-frage', { name: p.name, anzahl: vg.frage.length }), {
         vorgaben: vg.frage,
       });
-    if (bsp.unveraendert.length) await this.d.beispielMappen.entferneBeispielMappen(bsp.unveraendert, von.id);
-    const vorgabenWeg = await this.entferneVorgaben(
-      p,
-      [...vg.eigenWeg, ...(vorgabenWahl === 'entfernen' ? vg.frage.map((x) => x.id) : [])],
-      von,
-    );
-    // Untersichten zuerst, dann die Typen (Verweise untereinander: mehrere Runden).
-    const sichten: Sicht[] = await this.d.sichtenVerwaltung.listeSichten();
-    const tiefe = (sid: string): number => {
-      const s = sichten.find((x) => x.id === sid);
-      return s?.elternId ? 1 + tiefe(s.elternId) : 0;
-    };
-    for (const sid of Object.values(p.sichten)
-      .filter((x) => sichten.some((s) => s.id === x))
-      .sort((a, b) => tiefe(b) - tiefe(a)))
-      await this.d.sichtenVerwaltung.loescheSicht(sid);
-    let offen = [...typIds];
-    for (let runde = 0; offen.length; runde++) {
-      let typen = await this.d.mappentypen.listeTypen();
-      offen = offen.filter((t) => typen.some((x) => x.id === t));
-      const fehler: string[] = [];
-      const vorher = offen.length;
-      for (const t of offen) await this.d.mappentypen.loescheTyp(t).catch((x: Error) => fehler.push(meldungen(x)));
-      const rest = new Set((await this.d.mappentypen.listeTypen()).map((x) => x.id));
-      offen = offen.filter((t) => rest.has(t));
-      if (!offen.length) break;
-      if (runde > 0 && offen.length === vorher)
-        throw new Fachfehler(409, t('meldungen.pakete.laesst-sich-nicht-ganz', { name: p.name }), { gruende: fehler });
-      // Kein Fortschritt: Typen des Pakets verweisen im Kreis aufeinander – diese Verweise zuerst lösen.
-      if (offen.length === vorher) {
-        const bleibt = new Set(offen);
-        // Tabellen (#1030) zuerst: Solange eine Tabelle Mappen eines Typs über ein Feld zeigt, darf das Feld nicht weg.
-        if (await this.ohneTabellenAuf(typen, bleibt)) typen = await this.d.mappentypen.listeTypen();
-        for (const t of typen.filter((x) => bleibt.has(x.id))) {
-          const felder = ohneZiele(t, bleibt);
-          if (felder.length === t.felder.length && felder.every((f, i) => f === t.felder[i])) continue;
-          const register = t.register.map((r) =>
-            r.quellen ? { ...r, quellen: r.quellen.filter((q) => !bleibt.has(q.typId) || q.typId === t.id) } : r,
-          );
-          await this.d.mappentypen.aendereTyp(t.id, { ...t, felder, register });
-        }
-      }
-    }
-    // Hinweise (#1034) gehen mit; berechnete Felder in Typen, die bleiben, behalten ihren letzten Wert.
-    await Promise.all([
-      this.d.kern.repo.loeschePaket(id),
-      this.d.suche.setzePaketSynonyme(id, []),
-      this.d.kern.repo.loescheHinweiseVon(id),
-    ]);
+    // Alles oder nichts (#1521): Was die Datenbank betrifft, in einer Transaktion – bricht etwas ab, bleibt alles wie vorher.
+    const vorgabenWeg = await this.inEinerTransaktion(p, () => this.entferneDaten(p, { bsp, vg, vorgabenWahl, typIds }, von));
     // Sprachpaket (#731): Texte weg, Sprache aus der Einstellung, alle Prozesse laden neu. Beschriftungen an Mappentypen
     // bleiben – wie andere Beschriftungen einer nicht erlaubten Sprache stören sie nicht und gelten bei einer Neuinstallation.
     if (p.sprache) {

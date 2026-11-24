@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
   abschnittUmleitung,
-  inLeiste,
   anzahlInVorlage,
   bereichPasst,
   ansichtAus,
@@ -462,12 +461,11 @@ describe('Werkbank: mittlere Spalte für Sammlungen zum Anlegen und Bearbeiten (
     // #1190: „Neue PDFs automatisch verkleinern“ steht beim Speicherplatz im Systemzustand.
     assert.equal(abschnittUmleitung('texterkennung', 'automatisch-verkleinern'), '/werkbank/systemzustand#automatisch-verkleinern');
     assert.equal(abschnittUmleitung('texterkennung', 'warteschlange'), null);
-    // Nur bei beruflicher Nutzung in der Leiste (hilfsweise am Merkmal, bis #987).
-    assert.equal(inLeiste('datenschutz', { beruflich: false }), false);
-    assert.equal(inLeiste('datenschutz', { beruflich: true }), true);
-    assert.equal(inLeiste('datenschutz', undefined), false);
-    assert.equal(inLeiste('benutzer', { beruflich: false }), true);
-    assert.equal(inLeiste(null, { beruflich: false }), true);
+    // #1319: Datenschutz nur an der Stufe – ab Selbständig, sonst nur mit eigener Einblendung; das Merkmal zählt nicht.
+    assert.equal(inVorlage('haushalt', 'auskuenfte'), false);
+    assert.equal(inVorlage('selbstaendig', 'auskuenfte'), true);
+    assert.equal(sichtbar({ vorlage: 'haushalt', ein: [], aus: [] }, { ein: ['auskuenfte'] }, 'auskuenfte'), true);
+    assert.equal(sichtbar({ vorlage: 'selbstaendig', ein: [], aus: ['auskuenfte'] }, { ein: [] }, 'auskuenfte'), false);
     assert.deepEqual(liesAnsicht({ vorlage: 'haushalt', ein: ['datenschutz'], aus: [] }), {
       vorlage: 'haushalt',
       ein: ['auskuenfte'],

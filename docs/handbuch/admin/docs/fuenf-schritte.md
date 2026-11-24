@@ -6,7 +6,7 @@ Du hast Ablago gerade installiert und den Einrichtungsassistenten durchlaufen? D
 
 Das Wichtigste zuerst: die Sicherung. Lade unter **Werkbank → [Verschlüsselung](verschluesselung.md#notfallblatt)** das **Notfallblatt** herunter und leg es getrennt vom NAS ab, ausgedruckt oder in einem Passwortsafe – nur mit dem Schlüssel darauf lässt sich eine Sicherung öffnen. Danach schaltest du unter **Werkbank → Sicherung** den **Zeitplan** ein; Ablago sichert sich ab dann selbst und prüft jede Woche, ob sich die Sicherung einspielen lässt.
 
-*Das Notfallblatt hast du am Ende des Assistenten schon heruntergeladen* – ohne geht „Einrichtung abschließen“ nicht. Darauf steht auch der **Notfallcode**, falls du dich einmal aussperrst. Es fehlt nur noch der Zeitplan.
+*Das Notfallblatt hast du am Ende des Assistenten schon heruntergeladen* – ohne geht „Einrichtung abschließen“ nicht. Darauf steht auch der **Notfallcode**, falls du dich einmal aussperrst. Nach einer Neueinrichtung ist auch der Zeitplan schon an (jede Nacht um 02:00), und Ablago hat gleich die erste Sicherung angelegt und probeweise wiederhergestellt (siehe [Erste Sicherung nach der Einrichtung](sicherung.md#erste-sicherung)). Der nächste Schritt ist eine **Kopie außer Haus** – die erste Sicherung liegt auf demselben Gerät wie Ablago.
 
 ![Sicherung in der Werkbank](bilder/werkbank-sicherung.png)
 

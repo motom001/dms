@@ -6,6 +6,8 @@ Unter **Werkbank → Sicherung** legt Ablago Sicherungen selbst an: die ganze Da
 
 Eine Sicherung spielst du mit Ablago wieder ein. Möchtest du deine Unterlagen zusätzlich so haben, dass du sie **auch ohne Ablago** lesen kannst – etwa zum Mitnehmen in ein anderes Programm –, nimm den [Vollexport](export.md) in offenen Formaten.
 
+Sicherst du deinen Server ohnehin per Snapshot (NAS, virtuelle Maschine), steht unter [Sichern mit Snapshots](snapshots.md), was dabei zusammengehört und wie du den Schlüssel behandelst.
+
 ![Sicherung in der Werkbank](bilder/werkbank-sicherung.png)
 
 ## Was eine Sicherung enthält
@@ -32,7 +34,9 @@ Ohne Schlüssel lässt sich keine Sicherung anlegen; die Seite weist dann auf di
 
 Oben im Abschnitt steht der Stand in einer Zeile: letzte Sicherung, Anzahl und Größe der Sicherungen, nächster Termin laut Zeitplan, freier Platz und, falls eingerichtet, die letzte Kopie außer Haus. Zum Notfallblatt steht dort nichts: Es gehört zur [Verschlüsselung](verschluesselung.md#notfallblatt), dort steht auch, wann es zuletzt heruntergeladen wurde.
 
-**Jetzt sichern** startet eine Sicherung im Hintergrund, mit Fortschritt. Du kannst die Seite verlassen. Ist weniger Platz frei als der [Mindest-Speicherplatz](#zeitplan-und-aufbewahrung), beginnt keine Sicherung.
+**Jetzt sichern** startet eine Sicherung im Hintergrund, mit Fortschritt. Du kannst die Seite verlassen. Ist weniger Platz frei als der [Mindest-Speicherplatz](#zeitplan-und-aufbewahrung), beginnt keine Sicherung. Außerdem schätzt Ablago die Größe der nächsten Sicherung (die letzte vollständige, sonst Dokumente und Datenbank heute): Bliebe danach weniger als der Mindest-Speicherplatz frei, lässt Ablago die Sicherung aus und meldet das in der Werkbank – Ablago und die Datenbank liegen meist auf demselben Speicher, eine volle Platte legte auch sie lahm.
+
+**Wozu?** (freiwillig, höchstens 80 Zeichen): Gib einer Sicherung von Hand einen kurzen Namen, z. B. „Vor dem Entfernen von Rechnungen“. Er steht in der Liste unter der Art, beim [Zurückholen](wiederherstellen.md#auf-dem-laufenden-system) und im Protokoll. **Wozu? ändern** in der Zeile ändert oder leert ihn. Der Name gehört zur Sicherung: Er steht in ihren Metadaten (`.json`, Feld `wozu`) und verschlüsselt in der Sicherung selbst – er ist also auch nach einem Zurückholen und auf einem anderen Gerät noch da. Benannte Sicherungen zählen bei der Aufbewahrung wie alle anderen; von Hand angelegte räumt die Aufbewahrung ohnehin nicht weg. Automatische Sicherungen heißen „automatisch“; hat der Zeitplan eine verpasste nachgeholt, „automatisch · nachgeholt“. Die Meldung unter **Jetzt sichern** nennt die Sicherung, die gerade fertig wurde.
 
 Die Liste zeigt alle Sicherungen im Ordner mit Zeitpunkt, Art, Größe und Inhalt. Je Zeile stehen **Herunterladen**, **Prüfen** und **Löschen**. [Herunterladen](#sicherung-herunterladen) holt eine Kopie auf deinen Rechner. **Prüfen** rechnet die Prüfsumme der Datei nach und vergleicht sie mit der aus den Metadaten – „unverändert“ heißt: Die Datei ist so, wie Ablago sie geschrieben hat. **Löschen** entfernt beide Dateien.
 
@@ -43,6 +47,8 @@ Im Container geht das auch ohne Browser mit dem [Befehl `dms`](konsole.md#betrie
 Zum Aufräumen setzt du in der Liste die Haken vor den Sicherungen, die weg sollen, oder **Alle auswählen**. **Ausgewählte löschen (n)** fragt einmal für alle nach und nennt dabei Anzahl, Zeitraum und den Platz, der frei wird. Ablago löscht dann eine nach der anderen und zeigt den Fortschritt. Was sich nicht löschen ließ, bleibt ausgewählt und steht mit dem Grund über der Liste.
 
 Keine Sicherung hat einen Sonderschutz, auch nicht die neueste: **Alle auswählen** wählt wirklich alle, und **Ausgewählte löschen** löscht alle gewählten. Der Schutz ist die Rückfrage – sind alle gewählt, sagt sie zusätzlich, dass danach lokal keine Sicherung mehr da ist. Gelöscht werden genau die gewählten: Entsteht währenddessen eine neue Sicherung, ist sie nicht dabei. Kopien [außer Haus](sicherung-ausser-haus.md) bleiben am Ziel und stehen weiter in der Liste. Willst du eine Sicherung sicher behalten, lade sie vorher [herunter](#sicherung-herunterladen).
+
+Sicherungen, die es [nur noch außer Haus](sicherung-ausser-haus.md#nur-ausser-haus) gibt, haben ebenfalls einen Haken. Löschen lassen sie sich hier nicht – dafür steht neben **Ausgewählte löschen (n)** der Knopf **Aus der Liste nehmen (n)** (siehe [Aus der Liste nehmen](sicherung-ausser-haus.md#aus-der-liste-nehmen)). Jeder der beiden Knöpfe ist nur aktiv, wenn er auf alle gewählten passt; sonst steht der Grund daneben.
 
 Über der Liste steht, was die [Aufbewahrung](#zeitplan-und-aufbewahrung) von selbst wegräumt, mit dem Link **Aufbewahrung ändern**. Ältere automatische Sicherungen musst du also nicht von Hand löschen.
 
@@ -79,9 +85,9 @@ Windows zeigt die Prüfsumme in Großbuchstaben – das macht keinen Unterschied
 
 ![Zeitplan und Aufbewahrung](bilder/werkbank-sicherung-zeitplan.png)
 
-- **Automatische Sicherung** (Schalter) täglich oder wöchentlich zu einer Uhrzeit (z. B. täglich 02:00). War Ablago zu der Zeit aus, sichert es, sobald es wieder läuft – aber nur am selben Tag. Eine verpasste Sicherung vom Vortag holt es nicht nach; es sichert erst wieder zum nächsten geplanten Termin. Mehr als eine automatische Sicherung am Tag gibt es nie.
+- **Automatische Sicherung** (Schalter) täglich oder wöchentlich zu einer Uhrzeit (z. B. täglich 02:00). Nach einer **Neueinrichtung** ist sie von Anfang an an (siehe [Erste Sicherung nach der Einrichtung](#erste-sicherung)); bestehende Installationen behalten ihre Einstellung. War Ablago zu der Zeit aus, sichert es, sobald es wieder läuft – aber nur am selben Tag. Eine verpasste Sicherung vom Vortag holt es nicht nach; es sichert erst wieder zum nächsten geplanten Termin. Mehr als eine automatische Sicherung am Tag gibt es nie. Eine nachgeholte Sicherung heißt in der Liste „automatisch · nachgeholt“. Gab es in den letzten 60 Minuten schon eine Sicherung (von Hand oder vor einer Wiederherstellung), entfällt das Nachholen – sie zählt für heute. Direkt nach einer [Wiederherstellung](wiederherstellen.md#angaben-zur-sicherung) holt Ablago nichts nach.
 - Einschalten lässt sich der Zeitplan erst, wenn das **Notfallblatt** heruntergeladen ist – denn nur mit dem Schlüssel darauf lässt sich eine Sicherung öffnen. Bis dahin führt **Zum Notfallblatt** zur [Verschlüsselung](verschluesselung.md#notfallblatt).
-- **Aufbewahrung** (Standard **7 tägliche / 4 wöchentliche / 12 monatliche**): Von den automatischen Sicherungen bleibt je Tag, je Woche und je Monat die neueste, so viele wie eingestellt; ältere entfernt Ablago nach jeder automatischen Sicherung. Von Hand angelegte Sicherungen bleiben, bis du sie löschst.
+- **Aufbewahrung** (bei einer Neueinrichtung **7 tägliche / 4 wöchentliche / 3 monatliche**, bei älteren Installationen ohne gespeicherten Zeitplan 7 / 4 / 12): Von den automatischen Sicherungen bleibt je Tag, je Woche und je Monat die neueste, so viele wie eingestellt; ältere entfernt Ablago nach jeder automatischen Sicherung. Von Hand angelegte Sicherungen bleiben, bis du sie löschst. Direkt unter den Zahlen steht der **Speicherbedarf** („Speicherbedarf: etwa 14 Sicherungen ≈ 1,6 GB“) – dieselbe Hochrechnung wie unter [Speicherplatz](#speicherplatz). Sie rechnet mit, während du die Zahlen änderst, noch vor dem Speichern.
 - **Lokal nur die neueste behalten** (seit 0.142): Statt der Aufbewahrung bleibt nur die neueste automatische Sicherung im Ordner – für knappen Platz, wenn eine [Kopie außer Haus](sicherung-ausser-haus.md) entsteht. Eine Sicherung, deren Kopie gerade läuft, bleibt stehen, bis sie angekommen ist (höchstens 2 Tage). „Lokal keine“ gibt es nicht. Wählbar ist der Haken erst, wenn eine Sicherung außer Haus eingerichtet ist und ihre letzte Kopie erfolgreich war. Fällt das Ziel weg (Paket entfernt oder ausgeschaltet), schlägt die Kopie fehl oder hängt sie mehr als 2 Tage hinterher, wirkt der Haken nicht: Ablago bewahrt ältere Sicherungen dann wieder nach der Aufbewahrung auf und weist darauf hin.
 - **Mindest-Speicherplatz** (Standard 1 GB): Ist im Sicherungsordner weniger frei, beginnt keine Sicherung; das steht als Hinweis in der Werkbank und im Protokoll.
 - Im aktiven [Wartungsmodus](wartungsmodus.md) pausiert die automatische Sicherung.
@@ -93,6 +99,16 @@ Windows zeigt die Prüfsumme in Großbuchstaben – das macht keinen Unterschied
 
 Die Seite zeigt, wie groß Dokumente und Datenbank heute sind, eine **Hochrechnung** für die gewählte Aufbewahrung (jede Sicherung ist vollständig; die Datenbank lässt sich gut packen, Dokumente kaum), wie viel die Sicherungen belegen und wie viel im Ordner frei ist. Wird es knapp – weniger frei als der Mindest-Speicherplatz oder als zwei weitere Sicherungen –, warnt sie. Unabhängig davon überwacht **Werkbank → [Systemzustand](speicherplatz.md)** alle Ordner von Ablago mit Warnschwelle und Grenze.
 
+## Erste Sicherung nach der Einrichtung { #erste-sicherung }
+
+Nach einer Neueinrichtung sichert Ablago von selbst. Der Abschluss des [Einrichtungsassistenten](installation.md#der-einrichtungsassistent) sagt es in einer Zeile: „Ablago sichert jede Nacht um 02:00 – ändern kannst du das in der Werkbank.“ Mit **Einrichtung abschließen** – das geht erst mit heruntergeladenem Notfallblatt – passiert dann:
+
+1. Die automatische Sicherung ist an: täglich um 02:00, Aufbewahrung 7 / 4 / 3.
+2. Ablago erstellt im Hintergrund gleich die **erste Sicherung** und stellt sie danach **probeweise wieder her** – in einem eigenen Bereich der Datenbank, der danach wieder verschwindet, auch wenn die Probe scheitert. Bei einer leeren Ablage dauert das Sekunden. Geprüft wird der ganze Weg: Ordner beschreibbar, Rechte, Verschlüsselung, Zurückholen.
+3. **Werkbank → Sicherung** zeigt am Stand „Erste Sicherung und Probe erfolgreich“ mit Zeitpunkt. Die Übersicht der Werkbank nennt nur den nächsten Schritt: **Kopie außer Haus einrichten** – die erste Sicherung liegt auf demselben Gerät wie Ablago. Liegen die Sicherungen sogar auf derselben Platte wie die Dokumente, ist dieser Hinweis gelb.
+
+Scheitert die erste Sicherung oder ihre Probe, steht in der Übersicht ein roter Hinweis mit Verweis auf **Werkbank → Sicherung**; dort steht die Ursache am Stand. Genau dafür ist der erste Lauf da: Behebe sie und sichere neu. Beide Läufe stehen wie jede Sicherung und Probe im [Protokoll](fehlersuche.md#protokoll), Modul *sicherung*. Bestehende Installationen ändern sich nicht.
+
 ## Hinweise bei Problemen
 
 Die Übersicht der Werkbank zeigt einen Hinweis, wenn
@@ -100,7 +116,8 @@ Die Übersicht der Werkbank zeigt einen Hinweis, wenn
 - die letzte Sicherung **fehlgeschlagen** ist,
 - die letzte erfolgreiche **älter als 2 Tage** ist (oder es noch keine gibt),
 - das Notfallblatt fehlt, zu einem früheren Schlüssel gehört oder sein Notfallcode benutzt wurde (mit dem Knopf **Zum Notfallblatt**; dieser Hinweis steht auch oben auf dieser Seite),
-- der Sicherungsordner kein eigenes Volume ist oder auf derselben Platte liegt wie die Dokumente,
+- der Sicherungsordner kein eigenes Volume ist oder auf derselben Platte liegt wie die Dokumente (nach einer Neueinrichtung stattdessen: **Kopie außer Haus einrichten**, siehe [oben](#erste-sicherung)),
+- der Platz für die nächste Sicherung voraussichtlich nicht reicht (sie wurde ausgelassen),
 - die [Kopie außer Haus](sicherung-ausser-haus.md#anzeige-und-hinweise) fehlgeschlagen ist oder seit mehr als 2 Tagen keine neuere Sicherung dort ankam.
 
 Schlägt eine Sicherung fehl, bekommen alle Administratoren eine E-Mail – auch ohne Zeitplan, etwa bei **Jetzt sichern**. Ist die letzte erfolgreiche Sicherung zu alt, kommt die E-Mail nur, wenn der Zeitplan an ist. Es kommt **eine** E-Mail je Vorfall (nicht stündlich) – sofern der [E-Mail-Versand](installation.md#e-mail-und-adresse) eingerichtet ist. Alles steht auch im [Protokoll](fehlersuche.md#protokoll), Modul *sicherung*.

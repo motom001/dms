@@ -750,7 +750,7 @@ for (const pg of [false, ...(process.env.TEST_DATABASE_URL ? [true] : [])]) {
       const a = await rufe(admin, 'POST', '/api/werkbank/auskunft', { body: { mappeId: m.max.id, auswahl, geprueft: true, passwort } });
       assert.equal(a.status, 202);
       const fertig = await d.auftraege.warte();
-      assert.equal(fertig?.status, 'fertig', fertig?.fehler);
+      assert.equal(fertig?.status, 'fertig', String(fertig?.fehler));
       const stand = fertig!.ergebnis as { id: string; verschluesselt: boolean };
       assert.equal(stand.verschluesselt, true);
       const liste = ((await rufe(admin, 'GET', '/api/werkbank/datenschutz')).body as { auskuenfte: Array<{ id: string }> }).auskuenfte;

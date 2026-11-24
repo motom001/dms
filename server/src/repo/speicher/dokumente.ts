@@ -41,6 +41,7 @@ export function speicherDokumente(sp: SpeicherKontext) {
       delete n.anlageZu;
       delete n.anlageNr;
       delete n.eingangNr;
+      delete n.eingangFuer;
       if (!n.originalEmail) delete n.originalEmail;
       dokumente.set(d.id, n);
       return kopie(n);
@@ -55,6 +56,10 @@ export function speicherDokumente(sp: SpeicherKontext) {
       if (x.originalEmail !== undefined) {
         if (x.originalEmail) d.originalEmail = true;
         else delete d.originalEmail;
+      }
+      if (x.fuer !== undefined) {
+        if (x.fuer) d.eingangFuer = x.fuer;
+        else delete d.eingangFuer;
       }
     },
     async loescheDokument(id) {

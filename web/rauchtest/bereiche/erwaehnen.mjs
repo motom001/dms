@@ -8,7 +8,7 @@
  */
 import assert from 'node:assert/strict';
 import '../einrichtung.mjs';
-import { api, BASIS, daten, JONAS, LENA, rauchtest, schemaWechseln, sitzung } from '../hilfen.mjs';
+import { api, BASIS, daten, JONAS, LENA, rauchtest, rundgaengeGesehen, schemaWechseln, sitzung } from '../hilfen.mjs';
 import { axePruefen, tippflaechenPruefen } from '../muster.mjs';
 
 /** Zwei Mappen: die eine erwähnt die andere – Ziel und Quelle mit eigenem Namen je Lauf. */
@@ -161,10 +161,8 @@ for (const [person, erwartet] of [
 ])
   rauchtest(`Trefferliste: Titel erwähnter Mappen nach Rechten – ${person.name} (#1333)`, { als: person }, async (s) => {
     const typ = await listeMitErwaehnungen();
-    // Ein Rundgang, der bei der ersten Anmeldung von selbst startet (Jonas allein gestartet), läge über der Liste.
-    const cookie = await sitzung(person);
-    const { starten } = (await api('GET', '/api/entdecken', { cookie })).daten;
-    if (starten) await api('POST', `/api/entdecken/rundgaenge/${starten}`, { cookie, body: { stand: 'gesehen' } });
+    // Ein Rundgang, der beim ersten Besuch von selbst startet (Jonas allein gestartet), läge über der Liste.
+    await rundgaengeGesehen(await sitzung(person));
     await s.goto(BASIS + `/ablage/${typ.id}`);
     const liste = s.getByRole('region', { name: 'Mappen' });
     // Die Nebenzeile der Liste zeigt die erste Spalte nach dem Titel, hier das formatierte Feld.

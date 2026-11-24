@@ -107,7 +107,7 @@ Der erste Fachbereich mit eigener Fachlogik im Fachordner (Probelauf der Zielauf
 | `versionen.ts` | `DokumentVersionen` (`dienst.dokumentVersionen`) | `ersetzeDokument`, `holeVersionZurueck`, `nachNeuerVersion`, `versionen`, `versionInhalt`, `beruehre` |
 | `anlagen.ts` | `DokumentAnlagen` (`dienst.dokumentAnlagen`) | Anlagen (#998): `liste`, `haengeAn` („Als Anlage an … hängen“), `loese` („Zum eigenen Dokument machen“), `sortiere`, `benenne`, `alsAnlagen` (beim Teilen einer Post); das Mitwandern machen Repo (`verschiebeDokument`), `loescheDokument` und der Papierkorb |
 | `umwandeln.ts` | `DokumentUmwandlung` (`dienst.dokumentUmwandlung`) | Dateien umwandeln (#577): `nachFassung`, `umwandelPaketDa`, `setzeFassung`, `fassungVon`, `umwandlungStand` |
-| `archivfassung.ts` | `DokumentArchivfassung` (`dienst.dokumentArchiv`) | Archivfassung (#631): `archivNachVolltext`, `archivPaketDa`, `setzeArchivfassung`, `wortpositionen`, `archivStand` |
+| `archivfassung.ts` | `DokumentArchivfassung` (`dienst.dokumentArchiv`) | Archivfassung (#631): `archivNachVolltext`, `archivPaketDa`, `setzeArchivfassung`, `wortpositionen`, `seitenmasse` (#1445), `archivStand` |
 | `geschuetzte-pdf.ts` | `GeschuetztePdfs` (`dienst.geschuetztePdfs`) | geschützte PDFs (#827): `entsperreDokument`, `nachEntsperren`, `mitPdfSchutz` |
 | `fehlende-dateien.ts` | `FehlendeDateien` (`dienst.dateienFehlen`) | fehlende Dateien (#877): `merkeFehlendeDatei`, `fehlendeDateien`, `dokumenteOhneDatei`, `pruefeVorhanden` |
 

@@ -34,6 +34,8 @@ GitHub counts how often a release file is downloaded; the numbers in the catalog
 
 ## Installing { #installieren }
 
+[What Ablago may do](was-ablago-darf.md) decides which packages can be installed. If a package or an update is above it, the preview says why in words and offers **Allow …**; it is then not installed.
+
 1. Choose a package under **Available** and, if needed, an older version.
 2. Click **Install …**. The [common process](#mehrere-pakete-in-einem-schritt-installieren) opens: at the top the package, below it what it needs ("Needs: …"), and its **add-ons** as ticks – for text recognition, for instance, **Further languages?** with French, Spanish, Turkish …
 3. Click **Continue with … packages**. On **one page**, Ablago now asks everything that is necessary, and only that:
@@ -235,6 +237,7 @@ Only someone with **Full administration** can confirm, after signing in again. *
 - Reference fields, views, permission rules and automations point to the new folder type, direct links to folders keep working (folders keep their ID).
 - [Archive mode](archiv.md) and deadlines stay. If the conversion would make archive mode less strict, the preview refuses it – then turn it on for the new folder type first, at least as strictly.
 - If folders of the old type are in the bin, it stays as your own folder type.
+- Fields that the new package calculates ("calculated by …") are calculated by the new package afterwards – even if the taken-over folder type had them from its old package before (#1476). A documents tab whose documents moved to another tab disappears if it is empty afterwards and the new package doesn't bring it.
 
 Update several packages with conversions **one by one**, each with its own preview – Ablago refuses them in a combined flow.
 
@@ -273,7 +276,30 @@ For package authors, the format (`aus_text`) is in the [registry's rules](https:
 
 Otherwise Ablago names the reasons – including every example you have changed; delete it yourself beforehand if you no longer need it. Changed examples in folder types of other packages (such as an "Organisation" from *Basis*) stay; Ablago names them after removing.
 
+**All or nothing:** Ablago removes a package in one go. If removing stops, Ablago reports "… was not removed, nothing has changed." with the reason – folder types, views, examples and the package are then as before, and you can try again once the cause is fixed. Folder types that are **part of another folder** (such as *Invoice item* and *Tax line* of the *Invoice*), and [tables](mappentypen.md#tabelle) showing them, are resolved by Ablago itself. A package stuck half removed from an earlier attempt can now be removed.
+
+If you remove a package whose folder types another package knows only as an **optional** target (such as *Vehicles* for "Concerns" on the *Invoice*), conditions like "Show if Concerns points to a vehicle" stay and wait for the package: they never apply, the folder type can still be saved, and if you install the package again they work as before.
+
 If the package supplies full text or converts files (e.g. **Office and email**, **Image formats**), no documents wait for it any more afterwards: without text, the document again says that there is no package for this file type; if it already had text, the text stays.
+
+## Pausing and resuming { #anhalten }
+
+A package with code can be **paused** instead of removed – by hand with **Pause** on its page, or automatically when you lower [What Ablago may do](was-ablago-darf.md) and the package no longer fits. Paused means:
+
+- Its code does not run: no events, no tasks, no services; its actions are not in the "Folder" menu, its automations rest. Even if it ran by mistake, it would not reach the network.
+- **Folder types, folders, views and templates stay** and remain usable – they belong to you, not the package. Settings and secrets stay saved.
+- The package list shows **paused**, the package page the reason in words, e.g. "“Translation” uses the internet – you have not allowed that.", with **Allow …** and **Resume**; the [overview](uebersicht.md) shows a note.
+- **Resume** works without setting it up again, but only when "What Ablago may do" allows the package again. Raising alone resumes nothing on its own.
+
+## Damaged package { #beschaedigt }
+
+If an installed package is missing folder types or views of its own version – e.g. after a removal that was cancelled earlier –, the [overview](uebersicht.md) shows "… is not complete", and the package page offers **solutions**, each with one sentence:
+
+- **Repair** creates the missing parts of the same version again; existing folders, folder types and settings stay. It works all or nothing: if it fails, nothing is changed. For an uploaded package, upload the same version again.
+- **Reinstall** removes the package and leads into the usual **Install** process for the same version – only while its folder types hold no folders of your own.
+- **Remove completely** is the usual [removal](#entfernen).
+
+**Installing and updating** also work all or nothing (#1385): if something fails halfway, the Library is as before, and a second attempt succeeds without a name conflict.
 
 ## Settings { #einstellungen }
 
@@ -373,11 +399,11 @@ Ablago does not show computing time (CPU) per package: all packages run in the s
 
 **List** below, newest first, with a search field and the tick **Show errors only**:
 
-- every **delivered event** (type, the folder or post as a link – only if you may read it) and every other **call** (action, question, recognition, settings check …) with its **result** – *ok*, *Error*, *Time limit* or *Memory limit* –, duration, memory, error message and the [network calls](#netzaufrufe) of that call
+- every **delivered event** (type, the folder or post as a link – only if you may read it) and every other **call** (action, question, recognition, settings check …) with its **result** – *ok*, *Warning*, *Error*, *Time limit* or *Memory limit* – and duration and memory. **Expanded**, the entry shows the folder (as a link), the **result text** of the run (e.g. “Invoice: status new”, at most 300 characters, as under *Last*) or the error message, and the [network calls](#netzaufrufe) of that call. If Ablago rejects a write attempt of the package (e.g. 409 “changed”, 404, 400), the run is shown as a *Warning* with method, path, status and message – not as *ok*
 - the package's **log lines** (at most 60 per hour; further ones only in Ablago's log)
 - **Installed**, **Updated** and **Settings changed** – who, when and which settings (never values)
 
-The activity **never contains content** from documents or answers of the package. Entries are kept for **30 days** (at most 5000 per package) so that the load can show a month – longer than Ablago's [log](fehlersuche.md#protokoll), which only goes back one day. If you remove the package, its activity goes with it.
+The activity **never contains content** from documents. Of the package's answers, only the short result text of a run is shown; answers of AI functions and folder actions only as their length (“120 characters”). Entries are kept for **30 days** (at most 5000 per package) so that the load can show a month – longer than Ablago's [log](fehlersuche.md#protokoll), which only goes back one day. If you remove the package, its activity goes with it.
 
 ![The “Activity” tab of a package: load with traffic light, below the list with “Show errors only”](bilder/werkbank-paket-verlauf.png)
 
@@ -529,7 +555,7 @@ An AI package **only receives content from folder types that are allowed for AI 
 - **Per folder type:** Workbench → Folder types → *folder type* → section **AI services** → **May go to AI services**. Without the tick no AI package gets anything from this folder type – no folders, no documents, no excerpts, no events. This takes effect immediately and for all AI packages.
 - **On the package's page:** Workbench → Packages → *AI package* shows only one line in the **Overview**, “Receives content from *n* folder types”, with **Change**. You allow and block in the **Settings** tab, section **What the AI may read**: which folder types the package receives, and below all folder types with ticks – saved with the tab's button. For packages that read folders themselves, their permissions and [Packages on the folder type](berechtigungen.md#pakete-am-mappentyp) also count.
 - **New folder types are blocked until you allow them.** That way sensitive folder types such as *Health* never go out unintentionally – not even when a package brings them or you copy a folder type. A **new installation** has nothing allowed yet; after installing an AI package you allow on its page what it should receive.
-- **After the update** your existing folder types stay allowed as before, so nothing quietly stops working. The [Overview](uebersicht.md) points this out once (*New: exclude folder types from AI services*) as long as AI packages are installed; **Got it** hides the notice.
+- **After the update** your existing folder types stay allowed as before, so nothing quietly stops working. The [Overview](uebersicht.md) points this out once (*New: exclude folder types from AI services*) as long as AI packages are installed; **Acknowledge** hides the notice.
 - **Users** never go to a package.
 
 **What blocked means, per path:**
@@ -720,7 +746,7 @@ Everyone only sees folders they may read. The package supplies the vector of the
 | 10,000 | 12 MB | 4 MB | 0.4 s | 4 ms | 0.3 s |
 | 100,000 | 118 MB | 33 MB | 3.2 s | 37 ms | 3.0 s |
 
-Ablago needs no database extension for this (such as pgvector, which is missing in the image `postgres:17`). It compares in its own memory with 8 bits per number; it loads the cache in the background after the start – until it is there, the search works without similarity. Measured with `server/test/vektoren-messen.ts`.
+Ablago needs no database extension for this (such as pgvector, which is missing in the image `postgres:18`). It compares in its own memory with 8 bits per number; it loads the cache in the background after the start – until it is there, the search works without similarity. Measured with `server/test/vektoren-messen.ts`.
 
 ## Expert mode: further catalogues and uploading { #expertenmodus-weitere-kataloge-und-hochladen }
 

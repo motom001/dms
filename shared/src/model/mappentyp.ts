@@ -110,6 +110,11 @@ export interface MappentypDaten {
   ausPost?: boolean | null;
   /** „Woran man ihn erkennt“ (#937): kurzer Text für die Klassifizierung (#939), höchstens ERKENNBAR_AN_MAX Zeichen. */
   erkennbarAn?: string;
+  /**
+   * Mehrzahl (#1446), z. B. „Verträge“: Listen zeigen damit „12 Verträge“ statt „12 × Vertrag“. Leer bzw. fehlt = keine;
+   * andere Sprachen unter `beschriftungen.<sprache>.mehrzahl`. Höchstens MEHRZAHL_MAX Zeichen.
+   */
+  mehrzahl?: string;
   /** Name, Beschreibung und „Woran man ihn erkennt“ in weiteren Sprachen (#728, #937). */
   beschriftungen?: Beschriftungen<TypTeile>;
   /**
@@ -133,6 +138,8 @@ export const inAllgemeinerSuche = (t: Pick<MappentypDaten, 'inSuche'> | undefine
 
 /** Höchstlänge von „Woran man ihn erkennt“ (#937). */
 export const ERKENNBAR_AN_MAX = 300;
+/** Höchstlänge der Mehrzahl eines Mappentyps (#1446) – wie der Name. */
+export const MEHRZAHL_MAX = 80;
 /**
  * „Kann aus Post angelegt werden“ (#937): eingestellt – sonst an, wenn der Typ ein Dokumentenregister hat.
  * Systemtypen (Benutzer, Rolle, Post) nie.
@@ -171,6 +178,11 @@ export const SYSTEMTYPEN = {
   post: t('gemeinsam.model.systemtyp.post'),
 } as const;
 export type Systemtyp = keyof typeof SYSTEMTYPEN;
+/** Mehrzahl der Systemtypen (#1446) zum Standardnamen; Post hat keine („n × Post“). */
+export const SYSTEMTYP_MEHRZAHL: Partial<Record<Systemtyp, string>> = {
+  benutzer: t('gemeinsam.model.systemtyp.benutzer-mehrzahl'),
+  rolle: t('gemeinsam.model.systemtyp.rolle-mehrzahl'),
+};
 
 /** Systemeigene Spalten für Trefferlisten; beginnen mit _, damit sie nie mit Feldschlüsseln kollidieren. */
 export const SYSTEMSPALTEN = {

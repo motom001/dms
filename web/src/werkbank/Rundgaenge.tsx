@@ -221,15 +221,30 @@ function Kopf({ z, r, titel }: { z: RundgaengeZustand; r?: WerkbankRundgang; tit
   );
 }
 
-/** Rundgang von Ablago oder aus einem Paket: Datei zum Ansehen, ausprobieren, als eigenen kopieren. */
+/**
+ * Rundgang von Ablago oder aus einem Paket: Datei zum Ansehen, ausprobieren, als eigenen kopieren. Ausprobieren prüft
+ * mit der Herkunft des Rundgangs (#1533); Fehler stehen mit Zeile da. „Als eigenen kopieren“ ist der Hauptknopf unten
+ * rechts, wo im Editor die Speicherleiste steht, und legt die Kopie gleich an (ausgeschaltet, `start: manuell`).
+ */
 function FremderRundgang({ z, r }: { z: RundgaengeZustand; r: WerkbankRundgang }) {
-  const [meldung, setMeldung] = useState<string>();
+  const [meldung, setMeldung] = useState<Probe>();
+  async function kopieren() {
+    const vergeben = new Set((z.stand?.rundgaenge ?? []).filter((x) => x.herkunft === EIGEN).map((x) => lokal(x.schluessel)));
+    const basis = (/^schluessel: *(\S+)/m.exec(r.yaml)?.[1] ?? 'rundgang').slice(0, 37);
+    let schluessel = basis;
+    for (let n = 2; vergeben.has(schluessel); n++) schluessel = `${basis}_${n}`;
+    const g = await rundgaengeApi.neu(alsKopie(r.yaml).replace(/^schluessel: .*$/m, `schluessel: ${schluessel}`));
+    await rundgaengeApi.schalten(`${EIGEN}:${g.schluessel}`, false);
+    await z.laden();
+    geheZu(pfad(`${EIGEN}:${g.schluessel}`));
+  }
   return (
     <div className="einspaltig">
       <Kopf z={z} r={r} titel={r.titel} />
       {meldung && (
         <div className="hinweis schlecht" role="status">
-          <p>{meldung}</p>
+          <p>{meldung.text}</p>
+          {meldung.fehler?.length ? <ZeilenFehlerListe fehler={meldung.fehler} /> : null}
         </div>
       )}
       <div className="blatt stapel">
@@ -249,11 +264,18 @@ function FremderRundgang({ z, r }: { z: RundgaengeZustand; r: WerkbankRundgang }
           </pre>
         </NurLesenFeld>
         <div className="knoepfe">
-          <KnopfLink to={`${RUNDGAENGE_PFAD}/neu?kopie=${encodeURIComponent(r.schluessel)}`} art="haupt">
-            {t('werkbank.rundgaenge.ui.kopieren')}
-          </KnopfLink>
-          <Knopf onClick={async () => setMeldung(await probieren(r.yaml))} title={t('werkbank.rundgaenge.ui.ausprobieren.titel')}>
+          <Knopf
+            onClick={async () => setMeldung(await probieren(r.yaml, r.herkunft))}
+            title={t('werkbank.rundgaenge.ui.ausprobieren.titel')}>
             {t('werkbank.rundgaenge.ui.ausprobieren')}
+          </Knopf>
+        </div>
+      </div>
+      <div className="speicherleiste">
+        <span className="status" />
+        <div className="knoepfe">
+          <Knopf art="haupt" onClick={kopieren}>
+            {t('werkbank.rundgaenge.ui.kopieren')}
           </Knopf>
         </div>
       </div>
@@ -261,19 +283,70 @@ function FremderRundgang({ z, r }: { z: RundgaengeZustand; r: WerkbankRundgang }
   );
 }
 
+/** Ergebnis von „Ausprobieren“, wenn es nicht geht: Satz und, bei Fehlern der Prüfung, die Fehler mit Zeile. */
+interface Probe {
+  text: string;
+  fehler?: ZeilenFehler[];
+}
+
 /** Prüfen und im neuen Fenster nur für mich starten; liefert eine Meldung, wenn das nicht geht. */
-async function probieren(yaml: string): Promise<string | undefined> {
+async function probieren(yaml: string, herkunft?: string): Promise<Probe | undefined> {
   try {
-    const p = await rundgaengeApi.pruefen(yaml);
-    if (p.fehler.length || !p.rundgang) return t('werkbank.rundgaenge.fehler.pruefung');
-    return starteProbe(p.rundgang, p.pfad) ? undefined : t('werkbank.rundgaenge.ui.fenster.blockiert');
+    const p = await rundgaengeApi.pruefen(yaml, herkunft);
+    if (p.fehler.length || !p.rundgang) return { text: t('werkbank.rundgaenge.fehler.pruefung'), fehler: p.fehler };
+    return starteProbe(p.rundgang, p.pfad) ? undefined : { text: t('werkbank.rundgaenge.ui.fenster.blockiert') };
   } catch (x) {
-    return (x as Error).message;
+    return { text: (x as Error).message };
   }
 }
 
-/** Kopie eines fremden Rundgangs: eigene starten nie von selbst. */
-const alsKopie = (yaml: string) => yaml.replace(/^start: .*$/m, 'start: manuell');
+/**
+ * Entwurf, der beim Ausprobieren noch nicht gespeichert war (#1533): Öffnet der Browser die Probe nicht in einem
+ * eigenen Fenster, sondern an derselben Stelle, kommt er beim Zurückkehren wieder – höchstens eine Stunde lang.
+ */
+const ENTWURF = (schluessel: string | undefined) => `ablago:rundgang-entwurf:${schluessel ?? 'neu'}`;
+const ENTWURF_DAUER = 60 * 60 * 1000;
+const entwurf = {
+  merke(k: string, text: string) {
+    try {
+      localStorage.setItem(k, JSON.stringify({ text, zeit: Date.now() }));
+    } catch {
+      /* ohne Speicher bleibt der Entwurf nur in diesem Fenster */
+    }
+  },
+  hole(k: string): string | null {
+    try {
+      const x = JSON.parse(localStorage.getItem(k) ?? 'null') as { text?: unknown; zeit?: unknown } | null;
+      return x && typeof x.text === 'string' && typeof x.zeit === 'number' && Date.now() - x.zeit < ENTWURF_DAUER ? x.text : null;
+    } catch {
+      return null;
+    }
+  },
+  weg(k: string) {
+    try {
+      localStorage.removeItem(k);
+    } catch {
+      /* nichts gemerkt */
+    }
+  },
+};
+
+/** Kopie eines fremden Rundgangs: eigene starten nie von selbst – `seite` und `leise` (zu `start: erster_besuch`) fallen weg. */
+const alsKopie = (yaml: string) => yaml.replace(/^start: .*$/m, 'start: manuell').replace(/^(seite|leise): .*\n/gm, '');
+
+/** Beim Öffnen des Editors: ein gemerkter Entwurf vom Ausprobieren (sonst der Ausgangstext); gelesen wird einmal. */
+function useGemerkterEntwurf(rundgang: WerkbankRundgang | undefined, kopieVon: WerkbankRundgang | undefined, start: string) {
+  const entwurfKey = ENTWURF(kopieVon ? undefined : rundgang?.schluessel);
+  const [gemerkt] = useState(() => {
+    const x = entwurf.hole(entwurfKey);
+    entwurf.weg(entwurfKey);
+    return x ?? start;
+  });
+  return { entwurfKey, gemerkt };
+}
+
+const entwurfMeldung = (gemerkt: string, start: string) =>
+  gemerkt !== start ? { art: 'gut' as const, text: t('werkbank.rundgaenge.ui.entwurf-zurueck') } : undefined;
 
 function RundgangEditor({
   z,
@@ -288,15 +361,17 @@ function RundgangEditor({
 }) {
   const neu = !rundgang;
   const start = rundgang?.yaml ?? (kopieVon ? alsKopie(kopieVon.yaml) : t('werkbank.rundgaenge.ui.vorlage'));
+  const { entwurfKey, gemerkt } = useGemerkterEntwurf(rundgang, kopieVon, start);
   const [basis, setBasis] = useState(start);
-  const [text, setText] = useState(start);
+  const [text, setText] = useState(gemerkt);
   // Gleichzeitig bearbeiten (#917): der Stand, auf dem diese Bearbeitung beruht.
   const [stand917, setStand917] = useState(rundgang?.geaendert);
   const [fehler, setFehler] = useState<ZeilenFehler[] | null>(null);
-  const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
+  const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string } | undefined>(() => entwurfMeldung(gemerkt, start));
   const [sendet, setSendet] = useState(false);
   const feld = useRef<HTMLTextAreaElement>(null);
   const zuruecksetzen = () => {
+    entwurf.weg(entwurfKey);
     setText(rundgang?.yaml ?? start);
     setBasis(rundgang?.yaml ?? start);
     setStand917(rundgang?.geaendert);
@@ -347,6 +422,7 @@ function RundgangEditor({
       const r = neu ? await rundgaengeApi.neu(text) : await rundgaengeApi.aendern(lokal(rundgang.schluessel), text, stand917);
       await z.laden();
       loeseWache();
+      entwurf.weg(entwurfKey);
       setBasis(text);
       setStand917(r.geaendert);
       if (neu || `${EIGEN}:${r.schluessel}` !== rundgang?.schluessel) {
@@ -416,8 +492,10 @@ function RundgangEditor({
             <Knopf onClick={() => void pruefen()}>{t('werkbank.rundgaenge.ui.pruefen')}</Knopf>
             <Knopf
               onClick={async () => {
+                if (ent.geaendert) entwurf.merke(entwurfKey, text);
                 const m = await probieren(text);
-                if (m) setMeldung({ art: 'schlecht', text: m });
+                if (m?.fehler) setFehler(m.fehler);
+                if (m) setMeldung({ art: 'schlecht', text: m.text });
               }}
               title={t('werkbank.rundgaenge.ui.ausprobieren.titel')}>
               {t('werkbank.rundgaenge.ui.ausprobieren')}
@@ -462,20 +540,26 @@ function RundgangEditor({
   );
 }
 
-/** Fehler der Prüfung mit Zeile; ein Klick auf die Zeile setzt die Schreibmarke dorthin. */
-function ZeilenFehlerListe({ fehler, zurZeile }: { fehler: ZeilenFehler[]; zurZeile(zeile: number): void }) {
+/**
+ * Fehler der Prüfung mit Zeile; ein Klick auf die Zeile setzt die Schreibmarke dorthin. Ohne `zurZeile` (Datei nur
+ * zum Ansehen) steht die Zeile als Text da. Je Fehler eine Zeile: Zeile und Text nebeneinander, ohne Überlappung (#1533).
+ */
+function ZeilenFehlerListe({ fehler, zurZeile }: { fehler: ZeilenFehler[]; zurZeile?(zeile: number): void }) {
   return (
-    <ul className="zeilenfehler">
+    <span className="zeilenfehler">
       {fehler.map((f, i) => (
-        <li key={i}>
-          {f.zeile !== null && (
-            <>
-              <Knopf onClick={() => zurZeile(f.zeile!)}>{t('werkbank.rundgaenge.ui.zeile', { zeile: f.zeile })}</Knopf>:{' '}
-            </>
-          )}
-          {f.text}
-        </li>
+        <span key={i}>
+          {f.zeile !== null &&
+            (zurZeile ? (
+              <Knopf groesse="klein" onClick={() => zurZeile(f.zeile!)}>
+                {t('werkbank.rundgaenge.ui.zeile', { zeile: f.zeile })}
+              </Knopf>
+            ) : (
+              <b>{t('werkbank.rundgaenge.ui.zeile', { zeile: f.zeile })}</b>
+            ))}
+          <span>{f.text}</span>
+        </span>
       ))}
-    </ul>
+    </span>
   );
 }

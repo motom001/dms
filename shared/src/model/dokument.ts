@@ -68,6 +68,11 @@ export interface Dokument {
    */
   eingangNr?: number | null;
   /**
+   * Eingangskanäle (#1489): für wen das Dokument kam – beim E-Mail-Abruf „für“ des Postfachs, beim Eingangsordner die
+   * Person des Unterordners (Id der Benutzer-Mappe). Fehlt sonst.
+   */
+  eingangFuer?: string | null;
+  /**
    * E-Mail-Postfach (#999): Das ist die abgeholte E-Mail selbst („Original-E-Mail“, .eml) – als letzte Anlage am letzten
    * Anhang oder, ohne Anhänge, als Hauptdokument. Erkennung, Klassifizieren und KI lassen sie weg. Fehlt sonst.
    */
@@ -81,6 +86,9 @@ export const HERKUNFT = {
   webdav: t('gemeinsam.model.ueber-webdav'),
   paket: t('gemeinsam.model.von-einem-paket'),
   eingang: 'Eingangskanal',
+  // Eingangskanäle (#1489): E-Mail-Postfach und Eingangsordner (Scanner, Laufwerk) – vorher „hochgeladen“.
+  email: t('gemeinsam.model.per-e-mail'),
+  ordner: t('gemeinsam.model.aus-dem-eingangsordner'),
   zurueckgeholt: 'zurückgeholt',
   bearbeitet: t('gemeinsam.model.in-ablago-bearbeitet'),
   geschwaerzt: t('gemeinsam.model.in-ablago-geschwaerzt'),

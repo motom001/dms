@@ -30,7 +30,9 @@ At the top you see the areas:
 - **Your name** – opens a menu with *My account* (also appearance and absence), *Report a problem*, *About Ablago* and sign-out.
 - **The assistant at the bottom right** – in the same place on every page: tips, questions and the manual, see [Assistant](assistent.md).
 
-The first time you sign in, a short [tour](entdecken.md#rundgang) shows you these places. You can find it again at any time in the assistant under **Tips** → *All tips and tours*.
+The first time you open the Library, a short [tour](entdecken.md#rundgang) shows you these places; there are separate short tours for your first folder and for My account. You can find them again at any time in the assistant under **Tips** → *All tips and tours*.
+
+What the different buttons mean – blue, green, with a border, dashed – is shown on the page [What buttons look like](knoepfe.md).
 
 The Library is divided into **three columns**, from large to small:
 
@@ -72,6 +74,10 @@ Before something with consequences happens – deleting, signing out, discarding
 - ++esc++ or **Cancel** closes the question without doing anything.
 - For things with very serious consequences (restoring a backup, changing the key), you type a word to confirm.
 - On a smartphone, the question appears at the bottom of the screen, with large buttons.
+
+## What Ablago may do {#was-ablago-darf}
+
+Whoever administers Ablago decides once **what Ablago may do**: which packages it may use – for example templates only, or also helpers that use the internet – and how much it does on its own. Ablago keeps to this and no longer asks each time within this limit. Nothing changes for your daily work; if you miss a feature from a package, ask the person who administers Ablago. Built-in helpers such as text recognition always work.
 
 ## Signing out {#abmelden}
 

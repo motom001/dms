@@ -5,6 +5,7 @@
 import { randomUUID } from 'node:crypto';
 import { type Mappentyp, POST_RICHTUNG, POST_STAND } from '../../../shared/src/model';
 import { ALLE_TYPEN } from '../../../shared/src/pakete';
+import { SYSTEM_SYMBOLE } from '../../../shared/src/ansichtsymbole';
 import { kinderVon, zeigtAlleTypen } from '../../../shared/src/sichten';
 import type { Kern } from '../kern';
 import { protokoll } from '../protokoll/protokoll';
@@ -59,6 +60,7 @@ export class Systemsichten {
         position: 10,
         typen: [post.id],
         bedingungen: bed('richtung', POST_RICHTUNG.eingehend),
+        symbol: SYSTEM_SYMBOLE.eingegangen,
       });
       await this.repo.legeSichtAn(randomUUID(), {
         name: 'Versendet',
@@ -67,6 +69,7 @@ export class Systemsichten {
         position: 20,
         typen: [post.id],
         bedingungen: bed('richtung', POST_RICHTUNG.ausgehend),
+        symbol: SYSTEM_SYMBOLE.versendet,
       });
     }
     await this.einstellungen?.schreibe('post', { sichten: true, neu: neu.id });

@@ -53,6 +53,25 @@ Zum gewählten Beginn – oder sofort mit **Alle jetzt abmelden** bzw. [Jetzt so
     - die geplante [Sicherung](sicherung.md) und die Probe-Wiederherstellung,
     - der Abruf der [Postfächer](postfaecher.md) und des [Eingangsordners](eingangsordner.md).
 
+## Nichts geht rein oder raus
+
+Solange der Wartungsmodus aktiv ist, holt Ablago nichts von außen und schickt nichts hinaus. So kannst du in Ruhe sichern, wiederherstellen oder eine Kopie als [Testsystem aus einem Snapshot](snapshots.md#prufen) starten. Der [Systemzustand](speicherplatz.md) und die [Übersicht](uebersicht.md) zeigen dann „Wartungsmodus: nichts geht rein oder raus“.
+
+Je Art ist festgelegt, was mit dem geschieht, das in dieser Zeit fällig wäre:
+
+| Was | Im Wartungsmodus | Nach dem Ausschalten |
+| --- | --- | --- |
+| Abruf der [Postfächer](postfaecher.md) | ruht; **Jetzt abrufen** meldet „ruht“ | wird nachgeholt – die Mails bleiben bis dahin auf dem Mailserver |
+| [Eingangsordner](eingangsordner.md) | ruht | wird nachgeholt – die Dateien bleiben bis dahin im Ordner |
+| [E-Mail-Versand](e-mail-versand.md) (Benachrichtigungen, Zusammenfassung, Erinnerungen, Testmail) | **ausgelassen** – im [Protokoll](fehlersuche.md#protokoll) steht „E-Mail ausgelassen (Wartungsmodus)“ | wird nicht nachgeholt; Fristen und die tägliche Zusammenfassung laufen beim nächsten regulären Termin |
+| Zustellungen nach außen (Webhook-Ziele der [Automatisierungen](automatisierungen.md)) | ruhen, bleiben in der Warteschlange | werden nachgeholt |
+| Aufrufe von außen (Adressen der Automatisierungen) | **abgelehnt** mit 503 – der Absender soll es später noch einmal versuchen | – |
+| [Pakete](pakete.md): Zustellungen von Ereignissen | ruhen, bleiben in der Warteschlange | werden nachgeholt |
+| Pakete: Aktionen und Schnittstellen | **abgelehnt** („Während der Wartung laufen keine Pakete“) | bitte danach noch einmal |
+| Zeitplan der [Automatisierungen](automatisierungen.md) („Datum in N Tagen“) | ruht | verpasste Tage werden nachgeholt (wie nach einem Neustart) |
+
+Der Wartungsmodus überdauert einen Neustart. Ein Testsystem, das aus einem Snapshot startet, in dem der Modus an war, bleibt also ruhig, bis du ihn dort beendest.
+
 Unter **Angemeldete Sitzungen** siehst du, wer gerade mit welchem Gerät angemeldet ist und wann zuletzt aktiv.
 
 ## Ausschalten

@@ -53,6 +53,16 @@ A package never changes the archive mode of an **existing** folder type – neit
 
 Under **Workbench → Maintenance → Maintenance operations → Check all files**, Ablago reads every stored file – including older versions – and compares it with its checksum (SHA-256). Deviations ("content changed", "file missing") are listed with document and folder and in the log. Check this, for example, after moving the storage and before destroying paper.
 
+### On a schedule { #alle-dateien-prufen-zeitplan }
+
+So that immutability is proven regularly (GoBD) without you having to think about it, the check also runs on a **schedule** – in the same section under **Schedule**:
+
+- **Check regularly:** off (default), **monthly** (on the 1st of the month) or **weekly** on a weekday, each at a **time**. Not at the same time as the automatic [backup](sicherung.md#zeitplan-und-aufbewahrung): if it is switched on, there must be at least one hour between the two times.
+- The run **doesn't noticeably slow down the archive**: after each file it pauses briefly (at least as long as checking took), and while a backup, a restore or [maintenance mode](wartungsmodus.md) is running, it waits. **Cancel** stops a running check; the next date then starts from the beginning.
+- If Ablago restarts, the check **continues** where it was: it records its progress every 25 files. Below it says "Started on …: n of m files checked".
+- The **result** goes to the log and the [records](pakete.md#recht-nachweise) (`unveraenderbarkeit.pruefung`) as with a manual run. With **findings**, a red notice appears on the workbench start page and an item in the daily summary to the administrators (with email sending set up). A later run without findings – scheduled or by hand – removes the notice.
+- Packages with the right [Read setup](pakete.md#recht-einrichtung) see the schedule under `unveraenderbarkeit.zeitplan` ("aus", "monatlich/03:30" or "woechentlich/6/03:30"); comparing two states shows when it changed.
+
 ## Backup {#sicherung}
 
 The archive settings belong to the folder type and are part of every [backup](sicherung.md); after a restore they apply unchanged.

@@ -589,6 +589,62 @@ describe('Paket-Läufer (#338): Ablauf', () => {
     assert.equal(await l.aktion('echo', 'test', {}), 'Aktion ok');
   });
 
+  it('Verlauf (#1491): Ergebnistext und Mappe des Laufs; abgelehnte Schreibversuche machen „ok“ zur Warnung', async () => {
+    const { d, l } = await aufbau();
+    await installiere(d, 'echo', ECHO);
+    await l.start();
+    await warte(async () => (await l.uebersicht()).laeuft);
+    await d.kern.ereignis('dokument.hochgeladen', { dokument: 'd1', mappe: '00000000-0000-4000-8000-00000000a491' });
+    await d.ereignisse.verteile();
+    await warte(async () => (await d.kern.repo.ereignisStand()).echo?.zugestellt === 1);
+    const letzte = (await l.uebersicht()).pakete[0].letzte[0];
+    await warte(async () => (await d.kern.repo.paketVerlauf('echo', { anzahl: 10 })).some((e) => e.art === 'ereignis'));
+    const [e] = (await d.kern.repo.paketVerlauf('echo', { anzahl: 10 })).filter((x) => x.art === 'ereignis');
+    assert.equal(e.ergebnis, 'ok');
+    assert.equal(e.text, letzte.text.slice(0, 300), 'derselbe Text wie unter „Zuletzt“');
+    assert.equal(e.bezug?.mappe, '00000000-0000-4000-8000-00000000a491');
+    // Eine Aktion mit Ergebnistext: steht im Verlauf (vorher leer bei „ok“).
+    assert.equal(await l.aktion('echo', 'test', {}), 'Aktion ok');
+    await warte(async () => (await d.kern.repo.paketVerlauf('echo', { anzahl: 10 })).some((x) => x.art === 'aufruf'));
+    assert.equal((await d.kern.repo.paketVerlauf('echo', { anzahl: 10 })).find((x) => x.art === 'aufruf')?.text, 'Aktion ok');
+    // Schreibversuche, die die API ablehnt (409, 404, 400), merkt sich der Läufer je Aufruf; GET und 5xx nicht.
+    const intern = l as unknown as {
+      aufrufe: Map<number, unknown>;
+      merkeSchreibfehler(nr: number, m: string, p: string, r: { status: number; body: Buffer }): void;
+      nimmSchreibfehler(nr: number): string[];
+      verlauf(p: string, art: string, eingang: Record<string, unknown>, opt: object, r: object): void;
+    };
+    intern.aufrufe.set(4910, {});
+    intern.merkeSchreibfehler(4910, 'PUT', '/mappen/m1?x=1', { status: 409, body: Buffer.from(JSON.stringify({ fehler: 'Geändert' })) });
+    intern.merkeSchreibfehler(4910, 'POST', '/mappen', { status: 404, body: Buffer.from('nicht json') });
+    intern.merkeSchreibfehler(4910, 'GET', '/mappen/m1', { status: 404, body: Buffer.from('') });
+    intern.merkeSchreibfehler(4910, 'PUT', '/mappen/m1', { status: 500, body: Buffer.from('') });
+    intern.merkeSchreibfehler(4911, 'PUT', '/mappen/m1', { status: 409, body: Buffer.from('') });
+    intern.aufrufe.delete(4910);
+    const fehler = intern.nimmSchreibfehler(4910);
+    assert.deepEqual(fehler, ['PUT /mappen/m1 → 409 (Geändert)', 'POST /mappen → 404']);
+    assert.deepEqual(intern.nimmSchreibfehler(4910), [], 'danach vergessen');
+    assert.deepEqual(intern.nimmSchreibfehler(4911), [], 'ohne laufenden Aufruf nichts');
+    intern.verlauf(
+      'echo',
+      'ereignis',
+      { art: 'mappe.gespeichert', daten: {} },
+      { schreibfehler: fehler },
+      {
+        ok: true,
+        rc: 0,
+        text: 'Rechnung: Status neu',
+        ms: 5,
+        speicherMB: 1,
+        fehler: null,
+      },
+    );
+    await warte(async () => (await d.kern.repo.paketVerlauf('echo', { anzahl: 10 })).some((x) => x.was === 'mappe.gespeichert'));
+    const w = (await d.kern.repo.paketVerlauf('echo', { anzahl: 10 })).find((x) => x.was === 'mappe.gespeichert')!;
+    assert.equal(w.ergebnis, 'warnung', 'nicht „ok“');
+    assert.equal(w.text, 'Schreiben abgelehnt: PUT /mappen/m1 → 409 (Geändert); POST /mappen → 404 – Rechnung: Status neu');
+  });
+
   it('Ausprobieren (#1004): Probemodus ohne Dienstkonto – die API antwortet 403, das Paket scheitert; kein Ereignis im Verlauf', async () => {
     const { d, l } = await aufbau();
     await installiere(d, 'echo', ECHO);
@@ -1327,6 +1383,7 @@ describe('Paket-Läufer (#338): gebaut wie im Betrieb', () => {
     });
     const ergebnisse: Array<{ ok: boolean; text: string; fehler: string | null }> = [];
     const logs: string[] = [];
+    let geladen = 0;
     await new Promise<void>((fertig, fehler) => {
       const uhr = setTimeout(() => {
         kind.kill();
@@ -1340,15 +1397,26 @@ describe('Paket-Läufer (#338): gebaut wie im Betrieb', () => {
             pakete: [{ id: 'echo', version: '1.0.0', modul: new Uint8Array(ECHO), daten: [], netz: [] }],
             grenzen: { speicherMB: 16, sekunden: 5, parallel: 1 },
           });
-        else if (m.art === 'geladen') {
+        else if (m.art === 'geladen' && geladen++ === 0) {
           assert.equal(m.pakete[0].fehler, null);
           kind.send({ art: 'aufruf', nr: 1, paket: 'echo', eingang: { art: 'ereignis', json: '{"art":"x"}' } });
+        } else if (m.art === 'geladen') {
+          // Angehalten (#1563): Der Läufer lädt das Paket nicht; ein Aufruf läuft ins Leere.
+          assert.deepEqual(m.pakete, []);
+          kind.send({ art: 'aufruf', nr: 3, paket: 'echo', eingang: { art: 'aktion', json: '{}' } });
         } else if (m.art === 'frage')
           kind.send({ art: 'antwort', nr: m.nr, antwort: { status: 200, body: new TextEncoder().encode('{}') } });
         else if (m.art === 'log') logs.push(m.text);
         else if (m.art === 'ergebnis') {
           ergebnisse.push(m);
           if (m.nr === 1) kind.send({ art: 'aufruf', nr: 2, paket: 'echo', eingang: { art: 'aktion', json: '{}' } });
+          else if (m.nr === 2)
+            kind.send({
+              art: 'pakete',
+              pakete: [{ id: 'echo', version: '1.0.0', modul: new Uint8Array(ECHO), daten: [], netz: [] }],
+              grenzen: { speicherMB: 16, sekunden: 5, parallel: 1 },
+              angehalten: ['echo'],
+            });
           else {
             clearTimeout(uhr);
             kind.disconnect();
@@ -1363,8 +1431,10 @@ describe('Paket-Läufer (#338): gebaut wie im Betrieb', () => {
       [
         [true, null],
         [true, null],
+        [false, ergebnisse[2]?.fehler ?? null],
       ],
     );
+    assert.ok(ergebnisse[2].fehler, 'angehalten: kein Lauf');
     assert.equal(ergebnisse[1].text, 'Aktion ok');
     assert.match(logs.join(), /"art":"x"/);
   });

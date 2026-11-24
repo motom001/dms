@@ -60,6 +60,8 @@ Die Vorlagen nutzen **`:stabil`**. So bekommst du beim Aktualisieren nur Version
 
 Ohne Tag (z. B. `docker pull ghcr.io/motom001/dms`) nimmt Docker `:latest`. Das tun auch viele NAS-Oberflächen, wenn du kein Tag einträgst. Du bekommst dann die neueste Version, nicht die geprüfte: Trag `:stabil` ein, wenn du die wöchentlich geprüfte Version möchtest.
 
+**Nur stabile Versionen als eigenes Image:** `ghcr.io/motom001/ablago:<Version>` ist dasselbe Image wie `ghcr.io/motom001/dms:<Version>` (gleicher Prüfwert, amd64 und arm64, gleicher Herkunftsnachweis), trägt aber nur Versionen, die zu `:stabil` befördert wurden – ohne `:latest` und ohne `:stabil`. Es ist für App-Kataloge gedacht, die selbst nach dem neuesten Versions-Tag suchen (etwa TrueNAS mit Renovate). Wird `:stabil` zurückgesetzt, verschwindet dort nichts; der Katalog bekommt mit der nächsten Beförderung wieder eine neuere Version. Für eine eigene Compose-Datei bleibt `ghcr.io/motom001/dms:stabil` die Empfehlung.
+
 !!! note "Zwei verschiedene „Latest“"
     - Das **Image-Tag `:latest`** zeigt auf die **zuletzt veröffentlichte** Version. Es wandert mit jedem Release.
     - Die Markierung **„Latest“ bei den [Releases auf GitHub](https://github.com/motom001/dms/releases)** trägt die **stabile** Version, also dieselbe wie `:stabil`. Nach ihr richtet sich der Hinweis auf eine neue Version in der Werkbank.
@@ -72,7 +74,7 @@ Ohne Tag (z. B. `docker pull ghcr.io/motom001/dms`) nimmt Docker `:latest`. Das 
 
 Wer neue Versionen früher haben möchte, nimmt `:latest`; wer jeden Stand vor dem Release sehen möchte, `:main`. Der Hinweis auf eine neue Version unter **Werkbank → Systemzustand → Version und Updates** richtet sich nach der stabilen Version: Mit `:stabil` erscheint er einmal pro Woche. Mit `:latest` oder `:main` läuft meist eine Version über der stabilen; dann nennt er wie bisher neuere Stände auf `main`.
 
-Bei zwei Containern bleibt `postgres:17` für Sicherheits-Updates der Reihe 17 offen – unabhängig vom Tag von Ablago.
+Bei zwei Containern bekommt PostgreSQL seine Sicherheits-Updates über sein eigenes Image (`postgres:18` für die Reihe 18) – unabhängig vom Tag von Ablago.
 
 !!! note "Wenn eine stabile Version einen schweren Fehler hat"
     Der Maintainer setzt `:stabil` dann auf die vorige Version zurück (Workflow *:stabil zurücksetzen*, geht auch vorwärts) und hält die fehlerhafte Version zurück, damit der nächste Wochenlauf sie nicht wieder nimmt. Was passiert ist, steht in den [Releases](https://github.com/motom001/dms/releases).
@@ -92,9 +94,35 @@ Bei zwei Containern bleibt `postgres:17` für Sicherheits-Updates der Reihe 17 o
 
     Vor jeder Veröffentlichung prüft die CI die Images außerdem auf bekannte Sicherheitslücken. Einmal pro Woche gleicht das Projekt zusätzlich die ausgelieferten Images `:stabil` und `:latest` mit neuen Sicherheitsmeldungen ab, mit einer zweiten Datenbank und für wichtige Programme wie poppler zusätzlich direkt mit der öffentlichen Datenbank NVD – auch wenn Alpine einen Fall noch nicht führt. Wie schnell eine Korrektur kommt, hängt von der Schwere ab; die Zielzeiten stehen in der [Sicherheitsrichtlinie](https://github.com/motom001/dms/blob/main/SECURITY.md#zuständigkeit-und-reaktionszeiten). Du bekommst die Korrektur wie jedes Update: über `:stabil`, bei dringenden Fällen ohne die Woche abzuwarten.
 
+### PostgreSQL 18 (ab 0.306) { #postgresql-18 }
+
+Ab Ablago 0.306 ist **PostgreSQL 18** der Standard: `dms-komplett` bringt 18 mit, die Vorlagen schlagen `postgres:18` vor, und alle automatischen Tests laufen mit 18. Auf einem NAS schaffte Ablago mit 18 unter hoher Last gut ein Drittel mehr Anfragen bei kürzeren Antwortzeiten ([#1456](https://github.com/motom001/dms/issues/1456)). Eine Datenbank von PostgreSQL 17 kann 18 nicht öffnen; der Umzug geht über eine Sicherung.
+
+!!! warning "Beim Update beachten"
+    **dms-komplett** startet mit dem bisherigen Datenbank-Ordner nicht mehr. Die Seite unter der gewohnten Adresse zeigt dann „Ablago konnte nicht starten“ mit Grund und Weg; gelöscht wird nichts. So ziehst du um:
+
+    1. Image auf **`ghcr.io/motom001/dms-komplett:0.305.0`** stellen – die letzte Version mit PostgreSQL 17 – und den Container starten. Hast du schon vor dem Update gesichert, kannst du diesen Schritt und den nächsten überspringen.
+    2. **Werkbank → Sicherung → Jetzt sichern.** Halte das [Notfallblatt](verschluesselung.md#notfallblatt) bereit, falls der Schlüssel nicht mehr im Ordner `geheim` liegt.
+    3. Container stoppen. Den Ordner für `/data/postgres` **umbenennen** (z. B. in `postgres-17`) und einen leeren Ordner mit dem alten Namen anlegen.
+    4. Image wieder auf `:stabil` (oder die neue Version) stellen und starten. Der Assistent erscheint: **Aus einer Sicherung wiederherstellen** wählen und die Sicherung aus Schritt 2 einspielen.
+    5. Anmelden und kurz prüfen (Mappen, Dokumente, **Werkbank → Systemzustand**). Den Ordner `postgres-17` erst löschen, wenn alles läuft.
+
+    **Zwei Container** (`dms` und `postgres:17`): Du musst nichts tun. Ablago läuft mit PostgreSQL 17 weiter und schreibt beim Start einen Hinweis ins Protokoll. Umziehen kannst du, wann es dir passt:
+
+    1. **Werkbank → Sicherung → Jetzt sichern.**
+    2. In der Compose-Datei beim Dienst `db`: `image: postgres:18`, unter `environment` die Zeile `PGDATA: /var/lib/postgresql/data` und beim Volume einen **neuen, leeren Ordner** statt des bisherigen (z. B. `…/dms/postgres18:/var/lib/postgresql/data`). Am einfachsten übernimmst du die Zeilen aus der [aktuellen Vorlage](https://github.com/motom001/dms/tree/main/deploy).
+    3. Das Projekt neu erstellen. Der Assistent erscheint: **Aus einer Sicherung wiederherstellen** wählen und die Sicherung einspielen.
+    4. Prüfen wie oben; den alten Ordner erst löschen, wenn alles läuft.
+
+    Ohne die Zeile `PGDATA` legt `postgres:18` die Datenbank nicht in den eingebundenen Ordner, sondern unter `/var/lib/postgresql/18/docker` in ein unbenanntes Volume – beim Neuanlegen des Containers wäre sie weg. Zeigt das Volume noch auf den alten Ordner, startet PostgreSQL 18 nicht (die Daten bleiben unverändert); dann fehlt der neue, leere Ordner.
+
+- **Wie lange es dauert:** Sichern und Einspielen gehen bei einer Ablage mit 200.000 Mappen in wenigen Minuten (gemessen: siehe [Wiederherstellen](wiederherstellen.md#dauer)). Danach frischt Ablago die Statistik der Datenbank auf (`ANALYZE`), damit sie gleich wieder schnell ist.
+- **Sicherungen gelten für beide Versionen:** Ablagos Sicherung hängt nicht an der Hauptversion von PostgreSQL. Eine Sicherung aus einer Installation mit 18 (z. B. aus dem TrueNAS-Katalog) lässt sich in eine mit 17 einspielen und umgekehrt – solange die Version von Ablago gleich oder neuer ist als die der Sicherung.
+- **Eigene Datenbank:** Ablago braucht mindestens **PostgreSQL 16**; getestet ist 18. Mit 15 oder älter startet Ablago nicht und nennt den Grund. Melde Ablago mit **SCRAM** an, nicht mit MD5: MD5-Passwörter sind ab PostgreSQL 18 abgekündigt (siehe [Datenbank-Anbindung](installation.md#datenbank-anbindung)).
+
 ### Ohne Administratorrechte (root) { #ohne-root }
 
-Ablago läuft im Container nicht mehr als Administrator (root), sondern als eigener Benutzer: wie der Besitzer deiner Ordner, sonst `ablago` (Kennung 1000, Gruppe 1000). Die Programme, mit denen Ablago PDFs liest und rastert (poppler und qpdf), laufen noch einmal getrennt davon als Benutzer `ablago-werkzeug` (61000) – mit einer Grenze für den Arbeitsspeicher (Vorgabe 1024 MB je Aufruf), die Rechenzeit und die Größe einer Datei. Sie dürfen nur in ihren eigenen Arbeitsordner schreiben und kommen weder an die Dateien, die Ablago unter `/data` anlegt (nur für Ablago lesbar), noch an die Datenbank. Braucht ein PDF mehr, scheitert nur dieser eine Schritt mit einer Meldung (z. B. beim Schwärzen); Ablago läuft weiter. Das Image braucht dafür keine zusätzlichen Rechte von Docker.
+Ablago läuft im Container nicht mehr als Administrator (root), sondern als eigener Benutzer: wie der Besitzer deiner Ordner, sonst `ablago` (Kennung 1000, Gruppe 1000). Die Programme, mit denen Ablago PDFs liest und rastert (poppler und qpdf), laufen noch einmal getrennt davon als Benutzer `ablago-werkzeug` (61000) – mit einer Grenze für den Arbeitsspeicher (Vorgabe 1024 MB je Aufruf), die Rechenzeit und die Größe einer Datei. Sie dürfen nur in ihren eigenen Arbeitsordner schreiben und kommen weder an die Dateien, die Ablago unter `/data` anlegt (nur für Ablago lesbar), noch an die Datenbank. Braucht ein PDF mehr, scheitert nur dieser eine Schritt mit einer Meldung (z. B. beim Schwärzen); Ablago läuft weiter. Das Image braucht dafür keine zusätzlichen Rechte von Docker. Ob das wirkt, steht unter **Werkbank → Systemzustand → Laufzeit** in der Zeile „Dokumentwerkzeuge“, z. B. „getrennt, Speichergrenze 1024 MB“ (#1449). Startet der Container mit `docker run --user` oder `user:` in der Compose-Datei, kann das Image die Werkzeuge nicht trennen: Dann steht dort „ohne eigenen Benutzer“, und oben im Systemzustand weist ein Hinweis darauf hin. Die Grenzen gelten weiter; für die Trennung `--user` bzw. `user:` weglassen und den Benutzer, wenn nötig, mit `PUID` und `PGID` festlegen.
 
 **Unter welchem Benutzer Ablago läuft:** Ablago richtet sich nach dem Besitzer deiner Ordner. Gehören die eingebundenen Ordner (`/data/files`, `/data/geheim`, `/data/sicherung`, gegebenenfalls `/data/export` oder `/data` selbst) einem Benutzer deines NAS, etwa `1026` und Gruppe `100` auf einer Synology, läuft Ablago als genau dieser Benutzer. Du kommst dann über die Dateifreigabe weiter an Sicherungen und Exporte, ohne etwas einzutragen. Gehören die Ordner root (etwa ein frisches Docker-Volume oder Ordner, die Docker selbst angelegt hat), gilt die Vorgabe `1000:1000`. Root (0) und die Kennung der Dokumentwerkzeuge (61000) nimmt Ablago dabei nie, auch nicht als Gruppe. Das Protokoll sagt es in einem Satz, z. B. `Ablago läuft als Benutzer 1026 und Gruppe 100 – wie der Besitzer des Datenordners (/data/files).` Dasselbe steht auf der Startseite und unter **Werkbank → Systemzustand → Laufzeit** („Benutzer von Ablago“, „Gruppe von Ablago“, jeweils mit Herkunft).
 
@@ -119,7 +147,7 @@ Jede Änderung auf deinen Ordnern steht im Protokoll, auf der Startseite (solang
 - **Befehl `dms`:** `docker exec <container> dms …` läuft von selbst als derselbe Benutzer wie Ablago, auch ohne `PUID` in der Compose-Datei.
 - **Zurück auf die vorige Version:** Ältere Versionen vor 0.299.0 laufen als root und lesen die Ordner weiter. 0.299.0 selbst kennt die Wahl nach dem Besitzer noch nicht: Ohne `PUID`/`PGID` übernimmt es die Ordner für `1000:1000`.
 
-**Schon mit 0.299.0 aktualisiert?** Dann gehören deine Ordner jetzt `1000:1000`, und Ablago bleibt dabei. Gibt es nichts umzuschreiben, ändert sich nichts. Sollen die Ordner wieder deinem NAS-Benutzer gehören, damit du über die Dateifreigabe herankommst: auf dem NAS einmal `sudo chown -R 1026:100 /volume1/docker/dms/files /volume1/docker/dms/geheim /volume1/docker/dms/sicherung` ausführen (Zahlen und Pfade an dein NAS angepasst) und den Container neu starten. Ablago läuft danach von selbst als dieser Benutzer.
+**Schon mit 0.299.0 aktualisiert?** Dann gehören deine Ordner jetzt `1000:1000`, und Ablago bleibt dabei. Gibt es nichts umzuschreiben, ändert sich nichts. Sollen die Ordner wieder deinem NAS-Benutzer gehören, damit du über die Dateifreigabe herankommst: auf dem NAS einmal `sudo chown -R 1026:100 /volume1/docker/dms/files /volume1/docker/dms/geheim /volume1/docker/dms/sicherung` ausführen (Zahlen und Pfade an dein NAS angepasst) und den Container neu starten. Ablago läuft danach von selbst als dieser Benutzer. Solange `PUID` und `PGID` fehlen, die Vorgabe gilt und die Ordner auf einem Ordner des NAS liegen (Bind-Mount, kein benanntes Docker-Volume), weist die Übersicht der Werkbank darauf hin (#1449).
 
 **Wenn der Container nicht startet:** Kann Ablago in einen seiner Ordner nicht schreiben, zeigt die Startseite, was Ablago gesehen hat, und die Abhilfe als fertige Zeilen zum Einfügen. Beispiel: `/data/files` gehört `1026:100`, `/data/geheim` aber `1027:101`. Dann steht dort, welcher Ordner wem gehört, und darunter:
 
@@ -174,7 +202,7 @@ Die Ordner im Container sind jetzt fest: `/data/files`, `/data/geheim` und `/dat
 
 ### PostgreSQL
 
-Kleinere Versionen (17.x) bekommst du durch Neuziehen des Images `postgres:17`. Ein Wechsel der Hauptversion (z. B. 17 → 18) braucht eine Sicherung und Wiederherstellung – PostgreSQL kann die Daten einer älteren Hauptversion nicht direkt öffnen.
+Kleinere Versionen (18.x) bekommst du durch Neuziehen des Images `postgres:18`. Ein Wechsel der Hauptversion (z. B. 17 → 18) braucht eine Sicherung und Wiederherstellung – PostgreSQL kann die Daten einer älteren Hauptversion nicht direkt öffnen. Wie das geht, steht unter [PostgreSQL 18](#postgresql-18).
 
 ## Wie neue Versionen entstehen
 

@@ -34,6 +34,8 @@ GitHub zählt, wie oft eine Release-Datei heruntergeladen wird; daraus kommen di
 
 ## Installieren
 
+Welche Pakete sich installieren lassen, legt [Was Ablago darf](was-ablago-darf.md) fest. Liegt ein Paket oder ein Update darüber, sagt die Vorschau in Worten, warum, und bietet **Erlauben …** an; installiert wird es dann nicht.
+
 1. Wähle ein Paket unter **Verfügbar** und ggf. eine ältere Version.
 2. Klicke **Installieren …**. Es öffnet sich der [gemeinsame Ablauf](#mehrere-pakete-in-einem-schritt-installieren): oben das Paket, darunter, was es braucht („Braucht: …“), und seine **Ergänzungen** als Häkchen – bei der Texterkennung etwa **Weitere Sprachen?** mit Französisch, Spanisch, Türkisch …
 3. Klicke **Weiter mit … Paketen**. Auf **einer Seite** fragt Ablago jetzt alles, was nötig ist, und nur das:
@@ -234,6 +236,7 @@ Bestätigen darf nur, wer **Gesamte Verwaltung** hat, mit einer erneuten Anmeldu
 - Verweisfelder, Ansichten, Rechte-Regeln und Automatisierungen zeigen auf den neuen Mappentyp, Direktlinks auf Mappen funktionieren weiter (die Mappen behalten ihre Id).
 - [Archivmodus](archiv.md) und Fristen bleiben. Würde der Archivmodus durch den Umbau lockerer, lehnt die Vorschau ihn ab – schalte ihn dann vorher am neuen Mappentyp mindestens genauso streng ein.
 - Liegen Mappen des alten Typs im Papierkorb, bleibt er als eigener Mappentyp stehen.
+- Felder, die das neue Paket berechnet („berechnet von …“), berechnet danach das neue Paket – auch wenn der übernommene Mappentyp sie vorher von seinem alten Paket hatte (#1476). Ein Dokumentregister, dessen Dokumente in ein anderes Register umgezogen sind, verschwindet, wenn es danach leer ist und das neue Paket es nicht mitbringt.
 
 Mehrere Pakete mit Umbau aktualisierst du **einzeln**, jedes mit seiner eigenen Vorschau – im gemeinsamen Ablauf lehnt Ablago sie ab.
 
@@ -272,9 +275,32 @@ Für Paket-Autoren steht das Format (`aus_text`) in den [Regeln der Registry](ht
 
 Sonst nennt Ablago die Gründe – auch jedes Beispiel, das du geändert hast; das löschst du vorher selbst, wenn du es nicht mehr brauchst. Geänderte Beispiele in Mappentypen anderer Pakete (etwa eine „Organisation“ aus *Basis*) bleiben stehen; Ablago nennt sie nach dem Entfernen.
 
+**Ganz oder gar nicht:** Ablago entfernt ein Paket in einem Zug. Bricht das Entfernen ab, meldet Ablago „… wurde nicht entfernt, es ist nichts verändert.“ mit dem Grund – Mappentypen, Ansichten, Beispiele und das Paket stehen dann wie vorher da, und du kannst es nach dem Beheben noch einmal versuchen. Mappentypen, die **Teil einer anderen Mappe** sind (etwa *Rechnungsposition* und *Steuerzeile* zur *Rechnung*), und [Tabellen](mappentypen.md#tabelle) darauf löst Ablago dabei selbst auf. Hing ein Paket noch von einem früheren Versuch halb entfernt fest, gelingt das Entfernen jetzt.
+
+Entfernst du ein Paket, dessen Mappentypen ein anderes Paket nur **optional** als Ziel kennt (etwa *Fahrzeuge* für „Betrifft“ an der *Rechnung*), bleiben Bedingungen wie „Anzeigen, wenn Betrifft auf ein Fahrzeug zeigt“ stehen und warten auf das Paket: Sie treffen nie zu, der Mappentyp lässt sich weiter speichern, und installierst du das Paket wieder, wirken sie wie vorher.
+
 Ein **Sprachpaket** hat keine Mappentypen. Hat jemand seine Sprache gewählt oder ist sie die Sprache der Installation, fragt Ablago nach, bevor es entfernt – siehe [Sprachen → Sprachpakete](sprachen.md#sprachpakete).
 
 Liefert das Paket Volltext oder wandelt es Dateien um (z. B. **Office und E-Mail**, **Bildformate**), warten danach keine Dokumente mehr darauf: Ohne Text steht am Dokument wieder, dass es für diesen Dateityp kein Paket gibt; hatte es schon Text, bleibt der Text stehen.
+
+## Anhalten und Fortsetzen { #anhalten }
+
+Ein Paket mit Code lässt sich **anhalten**, statt es zu entfernen – von Hand mit **Anhalten** auf seiner Seite oder von selbst, wenn du [Was Ablago darf](was-ablago-darf.md) senkst und das Paket nicht mehr dazu passt. Angehalten heißt:
+
+- Sein Code läuft nicht: keine Ereignisse, keine Aufträge, keine Leistungen; seine Aktionen stehen nicht im Menü „Mappe“, seine Automatisierungen ruhen. Auch wenn es durch einen Fehler doch liefe, käme es nicht ins Netz.
+- **Mappentypen, Mappen, Ansichten und Vorlagen bleiben** und sind normal nutzbar – sie gehören euch, nicht dem Paket. Einstellungen und Geheimnisse bleiben gespeichert.
+- In der Paketliste steht **angehalten**, auf der Seite des Pakets der Grund in Worten, etwa „„Übersetzung“ nutzt das Internet – das habt ihr nicht erlaubt.“, mit **Erlauben …** und **Fortsetzen**; die [Übersicht](uebersicht.md) zeigt einen Hinweis.
+- **Fortsetzen** geht ohne Neueinrichtung, aber nur, wenn „Was Ablago darf“ das Paket wieder erlaubt. Erhöhen allein setzt nichts von selbst fort.
+
+## Beschädigtes Paket { #beschaedigt }
+
+Fehlen einem installierten Paket eigene Mappentypen oder Ansichten derselben Version – etwa nach einem früher abgebrochenen Entfernen –, zeigt die [Übersicht](uebersicht.md) „… ist nicht vollständig“, und auf der Seite des Pakets stehen **Lösungen**, je mit einem Satz:
+
+- **Reparieren** legt die fehlenden Teile derselben Version neu an; vorhandene Mappen, Mappentypen und Einstellungen bleiben. Das läuft ganz oder gar nicht: Scheitert es, ist nichts verändert. Für ein hochgeladenes Paket lädst du dieselbe Version noch einmal hoch.
+- **Neu installieren** entfernt das Paket und führt in den gewohnten Ablauf **Installieren** derselben Version – nur, solange es in seinen Mappentypen keine eigenen Mappen gibt.
+- **Ganz entfernen** ist das gewohnte [Entfernen](#entfernen).
+
+Auch **Installieren und Aktualisieren** laufen ganz oder gar nicht (#1385): Scheitert es mittendrin, ist die Ablage wie vorher, und ein zweiter Versuch gelingt ohne Namenskonflikt.
 
 ## Einstellungen
 
@@ -374,11 +400,11 @@ Die Rechenzeit (CPU) je Paket zeigt Ablago nicht: Alle Pakete laufen im selben L
 
 **Liste** darunter, neueste zuerst, mit Suchfeld und dem Haken **Nur Fehler zeigen**:
 
-- jedes **zugestellte Ereignis** (Art, die Mappe bzw. Post als Link – nur, wenn du sie lesen darfst) und jeder andere **Aufruf** (Aktion, Frage, Erkennung, Prüfung der Einstellungen …) mit **Ergebnis** – *ok*, *Fehler*, *Zeitgrenze* oder *Speichergrenze* –, Dauer, Speicher, Fehlermeldung und den [Netzaufrufen](#netzaufrufe) dieses Aufrufs
+- jedes **zugestellte Ereignis** (Art, die Mappe bzw. Post als Link – nur, wenn du sie lesen darfst) und jeder andere **Aufruf** (Aktion, Frage, Erkennung, Prüfung der Einstellungen …) mit **Ergebnis** – *ok*, *Warnung*, *Fehler*, *Zeitgrenze* oder *Speichergrenze* – sowie Dauer und Speicher. **Aufgeklappt** zeigt der Eintrag die Mappe (als Link), den **Ergebnistext** des Laufs (z. B. „Rechnung: Status neu“, höchstens 300 Zeichen, wie unter *Zuletzt*) bzw. die Fehlermeldung und die [Netzaufrufe](#netzaufrufe) dieses Aufrufs. Lehnt Ablago einen Schreibversuch des Pakets ab (z. B. 409 „geändert“, 404, 400), steht der Lauf als *Warnung* da, mit Methode, Pfad, Status und Meldung – nicht als *ok*
 - die **Protokollzeilen** des Pakets (höchstens 60 je Stunde; weitere nur im Protokoll von Ablago)
 - **Installiert**, **Aktualisiert** und **Einstellungen geändert** – wer, wann und welche Einstellungen (nie Werte)
 
-Im Verlauf stehen **nie Inhalte** aus Dokumenten oder Antworten des Pakets. Einträge bleiben **30 Tage** (höchstens 5000 je Paket), damit die Auslastung einen Monat zeigen kann – länger als das [Protokoll](fehlersuche.md#protokoll) von Ablago, das nur einen Tag zurückreicht. Entfernst du das Paket, verschwindet sein Verlauf mit.
+Im Verlauf stehen **nie Inhalte** aus Dokumenten. Von den Antworten des Pakets steht nur der kurze Ergebnistext eines Laufs dort; Antworten von KI-Funktionen und Mappen-Aktionen nur als Länge („120 Zeichen“). Einträge bleiben **30 Tage** (höchstens 5000 je Paket), damit die Auslastung einen Monat zeigen kann – länger als das [Protokoll](fehlersuche.md#protokoll) von Ablago, das nur einen Tag zurückreicht. Entfernst du das Paket, verschwindet sein Verlauf mit.
 
 ![Reiter „Verlauf“ eines Pakets: Auslastung mit Ampel, darunter die Liste mit „Nur Fehler zeigen“](bilder/werkbank-paket-verlauf.png)
 
@@ -529,7 +555,7 @@ Ein KI-Paket bekommt **nur Inhalte aus Mappentypen, die für KI-Dienste zugelass
 - **Je Mappentyp:** Werkbank → Mappentypen → *Mappentyp* → Abschnitt **KI-Dienste** → **Darf an KI-Dienste gehen**. Ohne Haken bekommt kein KI-Paket etwas aus diesem Mappentyp – keine Mappen, keine Dokumente, keine Ausschnitte, keine Ereignisse. Das gilt sofort und für alle KI-Pakete.
 - **Auf der Seite des Pakets:** Werkbank → Pakete → *KI-Paket* zeigt in der **Übersicht** nur eine Zeile „Bekommt Inhalte aus *n* Mappentypen“ mit **Ändern**. Zugelassen und gesperrt wird im Reiter **Einstellungen**, Abschnitt **Was die KI lesen darf**: welche Mappentypen das Paket bekommt, darunter alle Mappentypen mit Haken – gespeichert mit dem Knopf des Reiters. Bei Paketen, die selbst Mappen lesen, zählen dafür auch ihre Rechte und [Pakete am Mappentyp](berechtigungen.md#pakete-am-mappentyp).
 - **Neue Mappentypen sind gesperrt, bis du sie zulässt.** So gehen sensible Mappentypen wie *Gesundheit* nie ungewollt hinaus – auch nicht, wenn ein Paket sie mitbringt oder du einen Mappentyp kopierst. Eine **neue Installation** hat noch nichts zugelassen; nach dem Installieren eines KI-Pakets lässt du auf seiner Seite zu, was es bekommen soll.
-- **Nach dem Update** bleiben deine bisherigen Mappentypen wie vorher zugelassen, damit nichts unbemerkt aufhört zu funktionieren. Die [Übersicht](uebersicht.md) weist einmal darauf hin (*Neu: Mappentypen von KI-Diensten ausschließen*), solange KI-Pakete installiert sind; **Verstanden** blendet den Hinweis aus.
+- **Nach dem Update** bleiben deine bisherigen Mappentypen wie vorher zugelassen, damit nichts unbemerkt aufhört zu funktionieren. Die [Übersicht](uebersicht.md) weist einmal darauf hin (*Neu: Mappentypen von KI-Diensten ausschließen*), solange KI-Pakete installiert sind; **Zur Kenntnis nehmen** blendet den Hinweis aus.
 - **Benutzer** gehen nie an ein Paket.
 
 **Was gesperrt heißt, je Weg:**
@@ -720,7 +746,7 @@ Jeder sieht dabei nur Mappen, die er lesen darf. Den Vektor des Suchbegriffs lie
 | 10 000 | 12 MB | 4 MB | 0,4 s | 4 ms | 0,3 s |
 | 100 000 | 118 MB | 33 MB | 3,2 s | 37 ms | 3,0 s |
 
-Ablago braucht dafür keine Datenbank-Erweiterung (wie pgvector, die im Image `postgres:17` fehlt). Es vergleicht im eigenen Arbeitsspeicher mit 8 Bit je Zahl; den Zwischenspeicher lädt es nach dem Start im Hintergrund – bis er da ist, sucht die Suche ohne Ähnlichkeit. Gemessen mit `server/test/vektoren-messen.ts`.
+Ablago braucht dafür keine Datenbank-Erweiterung (wie pgvector, die im Image `postgres:18` fehlt). Es vergleicht im eigenen Arbeitsspeicher mit 8 Bit je Zahl; den Zwischenspeicher lädt es nach dem Start im Hintergrund – bis er da ist, sucht die Suche ohne Ähnlichkeit. Gemessen mit `server/test/vektoren-messen.ts`.
 
 ## Expertenmodus: weitere Kataloge und Hochladen
 

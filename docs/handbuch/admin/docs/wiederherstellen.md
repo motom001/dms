@@ -41,7 +41,7 @@ Ablago braucht für eine Wiederherstellung **keinen Zugang zum Internet** – we
 
 1. **die Sicherungsdatei** (`.dms-sicherung`) mit der **`.json` daneben**,
 2. **den Schlüssel**: die Schlüsseldatei aus dem Ordner `geheim` (im Container `/data/geheim`) oder das [Notfallblatt](verschluesselung.md#notfallblatt) – er steht nie in der Sicherung,
-3. **das Ablago-Image** in derselben oder einer neueren Version als die Sicherung, vorher z. B. mit `docker save ghcr.io/motom001/dms:stabil -o ablago.tar` abgelegt und auf dem neuen Gerät mit `docker load -i ablago.tar` geladen. Ohne Internet lässt es sich nicht ziehen. Bei [dms-komplett](https://help.ablago.app/installieren/aktuell/komplett/) dasselbe mit `ghcr.io/motom001/dms-komplett:stabil`; bei zwei Containern auch das Image der Datenbank (z. B. `postgres:17`),
+3. **das Ablago-Image** in derselben oder einer neueren Version als die Sicherung, vorher z. B. mit `docker save ghcr.io/motom001/dms:stabil -o ablago.tar` abgelegt und auf dem neuen Gerät mit `docker load -i ablago.tar` geladen. Ohne Internet lässt es sich nicht ziehen. Bei [dms-komplett](https://help.ablago.app/installieren/aktuell/komplett/) dasselbe mit `ghcr.io/motom001/dms-komplett:stabil`; bei zwei Containern auch das Image der Datenbank (z. B. `postgres:18`),
 4. **deine Compose-Datei** und die `.env` bzw. deine Umgebungsvariablen.
 
 Dann gehst du vor wie unter [Neues NAS, alte Sicherung](#neues-nas-alte-sicherung) beschrieben.
@@ -62,8 +62,23 @@ Was ein Paket selbst aus dem Internet holt (etwa ein Abgleich mit einem Dienst),
 1. Den [Wartungsmodus](wartungsmodus.md) einschalten und aktiv werden lassen (oder **Alle jetzt abmelden**).
 2. **Werkbank → Sicherung → Wiederherstellen**, Sicherung auswählen, Abgleich prüfen. Passt der Schlüssel dieser Installation nicht zur Sicherung, gib den vom passenden Notfallblatt ein.
 3. Bestätigen, dass der jetzige Stand ersetzt wird, und **Wiederherstellen**. In der Rückfrage tippst du zur Sicherheit das Wort **wiederherstellen** ein.
-4. Vorher sichert Ablago den **jetzigen Stand** (Art „vor einer Wiederherstellung“) – so kannst du zurück, falls du die falsche Sicherung erwischt hast. Fehlt dafür der Schlüssel, steht das als Hinweis im Ablauf. Dann bleibt der bisherige Stand der Datenbank **7 Tage** als eigener Bereich (Schema `dms_alt_behalten_…`) in der Datenbank; danach entfernt Ablago ihn beim nächsten Start. Die Abschlussmeldung nennt den Namen.
+4. Vorher sichert Ablago den **jetzigen Stand** (Art „vor einer Wiederherstellung“) – so kannst du zurück, falls du die falsche Sicherung erwischt hast. Das steht als Haken **Vorher den jetzigen Stand sichern (empfohlen)** im Ablauf, mit der geschätzten Größe; die Sicherung findest du danach unter **Werkbank → Sicherung**. Wann du den Haken abwählst, steht unter [Wiederherstellen im Notfall](#im-notfall). Fehlt dafür der Schlüssel, steht das als Hinweis im Ablauf. Dann bleibt der bisherige Stand der Datenbank **7 Tage** als eigener Bereich (Schema `dms_alt_behalten_…`) in der Datenbank; danach entfernt Ablago ihn beim nächsten Start. Die Abschlussmeldung nennt den Namen.
 5. Nach dem Neustart ist der Wartungsmodus aus; alle melden sich neu an.
+
+Sicherungen von Hand zeigen in der Auswahl ihr **Wozu?** (siehe [Jetzt sichern](sicherung.md#jetzt-sichern)) – so findest du z. B. „Vor dem Entfernen von Rechnungen“ schnell wieder.
+
+### Wiederherstellen im Notfall { #im-notfall }
+
+Die Sicherung davor ist ein guter Rückweg – im Notfall kann sie aber selbst im Weg stehen. Darum gilt:
+
+- **Abwählen:** Nimmst du den Haken **Vorher den jetzigen Stand sichern** heraus, fragt Ablago einmal nach: „Ohne Sicherung kannst du den jetzigen Stand nicht mehr zurückholen.“ Das ist richtig, wenn die Sicherung selbst das Problem ist (Ablago verklemmt sich beim Sichern) oder du ohnehin zu einem alten Stand musst.
+- **Zu wenig Platz:** Reicht der Platz für die Sicherung davor voraussichtlich nicht (geschätzte Größe plus [Mindest-Speicherplatz](sicherung.md#zeitplan-und-aufbewahrung)), ist der Haken aus und der Grund steht daneben. Sonst könnte die zusätzliche Sicherung die Platte füllen und das Zurückholen scheitern lassen.
+- **Die Sicherung davor scheitert:** Ablago bricht nicht stillschweigend ab und versucht es nicht von selbst noch einmal. Es zeigt den Fehler – gleich beim Start oder im Ablauf – und fragt: **Trotzdem ohne Sicherung wiederherstellen?** Du kannst den Grund beheben (z. B. Platz schaffen) oder ohne Sicherung des jetzigen Stands weitermachen. Bis dahin ist nichts ersetzt.
+- Das [Protokoll](fehlersuche.md#protokoll) (Modul *sicherung*) vermerkt bei jeder Wiederherstellung, ob mit oder ohne Sicherung davor.
+
+### Angaben zur Sicherung bleiben { #angaben-zur-sicherung }
+
+Die Sicherungsdateien liegen außerhalb der Datenbank, ihre Angaben aber darin: wann zuletzt automatisch gesichert wurde, die letzte Probe mit Ergebnis und die Proben je Sicherung, die Prüfungen, der Stand der Kopien außer Haus und die [ausgeblendeten](sicherung-ausser-haus.md#aus-der-liste-nehmen) Sicherungen. Diese Angaben übernimmt Ablago beim Zurückholen aus dem jetzigen Stand – sie springen nicht auf die Zeit der Sicherung zurück. Zeitplan und Aufbewahrung kommen dagegen aus der Sicherung. Direkt nach dem Wiederherstellen holt Ablago keine Sicherung und keine Probe nach; die nächste kommt zur eingestellten Zeit.
 
 Gehört zur Sicherung ein anderer Schlüssel als der jetzige, legt Ablago die bisherige Schlüsseldatei als `dms.schluessel.alt-…` daneben und nimmt den der Sicherung.
 
@@ -76,6 +91,19 @@ Eine Sicherung ist erst dann gut, wenn sie sich einspielen lässt. Deshalb spiel
 Auch die Probe prüft die Erweiterungen der Datenbank (siehe oben); fehlt eine, steht beim Schritt *Erweiterungen der Datenbank* ein Hinweis, die Probe gilt trotzdem als erfolgreich.
 
 Das Ergebnis steht je Sicherung in der Liste und als Ampel in der Übersicht: **grün** = letzte Probe erfolgreich und höchstens 8 Tage alt, **gelb** = älter oder noch nie, **rot** = fehlgeschlagen. Schlägt eine Probe fehl, bekommen alle Administratoren eine Mail. Im aktiven Wartungsmodus und bei zu wenig freiem Platz pausiert die Probe. Die Probe braucht den **aktuellen Schlüssel** dieser Installation: Eine Sicherung mit einem früheren Schlüssel (nach einem [Schlüsselwechsel](verschluesselung.md#schlussel-wechseln)) lässt sich nicht probeweise einspielen; die Probe schlägt dann mit einem Hinweis auf den Schlüssel fehl.
+
+## Wie lange es dauert { #dauer }
+
+Gemessen mit den Daten des [Lasttests](lasttest.md) der Stufe *groß* (#1464): **200.000 Mappen**, knapp 4.000 Dokumente, Datenbank 461 MB, PostgreSQL 18, Rechner mit 2 Kernen, Ablago 0.305:
+
+| Schritt | Dauer |
+| --- | ---: |
+| Sicherung anlegen (70 MB) | 8 s |
+| Wiederherstellen in eine leere Datenbank, gesamt | 102 s |
+| davon *Entschlüsseln und Einspielen* (Tabellen, Indizes, Statistik) | 98 s |
+| davon Statistik der Datenbank auffrischen (`ANALYZE`) | gut 2 s |
+
+Nach dem Einspielen frischt Ablago die Statistik aller Tabellen auf (`ANALYZE`). Ohne sie wüsste PostgreSQL nicht, wie groß die Tabellen sind, und wählte in den ersten Minuten langsame Wege – mit ihr ist die Ablage gleich nach dem Neustart so schnell wie vorher. Auf einem NAS mit langsamerem Speicher dauert alles entsprechend länger; mit Festplatte statt SSD rechne mit dem Mehrfachen.
 
 ## Nicht vorgesehen
 

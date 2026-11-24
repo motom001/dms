@@ -16,6 +16,10 @@ import type { richteEingangEin } from './eingang';
 import type { richteZugaengeEin } from './zugaenge';
 import type { baueDienst } from './dienst';
 import type { teileArbeitAuf } from './aufteilung';
+import { laufeErste } from '../sicherung/erste-sicherung';
+import { DateienPruefplan } from '../werkbank/dateien-pruefplan';
+import { debugAbgleich } from '../protokoll/debugmodus';
+import { ortszeit } from '../sicherung/sicherung-hilfen';
 
 /** Was starteHintergrund von früher braucht. */
 type Bisher = Pick<Awaited<ReturnType<typeof vorbereiten>>, 'leiter' | 'log'> &
@@ -31,6 +35,34 @@ type Bisher = Pick<Awaited<ReturnType<typeof vorbereiten>>, 'leiter' | 'log'> &
     notfall: Notfallzugang;
     verwaltung: Verwaltung;
   };
+
+/**
+ * „Alle Dateien prüfen“ nach Zeitplan (#1316): gedrosselt, nicht neben Sicherung, Wiederherstellung oder Wartung; ein
+ * angefangener Lauf setzt nach einem Neustart fort. Nur im Leiter.
+ */
+function starteDateienPruefplan(b: Pick<Bisher, 'dienst' | 'wartung' | 'wiederherstellung' | 'sicherung' | 'nurEiner' | 'log'>) {
+  const { dienst, wartung, wiederherstellung, sicherung, nurEiner, log } = b;
+  if (!dienst.kern.einstellungen) return;
+  const pruefplan = new DateienPruefplan({
+    einstellungen: dienst.kern.einstellungen,
+    pruefe: (von, opt) => dienst.mappenArchiv.pruefeDateien(von, opt),
+    auftragLaeuft: async () => (await dienst.auftraege.stand())?.status === 'laeuft',
+    beschaeftigt: () => wartung.aktiv || wiederherstellung.laeuft() || sicherung.laeuft(),
+    sicherungsUhrzeit: async () => {
+      const p = await sicherung.plan();
+      return p.aktiv ? p.uhrzeit : null;
+    },
+    ortszeit: () => ortszeit(new Date()),
+  });
+  wiederkehrend(
+    'dateien-pruefen',
+    60_000,
+    () =>
+      void nurEiner('dateien-pruefen', () => pruefplan.tick()).catch((e) =>
+        log.warn('Zeitplan für „Alle Dateien prüfen“ gestört', { fehler: (e as Error).message }),
+      ),
+  );
+}
 
 /** Hintergrund und wiederkehrende Läufe. */
 export async function starteHintergrund(bisher: Bisher) {
@@ -53,6 +85,14 @@ export async function starteHintergrund(bisher: Bisher) {
     zustandDb,
     aufteilung,
   } = bisher;
+  // Debug-Modus (#1528): in jedem Prozess mit der Datenbank abgleichen – gleich und dann jede Minute. Bis hierher galt
+  // die Stufe aus LOG_LEVEL, damit Fehler beim Start vollständig im Protokoll stehen.
+  if (dienst.kern.einstellungen) {
+    const e = dienst.kern.einstellungen;
+    const abgleich = () => debugAbgleich(e).catch((x) => log.warn('Debug-Modus nicht abgeglichen', { fehler: (x as Error).message }));
+    await abgleich();
+    wiederkehrend('debug-modus', 60_000, () => void abgleich());
+  }
   if (leiter) {
     await texterkennung.start({ zurueckstellen: lebt.allein });
     await laeufer.start().catch((e: unknown) => log.error('Paket-Läufer startet nicht', { fehler: (e as Error).message }));
@@ -94,14 +134,18 @@ export async function starteHintergrund(bisher: Bisher) {
         },
       );
     }, 5000).unref();
+    // Erste Sicherung samt Probe nach der Einrichtung (#1509), falls ein anderer Prozess sie vorgemerkt hat; sonst die Probe.
     wiederkehrend(
       'probe',
       60_000,
       () =>
-        void nurEiner('probe', () => wiederherstellung.tick()).catch((e) =>
-          log.error('Zeitplan der Probe gestört', { fehler: (e as Error).message }),
-        ),
+        void nurEiner('probe', async () => {
+          const frei = !wartung.aktiv && !wiederherstellung.laeuft() && !sicherung.laeuft();
+          if (frei && (await laufeErste(sicherung, wiederherstellung))) return;
+          await wiederherstellung.tick();
+        }).catch((e) => log.error('Zeitplan der Probe gestört', { fehler: (e as Error).message })),
     );
+    starteDateienPruefplan({ dienst, wartung, wiederherstellung, sicherung, nurEiner, log });
     // Notfallkontakte (#812): Info-Mails, die auf den E-Mail-Versand gewartet haben – sobald er eingerichtet ist.
     wiederkehrend('notfallkontakte', 5 * 60_000, () => {
       if (wartung.aktiv || wiederherstellung.laeuft()) return;

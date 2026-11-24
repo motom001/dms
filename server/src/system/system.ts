@@ -6,7 +6,8 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type postgres from 'postgres';
 import { t } from '../sprache/sprache';
-import { datumsformat } from '../../../shared/src/region';
+import { datumsformat, zeitText } from '../../../shared/src/region';
+import { protokoll } from '../protokoll/protokoll';
 import { gebietsschema } from '../../../shared/src/sprache';
 import type { Dienstbenutzer } from '../../../shared/src/dienstbenutzer';
 import { dienstbenutzer } from '../einrichtung/dienstbenutzer';
@@ -16,6 +17,17 @@ import { dienstbenutzer } from '../einrichtung/dienstbenutzer';
  * Knopfdruck – gibt es Neueres? Die Übersicht lässt sich als Text in ein
  * GitHub-Issue kopieren.
  */
+
+/** Debug-Modus in einer Zeile für den Systemzustand (#1528). */
+function debugText(): string {
+  const d = protokoll.debugStand;
+  if (d.an && d.bis)
+    return t(d.quelle === 'variable' ? 'meldungen.system.debug.aktiv-variable' : 'meldungen.system.debug.aktiv-werkbank', {
+      bis: zeitText(new Date(d.bis), { dateStyle: 'medium', timeStyle: 'short' }),
+    });
+  if (d.variableBeendet && process.env.LOG_LEVEL === 'debug') return t('meldungen.system.debug.variable-aus');
+  return t('meldungen.system.debug.aus');
+}
 
 export const REPO = 'motom001/dms';
 /** Bibliotheken des Servers, deren Version für den Support zählt. */
@@ -97,6 +109,8 @@ export function eigeneVersion(): string {
 
 /** Zufallswert dieser Installation für {@link standKennung} (#1067); leer, solange er nicht gesetzt ist. */
 let standSalz = '';
+/** Ordner, aus dem der Zufallswert kommt – für den zweiten Versuch in {@link standKennung}. */
+let standSalzOrdner = '';
 const STAND_SALZ = 'stand-salz';
 
 /**
@@ -104,6 +118,7 @@ const STAND_SALZ = 'stand-salz';
  * den Ordner und damit den Wert; legen zwei gleichzeitig an, gilt der erste (`wx`), der andere liest ihn.
  */
 export function setzeStandSalz(geheim: string): void {
+  standSalzOrdner = geheim;
   const datei = join(geheim, STAND_SALZ);
   const lesen = () => {
     try {
@@ -133,6 +148,10 @@ export function setzeStandSalz(geheim: string): void {
  * öffentliche Image nachrechnen und verriete über /api/gesundheit (ohne Anmeldung) doch die Version.
  */
 export function standKennung(): string {
+  // Beim allerersten Start gibt es den Ordner geheim noch nicht, wenn der Leiter den Zufallswert setzt (#1473: mit
+  // Node 26 in den Rauchtests mit zwei Prozessen aufgefallen). Dann bliebe er leer, während Prozess 2 die Datei später
+  // anlegt – zwei Kennungen hinter einem Port, und die Oberfläche lädt ständig neu. Darum: fehlt er, noch einmal versuchen.
+  if (!standSalz && standSalzOrdner) setzeStandSalz(standSalzOrdner);
   return createHmac('sha256', standSalz)
     .update(`${eigeneVersion()}|${env.DMS_COMMIT ?? ''}|${env.DMS_GEBAUT ?? ''}`)
     .digest('hex')
@@ -155,6 +174,8 @@ export async function uebersicht(
   betrieb: { mail: string; adresse: string } | undefined,
   /** Heimnetz nicht bestimmbar (#1355): Gateway-Adresse der letzten 24 Stunden, nur für den Systemzustand. */
   gateway?: { adresse: string } | null,
+  /** Stufe des Wartungsmodus (#1549): aktiv heißt „nichts geht rein oder raus“. */
+  wartung?: 'aus' | 'angekuendigt' | 'aktiv' | null,
 ): Promise<Uebersicht> {
   let datenbank: Uebersicht['datenbank'];
   try {
@@ -187,6 +208,18 @@ export async function uebersicht(
       'E-Mail': betrieb?.mail ?? 'aus',
       TRUST_PROXY: `${env.TRUST_PROXY || t('meldungen.system.nicht-gesetzt')} → ${proxyVertrauen(env.TRUST_PROXY).text}`,
       LOG_LEVEL: env.LOG_LEVEL ?? 'info',
+      // Debug-Modus (#1528): ob aktiv, woher und bis wann; nach Ablauf von LOG_LEVEL=debug der Hinweis, die Variable zu entfernen.
+      [t('meldungen.system.debug.zeile')]: debugText(),
+      ...(wartung
+        ? {
+            [t('meldungen.system.wartung.zeile')]:
+              wartung === 'aktiv'
+                ? t('meldungen.system.wartung.aktiv')
+                : wartung === 'angekuendigt'
+                  ? t('meldungen.system.wartung.angekuendigt')
+                  : t('meldungen.system.wartung.aus'),
+          }
+        : {}),
       ...heimnetzZeile(gateway),
     },
   };
@@ -516,7 +549,7 @@ export async function versionsabgleich(
       postgresql.hinweis,
       komplett
         ? 'Kommt mit dem nächsten Image dms-komplett (ghcr.io/motom001/dms-komplett neu ziehen, sobald es erschienen ist).'
-        : `Zum Aktualisieren das Image postgres:${(pg ?? '').split('.')[0] || '17'} neu ziehen und den Datenbank-Container neu starten.`,
+        : `Zum Aktualisieren das Image postgres:${(pg ?? '').split('.')[0] || '18'} neu ziehen und den Datenbank-Container neu starten.`,
     ]
       .filter(Boolean)
       .join(' ');

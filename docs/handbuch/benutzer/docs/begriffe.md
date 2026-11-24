@@ -147,7 +147,7 @@ Siehe auch: [Feldart](#feldart).
 Ein Trennblatt in einer Mappe, z. B. Allgemein (mit Feldern), Dokumente, Verknüpfungen oder Historie. Notizen und Historie sind feste Register jeder Mappe.
 
 <a id="rundgang"></a>**Rundgang** · ✓ Alltagswort · alle  
-Kurze Führung an der echten Oberfläche in wenigen Schritten, jeder Schritt hebt eine Stelle hervor. Ablagos eigener Rundgang startet bei der ersten Anmeldung eines neuen Kontos; alle finden ihn unter „Ablago entdecken“.  
+Kurze Führung an der echten Oberfläche in wenigen Schritten, jeder Schritt hebt eine Stelle hervor. Ablagos eigene Rundgänge starten beim ersten Besuch einer Seite (Ablage, Mappe, Werkbank; Mein Konto nur mit einem stillen Hinweis); alle finden sie unter „Ablago entdecken“.  
 Siehe auch: [Tipp](#tipp), [Ablago entdecken](#ablago-entdecken).
 
 <a id="standardwert"></a>**Standardwert** · ~ mit Erklärung · Administratoren  
@@ -162,7 +162,7 @@ Feldart ohne eigenen Wert – zeigt zwischen den Feldern einer Mappe die Mappen 
 Siehe auch: [Feldart](#feldart), [Register](#register), [Trefferliste](#trefferliste), [Verweis](#verweis).
 
 <a id="tipp"></a>**Tipp** · ✓ Alltagswort · alle  
-Ein Satz, der zeigt, was man in Ablago noch tun kann – höchstens ein neuer am Tag als „Tipp des Tages“ im Assistenten (ein Punkt am Knopf zeigt ihn an); „Zeig es mir“ führt an die Stelle oder startet einen Rundgang. In Mein Konto abschalten.  
+Ein Satz, der zeigt, was man in Ablago noch tun kann – höchstens ein neuer am Tag als „Tipp des Tages“ im Assistenten (ein Punkt am Knopf zeigt ihn an); „Zeig es mir“ führt an die Stelle, startet einen Rundgang oder öffnet eine Seite im Handbuch. In Mein Konto abschalten.  
 Siehe auch: [Rundgang](#rundgang), [Ablago entdecken](#ablago-entdecken), [Assistent](#assistent).
 
 <a id="titel"></a>**Titel** · ✓ Alltagswort · alle  
@@ -518,6 +518,10 @@ Siehe auch: [Paket](#paket), [Beispiel-Mappe](#beispiel-mappe), [Vorlage](#vorla
 Schlichter Text (Markdown) mit Platzhaltern wie {vertragsnummer}, etwa ein Kündigungsschreiben an einer Vertragsart. Pakete bringen Vorlagen an ihren Vorgaben mit; sie liegen als Dokument im Register der Mappe. Kein HTML, keine Bilder, Links nur https://. Mit „Brief aus Vorlage“ (Mappe ▾) wird daraus ein Brief als PDF mit den Angaben der Mappe.  
 Siehe auch: [Vorgabe](#vorgabe), [Paket](#paket), [Brief aus Vorlage](#brief-aus-vorlage).
 
+<a id="was-ablago-darf"></a>**Was Ablago darf** · ~ mit Erklärung · Administratoren  
+Zwei Antworten für die ganze Installation – welche Pakete Ablago nutzen darf (keine, nur Vorlagen, auch Helfer, die nur hier arbeiten, auch Helfer mit Internet) und wie viel es von sich aus tut (nichts, erkennen und vorlegen, alles erledigen). Ablago hält sich im Server daran und fragt innerhalb dieser Grenze nicht mehr einzeln nach. Eingebaute Helfer wie die Texterkennung arbeiten auf jeder Antwort. Steht als Karte oben in der Übersicht der Werkbank; erhöhen geht nur mit frischer Anmeldung.  
+Siehe auch: [Paket](#paket), [Übersicht](#ubersicht).
+
 <a id="was-mitkommt"></a>**Was mitkommt** · ✓ Alltagswort · Administratoren  
 Alles, was ein Paket mitbringt – Mappentypen, Ansichten, mitgelieferte Mappen, Beispiele, Wortlisten, Automatisierungen, Automatisierungsvorlagen, Aktionen im Menü „Mappe“, Einstellungen, Rechte und Netz – in derselben Reihenfolge wie im Katalog. Steht auf der Paketseite und in der Vorschau; beim Update ist Neues als „neu in dieser Version“ markiert. Dazu die Kurzanleitung „So nutzt du es“, die Ablago einmal direkt nach der Installation zeigt.  
 Siehe auch: [Paket](#paket), [Paketkatalog](#paketkatalog).
@@ -830,6 +834,7 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Vorgabe | Stammdaten, Standardmappe, Voreinstellung | `vorgabe (Mappe), inhalt.vorgaben` |
 | Vorlage | – | `inhalt/vorlagen/*.md` |
 | Vorschaubild | Thumbnail, Miniatur | `vorschau` |
+| Was Ablago darf | Vertrauensstufe, Stufe 1/2/3, Sicherheitsstufe | `darf, DarfStand, PAKETE_GRENZEN, SELBST_STUFEN (intern Vertrauensstufen)` |
 | Was mitkommt | – | `Mitkommt` |
 | Werkbank anpassen | – | `WerkbankAnsicht, VORLAGEN` |
 | Werkbank-Karte | Betriebskarte, Systemkarte | `BETRIEB_WENN, DannKarte art: sicherung, SYSTEMKONTO_WERKBANK` |
@@ -843,4 +848,4 @@ Wer Oberfläche, Handbuch, Hilfetexte oder Release-Notizen schreibt, verwendet d
 | Zwei-Faktor-Anmeldung | 2FA, MFA (in der Oberfläche) | – |
 | Übergeordnete Mappe | Elternmappe, Hauptmappe | `uebergeordneteId, shared/src/teile.ts` |
 
-*Stand: 2026-11-15*
+*Stand: 2026-11-24*

@@ -25,6 +25,16 @@
   beschreibung: Knopf mit dem eigenen Namen oben rechts; öffnet Mein Konto, Ablago entdecken, Ablago verwalten, Hilfe
   handy: true
   clients: false
+- anker: kopf.logo
+  seite: /ablage/start
+  beschreibung: Logo und Name oben links; führt zur Startseite (Ablage bzw. im Verwaltungsmodus Werkbank)
+  handy: true
+  clients: false
+- anker: kopf.bereiche
+  seite: /ablage/start
+  beschreibung: Wechsel zwischen Ablage und Werkbank in der Kopfzeile (Werkbank nur im Verwaltungsmodus)
+  handy: false
+  clients: false
 
 # ---------- Ablage: die drei Spalten ----------
 - anker: navigation.ansichten
@@ -139,6 +149,18 @@
   beschreibung: Feld einer geöffneten Mappe, z. B. mappe.feld:kuendigung_bis
   handy: true
   clients: false
+- anker: mappe.kopf
+  beschreibung: Kopf einer geöffneten Mappe – Art, Titel, angelegt und zuletzt geändert
+  handy: true
+  clients: false
+- anker: mappe.reiter
+  beschreibung: Reihe der Register einer geöffneten Mappe (Allgemein, Dokumente, Verknüpfungen, Notizen …)
+  handy: true
+  clients: false
+- anker: mappe.speicherleiste
+  beschreibung: Leiste unten in einer geöffneten Mappe – Mappe löschen, Änderungen verwerfen, Mappe speichern
+  handy: true
+  clients: false
 
 # ---------- Mein Konto ----------
 - anker: konto.abwesenheit
@@ -166,6 +188,15 @@
   beschreibung: Tägliche Zusammenfassung unter Mein Konto → Benachrichtigungen
   handy: true
   clients: false
+- anker: konto.zurueck
+  seite: /profil
+  beschreibung: „Zurück zur Ablage“ oben links in Mein Konto (#1302)
+  handy: true
+  clients: false
+- anker: konto.bereich:<seite>
+  beschreibung: Bereich in der Leiste von Mein Konto, z. B. konto.bereich:darstellung (konto, sicherheit, darstellung, benachrichtigungen, fehler-melden)
+  handy: true
+  clients: false
 
 # ---------- Ablago entdecken ----------
 - anker: entdecken.rundgaenge
@@ -180,6 +211,21 @@
   handy: true
   clients: false
 # Suche über den Listen in der Mitte (#978, #994): Suchfeld, darunter die Filter.
+- anker: werkbank.navigation
+  seite: /werkbank
+  beschreibung: Leiste der Werkbank links mit den Bereichen in Gruppen (z. B. „Ablage aufbauen“)
+  handy: true
+  clients: false
+- anker: werkbank.mitte
+  seite: /werkbank
+  beschreibung: Mitte der Werkbank; auf der Übersicht die Zahlen und Hinweise, was gerade ansteht
+  handy: true
+  clients: false
+- anker: werkbank.anpassen
+  seite: /werkbank
+  beschreibung: „Werkbank anpassen“ unten in der Leiste der Werkbank – weitere Bereiche einblenden
+  handy: true
+  clients: false
 - anker: werkbank.typen.suche
   seite: /werkbank/typen
   beschreibung: Suchfeld mit Filter „Paket“ über der Liste der Mappentypen

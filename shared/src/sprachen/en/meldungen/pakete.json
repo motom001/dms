@@ -248,6 +248,7 @@
   "pakete.das-paket-braucht": "The package “{name}” needs “{name2}”.",
   "pakete.laesst-sich-noch-nicht": "“{name}” can’t be removed yet.",
   "pakete.laesst-sich-nicht-ganz": "“{name}” can’t be removed completely.",
+  "pakete.entfernen-abgebrochen": "“{name}” was not removed, nothing has changed.",
   "sprachpakete.kein-code": "A language package contains only texts – manifest.yaml: code isn’t allowed in it.",
   "sprachpakete.kein-inhalt": "A language package contains only texts – manifest.yaml: inhalt stays empty (no folder types, views, examples, word lists or automations).",
   "sprachpakete.keine-abhaengigkeiten": "A language package doesn’t depend on or extend another package (abhaengigkeiten, ergaenzt).",

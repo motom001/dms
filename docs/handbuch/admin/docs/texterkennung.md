@@ -85,7 +85,7 @@ Fehlt ein [eingebautes Werkzeug](fehlersuche.md#werkzeuge) (z. B. das zum Lesen 
 
 Ob ein Dokumentenregister überhaupt einen Volltext erzeugt, stellst du am [Mappentyp](mappentypen.md#register) ein (*Volltext erzeugen*, Standard: an).
 
-Steht die Warteschlange, sagt ein Hinweis oben auf der Seite und bei *Volltext neu erzeugen* warum: **ausgeschaltet** (mit **Einschalten**) oder **pausiert, solange der Wartungsmodus an ist** (mit **Wartungsmodus beenden**). Ein nur angekündigter Wartungsmodus hält die Warteschlange nicht an.
+Steht die Warteschlange, sagt ein Hinweis oben auf der Seite und bei *Volltext neu erzeugen* warum: **ausgeschaltet** (mit **Einschalten**) oder **pausiert, solange der Wartungsmodus an ist** (mit **Wartungsmodus beenden**). Ein nur angekündigter Wartungsmodus hält die Warteschlange nicht an. Zusätzlich sieht Ablago alle 30 Sekunden nach, ob noch Dokumente auf die Texterkennung warten – so bleibt keines dauerhaft auf *wartet* stehen, auch wenn der Anstoß nach dem Hochladen einmal ins Leere ging (z. B. weil das Dokument im selben Moment als Anlage angehängt wurde).
 
 ## Sprache automatisch erkennen
 
@@ -117,6 +117,19 @@ Im Paket **Texterkennung (Deutsch und Englisch)** stecken Deutsch, Englisch und 
 Unter **Werkbank → Suche und Volltext → Erkannte Sprachen** siehst du, wie viele Dokumente in welcher Sprache vorliegen und ob das Paket ihre Sprachdaten hat. Fehlen sie, macht die Seite einen Vorschlag, z. B. „12 Dokumente auf Französisch – das Paket Texterkennung liest sie besser mit ‚Texterkennung – Zusatzsprache Französisch‘ (texterkennung.fra)“, mit Link zu diesem Paket. Fehlende Sprachdaten nennt das Paket außerdem im Ergebnis und im Protokoll des Paket-Läufers („Sprachdaten fehlen: fra (Zusatzpaket texterkennung.fra)“).
 
 Nach dem Installieren einer Zusatzsprache erkennt **Volltext neu erzeugen → Für alle Dokumente** (siehe unten) die vorhandenen Dokumente neu – oder du startest einzelne unter **Aufträge → fertig** neu.
+
+## Zeitgrenze je Auftrag { #zeitgrenze }
+
+Ein Auftrag der Texterkennung darf nicht ewig laufen – sonst wartet die ganze Warteschlange auf ein einziges hängendes Dokument. Unter **Zeitgrenze je Auftrag** stellst du ein, wie lange einer höchstens dauern darf: einen **Grundwert** in Minuten (Vorgabe 5, erlaubt 1 bis 240) und **dazu je Seite** Sekunden (Vorgabe 30, erlaubt 0 bis 600). Ein Dokument mit 20 Seiten darf mit der Vorgabe also 5 Minuten + 20 × 30 s = 15 Minuten brauchen. Kennt Ablago die Seitenzahl nicht, gilt der Grundwert.
+
+Läuft ein Auftrag länger, bricht Ablago ihn ab:
+
+- Das Dokument steht auf *Fehler* mit dem Grund „Fehlgeschlagen – Zeitgrenze: Der Auftrag lief länger als … Minuten und wurde abgebrochen.“ Am Dokument lässt es sich **erneut versuchen**, hier mit **Neu starten**.
+- Der nächste Auftrag startet sofort.
+- Im [Protokoll](fehlersuche.md#protokoll) steht eine Warnung (Modul `texterkennung`).
+- Häufen sich die Abbrüche – ab 3 in 24 Stunden –, meldet die [Übersicht](uebersicht.md) das mit einem Hinweis. Liegt es an sehr großen Dokumenten, erhöhe die Zeitgrenze; hängt ein Paket, sieh dir seinen Verlauf an.
+
+Liest ein Paket die Texte, gelten zusätzlich die Grenzen des [Paket-Läufers](pakete.md).
 
 ## Aufträge
 

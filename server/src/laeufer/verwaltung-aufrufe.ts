@@ -232,6 +232,7 @@ export abstract class PaketlaeuferAufrufe extends PaketlaeuferBasis {
       });
       this.sende({ art: 'aufruf', nr, paket, eingang: { art, json }, ...(opt.vorrang ? { vorrang: true } : {}) });
     }).finally(() => this.zugaenge.delete(nr));
+    const schreibfehler = this.nimmSchreibfehler(nr);
     const s = this.standVon(paket);
     s.aufrufe++;
     if (!r.ok) s.fehlgeschlagen++;
@@ -250,7 +251,7 @@ export abstract class PaketlaeuferAufrufe extends PaketlaeuferBasis {
     if (s.letzte.length > LETZTE) s.letzte.splice(0, s.letzte.length - LETZTE);
     if (!r.ok) log.warn(`Paket ${paket}: Aufruf fehlgeschlagen`, { paket, art, fehler: r.fehler, ms: r.ms });
     erfasseNetz(p, { ereignis: art === 'ereignis', funktion: opt.funktion, art: String(eingang.art) }, r.messung);
-    this.verlauf(paket, art, eingang, opt, r);
+    this.verlauf(paket, art, eingang, { ...opt, schreibfehler }, r);
     // Netzaufrufe (#807): ins Protokoll des Pakets und eine Zeile mit der Summe ins Systemprotokoll – Hosts und Bytes, nie Inhalte.
     if (r.netz?.length) {
       merkeNetz(s.protokoll, r.netz);

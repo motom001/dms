@@ -1,6 +1,6 @@
 /**
  * Rauchtests: Suche in Werkbank-Listen (#978, #994), gleichbedeutende Wörter (#992), Suche und Volltext aufgeräumt (#1189,
- * #1190, #1191), Vorschaubild der Archivfassung (#1216).
+ * #1190, #1191), Vorschaubild der Archivfassung (#1216), Zeitgrenze der Texterkennung (#1550).
  * Allein starten (frisch gestartetes Ablago, siehe rauchtest.mjs): node web/rauchtest/bereiche/werkbank-suche-und-archiv.mjs [fehlerordner] [musterordner]
  */
 import assert from 'node:assert/strict';
@@ -53,6 +53,53 @@ rauchtest('Werkbank: Mappentypen und Ansichten durchsuchen, Fundstellen, keine T
   await s.goto(BASIS + '/werkbank/sichten');
   await elemente.getByRole('searchbox', { name: 'Ansichten durchsuchen' }).fill('xylofonunterricht');
   await elemente.getByText('Keine Treffer.').waitFor();
+});
+
+// #1519: 259 Symbole – Gruppen eingeklappt mit Anzahl, offen die Gruppe des gewählten Symbols, Suche öffnet die Treffer;
+// die eingebaute Ansicht „Post“ hat ihr Symbol (in der Werkbank und in der Ablage).
+rauchtest('Werkbank: Symbol einer Ansicht aus 16 Gruppen wählen, eingebaute Ansichten mit Symbol (#1519)', { als: LENA }, async (s) => {
+  const cookie = await sitzung(LENA);
+  await api('POST', '/api/konto/verwaltung', { cookie, body: { passwort: LENA.passwort } });
+  const typen = (await api('GET', '/api/typen', { cookie })).daten;
+  const post = typen.find((x) => x.system === 'post');
+  const sichten = (await api('GET', '/api/sichten/definitionen', { cookie })).daten;
+  const symbole = Object.fromEntries(sichten.filter((x) => x.elternId === post.id || x.id === post.id).map((x) => [x.name, x.symbol]));
+  assert.deepEqual(symbole, { [post.name]: 'mail', Eingegangen: 'mailbox', Versendet: 'send' });
+  // Ablage: „Post“ steht mit Symbol im Baum.
+  await s.goto(BASIS + '/ablage/start');
+  const baum = s.getByRole('complementary', { name: 'Ansichten' });
+  await baum
+    .getByRole('link', { name: new RegExp(`^${post.name}`) })
+    .first()
+    .locator('svg.ansicht-sym')
+    .waitFor();
+  await verwalten(s);
+  await s.goto(BASIS + `/werkbank/sichten/${post.id}`);
+  const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
+  await bearbeitung.getByRole('button', { name: /Grunddaten/, expanded: false }).click();
+  await bearbeitung.getByRole('button', { name: /^Symbol .*Post, E-Mail/ }).click();
+  // 16 Gruppen, eingeklappt mit Anzahl; offen nur „Post und Kommunikation“ mit dem gewählten Symbol.
+  const gruppen = bearbeitung.locator('.symbolgruppe');
+  assert.equal(await gruppen.count(), 16);
+  const offen = bearbeitung.locator('.symbolgruppe [aria-expanded="true"]');
+  assert.equal(await offen.count(), 1);
+  assert.match(await offen.innerText(), /^Post und Kommunikation\s*10$/);
+  await bearbeitung.getByRole('button', { name: 'Post, E-Mail', pressed: true }).waitFor();
+  const funde = [];
+  for (const v of await axePruefen(s, ['.symbolraster-rahmen'])) funde.push(v);
+  // Suche: „wallbox“ findet die Ladestation in „Energie und Versorgung“ – offen, auch wenn sie zugeklappt war.
+  await bearbeitung.getByRole('searchbox', { name: 'Symbol suchen …' }).fill('wallbox');
+  assert.equal(await gruppen.count(), 1);
+  await bearbeitung.getByRole('group', { name: 'Energie und Versorgung' }).getByRole('button', { name: 'Ladestation, Wallbox' }).click();
+  await bearbeitung.getByRole('button', { name: /^Symbol .*Ladestation, Wallbox/ }).waitFor();
+  // Gruppe von Hand aufklappen; nichts gefunden: der Weg zurück.
+  await bearbeitung.getByRole('button', { name: /^Symbol .*Ladestation/ }).click();
+  await bearbeitung.getByRole('searchbox', { name: 'Symbol suchen …' }).fill('');
+  await bearbeitung.getByRole('button', { name: /^Geld und Bank/ }).click();
+  await bearbeitung.getByRole('group', { name: 'Geld und Bank' }).getByRole('button', { name: 'Quittung' }).waitFor();
+  await bearbeitung.getByRole('searchbox', { name: 'Symbol suchen …' }).fill('xylofonunterricht');
+  await bearbeitung.getByText('Keine Treffer.').waitFor();
+  assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
 });
 
 // #994: Auskünfte – Haken „Nur offene zeigen“ statt „offen · alle“, die Vorgaben rechts statt „Einstellungen“ in der Liste;
@@ -278,6 +325,36 @@ rauchtest('Werkbank: Suche – „Meintest du …?“ auch bei Treffern wählbar
   assert.equal((await stand()).unscharf, true);
 });
 
+// #1550: Zeitgrenze je Auftrag – Grundwert plus je Seite, gespeichert und nach dem Neuladen noch da.
+rauchtest('Werkbank: Texterkennung – Zeitgrenze je Auftrag einstellen (#1550)', { als: LENA }, async (s) => {
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  await s.goto(BASIS + '/werkbank/texterkennung');
+  const form = s.locator('#zeitgrenze');
+  await form.getByRole('heading', { name: 'Zeitgrenze je Auftrag' }).waitFor();
+  const minuten = form.getByLabel('Grundwert (Minuten)');
+  const jeSeite = form.getByLabel('Dazu je Seite (Sekunden)');
+  assert.deepEqual([await minuten.inputValue(), await jeSeite.inputValue()], ['5', '30'], 'Vorgabe 5 Minuten plus 30 s je Seite');
+  const stand = () =>
+    s.evaluate(
+      async () => (await (await fetch('/api/werkbank/texterkennung', { headers: { 'x-dms': '1' } })).json()).einstellungen.zeitgrenze,
+    );
+  await minuten.fill('7');
+  await jeSeite.fill('20');
+  await form.getByRole('button', { name: 'Zeitgrenze speichern' }).click();
+  await form.getByText('Gespeichert.', { exact: true }).waitFor();
+  assert.deepEqual(await stand(), { minuten: 7, jeSeiteSekunden: 20 });
+  await s.reload();
+  await s.locator('#zeitgrenze').getByLabel('Grundwert (Minuten)').waitFor();
+  assert.equal(await s.locator('#zeitgrenze').getByLabel('Grundwert (Minuten)').inputValue(), '7', 'bleibt nach dem Neuladen');
+  // Zurück auf die Vorgabe, damit spätere Bereiche mit ihr laufen.
+  await s.locator('#zeitgrenze').getByLabel('Grundwert (Minuten)').fill('5');
+  await s.locator('#zeitgrenze').getByLabel('Dazu je Seite (Sekunden)').fill('30');
+  await s.locator('#zeitgrenze').getByRole('button', { name: 'Zeitgrenze speichern' }).click();
+  await s.locator('#zeitgrenze').getByText('Gespeichert.', { exact: true }).waitFor();
+  assert.deepEqual(await stand(), { minuten: 5, jeSeiteSekunden: 30 });
+});
+
 /* ---------- Vorschaubild aus der Archivfassung (#1216) ---------- */
 
 /** Eine kleine E-Mail (nur Persona-Adressen), wie sie ein Postfach oder Hochladen ablegt. */
@@ -329,5 +406,34 @@ rauchtest(
     assert.equal(await bild.getAttribute('title'), 'Vorschau aus der umgewandelten Fassung eines Pakets');
     await s.waitForFunction((el) => el.complete && el.naturalWidth > 0, await bild.elementHandle(), { timeout: 20_000 });
     assert.equal(await liste.locator('.vorschaubild.ohne').count(), 0);
+  },
+);
+
+// Zeitplan für „Alle Dateien prüfen“ (#1316): aus, monatlich, wöchentlich; nicht gleichzeitig mit der Sicherung (seit
+// #1509 nach der Einrichtung täglich um 02:00) – der Server nennt den Abstand, danach „Gespeichert.“. Zum Schluss wieder aus.
+rauchtest(
+  'Werkbank: Zeitplan für „Alle Dateien prüfen“, nicht gleichzeitig mit der Sicherung, axe (#1316)',
+  { als: LENA, erwartet: [{ status: 422, pfad: /^\/api\/werkbank\/wartung\/dateien\/plan$/ }] },
+  async (s) => {
+    await s.goto(BASIS + '/ablage/start');
+    await verwalten(s);
+    await s.goto(BASIS + '/werkbank/wartung');
+    const dateien = s.locator('#dateien');
+    await dateien.getByRole('heading', { name: 'Zeitplan' }).waitFor();
+    const takt = dateien.getByRole('combobox', { name: 'Regelmäßig prüfen' });
+    assert.equal(await takt.inputValue(), 'aus');
+    await takt.selectOption('monatlich');
+    await dateien.getByText(/Nicht gleichzeitig mit der automatischen Sicherung \(02:00\)/).waitFor();
+    await dateien.getByLabel('Uhrzeit').fill('02:30');
+    await dateien.getByRole('button', { name: 'Zeitplan speichern' }).click();
+    await dateien.getByText(/mindestens 60 Minuten Abstand/).waitFor();
+    await dateien.getByLabel('Uhrzeit').fill('03:30');
+    await dateien.getByRole('button', { name: 'Zeitplan speichern' }).click();
+    await dateien.getByText('Gespeichert.').waitFor();
+    const funde = await axePruefen(s, ['#dateien']);
+    assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
+    await takt.selectOption('aus');
+    await dateien.getByRole('button', { name: 'Zeitplan speichern' }).click();
+    await dateien.getByText('Gespeichert.').waitFor();
   },
 );

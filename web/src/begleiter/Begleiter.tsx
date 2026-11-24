@@ -53,7 +53,8 @@ function useNeuerTipp() {
   const d = useDaten();
   const { stand } = useEntdecken();
   const rundgang = useAktiverRundgang();
-  if (!stand?.tipp || stand.tipp.gesehen || !stand.tippsAn || stand.starten) return false;
+  if (!stand?.tipp || stand.tipp.gesehen || !stand.tippsAn || stand.starten || stand.beimBesuch?.some((x) => x.seite === 'ablage'))
+    return false;
   return d.einstellungen.tipps !== false && !rundgang;
 }
 

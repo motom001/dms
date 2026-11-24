@@ -10,6 +10,7 @@ import {
   SicherungsListe,
   SicherungsOrdner,
   useWiederherstellung,
+  VorherSichern,
   zeit,
   type Wiederherstellung,
 } from './wiederherstellung/teile';
@@ -142,7 +143,7 @@ function AbgleichAnsicht({
   frisch: boolean;
   abbrechen?: () => void;
 }) {
-  const { brauchtSchluessel, schluessel, verstanden, setVerstanden, startbar, laeuft, starten } = w;
+  const { brauchtSchluessel, schluessel, verstanden, setVerstanden, startbar, laeuft, starten, vorherFehler } = w;
   return (
     <>
       <h3 className="h3">{t('oberflaeche.wiederherstellen.abgleich-damals-heute')}</h3>
@@ -160,15 +161,22 @@ function AbgleichAnsicht({
           </div>
         ))}
       {(brauchtSchluessel || schluessel) && <SchluesselFormular w={w} abgleich={abgleich} />}
+      {!frisch && <VorherSichern w={w} abgleich={abgleich} />}
       {!frisch && (
         <HakenFeld beschriftung={t('oberflaeche.wiederherstellen.mir-ist-klar-der')}>
           <input type="checkbox" checked={verstanden} onChange={(e) => setVerstanden(e.target.checked)} />
         </HakenFeld>
       )}
+      {vorherFehler && <TrotzdemOhne fehler={vorherFehler} laeuft={laeuft} ja={() => void starten(true)} />}
       <div className="knoepfe">
         {/* Auf dem frischen System die Hauptaktion; in der Werkbank ersetzt sie den jetzigen Stand – Gefahr mit Rückfrage. */}
         {frisch ? (
-          <Knopf art="haupt" gesperrt={!startbar} laeuft={laeuft} laeuftText={t('oberflaeche.wiederherstellen.starte')} onClick={starten}>
+          <Knopf
+            art="haupt"
+            gesperrt={!startbar}
+            laeuft={laeuft}
+            laeuftText={t('oberflaeche.wiederherstellen.starte')}
+            onClick={() => starten()}>
             {t('oberflaeche.wiederherstellen.wiederherstellen')}
           </Knopf>
         ) : (
@@ -178,7 +186,7 @@ function AbgleichAnsicht({
             gesperrt={!startbar}
             laeuft={laeuft}
             laeuftText={t('oberflaeche.wiederherstellen.starte')}
-            onClick={starten}
+            onClick={() => starten()}
             rueckfrage={{
               titel: t('oberflaeche.wiederherstellen.wirklich-wiederherstellen'),
               text: t('oberflaeche.wiederherstellen.der-jetzige-stand-von'),
@@ -219,7 +227,36 @@ function abschlussMeldung(abschluss: WhAbschluss, fertig: () => void) {
   );
 }
 
-/** Abgebrochen: Fehler, der bisherige Stand bleibt, die Schritte, zurück. */
+/**
+ * Sicherung davor gescheitert (#1530): nicht still abbrechen, nichts von selbst wiederholen – den Fehler zeigen und
+ * fragen „Trotzdem ohne Sicherung wiederherstellen?“.
+ */
+function TrotzdemOhne({ fehler, laeuft, ja }: { fehler: string; laeuft: boolean; ja: () => void }) {
+  return (
+    <div className="hinweis schlecht stapel" role="alert">
+      <p>
+        <strong>{fehler}</strong>
+      </p>
+      <p>{t('oberflaeche.wiederherstellen.trotzdem.text')}</p>
+      <div className="knoepfe">
+        <Knopf
+          art="gefahr"
+          symbol="zuruecksetzen"
+          laeuft={laeuft}
+          onClick={ja}
+          rueckfrage={{
+            titel: t('oberflaeche.wiederherstellen.vorher.frage'),
+            text: t('oberflaeche.wiederherstellen.vorher.frage.text'),
+            ja: t('oberflaeche.wiederherstellen.trotzdem'),
+          }}>
+          {t('oberflaeche.wiederherstellen.trotzdem')}
+        </Knopf>
+      </div>
+    </div>
+  );
+}
+
+/** Abgebrochen: Fehler, der bisherige Stand bleibt, die Schritte, zurück; Sicherung davor gescheitert: „Trotzdem ohne?“ (#1530). */
 function abbruchMeldung(lauf: WhLauf, fertig: () => void) {
   return (
     <>
@@ -230,9 +267,37 @@ function abbruchMeldung(lauf: WhLauf, fertig: () => void) {
       </div>
       <p>{t('oberflaeche.wiederherstellen.der-bisherige-stand-ist')}</p>
       <Schritte schritte={lauf.schritte} />
+      {lauf.vorherGescheitert && <OhneNochmal lauf={lauf} />}
       <div className="knoepfe">
         <Knopf onClick={fertig}>{t('oberflaeche.wiederherstellen.zurueck')}</Knopf>
       </div>
+    </>
+  );
+}
+
+/** Nach dem Abbruch: dieselbe Sicherung ohne Sicherung davor (mit dem Schlüssel dieser Installation). */
+function OhneNochmal({ lauf }: { lauf: WhLauf }) {
+  const [laeuft, setLaeuft] = useState(false);
+  const [fehler, setFehler] = useState<string>();
+  return (
+    <>
+      <TrotzdemOhne
+        fehler={t('oberflaeche.wiederherstellen.trotzdem.frage')}
+        laeuft={laeuft}
+        ja={() => {
+          setLaeuft(true);
+          setFehler(undefined);
+          einrichtungApi
+            .whStart({ name: lauf.sicherung, bestaetigt: true, vorherSichern: false })
+            .catch((e: Error) => setFehler(e.message))
+            .finally(() => setLaeuft(false));
+        }}
+      />
+      {fehler && (
+        <p className="fehlertext" role="alert">
+          {fehler}
+        </p>
+      )}
     </>
   );
 }

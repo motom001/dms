@@ -92,6 +92,8 @@ export const notfallblattPdf = (...a: A<typeof Nf.notfallblattPdf>) => arbeite('
 /** Archivfassung (#631): PDF/A-Kennung nachsehen, Wörter mit Lage aus der Textebene. */
 export const liesPdfA = (...a: A<typeof Ar.liesPdfA>) => arbeite('liesPdfA', ...a);
 export const textebeneWoerter = (...a: A<typeof Ar.textebeneWoerter>) => arbeite('textebeneWoerter', ...a);
+/** Seitenzahl und Seitengrößen ohne Wörter (#1445): nur pdfinfo, darum nicht im Arbeiter. */
+export { seitenGroessen } from './seitengroessen';
 export const bereinigePdf = (...a: A<typeof An.bereinigePdf>) => arbeite('bereinigePdf', ...a);
 /** E-Rechnung (#1043): XML aus dem PDF-Anhang (ZUGFeRD/Factur-X), mit Grenzen; null ohne. */
 export const eingebetteteERechnung = (...a: A<typeof Er.eingebetteteERechnung>) => arbeite('eingebetteteERechnung', ...a);

@@ -127,7 +127,7 @@ describe('Entfernte Sicherungen (#976)', () => {
     assert.equal(st.nur[0].holbar, true);
     assert.equal(st.nur[0].ziel, 'WebDAV https://cloud.example.org/Ablago', 'ohne Zugangsdaten');
     const l = await warte(await s.entfernt.hole(name, 'webdav', 'markus@example.org'), s);
-    assert.equal(l.status, 'fertig', l.fehler);
+    assert.equal(l.status, 'fertig', String(l.fehler));
     assert.equal(l.art, 'holen');
     assert.ok(aufrufe.filter((a) => a.auftrag === 'holen').length >= 2, 'mehrere Aufrufe mit Fortsetzung');
     assert.deepEqual(await readFile(join(s.ordner, `${name}.dms-sicherung`)), ziel.dateien.get(name), 'unverändert');
@@ -173,7 +173,7 @@ describe('Entfernte Sicherungen (#976)', () => {
         return lauf;
       };
       const l = await warte(await s.entfernt.hole(name, 'webdav', 'markus@example.org'), s);
-      assert.equal(l.status, verfaelschen ? 'fehler' : 'fertig', l.fehler);
+      assert.equal(l.status, verfaelschen ? 'fehler' : 'fertig', String(l.fehler));
       assert.deepEqual(gesehen, [{ status: l.status, liegt: [] }], 'ein Wechsel, danach nichts Vorläufiges mehr');
     }
   });
@@ -195,7 +195,7 @@ describe('Entfernte Sicherungen (#976)', () => {
       assert.deepEqual(liegt, [`.holen-${name}.${hindernis}`], 'nur das Hindernis des Tests, keine vorläufige Datei');
       await rm(weg, { recursive: true });
       const zweite = await warte(await s.entfernt.hole(name, 'webdav', 'markus@example.org'), s);
-      assert.equal(zweite.status, 'fertig', zweite.fehler);
+      assert.equal(zweite.status, 'fertig', String(zweite.fehler));
       assert.deepEqual(await readFile(join(s.ordner, `${name}.dms-sicherung`)), ziel.dateien.get(name));
       assert.deepEqual((await readdir(s.ordner)).filter((n) => n.startsWith('.')), [], 'keine Teildatei');
     }
@@ -244,5 +244,35 @@ describe('Entfernte Sicherungen (#976)', () => {
     assert.equal(heikleHandlung('POST', '/api/werkbank/sicherung/:name/holen', {}), 'sicherung');
     assert.match(liesCode({ sprache: 'c', rechte: { schnittstellen: ['dms:sicherung-holen'] } }).fehler.join(' '), /nur zusammen mit dms:sicherung-lesen/);
     assert.deepEqual(liesCode({ sprache: 'c', ereignisse: ['sicherung.fertig'], rechte: { schnittstellen: ['dms:sicherung-lesen', 'dms:sicherung-holen'] } }).fehler, []);
+  });
+
+  it('„Aus der Liste nehmen“ (#1320): nichts am Ziel gelöscht, bleibt nach erneutem Abgleich draußen, „Wieder zeigen“ holt sie zurück', async () => {
+    const ziel: Ziel = { dateien: new Map(), meta: new Map(), holen: true };
+    const { s, name, aufrufe } = await aufbau(ziel);
+    await assert.rejects(s.entfernt.ausblenden([name], [name], 'markus@example.org'), /liegt auch lokal/);
+    await s.loesche(name, 'markus@example.org');
+    await assert.rejects(s.entfernt.ausblenden([], [], 'markus@example.org'), /wählen/);
+    const vorher = aufrufe.length;
+    assert.deepEqual(await s.entfernt.ausblenden([name], [], 'markus@example.org'), [name]);
+    assert.ok(aufrufe.slice(vorher).every((a) => a.auftrag === 'auflisten'), 'nur auflisten, kein Auftrag zum Löschen');
+    assert.ok(ziel.dateien.has(name), 'die Datei liegt weiter am Ziel');
+    const st = (await s.entfernt.stand([], true))!;
+    assert.deepEqual(st.nur, [], 'nach erneutem Abgleich nicht wieder da');
+    assert.equal(st.ausgeblendet.length, 1);
+    assert.equal(st.ausgeblendet[0].name, name);
+    assert.equal(st.ausgeblendet[0].von, 'markus@example.org');
+    assert.equal(st.ausgeblendet[0].ziel, 'WebDAV https://cloud.example.org/Ablago');
+    // Eine andere Datei gleichen Namens (andere Prüfsumme) ist nicht dieselbe Sicherung: Sie erscheint.
+    const alt = ziel.meta.get(name) as SchlankeMetadaten;
+    ziel.meta.set(name, { ...alt, sha256: 'f'.repeat(64) });
+    await s.einstellungen.schreibe('sicherung_entfernt', null);
+    assert.equal((await s.entfernt.stand([], true))!.nur.length, 1, 'andere Prüfsumme: wieder in der Liste');
+    ziel.meta.set(name, alt);
+    assert.equal((await s.entfernt.stand([], true))!.nur.length, 0);
+    await s.entfernt.einblenden(name, 'markus@example.org');
+    const danach = (await s.entfernt.stand([], true))!;
+    assert.equal(danach.nur.length, 1);
+    assert.deepEqual(danach.ausgeblendet, []);
+    await assert.rejects(s.entfernt.einblenden(name, 'markus@example.org'), /gibt es nicht/);
   });
 });

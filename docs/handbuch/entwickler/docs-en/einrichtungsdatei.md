@@ -9,6 +9,7 @@ The setup assistant's configuration file (#806) describes a setup in a machine-r
 - Unknown fields are errors (`additionalProperties: false`) so that typos don't get lost silently.
 - **Your account (#821):** section `konto` – the person setting up, with "Full administration". Older files (0.191, 0.192) with `administrator` Ablago reads as `konto`; `erster-benutzer` is dropped with a notice (`hinweise`). Neither is in the schema – the conversion happens before the check; line and field of an error still name the name from the file.
 - **Use (#1045):** `nutzung` (`privat`, `beruflich`, `beides`) determines the attribute “used for work” (#1032) in the plan (`optional.beruflich`); `organisation` (name required; address, email, phone) only exists for work use. Older files without `nutzung` set the attribute directly with `optionales.beruflich`; if both are present they must match. `server/src/einrichtung/einrichtungsdatei.ts` checks these contradictions after the schema, with line and field.
+- **Workbench and what Ablago may do (#1319, #1562):** `werkbank` (one of the levels in `STUFEN`) and `darf` (`pakete`, `selbst`, `hoechstens`) are optional and were added without a new format version – like `nutzung`: older files stay valid, a file with the new fields loads only in Ablago from this version on. An answer above `hoechstens` is a contradiction with line and field. "Set up now" sets the level with the workbench view and `darf` via `PUT /api/werkbank/darf`; the server accepts `hoechstens` only while the wizard is open and no maximum values apply yet.
 - **No secrets:** fields `passwort` only accept a reference to an environment variable (`${NAME}`, capital letters, digits, underscore). The format knows no key – Ablago always creates it anew.
 
 The keys are German in every language, like the API's names.
@@ -52,6 +53,12 @@ konto:
   passwort: ${DMS_KONTO_PASSWORT}
 # Wofür Ablago genutzt wird: privat, beruflich oder beides.
 nutzung: privat
+# Stufe der Werkbank: einsteiger, haushalt, selbstaendig, organisation oder alles. Fehlt sie, gilt die Vorgabe zur Nutzung.
+werkbank: einsteiger
+# Was Ablago darf: pakete (keine, vorlagen, lokal, netz) und selbst (nichts, vorschlag, alles). hoechstens legt ein Anbieter fest.
+darf:
+  pakete: lokal
+  selbst: vorschlag
 # Aus dem offiziellen Katalog, je die neueste passende Version; Automatisierungen: true = eingeschaltet.
 pakete:
   - id: texterkennung

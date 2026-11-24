@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { SicherungsZustand } from '../../api/betrieb';
+import type { ErsteSicherung, SicherungsZustand } from '../../api/betrieb';
 import { t, tn } from '../../sprache';
 import { NOTFALLBLATT_SEITE } from '../../../../shared/src/werkbankansicht';
 import { zeit, zielName } from '../sicherungFormat';
@@ -20,10 +20,39 @@ export interface SicherungsHinweis {
 export function sicherungsHinweise(z: SicherungsZustand, mitNotfallblatt: boolean): SicherungsHinweis[] {
   const h: SicherungsHinweis[] = [];
   if (!z.schluessel) return h; // Ohne Schlüssel weist schon die Verschlüsselung darauf hin.
-  fehlerUndAlter(z, h);
-  notfallblattUndProbe(z, h, mitNotfallblatt);
-  ortUndAusserHaus(z, h);
+  const erste = ersteAktuell(z);
+  if (erste?.status === 'fehler') ersteFehler(erste, h);
+  else if (!erste || erste.status === 'ok') fehlerUndAlter(z, h);
+  notfallblattUndProbe(z, h, mitNotfallblatt, !!erste && erste.status !== 'ok');
+  ortUndAusserHaus(z, h, !!z.erste && !!z.letzte && (!erste || erste.status === 'ok'));
   return h;
+}
+
+/**
+ * Erste Sicherung samt Probe nach der Einrichtung (#1509) – solange sie die neueste ist (bzw. noch läuft oder gerade
+ * scheiterte und es keine andere gibt). Danach gilt wieder der normale Stand.
+ */
+export function ersteAktuell(z: SicherungsZustand): ErsteSicherung | null {
+  const e = z.erste;
+  if (!e) return null;
+  if (e.status === 'offen' || e.status === 'laeuft') return e;
+  if (!z.letzte) return e;
+  return e.sicherung && z.letzte.name === `${e.sicherung}.dms-sicherung` ? e : null;
+}
+
+/** Erste Sicherung oder ihre Probe gescheitert (#1509, C9): ein roter Hinweis an genau einer Stelle (Übersicht). */
+function ersteFehler(e: ErsteSicherung, h: SicherungsHinweis[]) {
+  h.push({
+    schluessel: 'sicherung.erste-fehler',
+    datum: e.am,
+    art: 'schlecht',
+    text: (
+      <>
+        <strong>{e.schritt === 'probe' ? t('werkbank.sicherung.erste.probe-fehler') : t('werkbank.sicherung.erste.fehler')}</strong>{' '}
+        {t('werkbank.sicherung.erste.fehler.text')}
+      </>
+    ),
+  });
 }
 
 /** Letzte Sicherung fehlgeschlagen, keine oder zu alt. */
@@ -58,8 +87,8 @@ function fehlerUndAlter(z: SicherungsZustand, h: SicherungsHinweis[]) {
     });
 }
 
-/** Notfallblatt (#993, #815) und Probe-Wiederherstellung (#109). */
-function notfallblattUndProbe(z: SicherungsZustand, h: SicherungsHinweis[], mitNotfallblatt: boolean) {
+/** Notfallblatt (#993, #815) und Probe-Wiederherstellung (#109); `ohneProbe`: die erste Sicherung samt Probe läuft oder scheiterte (#1509). */
+function notfallblattUndProbe(z: SicherungsZustand, h: SicherungsHinweis[], mitNotfallblatt: boolean, ohneProbe: boolean) {
   // Seit #815 auch: Der Notfallcode darauf wurde benutzt, oder das Blatt stammt aus der Zeit vor dem Notfallcode.
   const nb = z.notfallblatt;
   // Das Notfallblatt selbst steht unter Verschlüsselung (#993) – der Hinweis führt dorthin.
@@ -85,6 +114,7 @@ function notfallblattUndProbe(z: SicherungsZustand, h: SicherungsHinweis[], mitN
         ),
     });
   // Probe-Wiederherstellung (#109): Ampel.
+  if (ohneProbe) return;
   if (z.probe?.ampel === 'rot')
     h.push({
       schluessel: 'sicherung.probe-fehler',
@@ -116,8 +146,24 @@ function notfallblattUndProbe(z: SicherungsZustand, h: SicherungsHinweis[], mitN
     });
 }
 
-/** Speicherort (Volume, gleiche Platte) und Sicherung außer Haus (#585, #1194). */
-function ortUndAusserHaus(z: SicherungsZustand, h: SicherungsHinweis[]) {
+/** Speicherort (Volume, gleiche Platte) und Sicherung außer Haus (#585, #1194); `naechsterSchritt`: Kopie außer Haus nach der Neueinrichtung (#1509). */
+function ortUndAusserHaus(z: SicherungsZustand, h: SicherungsHinweis[], naechsterSchritt: boolean) {
+  // #1509: Nach der Neueinrichtung ist der nächste Schritt die Kopie außer Haus – deutlich, wenn die Sicherungen sogar
+  // auf derselben Platte wie die Dateien liegen. Er ersetzt dann den Hinweis „dieselbe Platte“.
+  const ausserHaus = naechsterSchritt && !z.extern?.ziele.length;
+  if (ausserHaus)
+    h.push({
+      schluessel: 'sicherung.ausser-haus',
+      art: z.ort.gleichePlatte ? 'warn' : 'info',
+      ziel: '/werkbank/sicherung#ausser-haus',
+      knopf: t('werkbank.sicherung.ausser-haus.knopf'),
+      text: (
+        <>
+          <strong>{t('werkbank.sicherung.ausser-haus.titel')}</strong>{' '}
+          {z.ort.gleichePlatte ? t('werkbank.sicherung.ausser-haus.gleiche-platte') : t('werkbank.sicherung.ausser-haus.text')}
+        </>
+      ),
+    });
   if (z.ort.volume === false)
     h.push({
       schluessel: 'sicherung.volume',
@@ -130,7 +176,7 @@ function ortUndAusserHaus(z: SicherungsZustand, h: SicherungsHinweis[]) {
         </>
       ),
     });
-  else if (z.ort.gleichePlatte)
+  else if (z.ort.gleichePlatte && !ausserHaus)
     h.push({
       schluessel: 'sicherung.gleiche-platte',
       art: 'info',

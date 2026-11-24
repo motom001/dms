@@ -46,10 +46,11 @@ export function pgDokumente(k: PgKontext) {
       return alsDokument(r);
     },
     async setzeEingang(id, x) {
-      if (!istUuid(id) || (x.nr === undefined && x.originalEmail === undefined)) return;
+      if (!istUuid(id) || (x.nr === undefined && x.originalEmail === undefined && x.fuer === undefined)) return;
       await sql`UPDATE dokumente SET
         eingang_nr = ${x.nr === undefined ? sql`eingang_nr` : x.nr && x.nr > 0 ? Math.round(x.nr) : null},
-        original_email = ${x.originalEmail === undefined ? sql`original_email` : x.originalEmail}
+        original_email = ${x.originalEmail === undefined ? sql`original_email` : x.originalEmail},
+        eingang_fuer = ${x.fuer === undefined ? sql`eingang_fuer` : x.fuer && istUuid(x.fuer) ? x.fuer : null}
         WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
     },
     async loescheDokument(id) {

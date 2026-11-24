@@ -16,6 +16,8 @@ import {
   type PlanOrganisation,
 } from '../../../shared/src/einrichtungsplan';
 import { PAKET_ID } from '../../../shared/src/kennungen';
+import { STUFEN, type Vorlage } from '../../../shared/src/werkbankansicht';
+import { PAKETE_GRENZEN, SELBST_STUFEN, ueberHoechstwert, type Darf } from '../../../shared/src/darf';
 import { Fachfehler } from '../grundlagen/fehler';
 import { t } from '../sprache/sprache';
 import { EINRICHTUNGSDATEI_MAX as DATEI_MAX, KB } from '../grundlagen/grenzen';
@@ -108,6 +110,24 @@ export const SCHEMA: Schema = {
         ort: { type: 'string', maxLength: ORGANISATION_MAX.ort },
         email: { ...EMAIL, maxLength: ORGANISATION_MAX.email },
         telefon: { type: 'string', maxLength: ORGANISATION_MAX.telefon },
+      },
+    },
+    // Stufe der Werkbank (#1319): Fehlt sie, gilt die Vorgabe zur Nutzung.
+    werkbank: { enum: STUFEN, description: t('meldungen.einrichtungsdatei.werkbank') },
+    // Was Ablago darf (#1562): beide Antworten; Höchstwerte legt ein Anbieter fest, der Server setzt sie durch.
+    darf: {
+      type: 'object',
+      additionalProperties: false,
+      description: t('meldungen.einrichtungsdatei.darf'),
+      properties: {
+        pakete: { enum: PAKETE_GRENZEN },
+        selbst: { enum: SELBST_STUFEN },
+        hoechstens: {
+          type: 'object',
+          additionalProperties: false,
+          description: t('meldungen.einrichtungsdatei.darf.hoechstens'),
+          properties: { pakete: { enum: PAKETE_GRENZEN }, selbst: { enum: SELBST_STUFEN } },
+        },
       },
     },
     pakete: {
@@ -328,6 +348,8 @@ function planAus(o: Roh): Einrichtungsplan {
     },
     ...(nutzung ? { nutzung } : {}),
     ...(o.organisation ? { organisation: organisationAus(o.organisation as Roh) } : {}),
+    ...(o.werkbank ? { werkbank: o.werkbank as Vorlage } : {}),
+    ...(o.darf ? { darf: o.darf as NonNullable<Einrichtungsplan['darf']> } : {}),
   };
 }
 
@@ -344,6 +366,11 @@ function widersprueche(o: Roh): Verstoss[] {
   const beruflich = nutzung ? beruflichBei(nutzung) : opt.beruflich === true;
   if (o.organisation && !beruflich)
     aus.push({ pfad: ['organisation'], text: t('einrichtung.datei.fehler.organisation'), schluessel: true });
+  // Was Ablago darf (#1562): keine Antwort über dem Höchstwert des Anbieters.
+  const darf = (o.darf ?? {}) as Partial<Darf> & { hoechstens?: Partial<Darf> };
+  for (const k of ['pakete', 'selbst'] as const)
+    if (darf.hoechstens && ueberHoechstwert(darf.hoechstens, { [k]: darf[k] }))
+      aus.push({ pfad: ['darf', k], text: t('einrichtung.datei.fehler.darf') });
   return aus;
 }
 
@@ -422,6 +449,20 @@ const ueber = (doc: Document, schluessel: string, text: string) => {
   if (p && isScalar(p.key)) p.key.commentBefore = ` ${text}`;
 };
 
+/** Stufe der Werkbank (#1319) und Was Ablago darf (#1562) für die Datei: nur, was gesetzt ist. */
+function werkbankUndDarf(plan: Einrichtungsplan): Roh {
+  const o: Roh = {};
+  if (plan.werkbank) o.werkbank = plan.werkbank;
+  const d = plan.darf;
+  if (!d || !Object.keys(d).length) return o;
+  o.darf = {
+    ...(d.pakete ? { pakete: d.pakete } : {}),
+    ...(d.selbst ? { selbst: d.selbst } : {}),
+    ...(d.hoechstens && Object.keys(d.hoechstens).length ? { hoechstens: { ...d.hoechstens } } : {}),
+  };
+  return o;
+}
+
 /** Schreibt einen Plan als YAML – mit kurzen Kommentaren, ohne Passwörter und ohne Schlüssel. */
 export function schreibeEinrichtungsdatei(plan: Einrichtungsplan): string {
   const o: Roh = { 'ablago-einrichtung': EINRICHTUNG_FORMAT };
@@ -442,6 +483,7 @@ export function schreibeEinrichtungsdatei(plan: Einrichtungsplan): string {
     ...(plan.konto.passwort ? { passwort: plan.konto.passwort } : {}),
   };
   if (plan.nutzung) o.nutzung = plan.nutzung;
+  Object.assign(o, werkbankUndDarf(plan));
   // Nur, was ausgefüllt ist; der Name immer (Pflicht).
   if (plan.organisation)
     o.organisation = Object.fromEntries(
@@ -487,6 +529,8 @@ export function schreibeEinrichtungsdatei(plan: Einrichtungsplan): string {
   ueber(doc, 'konto', t('einrichtung.datei.kommentar.konto'));
   ueber(doc, 'nutzung', t('einrichtung.datei.kommentar.nutzung'));
   ueber(doc, 'organisation', t('einrichtung.datei.kommentar.organisation'));
+  ueber(doc, 'werkbank', t('einrichtung.datei.kommentar.werkbank'));
+  ueber(doc, 'darf', t('einrichtung.datei.kommentar.darf'));
   ueber(doc, 'pakete', t('einrichtung.datei.kommentar.pakete'));
   ueber(doc, 'optionales', t('einrichtung.datei.kommentar.optionales'));
   return doc.toString({ lineWidth: 0 });

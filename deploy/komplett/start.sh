@@ -2,7 +2,7 @@
 # dms-komplett (#208): PostgreSQL und Ablago in einem Container.
 #
 # - Ordner /data/postgres und /data/postgres/daten für postgres richten und als postgres probeschreiben (#943).
-# - Erster Start: Datenbank in /data/postgres/daten anlegen (UTF-8, Locale C).
+# - Erster Start: Datenbank in /data/postgres/daten anlegen (UTF-8, Locale C, mit Datenprüfsummen).
 # - PostgreSQL lauscht nur innerhalb des Containers (127.0.0.1), von außen nicht erreichbar. Kein Passwort, das jemand
 #   kennen muss: Das für Ablago setzt dieses Skript selbst (#1354, siehe unten).
 # - Stopp (docker stop): erst Ablago, dann PostgreSQL sauber („fast“) herunterfahren.
@@ -24,6 +24,9 @@ SOCKET=${DMS_PG_SOCKET:-/run/postgresql}
 HBA=${DMS_PG_HBA:-/usr/local/share/ablago/pg_hba.conf}
 LISTE="Wachsen und umziehen: https://help.ablago.app/admin/aktuell/wachsen/"
 HILFE_START="Hilfe: https://help.ablago.app/installieren/aktuell/komplett/#container-startet-nicht"
+# Letzte Version mit PostgreSQL 17 (#1464) – dieselbe wie LETZTE_VERSION_PG17 in server/src/einrichtung/startfehler.ts
+# (der Test pg-umzug-version.test.ts vergleicht beide).
+LETZTE_PG17=0.305.0
 log() { echo "[dms-komplett] $*"; }
 # Vorstart (#1250), Benutzer von Ablago und Werkzeugdienst (#1354).
 # shellcheck source=deploy/image/start-hilfen.sh disable=SC1091
@@ -71,7 +74,14 @@ if [ -s "$PGDATA/PG_VERSION" ]; then
   if [ "$IST" != "$SOLL" ]; then
     log "FEHLER: Die Datenbank in /data/postgres stammt von PostgreSQL $IST, dieses Image bringt PostgreSQL $SOLL mit."
     log "Der Container startet nicht, damit nichts kaputtgeht. Umstieg über Sicherung und Wiederherstellung – $LISTE"
-    fehlerseite pg-version
+    # Umzug von 17 auf 18 (#1464): Die Startseite nennt die letzte Version mit PostgreSQL 17 für die Sicherung. Gelöscht
+    # wird nichts – der Ordner bleibt, wie er ist.
+    if [ "$IST" = 17 ] && [ "$SOLL" = 18 ]; then
+      log "Umzug: mit Ablago $LETZTE_PG17 (dms-komplett:$LETZTE_PG17, letzte Version mit PostgreSQL 17) eine Sicherung anlegen, den Ordner für /data/postgres umbenennen und einen leeren anlegen, dieses Image starten und die Sicherung im Einrichtungsassistenten einspielen."
+      fehlerseite pg-17
+    else
+      fehlerseite pg-version
+    fi
     exit 1
   fi
 else
@@ -82,7 +92,9 @@ else
   fi
   log "Erster Start: lege die Datenbank an (PostgreSQL $SOLL)."
   stand pg-anlegen
-  if ! su-exec postgres initdb -D "$PGDATA" -U postgres -E UTF8 --locale=C --auth-local=trust --auth-host=trust >/dev/null; then
+  # Datenprüfsummen bewusst an (#1464; seit PostgreSQL 18 ohnehin Vorgabe): Beschädigte Blöcke auf dem Datenträger
+  # fallen beim Lesen auf, statt still falsche Daten zu liefern. Locale C: keine Abhängigkeit von Kollationen des Systems.
+  if ! su-exec postgres initdb -D "$PGDATA" -U postgres -E UTF8 --locale=C --data-checksums --auth-local=trust --auth-host=trust >/dev/null; then
     log "FEHLER: Die Datenbank ließ sich nicht anlegen (siehe oben). Häufige Gründe: Speicher voll, Rechte des Ordners. $HILFE_START"
     fehlerseite pg-anlegen
     exit 1

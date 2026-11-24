@@ -168,7 +168,21 @@ export const popplerErzeuger: Erzeuger = async (inhalt, mime) => {
     await schreibeWerkzeugDatei(pdf, mime === 'application/pdf' ? inhalt : await bildSeitePdf(inhalt, mime));
     await starte(
       'pdftoppm',
-      ['-f', '1', '-l', '1', '-singlefile', '-scale-to', String(VORSCHAU_PX), '-jpeg', '-jpegopt', 'quality=80', pdf, join(dir, 'bild')],
+      [
+        '-cropbox',
+        '-f',
+        '1',
+        '-l',
+        '1',
+        '-singlefile',
+        '-scale-to',
+        String(VORSCHAU_PX),
+        '-jpeg',
+        '-jpegopt',
+        'quality=80',
+        pdf,
+        join(dir, 'bild'),
+      ],
       60_000,
     );
     return await liesWerkzeugDatei(join(dir, 'bild.jpg'));

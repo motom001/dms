@@ -91,6 +91,8 @@ export const alsTyp = (r: Zeile): Mappentyp => ({
   // Dokument übernehmen (#937, Migration 089): null = Vorgabe.
   ausPost: (r.aus_post as boolean | null) ?? null,
   erkennbarAn: (r.erkennbar_an as string | null) ?? '',
+  // Mehrzahl (#1446, Migration 123): nur, wenn eingetragen.
+  ...(r.mehrzahl ? { mehrzahl: r.mehrzahl as string } : {}),
   // Ist Teil einer anderen Mappe (#1031, Migration 097): nur, wenn eingestellt.
   ...(r.teil_von ? { teilVon: r.teil_von as string } : {}),
   // In der allgemeinen Suche zeigen (#1220, Migration 116): nur, wenn eingestellt.
@@ -136,9 +138,10 @@ export const alsMappe = (r: Zeile): Mappe => ({
   ...(r.vorgabe ? { vorgabe: r.vorgabe as string } : {}),
 });
 /** E-Mail-Postfach (#999): Eingangsreihenfolge und Kennzeichen „Original-E-Mail“ – nur, wo gesetzt. */
-const eingangsfelder = (r: Zeile): Pick<Dokument, 'eingangNr' | 'originalEmail'> => ({
+const eingangsfelder = (r: Zeile): Pick<Dokument, 'eingangNr' | 'originalEmail' | 'eingangFuer'> => ({
   ...(r.eingang_nr ? { eingangNr: r.eingang_nr as number } : {}),
   ...(r.original_email ? { originalEmail: true } : {}),
+  ...(r.eingang_fuer ? { eingangFuer: r.eingang_fuer as string } : {}),
 });
 export const alsDokument = (r: Zeile): Dokument => ({
   id: r.id as string,

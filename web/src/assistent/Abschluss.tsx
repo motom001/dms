@@ -190,6 +190,40 @@ function PasskeyAngebot({ l, aktualisieren }: { l: Lauf; aktualisieren: () => Pr
 }
 
 /**
+ * Sicherung nach der Einrichtung (#1509): eine normale Zeile der Fortschrittsliste – kein Kasten, keine Warnfarbe.
+ * Mit „Einrichtung abschließen“ schaltet Ablago die Sicherung ein und macht gleich die erste samt Probe; läuft sie
+ * schon (z. B. nach Neuladen), zeigt die Zeile „läuft“ bzw. den Haken.
+ */
+function ErsteSicherungZeile() {
+  const [zustand, setZustand] = useState<'offen' | 'laeuft' | 'fertig'>('offen');
+  useEffect(() => {
+    void betriebApi.sicherung().then(
+      (s) => {
+        const e = s.zustand.erste?.status;
+        setZustand(e === 'ok' ? 'fertig' : e === 'offen' || e === 'laeuft' ? 'laeuft' : 'offen');
+      },
+      () => {},
+    );
+  }, []);
+  return (
+    <ol className="lauf-liste">
+      <li className={`lauf-${zustand}`} aria-busy={zustand === 'laeuft' || undefined}>
+        <span className="lauf-zeichen" aria-hidden="true">
+          {zustand === 'fertig' ? <Symbol name="haken" /> : zustand === 'laeuft' ? '…' : '·'}
+        </span>
+        <span className="lauf-text">
+          <span>
+            {t('einrichtung.abschluss.sicherung')}
+            {zustand === 'laeuft' ? ' …' : ''}
+          </span>
+          <span className="leise klein">{t('einrichtung.abschluss.sicherung.notfallblatt')}</span>
+        </span>
+      </li>
+    </ol>
+  );
+}
+
+/**
  * Abschluss: Notfallblatt (Pflicht), Zwei-Faktor anbieten, Links, „Einrichtung abschließen“.
  *
  * Das Notfallblatt lädt die Oberfläche selbst herunter (statt über einen Link): Es ist eine heikle Handlung (#819), und
@@ -273,6 +307,7 @@ export function Abschluss({ abschliessen, version }: { abschliessen: () => Promi
           </p>
         )}
       </section>
+      <ErsteSicherungZeile />
       <ZweifaktorAngebot l={l} aktualisieren={abschliessen} />
       {/* Passkey (#811): nur über HTTPS (oder localhost) – sonst bietet der Assistent ihn gar nicht erst an. */}
       {passkeysImBrowser() && <PasskeyAngebot l={l} aktualisieren={abschliessen} />}

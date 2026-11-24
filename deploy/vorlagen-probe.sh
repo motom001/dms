@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Probe-Installation der NAS-Vorlagen (#184, #185, #179) und der Vorlage für den Raspberry Pi (#578):
 # startet jede Vorlage unter deploy/*/ mit dem gerade gebauten Image, wartet, bis Ablago antwortet,
-# und prüft, dass der Einrichtungsassistent ohne Datenbankschritt beginnt. Läuft in der CI (image.yml).
+# und prüft, dass der Einrichtungsassistent ohne Datenbankschritt beginnt und die Datenbank (PostgreSQL 18, #1464) im
+# eingebundenen Ordner liegt. Läuft in der CI (image.yml).
 #
 #   deploy/vorlagen-probe.sh <image> [vorlage …]      z. B. deploy/vorlagen-probe.sh dms:probe
 set -euo pipefail
@@ -42,6 +43,10 @@ for v in "${VORLAGEN[@]}"; do
     sudo test -s "$arbeit/geheim/datenbank.json" || { echo "::error::$v: Anbindung nicht übernommen"; fehler=1; }
     # Ohne root (#1354): Ablago läuft als 1000, die Ordner gehören ihm.
     [ "$(sudo stat -c %u "$arbeit/geheim")" = 1000 ] || { echo "::error::$v: /data/geheim gehört nicht dem Benutzer von Ablago"; fehler=1; }
+    # PostgreSQL 18 (#1464): Die Datenbank liegt im eingebundenen Ordner (PGDATA in der Vorlage), nicht in einem
+    # unbenannten Volume, das beim Neuanlegen des Containers verloren ginge.
+    pgv=$(sudo cat "$arbeit/postgres/PG_VERSION" 2>/dev/null || echo fehlt)
+    [ "$pgv" = 18 ] || { echo "::error::$v: Datenbank nicht im Ordner postgres (PG_VERSION: $pgv)"; fehler=1; }
   fi
   docker compose -p "$projekt" -f "$arbeit/docker-compose.yml" down -v >/dev/null 2>&1 || true
   sudo rm -rf "$arbeit" 2>/dev/null || rm -rf "$arbeit" || true

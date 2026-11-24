@@ -33,6 +33,7 @@ import { Menue } from '../bausteine';
 ```
 
 - **Tastatur** nach WAI-ARIA (Menü-Knopf): Enter, Leertaste oder Pfeil runter öffnen und setzen den Fokus auf den ersten Punkt; Pfeiltasten, Pos1 und Ende wandern; Esc schließt und gibt den Fokus an den Knopf zurück. Ein Klick daneben schließt.
+- **Lage (#1488):** Die offene Liste liegt fest im Fenster (`position: fixed`), unter dem Knopf, wenn sie dort Platz hat – der Platz des Assistenten unten rechts (`--platz-begleiter`) zählt nicht als Platz –, sonst darüber. Passt sie nirgends ganz, nimmt sie die Seite mit mehr Platz und rollt in sich. So verlängert ein Menü keine Spalte und erzeugt keine Rollleiste der Seite. Beim Rollen und bei neuer Fenstergröße rückt sie mit. Das Muster steht in `web/src/bausteine/menue/lage.ts` (`aufklapplage`, `legeFest`) – für alles, was aufklappt.
 - **Am Handy** öffnet das Menü als Blatt von unten; jeder Punkt ist mindestens 48 px hoch.
 - **Fehler** aus `tu` (abgelehntes Promise) kommen als Hinweisfenster.
 - Die Musterseite zeigt den Baustein im Bereich **Menü**: mit Gruppen, gesperrtem Punkt und Gefahr.

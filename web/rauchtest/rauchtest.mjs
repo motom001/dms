@@ -33,6 +33,7 @@
 
 // Die Einrichtung zuerst, dann die Bereiche in der Reihenfolge, in der sie aufeinander aufbauen.
 import './einrichtung.mjs';
+import './bereiche/werkbank-uebersicht.mjs';
 import './bereiche/start-und-suche.mjs';
 import './bereiche/pakete.mjs';
 import './bereiche/paket-reiter.mjs';
@@ -46,6 +47,7 @@ import './bereiche/bausteine-und-knoepfe.mjs';
 import './bereiche/dreiteilung-und-systemzustand.mjs';
 import './bereiche/werkbank-suche-und-archiv.mjs';
 import './bereiche/aus-bausteinen.mjs';
+import './bereiche/formularfelder.mjs';
 import './bereiche/startbild-und-vorschlaege.mjs';
 import './bereiche/automatisierungen.mjs';
 import './bereiche/organisation-und-datenschutz.mjs';
@@ -55,6 +57,7 @@ import './bereiche/erwaehnen.mjs';
 import './bereiche/werkbank-laden.mjs';
 import './bereiche/anmeldeschutz.mjs';
 import './bereiche/navigation.mjs';
+import './bereiche/mappe-menues.mjs';
 import './bereiche/ruhige-werkbank.mjs';
 import './bereiche/liste-und-verweise.mjs';
 import './bereiche/lasttest-seite.mjs';

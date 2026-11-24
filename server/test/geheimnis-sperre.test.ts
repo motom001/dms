@@ -357,7 +357,7 @@ describe('Geheimnisse gibt Ablago nie heraus (#1055)', () => {
             },
           });
           const f = await d.auftraege.warte();
-          assert.equal(f?.status, 'fertig', f?.fehler);
+          assert.equal(f?.status, 'fertig', String(f?.fehler));
           const id = (f!.ergebnis as { id: string }).id;
           const inhalt = (await rufeH('GET', '/api/werkbank/auskunft/:id/zip', { params: { id } })).datei!.inhalt as unknown as
             AsyncIterable<Buffer> | Buffer;

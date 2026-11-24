@@ -4,11 +4,11 @@ import type { Dokument, OcrStand } from '../../../../shared/src/model';
 import type { ArchivStand } from '../../../../shared/src/archivfassung';
 import { sprache } from '../../../../shared/src/sprache';
 import { t, tn } from '../../sprache';
-import { archivfassungUrl, dokumentUrl } from '../../api/dokumente';
+import { dokumentUrl } from '../../api/dokumente';
 import { Person } from '../../Person';
 import { Hilfe } from '../../Hilfe';
 import { Symbol } from '../../Symbol';
-import { Knopf, KnopfLink } from '../../bausteine';
+import { Knopf } from '../../bausteine';
 import { artVon, groesse, herkunftVon, zeit } from './hilfen';
 
 /** Schmaler Bildschirm (Handy, #505) – wie die Blätter von unten in styles.css (bis 600 px). */
@@ -69,6 +69,29 @@ export function DokTeilen({ d }: { d: Dokument }) {
   );
 }
 
+/**
+ * Herkunft und Person (#1489): „per E-Mail · für Lena“ bei Eingangskanälen, sonst wer hochgeladen hat. Ohne Person
+ * (z. B. ein Postfach ohne „für“) fällt der Teil weg – kein „unbekannt“.
+ */
+export function HerkunftUndPerson({ x }: { x: Dokument }) {
+  return (
+    <>
+      {herkunftVon(x.herkunft)}
+      {x.eingangFuer ? (
+        <>
+          {' · '}
+          {t('ablage.dokumente.info.fuer')} <Person id={x.eingangFuer} />
+        </>
+      ) : x.erstelltVon ? (
+        <>
+          {' · '}
+          <Person id={x.erstelltVon} />
+        </>
+      ) : null}
+    </>
+  );
+}
+
 /** Eine Infozeile (#1211): Art · Seiten · Größe · Datum · Herkunft · Version und Archivnummer, wenn vorhanden. */
 export function Infozeile({ x, s }: { x: Dokument; s?: OcrStand }) {
   const teile: ReactNode[] = [
@@ -76,9 +99,7 @@ export function Infozeile({ x, s }: { x: Dokument; s?: OcrStand }) {
     s?.stand === 'fertig' && s.seiten ? t('ablage.dokumente.info.seiten', { anzahl: s.seiten }) : null,
     groesse(x.groesse),
     zeit(x.erstellt),
-    <>
-      {herkunftVon(x.herkunft)} · <Person id={x.erstelltVon} />
-    </>,
+    <HerkunftUndPerson x={x} />,
     (x.version ?? 1) > 1 ? t('ablage.dokumente.version-2', { wert: x.version ?? 1 }) : null,
     x.archivnummer ? tn('ablage.dokumente.archivnummer-2', { b: <strong className="mono">{x.archivnummer}</strong> }) : null,
   ].filter((v) => v !== null && v !== '');
@@ -139,30 +160,4 @@ export function NichtHerunterladen() {
       {t('mappen.mitnehmen.knopf')}
     </Knopf>
   );
-}
-
-/**
- * Herunterladen (#631): mit Archivfassung die Wahl – vorausgewählt (vorn) ist, was man gerade sieht, bei E-Rechnungen
- * immer das Original.
- */
-export function Herunterladen({ x, archiv }: { x: Dokument; archiv: boolean }) {
-  const a = x.archivfassung?.stand === 'fertig' ? x.archivfassung.fassung : undefined;
-  if (!a || a.imOriginal)
-    return (
-      <KnopfLink href={dokumentUrl(x.id, true)} art="link">
-        {t('ablage.dokumente.herunterladen')}
-      </KnopfLink>
-    );
-  const zuerstArchiv = archiv && !a.erechnung;
-  const orig = (
-    <KnopfLink key="o" href={dokumentUrl(x.id, true)} title={t('volltext.archiv.laden.original.titel')} art="link">
-      {zuerstArchiv ? t('volltext.archiv.laden.original') : t('ablage.dokumente.herunterladen')}
-    </KnopfLink>
-  );
-  const arch = (
-    <KnopfLink key="a" href={archivfassungUrl(x.id, true)} title={t('volltext.archiv.laden.archiv.titel')} art="link">
-      {zuerstArchiv ? t('ablage.dokumente.herunterladen') : t('volltext.archiv.laden.archiv')}
-    </KnopfLink>
-  );
-  return <>{zuerstArchiv ? [arch, orig] : [orig, arch]}</>;
 }

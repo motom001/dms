@@ -29,6 +29,8 @@
   "uebersicht.heimnetz-gateway": "Ablago can’t tell the home network from the internet.",
   "uebersicht.heimnetz-gateway.text": "Requests arrive with the address {adresse}, the gateway address of its own network, with Docker the one of the Docker network (last on {datum}). Ablago doesn’t believe proxy information from there; the requests don’t count as the home network, not for the emergency access either, nor for setup without a code, and they share one address for sign-in protection. If your reverse proxy runs on the same computer, set TRUST_PROXY to {adresse}. Otherwise: a port mapping without the userland proxy or an address of its own for the container (macvlan).",
   "uebersicht.heimnetz-gateway.knopf": "To emergency access",
+  "uebersicht.proxy-netz": "TRUST_PROXY names a whole network ({netz}) instead of your proxy’s address.",
+  "uebersicht.proxy-netz.text": "Requests come directly from the gateway {adresse} (last on {datum}), and the network covers it. Enter only your proxy’s address, e.g. {adresse} – a whole network also believes requests that merely come through the gateway.",
   "uebersicht.genug-platz": "enough space",
   "uebersicht.notfallzugang-ist-aktiv": "Emergency access “{name}” is active.",
   "uebersicht.er-entstand-ueber-eine": "{b} It was created via a RESCUE file on {datum}. Give it a proper name or deactivate it – if that wasn’t you, deactivate it immediately.",
@@ -47,6 +49,7 @@
   "uebersicht.angekuendigt": "announced",
   "uebersicht.der-wartungsmodus-ist": "Maintenance mode is {wert}.",
   "uebersicht.nur-administratoren-koennen-arbeiten": "Only administrators can work.",
+  "uebersicht.nichts-geht-rein-oder-raus": "Maintenance mode: nothing goes in or out – mailboxes, inbox folders, deliveries and packages rest, emails are skipped.",
   "uebersicht.bald-werden-alle-anderen": "Everyone else will be signed out soon.",
   "uebersicht.zum-wartungsmodus": "To maintenance mode",
   "uebersicht.es-gibt-noch-keinen": "There is no key for passwords yet.",
@@ -149,5 +152,15 @@
   "uebersicht.davon-eingerichtet": ", {benutzt} of them set up",
   "uebersicht.bereiche-ausgeblendet_one": "One area hidden{wert}",
   "uebersicht.bereiche-ausgeblendet_other": "{anzahl} areas hidden{wert}",
-  "uebersicht.offen": "open"
+  "uebersicht.offen": "open",
+  "uebersicht.empfohlen": "Recommended packages.",
+  "uebersicht.empfohlen.text": "Most installations need these packages:",
+  "uebersicht.empfohlen.texterkennung": "Text recognition",
+  "uebersicht.empfohlen.texterkennung.satz": "so scans become searchable.",
+  "uebersicht.empfohlen.benachrichtigungen": "Notifications",
+  "uebersicht.empfohlen.benachrichtigungen.satz": "daily summary, post for you.",
+  "uebersicht.empfohlen.installieren": "Install",
+  "uebersicht.empfohlen.installieren.name": "Install: {name}",
+  "uebersicht.empfohlen.alle": "View all packages",
+  "uebersicht.neu-laden.titel": "Reload notes and status"
 }

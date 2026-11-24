@@ -12,7 +12,7 @@ import { protokoll } from '../protokoll/protokoll';
 import { imapGemessen } from '../system/externmessung';
 import { AnmeldungAbgelaufen, OAUTH_ANBIETER, type OAuthAnbieter, type OAuthStatus, type PostfachOAuth } from './postfach-oauth';
 import { t } from '../sprache/sprache';
-import { gebietsschema } from '../../../shared/src/sprache';
+import { tagIn, zeitText } from '../../../shared/src/region';
 import type { Verschluesselung, Zugang, ImapSitzung, ImapVerbinder, GeleseneMail, MailLeser } from './postfach-typen';
 
 /**
@@ -602,7 +602,8 @@ export class Postfaecher {
       {
         betreff: mail.betreff || t('meldungen.postfach.ohne-betreff'),
         von: absender,
-        ...(datum ? { datum: datum.toISOString().slice(0, 10) } : {}),
+        // Kalendertag in der Zone der Region (#1526): Eine Mail um 00:30 Ortszeit gehört zu diesem Tag, nicht zum Vortag (UTC).
+        ...(datum ? { datum: tagIn(datum) } : {}),
         ...(p.fuer ? { an: p.fuer } : {}),
         nachricht: mail.text.slice(0, NOTIZ_MAX),
       },
@@ -613,9 +614,7 @@ export class Postfaecher {
         text: t('meldungen.postfach.aus-postfach-uebernommen-mail', {
           name: p.name,
           wert: absender || t('meldungen.postfach.unbekannt'),
-          wert2: datum
-            ? t('meldungen.postfach.vom', { datum: datum.toLocaleString(gebietsschema(), { dateStyle: 'short', timeStyle: 'short' }) })
-            : '',
+          wert2: datum ? t('meldungen.postfach.vom', { datum: zeitText(datum, { dateStyle: 'short', timeStyle: 'short' }) }) : '',
         }),
         postfach: p.name,
       },
@@ -638,7 +637,7 @@ export class Postfaecher {
 
   /** Anhänge (und wahlweise die Original-E-Mail) als Dokumente der Post (#999, postfach-anhaenge.ts). */
   private ladeAnhaenge(p: Postfach, postId: string, mail: GeleseneMail, quelle: Buffer, abgelehnt: string[] = []): Promise<number> {
-    return legeAnhaengeAb(this.d.dienst, { postId, mail, quelle, original: p.original, von: SYSTEMNAME }, abgelehnt);
+    return legeAnhaengeAb(this.d.dienst, { postId, mail, quelle, original: p.original, von: SYSTEMNAME, fuer: p.fuer }, abgelehnt);
   }
 
   /** Nach einem Absturz: Gibt es die Post schon, die Mail nur noch wegräumen und merken. */

@@ -28,12 +28,24 @@ jobs:
         teil: [1, 2, 3]
     services:
       postgres:
-        image: postgres:17
+        image: postgres:18
         env:
           POSTGRES_USER: dms
           POSTGRES_PASSWORD: dms
           POSTGRES_DB: dms_test
         ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U dms -d dms_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+      # Nur als Quelle für den Umzug 17 → 18 über die Sicherung (#1464, server/test/umzug-pg17-pg18.test.ts). Getestet
+      # wird Ablago selbst nur noch mit 18 (Entscheidung Thomas 21.11.2026, #1544).
+      postgres17:
+        image: postgres:17
+        env:
+          POSTGRES_USER: dms
+          POSTGRES_PASSWORD: dms
+          POSTGRES_DB: dms_test
+        ports: ['5433:5432']
         options: >-
           --health-cmd "pg_isready -U dms -d dms_test"
           --health-interval 5s --health-timeout 5s --health-retries 10
@@ -72,6 +84,7 @@ jobs:
           }
         env:
           TEST_DATABASE_URL: postgres://dms:dms@localhost:5432/dms_test
+          TEST_DATABASE_URL_PG17: postgres://dms:dms@localhost:5433/dms_test
           TEST_TEIL: ${{ matrix.teil }}/3
       # Ungelesene Datei-Ströme (#1456, Vorbereitung auf Node 26): die Testdateien, die echte Dateien lesen, noch einmal
       # mit regelmäßiger Speicherbereinigung (server/test/offene-dateien.ts). Nur in Teil 1 – etwa 2 Minuten, und die
@@ -98,7 +111,7 @@ jobs:
     timeout-minutes: 40
     services:
       postgres:
-        image: postgres:17
+        image: postgres:18
         env:
           POSTGRES_USER: dms
           POSTGRES_PASSWORD: dms
@@ -168,6 +181,20 @@ jobs:
           if ls web/dist/assets | grep -q '^muster' || grep -alq '/muster' web/dist/assets/*.js; then
             echo "::error title=Musterseite::Die Musterseite steckt im Produktivbau (web/src/start.tsx, VITE_MUSTER)"; exit 1
           fi
+          # Bestandteile der Oberfläche (#1470): welche npm-Pakete wirklich im Bündel stecken. Gleicher Bau wie im Image;
+          # release.yml liest die Datei mit den Stücklisten (Artefakte „bestandteile-*“). qrcode bringt seine
+          # Kommandozeile (yargs) nicht ins Bündel.
+          jq -e '[.pakete[].name] | (index("react") != null and index("qrcode") != null and index("yargs") == null)' \
+            web/bestandteile-buendel.json >/dev/null ||
+            { echo "::error title=Bestandteile::web/bestandteile-buendel.json unvollständig (vite.config.ts, #1470)"; exit 1; }
+          mkdir -p "$RUNNER_TEMP/bestandteile-oberflaeche"
+          cp web/bestandteile-buendel.json "$RUNNER_TEMP/bestandteile-oberflaeche/"
+      - name: Bestandteile der Oberfläche ablegen
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: bestandteile-oberflaeche
+          path: ${{ runner.temp }}/bestandteile-oberflaeche
+          retention-days: 7
       # Testbau (#967): mit Musterseite unter /muster für die Rauchtests. Das Image baut das Dockerfile, ohne Musterseite.
       - name: Bauen
         run: npm run build
@@ -270,7 +297,7 @@ jobs:
     timeout-minutes: 20
     services:
       postgres:
-        image: postgres:17
+        image: postgres:18
         env:
           POSTGRES_USER: dms
           POSTGRES_PASSWORD: dms
@@ -510,12 +537,16 @@ jobs:
       # Dieselbe Tageskennung der Paketschicht wie beim Bau auf main (#1397): So kommt sie wie dort aus dem Cache, und
       # der Vergleich der Paketlisten unten sieht, was ein Release sähe.
       - id: zeit
-        run: echo "tag=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "tag=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+          # Release-Version für DMS_VERSION im Image (#1447), wie beim Bau auf main.
+          echo "version=$(jq -r .version package.json)" >> "$GITHUB_OUTPUT"
       - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
           build-args: |
             APK_TAG=${{ steps.zeit.outputs.tag }}
+            DMS_VERSION=${{ steps.zeit.outputs.version }}
           platforms: ${{ matrix.plattform }}
           load: true
           push: false
@@ -527,6 +558,9 @@ jobs:
           docker run --rm --entrypoint sh dms:probe -c 'uname -m && pdftotext -v 2>&1 | head -1 && qpdf --version | head -1'
           if docker run --rm --entrypoint sh dms:probe -c 'command -v tesseract'; then echo "::error::tesseract steckt wieder im Image (#459)"; exit 1; fi
           docker run --rm --entrypoint node dms:probe -e "console.log('Node.js', process.version, process.arch)"
+          # Version im Image (#1447): DMS_VERSION wie package.json.
+          v=$(docker run --rm --entrypoint printenv dms:probe DMS_VERSION)
+          [ "$v" = "${{ steps.zeit.outputs.version }}" ] || { echo "::error::DMS_VERSION im Image ist „$v“ statt ${{ steps.zeit.outputs.version }}"; exit 1; }
           groesse=$(docker image inspect dms:probe --format '{{.Size}}')
           echo "::notice title=Image ${{ matrix.plattform }}::$((groesse / 1048576)) MB"
       # Lizenztexte im Image (#1278): Datendateien in server/lizenzen/, die server/src/pakete/lizenztexte.ts beim Start liest.
@@ -618,6 +652,7 @@ jobs:
           push: false
           build-args: |
             APK_TAG=${{ steps.zeit.outputs.tag }}
+            DMS_VERSION=${{ steps.zeit.outputs.version }}
           tags: dms-komplett:probe
           cache-from: type=gha,scope=${{ matrix.plattform }}
       # Gleiche Alpine-Pakete in beiden Varianten (#1397): gemeinsame Pakete müssen dieselbe Version haben, je
@@ -769,6 +804,8 @@ jobs:
         run: |
           echo "jetzt=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
           echo "tag=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+          # Release-Version aus package.json (#1447): das Image setzt DMS_VERSION selbst.
+          echo "version=$(jq -r .version package.json)" >> "$GITHUB_OUTPUT"
       - id: bau
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
@@ -776,6 +813,7 @@ jobs:
           build-args: |
             DMS_COMMIT=${{ github.sha }}
             DMS_GEBAUT=${{ steps.zeit.outputs.jetzt }}
+            DMS_VERSION=${{ steps.zeit.outputs.version }}
             APK_TAG=${{ steps.zeit.outputs.tag }}
           target: ${{ matrix.variante }}
           platforms: ${{ matrix.plattform }}
@@ -877,7 +915,7 @@ jobs:
       - name: Sicherheitslücken im Image
         if: steps.trivy.outcome == 'success'
         run: .github/werkzeuge/image-pruefen.sh "${{ steps.digest.outputs.ref }}" --sarif "$RUNNER_TEMP/trivy.sarif" --nur-melden
-      - uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+      - uses: github/codeql-action/upload-sarif@1bd86f2fdb4b86187fa4059f16f31a3202acc9ea # v4.39.4
         with:
           sarif_file: ${{ runner.temp }}/trivy.sarif
           category: image-${{ matrix.image }}

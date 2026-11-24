@@ -158,7 +158,7 @@ export const ABLAEUFE = [
       await s.locator('.dokzeile').filter({ hasText: 'Hausrat Bedingungen.pdf' }).first().waitFor();
     },
     schritt: async (s) => {
-      const zeile = s.locator('.dokumentliste li', { hasText: 'Hausrat Bedingungen.pdf' });
+      const zeile = s.locator('.dokumentliste li:not(.anlagezeile)', { hasText: 'Hausrat Bedingungen.pdf' });
       await zeile.getByRole('button', { name: /^Weitere Handlungen für/ }).click();
       await s.getByRole('menuitem', { name: 'Seiten …' }).click();
       await s.getByRole('region', { name: /^Seiten von/ }).waitFor();

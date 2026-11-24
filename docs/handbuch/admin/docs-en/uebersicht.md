@@ -1,13 +1,13 @@
 # Workbench and overview {#werkbank-und-ubersicht}
 
-The **workbench** only exists in [Administration mode](verwalten.md#der-verwaltungsmodus): user menu → **Administer Ablago**. Afterwards you land on the **overview** – it shows the messages of your own areas. If a link leads you into the workbench (e.g. from an email "Backup failed"), you land exactly there after "Administer Ablago". You can reach the **Library** in this mode at any time via **Library** at the top, for instance to check what a folder contains. On the left are the areas you may manage, in groups, ordered by what you want to do right now – build the Library, manage users, data protection (only when used for work), bring in post, back up data, change basic settings or track down an error. Which areas you see depends on the [Template](#werkbank-anpassen):
+The **workbench** only exists in [Administration mode](verwalten.md#der-verwaltungsmodus): user menu → **Administer Ablago**. Afterwards you land on the **overview** – it shows the messages of your own areas. If a link leads you into the workbench (e.g. from an email "Backup failed"), you land exactly there after "Administer Ablago". You can reach the **Library** in this mode at any time via **Library** at the top, for instance to check what a folder contains. On the left are the areas you may manage, in groups, ordered by what you want to do right now – build the Library, manage users, data protection, bring in post, back up data, change basic settings or track down an error. Which areas you see depends on the [Template](#werkbank-anpassen):
 
 <!-- bereiche:gruppen -->
 | Group | Areas |
 | --- | --- |
 | **Build the Library** | [Packages](pakete.md), [Example Library](beispielablage.md), [Folder types](mappentypen.md), [Views](sichten.md), [Number sequences](nummernkreise.md), [Automations](automatisierungen.md), [Automation templates](automatisierungsvorlagen.md), [Tours](rundgaenge.md), [Tips](tipps.md) |
 | **Users and security** | [Users](benutzer.md), [Encryption](verschluesselung.md), [Retention expired](archiv.md#nach-der-frist-aufbewahrung-abgelaufen) (only with archive mode), [Stamps](stempel.md) |
-| **Data protection** | [Data protection requests](datenschutz.md#auskunft-erteilen) (only when used for work), [Deletion concept](loeschkonzept.md#aus-dem-dms-erzeugen) (only when used for work), [Deletion log](datenschutz.md#loschprotokoll) (only when used for work) |
+| **Data protection** | [Data protection requests](datenschutz.md#auskunft-erteilen), [Deletion concept](loeschkonzept.md#aus-dem-dms-erzeugen), [Deletion log](datenschutz.md#loschprotokoll) |
 | **Post and intake** | [Mailboxes](postfaecher.md), [Intake folder](eingangsordner.md) (only if the folder is mounted), [WebDAV drive](webdav.md), [Search and full text](texterkennung.md), [Synonyms](suche.md#gleichbedeutende-worter) |
 | **Back up data** | [Backup](sicherung.md), [Full export](export.md), [Bin](papierkorb.md), [Back up data → Settings](daten-einstellungen.md) |
 | **Settings** | [Email and address](installation.md#e-mail-und-adresse), [Region](region.md), [Languages](sprachen.md), [Own organisation](organisation.md), [Tasks](aufgaben.md#werkbank-aufgaben), [Sign-in protection](anmeldeschutz.md), [Themes](designs.md), [Database connection](installation.md#datenbank-anbindung) |
@@ -82,9 +82,9 @@ Pages for building – folder types, views, number sequences, automations and th
 
 ## Overview {#ubersicht}
 
-The workbench begins with the **overview**. It is split in two like the start page of the Library: the areas on the left, the overview itself wide on the right – on a phone the overview alone, where **Areas ›** at the top leads to the areas. At the top are the **tiles**: open tasks, text recognition queue, bin, reported errors, stock (folders, documents, storage, users) and version. That way you first see everything that is pending.
+The workbench begins with the **overview**. It is split in two like the start page of the Library: the areas on the left, the overview itself wide on the right – on a phone the overview alone, where **Areas ›** at the top leads to the areas. At the very top is the card **[What Ablago may do](was-ablago-darf.md)** with your two answers and **Change …**. Below it are the **tiles**: open tasks, text recognition queue, bin, reported errors, stock (folders, documents, storage, users) and version. That way you first see everything that is pending.
 
-Below them, under **Notes**, are the **messages**, each exactly once and each with a button into the matching area. **This also applies to areas that are hidden in your template.** They are sorted by severity:
+Below them, under **Notes**, are the **messages**, each exactly once: one or two sentences, below them a button with the action (such as **Set up email**) and next to it **Acknowledge** – **No, thanks** only where the note really asks a question. **This also applies to areas that are hidden in your template.** They are sorted by severity:
 
 1. **Red – critical:** something isn't working here or data is at risk. You have to deal with it.
 2. **Yellow – warning:** something is missing or set up in a risky way.
@@ -93,6 +93,10 @@ Below them, under **Notes**, are the **messages**, each exactly once and each wi
 Within a level, messages with a date (e.g. a failed backup) come first, newest first. If everything is set up, it says "Everything set up".
 
 ![Workbench → Overview](bilder/werkbank-uebersicht.png)
+
+When you come back to the overview after an action – or bring the tab to the front again – it reloads its notes by itself; whatever is done disappears. You no longer need **Reload** at the top right for that; it stays for the impatient.
+
+**Recommended packages** appear as **one** note: one row per missing package with a sentence on what it is for (text recognition: so scans become searchable; notifications: daily summary, post for you) and **Install**; below that **View all packages**. Installed packages disappear from the list; once all are there, the note disappears. Migration notes such as "Text recognition is now a package" only appear in installations that come from an older version, not after a fresh setup.
 
 The number after *Overview* in the bar names the red and yellow messages still open – without notices and without deliberately accepted ones.
 
@@ -119,6 +123,8 @@ Two notices you close with a button of their own instead – they don't come bac
 | Emergency access is active (RESCUE file) | red | `notfallzugang` |
 | Emergency access was used with the emergency code – until "Read" | red | `notfallzugang.benutzt` |
 | Ablago can't tell the home network from the internet: requests arrive with the gateway address of the Docker network ([Home network can't be determined](anmeldeschutz.md#heimnetz-nicht-bestimmbar)) | yellow | `heimnetz.gateway` |
+| TRUST_PROXY names a whole network instead of your proxy's address: requests come directly from the gateway, and the network covers it ([Home network can't be determined](anmeldeschutz.md#heimnetz-nicht-bestimmbar)) | yellow | `proxy.netz` |
+| PUID and PGID are missing – data folders on a NAS folder now belong to the default 1000:1000 ([Without administrator rights](aktualisieren.md#ohne-root)) | yellow | `kennung.puid` |
 | Storage limit reached | red | `speicherplatz.grenze` |
 | Storage space is getting tight | yellow | `speicherplatz.knapp` |
 | Enough space again – end maintenance? | yellow | `speicherplatz.wartung-beenden` |
@@ -126,13 +132,13 @@ Two notices you close with a button of their own instead – they don't come bac
 | Planned runs paused (the person may no longer carry them out) | yellow | `ablaeufe.angehalten` |
 | Automations with failed runs | yellow | `automatisierung.fehlgeschlagen` |
 | Reminders taken over on the update | notice | `automatisierung.umgezogen` |
-| No daily summary, favourite reports or “Post for you” without the package "Notifications" | notice | `automatisierung.ohne-benachrichtigungen` |
+| Package "Notifications" installed, but no daily summary switched on (if the package is missing, it is under "Recommended packages") | notice | `automatisierung.ohne-benachrichtigungen` |
 | No switched-on automation “Post for you” (package older than 1.3.0 or switched off) | notice | `automatisierung.ohne-post-fuer-dich` |
 | Addresses accept [calls from outside](automatisierungen.md#aufruf-von-aussen) – with **Switch all off** instead of “Acknowledge” | notice | `automatisierung.aufrufe` |
 | CPU or memory above 90 % for 5 minutes | yellow | `auslastung` |
 | Bottleneck (waiting time, connections, workers, overload) | yellow | `engpass` |
 | Search extensions missing or in the wrong place | yellow | `erweiterungen` |
-| Maintenance mode announced or active | yellow | `wartung` |
+| Maintenance mode announced or active; active with "Maintenance mode: nothing goes in or out" ([what rests](wartungsmodus.md#nichts-geht-rein-oder-raus)) | yellow | `wartung` |
 | No key for passwords yet | yellow | `tresor.fehlt` |
 | The key for passwords is missing | red | `tresor.verloren` |
 | The key file doesn't match | red | `tresor.falsch` |
@@ -148,6 +154,8 @@ Two notices you close with a button of their own instead – they don't come bac
 | Test restore missing or old | notice | `sicherung.probe` |
 | The backup folder is not a volume of its own | yellow | `sicherung.volume` |
 | Backups on the same disk as the documents | notice | `sicherung.gleiche-platte` |
+| After a new setup: next step, set up an off-site copy ([First backup](sicherung.md#erste-sicherung); then replaces the "same disk" notice) | notice (yellow on the same disk) | `sicherung.ausser-haus` |
+| The first backup after setup or its test failed – the cause is shown under Workbench → Backup | red | `sicherung.erste-fehler` |
 | Off-site backup failed | red | `sicherung.extern-fehler` |
 | Off-site backup more than 2 days behind | yellow | `sicherung.extern-alt` |
 | “Keep only the newest locally” currently not in effect | yellow | `sicherung.nur-neueste` |
@@ -159,11 +167,15 @@ Two notices you close with a button of their own instead – they don't come bac
 | DMS_LASTTEST in a real installation | yellow | `lasttest` |
 | The [Example Library](beispielablage.md) is set up (until you remove it) | notice | `beispielablage` |
 | Package still needs settings | yellow | `paket-einstellungen` |
-| New: exclude folder types from AI services (once after the update, with AI packages; “Got it”) | notice | `ki.typen` |
-| Skipped during setup | notice | `einrichtung` |
+| Packages paused – each with the reason in words ([Pausing](pakete.md#anhalten)) | yellow | `pakete.angehalten` |
+| Packages not complete – solutions on the package ([Damaged package](pakete.md#beschaedigt)) | yellow | `pakete.beschaedigt` |
+| New: exclude folder types from AI services (once after the update, with AI packages; “Acknowledge”) | notice | `ki.typen` |
+| New: What Ablago may do – please take a look once (once after the update; “Acknowledge”) | notice | `darf.neu` |
+| Skipped during setup (address and email sending; packages are under "Recommended packages") | notice | `einrichtung` |
 | Good if someone else can manage – only one person may manage | notice | `verwaltung.zweite-person` |
 | Environment variables that are no longer needed (each with a reason) | notice | `variablen` |
 | Email sending is not set up | yellow | `mail` |
+| Recommended packages: text recognition, notifications – **Install** per row | notice (yellow as soon as scans wait for text recognition) | `pakete.empfohlen` |
 | Open reported errors | yellow | `fehlermeldungen` |
 | Intake folder: files older than the limit (default 180 days) | yellow | `eingangsordner.alt` |
 | Intake folder: all files together above the limit (default 2 GB) | yellow | `eingangsordner.groesse` |
@@ -171,12 +183,14 @@ Two notices you close with a button of their own instead – they don't come bac
 | Intake folder: more files than the limit (default 100) | yellow | `eingangsordner.anzahl` |
 | Intake folder: folder belongs to no user (post without “To”) | yellow | `eingangsordner.ohne-person` |
 | Intake folder: a person’s folder could not be renamed after the e-mail address changed | yellow | `eingangsordner.umbenennen` |
-| Text recognition is now a package | notice (yellow as soon as scans are waiting) | `texterkennung.paket` |
+| Text recognition is now a package (only after an update from an older version) | notice (yellow as soon as scans are waiting) | `texterkennung.paket` |
 | Documents with an error in text recognition | yellow | `texterkennung.fehler` |
+| At least 3 text recognition jobs cancelled within 24 hours because of the [time limit](texterkennung.md#zeitgrenze) | yellow | `texterkennung.zeitgrenze` |
 | A tool for reading PDFs is missing: no text from PDFs, no page images ([Built-in tools](fehlersuche.md#werkzeuge); button **View and check again**) | red | `werkzeug.fehlt:poppler` |
 | A tool for editing PDFs is missing: protected PDFs can't be unlocked, shrinking works less well ([Built-in tools](fehlersuche.md#werkzeuge)) | yellow | `werkzeug.fehlt:qpdf` |
 | Fonts for PDFs are missing: PDFs without embedded fonts show no text in page images, thumbnails and the archive version ([Built-in tools](fehlersuche.md#werkzeuge)) | yellow | `schriften.fehlen` |
 | Document files are missing from the storage folder (e.g. `/data/files` without a volume) – details in the log, module *Documents* | red | `dateien.fehlen` |
+| "Check all files" (by hand or [on a schedule](archiv.md#alle-dateien-prufen-zeitplan)) found deviations | red | `dateien.befund` |
 | Nobody gets the tasks without a recipient | notice | `aufgabenempfaenger` |
 | Tasks with people without read permission | yellow | `aufgaben.ohne-leserecht` |
 | Tasks without a recipient | notice | `aufgaben.ohne-empfaenger` |
@@ -246,7 +260,7 @@ You choose the level in the setup wizard in the step “Use” and later here. E
 | **Number** | **10** | **30** | **35** | **37** | **39** |
 <!-- /bereiche:stufen -->
 
-The data protection areas are also only in the bar when Ablago is used for work.
+The data protection areas also follow only the level (from Self-employed) and your own shows and hides – whether Ablago is used for work does not matter for the bar. It still decides whether your own organisation appears in disclosures.
 
 Afterwards you can deviate per area:
 

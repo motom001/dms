@@ -29,6 +29,8 @@
   "uebersicht.heimnetz-gateway": "Ablago kann Heimnetz und Internet nicht unterscheiden.",
   "uebersicht.heimnetz-gateway.text": "Anfragen kommen mit der Adresse {adresse} an, der Gateway-Adresse des eigenen Netzes, bei Docker die des Docker-Netzes (zuletzt {datum}). Ablago glaubt Proxy-Angaben von dort nicht; die Anfragen gelten nicht als Heimnetz, auch nicht für den Notfallzugang und die Einrichtung ohne Code, und teilen sich eine Adresse für den Anmeldeschutz. Läuft dein Reverse-Proxy auf demselben Rechner, setze TRUST_PROXY auf {adresse}. Sonst: Portfreigabe ohne Userland-Proxy oder eine eigene Adresse für den Container (macvlan).",
   "uebersicht.heimnetz-gateway.knopf": "Zum Notfallzugang",
+  "uebersicht.proxy-netz": "TRUST_PROXY nennt ein ganzes Netz ({netz}) statt der Adresse deines Proxys.",
+  "uebersicht.proxy-netz.text": "Anfragen kommen direkt vom Gateway {adresse} (zuletzt {datum}), und das Netz deckt es ab. Trage nur die Adresse deines Proxys ein, z. B. {adresse} – ein ganzes Netz glaubt auch Anfragen, die nur über das Gateway kommen.",
   "uebersicht.genug-platz": "genug Platz",
   "uebersicht.notfallzugang-ist-aktiv": "Notfallzugang „{name}“ ist aktiv.",
   "uebersicht.er-entstand-ueber-eine": "{b} Er entstand über eine RESCUE-Datei am {datum}. Gib ihm einen richtigen Namen oder deaktiviere ihn – warst du das nicht, sofort deaktivieren.",
@@ -47,6 +49,7 @@
   "uebersicht.angekuendigt": "angekündigt",
   "uebersicht.der-wartungsmodus-ist": "Der Wartungsmodus ist {wert}.",
   "uebersicht.nur-administratoren-koennen-arbeiten": "Nur Administratoren können arbeiten.",
+  "uebersicht.nichts-geht-rein-oder-raus": "Wartungsmodus: nichts geht rein oder raus – Postfächer, Eingangsordner, Zustellungen und Pakete ruhen, E-Mails werden ausgelassen.",
   "uebersicht.bald-werden-alle-anderen": "Bald werden alle anderen abgemeldet.",
   "uebersicht.zum-wartungsmodus": "Zum Wartungsmodus",
   "uebersicht.es-gibt-noch-keinen": "Es gibt noch keinen Schlüssel für Passwörter.",
@@ -149,5 +152,15 @@
   "uebersicht.davon-eingerichtet": ", {benutzt} davon eingerichtet",
   "uebersicht.bereiche-ausgeblendet_one": "Ein Bereich ausgeblendet{wert}",
   "uebersicht.bereiche-ausgeblendet_other": "{anzahl} Bereiche ausgeblendet{wert}",
-  "uebersicht.offen": "offen"
+  "uebersicht.offen": "offen",
+  "uebersicht.empfohlen": "Empfohlene Pakete.",
+  "uebersicht.empfohlen.text": "Diese Pakete brauchen die meisten Ablagen:",
+  "uebersicht.empfohlen.texterkennung": "Texterkennung",
+  "uebersicht.empfohlen.texterkennung.satz": "damit Scans durchsuchbar werden.",
+  "uebersicht.empfohlen.benachrichtigungen": "Benachrichtigungen",
+  "uebersicht.empfohlen.benachrichtigungen.satz": "tägliche Zusammenfassung, Post für dich.",
+  "uebersicht.empfohlen.installieren": "Installieren",
+  "uebersicht.empfohlen.installieren.name": "Installieren: {name}",
+  "uebersicht.empfohlen.alle": "Alle Pakete ansehen",
+  "uebersicht.neu-laden.titel": "Hinweise und Stand neu laden"
 }

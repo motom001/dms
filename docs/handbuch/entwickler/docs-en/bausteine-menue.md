@@ -33,6 +33,7 @@ import { Menue } from '../bausteine';
 ```
 
 - **Keyboard** following WAI-ARIA (menu button): Enter, Space or Arrow down open it and focus the first item; arrow keys, Home and End move; Esc closes and returns focus to the button. A click outside closes it.
+- **Position (#1488):** the open list is fixed in the window (`position: fixed`), below the button when there is room – the assistant's space at the bottom right (`--platz-begleiter`) does not count as room – otherwise above it. If it fits nowhere completely, it takes the side with more room and scrolls inside. So a menu never lengthens a column and never adds a page scrollbar. It follows when scrolling or resizing. The pattern lives in `web/src/bausteine/menue/lage.ts` (`aufklapplage`, `legeFest`) – for everything that pops open.
 - **On the phone** the menu opens as a sheet from the bottom; every item is at least 48 px high.
 - **Errors** from `tu` (rejected promise) appear in a message window.
 - The pattern page shows the building block in the area **Menu**: with groups, a locked item and danger.

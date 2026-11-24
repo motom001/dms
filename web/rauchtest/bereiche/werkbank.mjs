@@ -12,7 +12,9 @@ import {
   keineWaagerechteRolle,
   LENA,
   rauchtest,
+  rundgaengeGesehen,
   schemaWechseln,
+  sitzung,
   verwalten,
   WERKBANK_BEREICHE,
 } from '../hilfen.mjs';
@@ -133,6 +135,49 @@ rauchtest(
   },
 );
 
+// Nach der Einrichtung (#1509): Sicherung an (täglich 02:00), erste Sicherung und Probe liefen von selbst. Der Zustand
+// steht grün am Stand, der Speicherbedarf unter der Aufbewahrung rechnet beim Ändern mit; die Übersicht nennt nur den
+// nächsten Schritt „Kopie außer Haus einrichten“ – keine Warnung „noch keine Sicherung“ oder „noch keine Probe“.
+rauchtest(
+  'Werkbank: erste Sicherung und Probe nach der Einrichtung, nächster Schritt außer Haus (#1509)',
+  { als: LENA, erwartet: [{ status: 409, pfad: /^\/api\/wiederherstellung\/sicherungen$/ }], timeout: 150_000 },
+  async (s) => {
+    await s.goto(BASIS + '/ablage/start');
+    await verwalten(s);
+    // Mit zwei Prozessen macht der Leiter den Lauf beim nächsten Blick (höchstens eine Minute) – den Stand abfragen.
+    const stand = async () => (await s.request.get(BASIS + '/api/werkbank/sicherung', { headers: { 'x-dms': '1' } })).json();
+    let z = await stand();
+    for (let i = 0; i < 120 && ['offen', 'laeuft'].includes(z.zustand.erste?.status); i++) {
+      await new Promise((r) => setTimeout(r, 1000));
+      z = await stand();
+    }
+    assert.equal(z.zustand.erste?.status, 'ok', JSON.stringify(z.zustand.erste));
+    assert.deepEqual([z.plan.aktiv, z.plan.uhrzeit, z.plan.haeufigkeit], [true, '02:00', 'taeglich']);
+    assert.equal(z.zustand.probe.ampel, 'gruen');
+    await s.goto(BASIS + '/werkbank/sicherung');
+    const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
+    await bearbeitung.getByRole('heading', { name: 'Sicherung', level: 1 }).waitFor();
+    await bearbeitung
+      .locator('.standzeile')
+      .getByText(/Erste Sicherung und Probe erfolgreich, /)
+      .waitFor();
+    assert.equal(await bearbeitung.getByText(/Es gibt noch keine Sicherung/).count(), 0);
+    // Speicherbedarf direkt unter der Aufbewahrung, rechnet vor dem Speichern mit.
+    const zeitplan = bearbeitung.locator('#zeitplan');
+    await zeitplan.getByText(/^Speicherbedarf: etwa 14 Sicherungen ≈ /).waitFor();
+    await zeitplan.getByRole('spinbutton', { name: 'Tägliche' }).fill('3');
+    await zeitplan.getByText(/^Speicherbedarf: etwa 10 Sicherungen ≈ /).waitFor();
+    // Übersicht: genau ein Hinweis zur Sicherung – der nächste Schritt, mit Handlung und „Zur Kenntnis nehmen“.
+    await s.goto(BASIS + '/werkbank');
+    const hinweis = s.locator('.hinweis', { hasText: 'Nächster Schritt: Kopie außer Haus einrichten.' });
+    await hinweis.waitFor();
+    await hinweis.getByRole('link', { name: 'Kopie außer Haus einrichten' }).waitFor();
+    await hinweis.getByRole('button', { name: 'Zur Kenntnis nehmen' }).waitFor();
+    for (const text of [/Es gibt noch keine Sicherung/, /Erst eine Probe/, /Erste Sicherung und Probe erfolgreich/])
+      assert.equal(await s.locator('.hinweis').getByText(text).count(), 0, String(text));
+  },
+);
+
 // Wiederherstellen (Abschnitt der Sicherung) antwortet außerhalb des Wartungsmodus mit 409 – das ist gewollt.
 rauchtest(
   'Werkbank: Notfallblatt nur unter Verschlüsselung, Sicherung verweist dorthin (#993, #1193)',
@@ -177,7 +222,8 @@ rauchtest(
     const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
     await bearbeitung.getByRole('heading', { name: 'Sicherung', level: 1 }).waitFor();
     await bearbeitung.getByRole('button', { name: 'Jetzt sichern' }).click();
-    const zeile = bearbeitung.locator('#liste tbody tr').first();
+    // Seit #1509 liegt schon die erste (automatische) Sicherung aus der Einrichtung da – die neue ist die von Hand.
+    const zeile = bearbeitung.locator('#liste tbody tr', { hasText: 'von Hand' }).first();
     const laden = zeile.getByRole('button', { name: 'Herunterladen' });
     await laden.waitFor({ timeout: 60_000 });
     const knoepfe = await zeile.locator('td').last().getByRole('button').allInnerTexts();
@@ -227,8 +273,9 @@ const STUFE_NEU = {
   organisation: ['rundgaenge', 'designs'],
   alles: ['anbindung', 'demo'],
 };
-// Stehen nur unter einer Bedingung in der Leiste (Archivmodus, eingebundener Ordner, berufliche Nutzung).
-const BEDINGT = ['aufbewahrung', 'eingangsordner', 'auskuenfte', 'loeschkonzept', 'loeschprotokoll'];
+// Stehen nur unter einer Bedingung in der Leiste (Archivmodus, eingebundener Ordner). Die Gruppe Datenschutz hängt seit
+// #1319 nur an der Stufe – auch in dieser privat genutzten Testinstallation steht sie ab Selbständig da.
+const BEDINGT = ['aufbewahrung', 'eingangsordner'];
 const ansichtSetzen = (s, data) => s.request.put(BASIS + '/api/werkbank/ansicht', { headers: { 'x-dms': '1' }, data });
 
 /** Was die Leiste regulär zeigt (ohne Bereiche, die nur wegen eines Hinweises dastehen), als Pfade. */
@@ -331,12 +378,15 @@ rauchtest('Rundgang beim ersten Anmelden und „Ablago entdecken“', {}, async 
   await s.getByLabel('Passwort', { exact: true }).fill(JONAS.passwort);
   await s.getByRole('button', { name: 'Anmelden', exact: true }).click();
   const rundgang = s.getByRole('dialog');
-  // #1300: sechs Schritte, der letzte zeigt auf den Assistenten.
-  await rundgang.getByText('Schritt 1 von 6').waitFor();
-  for (let i = 2; i <= 6; i++) {
+  // #1300, #1522: sieben Schritte in Leserichtung, der erste zeigt auf das Logo oben links, der letzte auf den Assistenten.
+  await rundgang.getByText(/Deine Ablage im Überblick/).waitFor();
+  await rundgang.getByRole('heading', { name: 'Zurück zum Anfang' }).waitFor();
+  await rundgang.getByText('Schritt 1 von 7').waitFor();
+  for (let i = 2; i <= 7; i++) {
     await rundgang.getByRole('button', { name: 'Weiter' }).click();
-    await rundgang.getByText(`Schritt ${i} von 6`).waitFor();
+    await rundgang.getByText(`Schritt ${i} von 7`).waitFor();
   }
+  await rundgang.getByRole('heading', { name: 'Hilfe ist immer da' }).waitFor();
   await rundgang.getByRole('button', { name: 'Fertig' }).click();
   await rundgang.waitFor({ state: 'detached' });
   await s.getByRole('heading', { name: 'Guten Tag, Jonas', level: 1 }).waitFor();
@@ -346,10 +396,19 @@ rauchtest('Rundgang beim ersten Anmelden und „Ablago entdecken“', {}, async 
   await s.getByRole('dialog', { name: 'Assistent' }).getByRole('link', { name: 'Alle Tipps und Rundgänge ›' }).click();
   await s.getByRole('heading', { name: 'Ablago entdecken', level: 1 }).waitFor();
   await s.getByRole('region', { name: 'Tipps' }).getByRole('link').first().waitFor();
-  await s.getByRole('region', { name: 'Rundgänge' }).getByRole('button', { name: 'Rundgang starten' }).click();
-  await rundgang.getByText('Schritt 1 von 6').waitFor();
+  const rundgaenge = s.getByRole('region', { name: 'Rundgänge' });
+  // Die Werkbank hat ihren Rundgang nur für Verwaltende (#1512).
+  assert.equal(await rundgaenge.getByText('Die Werkbank im Überblick').count(), 0);
+  await rundgaenge
+    .getByRole('listitem')
+    .filter({ hasText: 'Deine Ablage im Überblick' })
+    .getByRole('button', { name: 'Rundgang starten' })
+    .click();
+  await rundgang.getByText('Schritt 1 von 7').waitFor();
   await rundgang.getByRole('button', { name: 'Überspringen' }).click();
   await rundgang.waitFor({ state: 'detached' });
+  // Die Rundgänge der Mappe und von Mein Konto prüft rundgaenge-und-tipps.mjs; über Jonas' weiteren Tests liegen sie nicht.
+  await rundgaengeGesehen(await sitzung(JONAS));
 });
 
 rauchtest('Abmelden', { als: LENA }, async (s) => {

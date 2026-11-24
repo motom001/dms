@@ -184,23 +184,32 @@
     "fehler": null
   },
   "gesperrt": {
-    "anfragen": [["GET", "/api/werkbank/anmeldeschutz"]],
+    "anfragen": [
+      ["GET", "/api/werkbank/anmeldeschutz"],
+      ["GET", "/api/region"]
+    ],
     "ausgabe": [
       "IP            seit             bis              Grund",
-      "203.0.113.7   02.01.26, 03:04  bis entsperrt    zu viele Versuche",
-      "198.51.100.1  02.01.26, 03:04  03.01.26, 03:04  Liste"
+      "203.0.113.7   02.01.26, 04:04  bis entsperrt    zu viele Versuche",
+      "198.51.100.1  02.01.26, 04:04  03.01.26, 04:04  Liste"
     ],
     "fragen": [],
     "fehler": null
   },
   "gesperrt leer": {
-    "anfragen": [["GET", "/api/werkbank/anmeldeschutz"]],
+    "anfragen": [
+      ["GET", "/api/werkbank/anmeldeschutz"],
+      ["GET", "/api/region"]
+    ],
     "ausgabe": ["Keine Adresse gesperrt."],
     "fragen": [],
     "fehler": null
   },
   "gesperrt als JSON": {
-    "anfragen": [["GET", "/api/werkbank/anmeldeschutz"]],
+    "anfragen": [
+      ["GET", "/api/werkbank/anmeldeschutz"],
+      ["GET", "/api/region"]
+    ],
     "ausgabe": [
       {
         "json": [
@@ -246,19 +255,28 @@
     }
   },
   "wartung": {
-    "anfragen": [["GET", "/api/werkbank/wartung"]],
-    "ausgabe": ["Wartungsmodus: aktiv – Umzug (bis 02.01.26, 05:00)"],
+    "anfragen": [
+      ["GET", "/api/werkbank/wartung"],
+      ["GET", "/api/region"]
+    ],
+    "ausgabe": ["Wartungsmodus: aktiv – Umzug (bis 02.01.26, 06:00)"],
     "fragen": [],
     "fehler": null
   },
   "wartung ohne Text": {
-    "anfragen": [["GET", "/api/werkbank/wartung"]],
+    "anfragen": [
+      ["GET", "/api/werkbank/wartung"],
+      ["GET", "/api/region"]
+    ],
     "ausgabe": ["Wartungsmodus: aktiv"],
     "fragen": [],
     "fehler": null
   },
   "wartung aus Stand": {
-    "anfragen": [["GET", "/api/werkbank/wartung"]],
+    "anfragen": [
+      ["GET", "/api/werkbank/wartung"],
+      ["GET", "/api/region"]
+    ],
     "ausgabe": ["Kein Wartungsmodus."],
     "fragen": [],
     "fehler": null
@@ -316,18 +334,24 @@
     "fehler": null
   },
   "status": {
-    "anfragen": [["GET", "/api/werkbank/system"]],
+    "anfragen": [
+      ["GET", "/api/werkbank/system"],
+      ["GET", "/api/region"]
+    ],
     "ausgabe": [
       "Ablago 1.2.3 (voll), Commit abcdef1",
-      "Läuft seit 02.01.26, 03:04 · Node v22 · Europe/Berlin",
+      "Läuft seit 02.01.26, 04:04 · Node v22 · Europe/Berlin",
       "Datenbank: version 16 · groesse 12"
     ],
     "fragen": [],
     "fehler": null
   },
   "status ohne Commit, Datenbank-Fehler": {
-    "anfragen": [["GET", "/api/werkbank/system"]],
-    "ausgabe": ["Ablago 1.2.3 (voll)", "Läuft seit 02.01.26, 03:04 · Node v22 · Europe/Berlin", "Datenbank: Fehler – weg"],
+    "anfragen": [
+      ["GET", "/api/werkbank/system"],
+      ["GET", "/api/region"]
+    ],
+    "ausgabe": ["Ablago 1.2.3 (voll)", "Läuft seit 02.01.26, 04:04 · Node v22 · Europe/Berlin", "Datenbank: Fehler – weg"],
     "fragen": [],
     "fehler": null
   },
@@ -380,10 +404,13 @@
     "fehler": null
   },
   "benutzer": {
-    "anfragen": [["GET", "/api/benutzer"]],
+    "anfragen": [
+      ["GET", "/api/benutzer"],
+      ["GET", "/api/region"]
+    ],
     "ausgabe": [
       "E-Mail            Name  Verwaltung          Status       Letzte Anmeldung",
-      "anna@example.org  Anna  Gesamte Verwaltung  aktiv        02.01.26, 03:04",
+      "anna@example.org  Anna  Gesamte Verwaltung  aktiv        02.01.26, 04:04",
       "ben@example.org   Ben   sicherung           eingeladen   –",
       "carl@example.org  Carl  –                   deaktiviert  –"
     ],
@@ -391,7 +418,10 @@
     "fehler": null
   },
   "benutzer als JSON": {
-    "anfragen": [["GET", "/api/benutzer"]],
+    "anfragen": [
+      ["GET", "/api/benutzer"],
+      ["GET", "/api/region"]
+    ],
     "ausgabe": [
       {
         "json": [

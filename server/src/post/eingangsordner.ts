@@ -680,7 +680,14 @@ export class Eingangsordner {
       const register = typ.register.find((r) => r.art === 'dokumente')?.key;
       await this.d.dienst.dokumente.ladeHoch(
         post.id,
-        { register, name: basename(rel), typ: MIME[extname(rel).toLowerCase()] },
+        // Herkunft (#1489): „aus dem Eingangsordner“, für die Person des Unterordners.
+        {
+          register,
+          name: basename(rel),
+          typ: MIME[extname(rel).toLowerCase()],
+          herkunft: 'ordner',
+          ...(person ? { eingang: { fuer: person.id } } : {}),
+        },
         inhalt,
         null,
       );
@@ -723,6 +730,7 @@ export class Eingangsordner {
       if (inhalt && createHash('sha256').update(inhalt).digest('hex') === j.sha256) {
         // Dokument fehlt noch (Absturz zwischen Post und Hochladen)? Dann jetzt nachholen.
         if (!(await this.d.dienst.eingangskanaele.postMitDatei(j.sha256, j.seit))) {
+          const fuer = this.personIn(rel, personen);
           const typ = await this.d.dienst.eingangskanaele.postTyp();
           await this.d.dienst.dokumente
             .ladeHoch(
@@ -731,6 +739,8 @@ export class Eingangsordner {
                 register: typ.register.find((r) => r.art === 'dokumente')?.key,
                 name: basename(rel),
                 typ: MIME[extname(rel).toLowerCase()],
+                herkunft: 'ordner',
+                ...(fuer ? { eingang: { fuer: fuer.id } } : {}),
               },
               inhalt,
               null,

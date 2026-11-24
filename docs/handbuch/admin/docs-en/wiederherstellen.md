@@ -41,7 +41,7 @@ Ablago does **not need internet access** for a restore – neither the [package 
 
 1. **the backup file** (`.dms-sicherung`) with the **`.json` next to it**,
 2. **the key**: the key file from the `geheim` folder (in the container `/data/geheim`) or the [emergency sheet](verschluesselung.md#notfallblatt) – it is never in the backup,
-3. **the Ablago image** in the same or a newer version than the backup, saved beforehand e.g. with `docker save ghcr.io/motom001/dms:stabil -o ablago.tar` and loaded on the new device with `docker load -i ablago.tar`. Without internet it cannot be pulled. With [dms-komplett](https://help.ablago.app/installieren/aktuell/komplett/) the same with `ghcr.io/motom001/dms-komplett:stabil`; with two containers also the database image (e.g. `postgres:17`),
+3. **the Ablago image** in the same or a newer version than the backup, saved beforehand e.g. with `docker save ghcr.io/motom001/dms:stabil -o ablago.tar` and loaded on the new device with `docker load -i ablago.tar`. Without internet it cannot be pulled. With [dms-komplett](https://help.ablago.app/installieren/aktuell/komplett/) the same with `ghcr.io/motom001/dms-komplett:stabil`; with two containers also the database image (e.g. `postgres:18`),
 4. **your Compose file** and the `.env` or your environment variables.
 
 Then proceed as described under [New NAS, old backup](#neues-nas-alte-sicherung).
@@ -62,8 +62,23 @@ Whatever a package itself fetches from the internet (such as a sync with a servi
 1. Switch on [maintenance mode](wartungsmodus.md) and let it become active (or **Sign everyone out now**).
 2. **Workbench → Backup → Restore**, choose the backup, check the comparison. If this installation's key doesn't match the backup, enter the one from the matching emergency sheet.
 3. Confirm that the current state will be replaced, and **Restore**. In the confirmation you type the word **wiederherstellen** for safety.
-4. Beforehand, Ablago backs up the **current state** (kind "before a restore") – so you can go back if you picked the wrong backup. If the key is missing for this, a notice appears in the process. Then the previous state of the database stays in the database as a separate area (schema `dms_alt_behalten_…`) for **7 days**; after that Ablago removes it on the next start. The final message names it.
+4. Beforehand, Ablago backs up the **current state** (kind "before a restore") – so you can go back if you picked the wrong backup. This appears as the checkbox **Back up the current state first (recommended)** in the process, with the estimated size; you will find the backup afterwards under **Workbench → Backup**. When to untick it is described under [Restoring in an emergency](#im-notfall). If the key is missing for this, a notice appears in the process. Then the previous state of the database stays in the database as a separate area (schema `dms_alt_behalten_…`) for **7 days**; after that Ablago removes it on the next start. The final message names it.
 5. After the restart, maintenance mode is off; everyone signs in anew.
+
+Backups made by hand show their **What for?** in the selection (see [Back up now](sicherung.md#jetzt-sichern)) – so you quickly find e.g. "Before removing invoices" again.
+
+### Restoring in an emergency { #im-notfall }
+
+The backup beforehand is a good way back – but in an emergency it can get in the way itself. Therefore:
+
+- **Untick:** if you untick **Back up the current state first**, Ablago asks once: "Without a backup you can no longer get the current state back." That is right if the backup itself is the problem (Ablago gets stuck while backing up) or you have to go back to an old state anyway.
+- **Too little space:** if there probably isn't enough space for the backup beforehand (estimated size plus [minimum storage space](sicherung.md#zeitplan-und-aufbewahrung)), the checkbox is off and the reason is shown next to it. Otherwise the extra backup could fill the disk and make the restore fail.
+- **The backup beforehand fails:** Ablago doesn't silently give up and doesn't retry by itself. It shows the error – right at the start or in the process – and asks: **Restore anyway without a backup?** You can fix the cause (e.g. free up space) or continue without a backup of the current state. Until then, nothing has been replaced.
+- The [log](fehlersuche.md#protokoll) (module *sicherung*) records for each restore whether it was done with or without a backup beforehand.
+
+### Backup details are kept { #angaben-zur-sicherung }
+
+The backup files are outside the database, but their details are inside it: when the last automatic backup ran, the last test with its result and the tests per backup, the checks, the state of the off-site copies and the [hidden](sicherung-ausser-haus.md#aus-der-liste-nehmen) backups. When restoring, Ablago takes these details from the current state – they don't jump back to the time of the backup. Schedule and retention, on the other hand, come from the backup. Right after the restore, Ablago doesn't catch up on any backup or test; the next one comes at the set time.
 
 If the backup has a different key from the current one, Ablago puts the previous key file next to it as `dms.schluessel.alt-…` and takes the backup's.
 
@@ -76,6 +91,19 @@ A backup is only good if it can be restored. That's why Ablago restores the newe
 The test also checks the database extensions (see above); if one is missing, the step *Database extensions* shows a notice, and the test still counts as successful.
 
 The result is shown per backup in the list and as a traffic light in the overview: **green** = last test successful and at most 8 days old, **yellow** = older or never, **red** = failed. If a test fails, all administrators get an e-mail. In active maintenance mode and with too little free space, the test pauses. The test needs this installation's **current key**: a backup with an earlier key (after a [key change](verschluesselung.md#schlussel-wechseln)) can't be test-restored; the test then fails with a notice about the key.
+
+## How long it takes { #dauer }
+
+Measured with the data of the [load test](lasttest.md) level *groß* (#1464): **200,000 folders**, almost 4,000 documents, database 461 MB, PostgreSQL 18, computer with 2 cores, Ablago 0.305:
+
+| Step | Duration |
+| --- | ---: |
+| Create the backup (70 MB) | 8 s |
+| Restore into an empty database, total | 102 s |
+| of which *Decrypting and restoring* (tables, indexes, statistics) | 98 s |
+| of which refreshing the database statistics (`ANALYZE`) | just over 2 s |
+
+After importing, Ablago refreshes the statistics of all tables (`ANALYZE`). Without them PostgreSQL wouldn't know how big the tables are and would choose slow paths in the first minutes – with them the collection is as fast as before right after the restart. On a NAS with slower storage everything takes correspondingly longer; with a hard disk instead of an SSD expect several times as long.
 
 ## Not provided for {#nicht-vorgesehen}
 

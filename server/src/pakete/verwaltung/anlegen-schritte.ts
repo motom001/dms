@@ -201,6 +201,7 @@ export abstract class PaketAnlegenSchritte extends PaketErgaenzen {
           felder,
           register,
           beschriftungen: besch.typ.beschriftungen ?? null,
+          ...(besch.typ.mehrzahl ? { mehrzahl: besch.typ.mehrzahl } : {}),
         },
         m.id,
       );
@@ -352,6 +353,7 @@ export abstract class PaketAnlegenSchritte extends PaketErgaenzen {
         von,
         typId: (s) => typMap[s] ?? ids.get(s),
         vorgabeId: async (vw) => vorgabeId(l, vw) ?? (await this.vorgabeMappe(vw, m.id))?.id ?? null,
+        paketRegister: (s) => paket.typen.find((x) => x.schluessel === s)?.register.map((r) => r.key),
       });
       const umbauErg = l.umbauErg;
       for (const s of umbauErg.eigeneWeg) if (!paket.typen.some((x) => x.schluessel === s)) delete typMap[s];

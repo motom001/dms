@@ -5,7 +5,7 @@ import type { ReactNode } from 'react';
 import { useKonto } from '../konto';
 import { Dreiteilung } from '../bereiche';
 import { useDaten } from '../daten';
-import { darfSeite, hatMitte, inLeiste, wartungsPlakette, werkbankEbene } from '../../../shared/src/werkbankansicht';
+import { darfSeite, hatMitte, wartungsPlakette, werkbankEbene } from '../../../shared/src/werkbankansicht';
 import { t, tn } from '../sprache';
 import { useHandbuch } from '../Hilfe';
 import { AnsichtPanel, type BereichZustand } from './Ansicht';
@@ -129,7 +129,8 @@ export function Werkbank({ teile }: { teile: string[] }) {
       </div>
     );
   }
-  const eigene = eintraege.filter((e) => darf(e.pfad) && inLeiste(e.gruppe, d.zaehler.merkmale));
+  // Die Leiste entsteht nach einer Regel (#1319): Stufe und eigene Einblendungen – Datenschutz hängt nicht mehr am Merkmal „beruflich“.
+  const eigene = eintraege.filter((e) => darf(e.pfad));
 
   return (
     <Dreiteilung
@@ -139,7 +140,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
       rechts={bereich !== 'uebersicht'}
       offen={id}
       schmalBis={WERKBANK_SCHMAL}>
-      <aside className="spalte sichten" aria-label={t('werkbank.werkbank.bereiche')}>
+      <aside className="spalte sichten" aria-label={t('werkbank.werkbank.bereiche')} data-anker="werkbank.navigation">
         <WerkbankNavigation
           bereich={bereich}
           eintraege={eigene}
@@ -159,7 +160,7 @@ export function Werkbank({ teile }: { teile: string[] }) {
           {t('werkbank.handbuch.link')} <Symbol name="extern" />
         </a>
       </aside>
-      <section className="spalte liste" aria-label={t('werkbank.werkbank.elemente')}>
+      <section className="spalte liste" aria-label={t('werkbank.werkbank.elemente')} data-anker="werkbank.mitte">
         <HandyKopf an={h.schmal} bereich={bereich} ebene="liste" />
         {liste}
       </section>

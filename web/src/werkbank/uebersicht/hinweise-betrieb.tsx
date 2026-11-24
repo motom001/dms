@@ -6,6 +6,7 @@ import { gebietsschema } from '../../../../shared/src/sprache';
 import { sicherungsHinweise } from '../Sicherung';
 import { exportHinweise } from '../Vollexport';
 import { bytes, datum, zahl } from './hilfen';
+import { empfohlenePakete, umstiegTexterkennung } from './empfohlen';
 import type { Hinweis } from './hilfen';
 
 /* Meldungen der Übersicht (#68, #816), zweiter Teil: Post, Sicherung, Anbindung, Pakete, Einrichtung, Texterkennung, Aufgaben. */
@@ -169,7 +170,8 @@ export function paketeUndEinrichtung(u: WerkbankUebersicht, h: Hinweis[]) {
       ),
       ziel: `/werkbank/pakete/${u.kiTypen.pakete[0].id}`,
       knopf: t('pakete.ki.hinweis.knopf'),
-      erledigen: t('pakete.ki.hinweis.verstanden'),
+      // Einheitlich (#1511): kommt nur einmal – „Zur Kenntnis nehmen“ schließt ihn ab.
+      erledigen: t('werkbank.uebersicht.akzeptieren'),
     });
   // Im Einrichtungsassistenten übersprungen (#119): hier nachholen.
   const nachholen: Record<string, { text: string; ziel: string; knopf: string }> = {
@@ -178,11 +180,16 @@ export function paketeUndEinrichtung(u: WerkbankUebersicht, h: Hinweis[]) {
       ziel: '/werkbank/betrieb',
       knopf: t('werkbank.uebersicht.zu-e-mail-und'),
     },
-    pakete: {
-      text: t('werkbank.uebersicht.pakete-dazuholen-z-b'),
-      ziel: '/werkbank/pakete',
-      knopf: t('werkbank.uebersicht.zu-den-paketen'),
-    },
+    // Pakete übersprungen: seit #1511 im Hinweis „Empfohlene Pakete“ (ältere Server ohne `empfohlenFehlt`: wie bisher).
+    ...(u.empfohlenFehlt
+      ? {}
+      : {
+          pakete: {
+            text: t('werkbank.uebersicht.pakete-dazuholen-z-b'),
+            ziel: '/werkbank/pakete',
+            knopf: t('werkbank.uebersicht.zu-den-paketen'),
+          },
+        }),
   };
   for (const x of u.einrichtung?.uebersprungen ?? [])
     if (nachholen[x] && !(x === 'optional' && u.mail))
@@ -239,6 +246,54 @@ export function paketeUndEinrichtung(u: WerkbankUebersicht, h: Hinweis[]) {
     });
 }
 
+/** Beschädigte (#1551) und angehaltene Pakete (#1563), Was Ablago darf nach dem Update (#1562). */
+export function paketeUndDarf(u: WerkbankUebersicht, h: Hinweis[]) {
+  // Beschädigte Pakete (#1551): am Paket stehen die Lösungen.
+  const bs = u.beschaedigt ?? [];
+  if (bs.length)
+    h.push({
+      schluessel: 'pakete.beschaedigt',
+      art: 'warn',
+      text: (
+        <>
+          <strong>{t('werkbank.pakete.beschaedigt.hinweis', { anzahl: bs.length })}</strong> {bs.map((x) => `„${x.name}“`).join(', ')}.{' '}
+          {t('werkbank.pakete.beschaedigt.hinweis.text')}
+        </>
+      ),
+      ziel: bs.length === 1 ? `/werkbank/pakete/${encodeURIComponent(bs[0].id)}` : '/werkbank/pakete',
+      knopf: t('werkbank.pakete.beschaedigt.knopf'),
+    });
+  // Angehaltene Pakete (#1563): mit Grund in Worten; zum Paket (eines) bzw. zur Liste (mehrere).
+  const ah = u.angehalten ?? [];
+  if (ah.length)
+    h.push({
+      schluessel: 'pakete.angehalten',
+      art: 'warn',
+      text: (
+        <>
+          <strong>{t('werkbank.darf.angehalten.hinweis', { anzahl: ah.length })}</strong> {ah.map((x) => x.grund).join(' ')}{' '}
+          {t('werkbank.darf.angehalten.text')}
+        </>
+      ),
+      ziel: ah.length === 1 ? `/werkbank/pakete/${encodeURIComponent(ah[0].id)}` : '/werkbank/pakete',
+      knopf: t('werkbank.darf.angehalten.knopf'),
+    });
+  // Was Ablago darf (#1562): einmal nach dem Update, bis jemand mit „Gesamte Verwaltung“ es zur Kenntnis nimmt.
+  if (u.darfNeu)
+    h.push({
+      schluessel: 'darf.neu',
+      art: 'info',
+      text: (
+        <>
+          <strong>{t('werkbank.darf.hinweis.neu')}</strong> {t('werkbank.darf.hinweis.neu.text')}
+        </>
+      ),
+      ziel: '/werkbank#was-ablago-darf',
+      knopf: t('werkbank.darf.hinweis.neu.knopf'),
+      erledigen: t('werkbank.uebersicht.akzeptieren'),
+    });
+}
+
 /** E-Mail-Versand, Fehlermeldungen, Texterkennung (#459), Ersatzschriften (#1329). */
 export function mailUndTexterkennung(u: WerkbankUebersicht, h: Hinweis[]) {
   if (!u.mail)
@@ -251,6 +306,8 @@ export function mailUndTexterkennung(u: WerkbankUebersicht, h: Hinweis[]) {
       ziel: '/werkbank/betrieb',
       knopf: t('werkbank.uebersicht.e-mail-einrichten'),
     });
+  // Empfohlene Pakete (#1511): nach dem E-Mail-Versand, ein Hinweis für alle fehlenden.
+  empfohlenePakete(u, h);
   if (u.fehlermeldungen)
     h.push({
       schluessel: 'fehlermeldungen',
@@ -265,8 +322,9 @@ export function mailUndTexterkennung(u: WerkbankUebersicht, h: Hinweis[]) {
       ziel: '/werkbank/fehlermeldungen',
       knopf: t('werkbank.uebersicht.ansehen'),
     });
-  // Texterkennung ist seit #459 ein Paket: ohne Paket deutlich, sobald Scans darauf warten, sonst als Hinweis.
-  if (u.texterkennungPaket === false)
+  // Texterkennung ist seit #459 ein Paket: ohne Paket deutlich, sobald Scans darauf warten, sonst als Hinweis. Ein
+  // Umstiegs-Hinweis – nur für Installationen, die von einer älteren Version kommen (#1511); sonst „Empfohlene Pakete“.
+  if (umstiegTexterkennung(u))
     h.push({
       schluessel: 'texterkennung.paket',
       art: u.texterkennung?.paket ? 'warn' : 'info',
@@ -294,6 +352,20 @@ export function mailUndTexterkennung(u: WerkbankUebersicht, h: Hinweis[]) {
         </>
       ),
       ziel: '/werkbank/texterkennung',
+      knopf: t('werkbank.uebersicht.zur-texterkennung'),
+    });
+  // #1550: Abbrüche wegen der Zeitgrenze häufen sich (ab 3 in 24 Stunden).
+  if ((u.texterkennungZeitgrenze ?? 0) > 0)
+    h.push({
+      schluessel: 'texterkennung.zeitgrenze',
+      art: 'warn',
+      text: (
+        <>
+          <strong>{t('werkbank.texterkennung.zeitgrenze.uebersicht', { anzahl: u.texterkennungZeitgrenze! })}</strong>{' '}
+          {t('werkbank.texterkennung.zeitgrenze.uebersicht.text')}
+        </>
+      ),
+      ziel: '/werkbank/texterkennung#zeitgrenze',
       knopf: t('werkbank.uebersicht.zur-texterkennung'),
     });
 }
@@ -340,6 +412,23 @@ export function aufgabenUndMappen(u: WerkbankUebersicht, h: Hinweis[]) {
         <>
           <strong>{t('werkbank.uebersicht.dateien-fehlen', { anzahl: u.dateienFehlen, zahl: zahl(u.dateienFehlen) })}</strong>{' '}
           {t('werkbank.uebersicht.dateien-fehlen.text')}
+        </>
+      ),
+      ziel: '/werkbank/texterkennung#dateien',
+      knopf: t('werkbank.uebersicht.dateien-fehlen.knopf'),
+    });
+  // #1316: „Alle Dateien prüfen“ (von Hand oder nach Zeitplan) hat Abweichungen gefunden.
+  if (u.dateienBefund)
+    h.push({
+      schluessel: `dateien.befund:${u.dateienBefund.am}`,
+      datum: u.dateienBefund.am,
+      art: 'schlecht',
+      text: (
+        <>
+          <strong>
+            {t('werkbank.archiv.pruefplan.uebersicht', { abweichungen: u.dateienBefund.abweichungen, dateien: u.dateienBefund.dateien })}
+          </strong>{' '}
+          {t('werkbank.archiv.pruefplan.uebersicht.text', { datum: datum(u.dateienBefund.am) })}
         </>
       ),
       ziel: '/werkbank/texterkennung#dateien',

@@ -39,7 +39,19 @@ Knöpfe bedeuten überall dasselbe, und nichts erschreckt unnötig (#1210). Wer 
 
 **Geprüft wird das** an drei Stellen: Die Typprüfung verlangt bei `art="gefahr"` Rückfrage und Symbol und lässt am `Knopf` keine Art `link` zu (`web/src/bausteine/knopf/typpruefung.ts`). ESLint verbietet Farbklassen über `className` am Knopf (`ablago/knopf-farben`) und Elemente, die per Klasse `knopf` oder `textknopf` wie ein Knopf aussehen (`ablago/bausteine`, #1269; [Stil und Abhängigkeiten](stil.md#regeln)). Die Rauchtests melden auf jeder besuchten Seite Anlege-Knöpfe ohne „+“, Gefahr-Knöpfe ohne Rückfrage, rot Gefülltes außerhalb einer Rückfrage, alles, was wie ein Link aussieht, aber kein Ziel hat, und jedes kleine Element mit Rand, das weder Knopf noch Link noch Feld ist (Leitsatz 8) ([Rauchtest und Bilder](#rauchtest)).
 
+Für Anwender erklärt das Benutzerhandbuch dieselben Regeln auf einer Seite: [So sehen Knöpfe aus](https://help.ablago.app/benutzer/aktuell/knoepfe/) (#1524). Ihre Bilder (`knoepfe-*`, hell und dunkel) nimmt `musterAufnehmen` (`web/rauchtest/muster.mjs`) aus einzelnen Karten der Musterseite auf – ändert sich ein Baustein, stimmen sie von selbst.
+
 ![Musterseite, Bereich „Knopf“: Arten, Gefahr in Ruhe, mit Maus und Fokus, die Rückfrage, gesperrt in zwei Formen und die geöffnete Erklärung](bilder/muster-knopf.png){ loading=lazy }
+
+## Muster: Hinweis in der Übersicht { #hinweis-uebersicht }
+
+Alle Hinweise unter „Hinweise“ in der Übersicht der Werkbank folgen einem Muster (#1511, Eintrag im Musterkatalog). Neue Hinweise entstehen in `web/src/werkbank/uebersicht/hinweise.tsx` bzw. `hinweise-betrieb.tsx` als `Hinweis` und halten sich daran:
+
+- **Aufbau:** Titel fett, danach ein bis zwei Sätze. Darunter **ein** Hauptknopf mit der Handlung (Verb und Gegenstand, z. B. „E-Mail einrichten“, „Paket installieren“) und daneben als Neben-Knopf **„Zur Kenntnis nehmen“** (`Akzeptieren.tsx`). Zur Kenntnis genommene Hinweise stehen eingeklappt unten unter „Bewusst akzeptiert (n)“.
+- **„Nein, danke“** nur, wo der Hinweis eine echte Ja/Nein-Frage stellt (z. B. „zweite Person mit Verwaltungsrecht?“); dazu die Variante **„Gelesen“** für rote Meldungen, die man nur zur Kenntnis nehmen kann. Beides über `erledigen`. Ein Hinweis, der nur einmal kommt (z. B. nach einem Update), schließt mit `erledigen: „Zur Kenntnis nehmen“` ab.
+- **Liste im Hinweis:** Mehrere gleiche Handlungen stehen als Zeilen in **einem** Hinweis, nicht als mehrere Hinweise – je Zeile Name, ein Satz und derselbe Neben-Knopf in gleicher Breite untereinander, darunter ein Link auf alle (`eigeneKnoepfe`, Beispiel „Empfohlene Pakete“). Keine Kacheln, keine Bilder. Ist die Liste leer, verschwindet der Hinweis ganz.
+- **Umstiegs-Hinweise** („… ist jetzt ein Paket“) nur für Installationen, die von einer älteren Version kommen (`umstieg` in der Antwort der Übersicht), nie nach einer Neueinrichtung.
+- Nach einer Handlung lädt die Übersicht ihre Hinweise beim Zurückkommen selbst neu (#1513); erledigte Hinweise verschwinden ohne „Neu laden“.
 
 ## Am Handy { #handy }
 
@@ -103,6 +115,7 @@ Dieselben Bilder nimmt der Workflow **Handbuch** in den Jobs `bilder (de)` und `
 | [Kachel](bausteine-kachel.md) | Ein Weg mit einer Zahl, gleich auf Startseite und Werkbank-Übersicht; grün mit Haken nur, wenn leer „erledigt“ heißt |
 | [PaketChip](bausteine-paketchip.md) | Herkunft aus einem Paket: Symbol und Name hinter dem Namen, Tooltip mit Version, Link zur Paketseite |
 | [Eingaben mit Einheit](bausteine-einheit.md) | Zeitraum (Zahl und Einheit, Einzahl/Mehrzahl) und Prozent (Zahl mit „%“) für die Feldarten Zeitraum und Prozent |
+| [Datum](bausteine-datum.md) | Datumsfeld zum Tippen mit eigenem Kalender samt Kalenderwochen (ISO 8601); Klick ins Feld öffnet ihn, die Tastatur bleibt direkt |
 | [Tabelle](bausteine-tabelle.md) | Zeilen mit Spalten, jede führt zu einer Seite; breit eine Tabelle, schmal eine Liste mit den ersten zwei Spalten (Feldart Tabelle) |
 | [Suche](bausteine-suche.md) | Das Suchfeld aller Listen, das Muster „Liste in der Mitte: Suchfeld oben, Filter darunter“ mit Trefferzahl, Fundstellen und Paketfilter, und das Suchfeld der Kopfzeile (`KopfSuche`) |
 | [Umschalter](bausteine-umschalter.md) | Segmentknopf: zwei bis vier gleichrangige Wahlen, genau eine an – etwa „Fragen · Tipps · Handbuch“ im Assistenten |

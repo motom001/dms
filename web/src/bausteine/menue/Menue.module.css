@@ -1,9 +1,12 @@
-/* Menü (#1211, #1212): ein Aussehen für alle Menüs. Nur Werte aus tokens.css. */
+/* Menü (#1211, #1212): ein Aussehen für alle Menüs. Nur Werte aus tokens.css. Lage und Höhe der offenen Liste setzt
+   lage.ts (#1488): fest im Fenster, unten oder oben, ohne Rollleiste der Seite. */
 .menue { position: relative; display: inline-flex; }
 .pfeil { transition: transform .12s; }
 .an .pfeil { transform: rotate(180deg); }
-.liste { position: absolute; right: 0; top: calc(100% + 4px); z-index: var(--ebene-menue); min-width: 220px; max-width: min(360px, calc(100vw - 32px)); display: flex; flex-direction: column; padding: 4px; background: var(--flaeche); color: var(--tinte); border: 1px solid var(--linie); border-radius: 8px; box-shadow: 0 8px 24px var(--schatten-zart); }
+.liste { position: absolute; right: 0; top: calc(100% + 4px); z-index: var(--ebene-menue); min-width: 220px; max-width: min(360px, calc(100vw - 32px)); overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; padding: 4px; background: var(--flaeche); color: var(--tinte); border: 1px solid var(--linie); border-radius: 8px; box-shadow: 0 8px 24px var(--schatten-zart); }
 .liste.links { right: auto; left: 0; }
+/* Mit Höchsthöhe rollt die Liste selbst; die Punkte bleiben so hoch, wie sie sind. */
+.liste > * { flex: none; }
 .gruppe { margin: 6px 10px 2px; font-size: calc(11.5px * var(--skala, 1)); font-weight: 600; color: var(--leise); }
 .punkt { display: grid; grid-template-columns: 1.1em minmax(0, 1fr); align-items: center; gap: 2px 8px; width: 100%; min-height: 32px; text-align: left; background: none; border: 0; padding: 7px 10px; border-radius: 6px; font: inherit; font-weight: 400; color: inherit; cursor: pointer; }
 .punkt:hover, .punkt:focus-visible { background: var(--senke); outline: none; }

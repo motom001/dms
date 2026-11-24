@@ -4,7 +4,15 @@ export { bereinigeWerte, MappenEingaben, type MappenEingabenAnschluss } from './
 export { MappenTitel } from './titel';
 export { HISTORIE_SEITE_MAX, HISTORIE_STANDARD_TAGE, MappenHistorie } from './historie';
 export { keinSchluessel, Passwortfelder, type PasswortfelderAnschluss } from './passwortfelder';
-export { ARCHIV_PRAEFIX, archivnummerAus, MappenArchiv, type MappenArchivAnschluss } from './archiv';
+export {
+  ARCHIV_PRAEFIX,
+  archivnummerAus,
+  liesDateienErgebnis,
+  MappenArchiv,
+  type DateienPruefOptionen,
+  type DateienPruefstand,
+  type MappenArchivAnschluss,
+} from './archiv';
 export { MappenNotizen, type NotizenAnschluss } from './notizen';
 export { geaenderteBerechnete, pruefeBerechnete, type BerechnetAbgelehnt } from './berechnet';
 export {

@@ -10,6 +10,7 @@ import {
   type PlanPaket,
   type PlanVerbindung,
   type Sammelschritt,
+  type PlanDarf,
 } from '../../../shared/src/einrichtungsplan';
 import type { AblaufErgebnis } from '../../../shared/src/pakete';
 import type { NotfallkontaktEingabe } from '../../../shared/src/notfallkontakte';
@@ -99,8 +100,10 @@ export interface Sammlung {
   nutzung: Nutzung | null;
   /** „Deine Organisation“ (#1045) – nur bei beruflich und beides; null = keine. */
   organisation: PlanOrganisation | null;
-  /** Stufe der Werkbank (#987); fehlt = Vorgabe zur Nutzung. Nicht in der Konfigurationsdatei. */
+  /** Stufe der Werkbank (#987); fehlt = Vorgabe zur Nutzung. Seit #1319 auch in der Konfigurationsdatei. */
   werkbank?: Vorlage;
+  /** Was Ablago darf (#1562), aus der Konfigurationsdatei; fehlt = Vorgabe. Fragen im Assistenten kommen mit #1566. */
+  darf?: PlanDarf;
   /** Schritte, die schon einmal mit „Weiter“ verlassen wurden. */
   besucht: Ansicht[];
   ansicht: Ansicht;
@@ -266,6 +269,8 @@ export function planAus(s: Sammlung, db: PlanDatenbank | null = s.datenbank): Ei
     },
     ...(s.nutzung ? { nutzung: s.nutzung } : {}),
     ...(s.organisation && s.nutzung && beruflichBei(s.nutzung) ? { organisation: s.organisation } : {}),
+    ...(s.werkbank ? { werkbank: s.werkbank } : {}),
+    ...(s.darf ? { darf: s.darf } : {}),
   };
 }
 
@@ -279,6 +284,8 @@ export function sammlungAus(p: Einrichtungsplan, hinweise: string[]): Sammlung {
     paketeVorgabe: p.pakete,
     nutzung: p.nutzung ?? null,
     organisation: p.organisation ?? null,
+    ...(p.werkbank ? { werkbank: p.werkbank } : {}),
+    ...(p.darf ? { darf: p.darf } : {}),
     optional: {
       adresse: p.optional.adresse ?? '',
       bundesland: p.optional.bundesland ?? '',

@@ -375,3 +375,29 @@ describe('Nur das eigene Paket (#1082, Sicherheit)', () => {
     );
   });
 });
+
+describe('Angehalten (#1563): Automatisierungen, Ereignisse und Aufträge ruhen; Fortsetzen ohne Neueinrichtung', () => {
+  it('angehalten läuft nichts, Mappentyp und Einstellungen bleiben; nach Fortsetzen wieder wie vorher', async () => {
+    const x = await aufbau(am('04:30'));
+    await x.installiere(vertraege());
+    const a = await x.auto('Verträge täglich prüfen');
+    const angehalten = await x.p.halteAn('vertraege', ICH);
+    assert.equal(angehalten.angehalten?.grund, 'hand');
+    x.zeit.jetzt = am('05:01');
+    await x.motor.zeitplan();
+    assert.deepEqual(await x.motor.laeufe(a.id), [], 'seine Automatisierungen laufen nicht');
+    assert.equal((await x.auto('Verträge täglich prüfen')).aktiv, true, 'ausgeschaltet nur, solange angehalten – der Schalter bleibt');
+    await x.d.ereignisseDienst.auftrag('vertraege', 'zeitplan.ausgefuehrt', { aufgabe: 'taeglich' });
+    assert.deepEqual(await x.zustellung(), [], 'keine Ereignisse und Aufträge');
+    // Mappentypen bleiben nutzbar: Sie gehören der Person, nicht dem Paket.
+    const typ = (await x.d.mappentypen.listeTypen()).find((t) => t.name === 'Vertrag')!;
+    assert.ok(typ, 'Mappentyp bleibt');
+    // Fortsetzen: am nächsten Tag läuft die Automatisierung wieder, ohne Neueinrichtung.
+    const weiter = await x.p.setzeFort('vertraege', ICH);
+    assert.equal(weiter.angehalten, undefined);
+    x.zeit.jetzt = am('05:01', '2026-11-11');
+    await x.motor.zeitplan();
+    assert.equal((await x.motor.laeufe(a.id)).length, 1, 'läuft wieder');
+    assert.equal((await x.zustellung()).filter((e) => e.art === 'zeitplan.ausgefuehrt').length, 1);
+  });
+});

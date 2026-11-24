@@ -53,6 +53,15 @@ When Ablago removes a backup locally (retention, *Keep only the newest locally* 
 
 The package never gets the key and only delivers what Ablago requests from it. The backup folder needs as much free space as the backup is large.
 
+### Remove from list { #aus-der-liste-nehmen }
+
+If you no longer need a backup that only exists off-site, remove it from the list – with **Remove from list** in its row, or for several at once: tick them and use **Remove from list (n)** above the list. The button is only active if all selected backups only exist off-site; local backups are deleted as usual.
+
+- **Nothing is deleted** at the destination. The confirmation says so and names where the files remain. Tidying up at the destination is up to you (or you keep them).
+- Ablago remembers the backup by name and checksum. If the destination reports it again at the next check, it stays off the list. If a different file with the same name (different checksum) turns up there later, it appears.
+- Below the list, collapsed, is **Hidden (n)**: for each backup, who removed it from the list and when, and **Show again**.
+- The [log](fehlersuche.md#protokoll) (module *sicherung*) records who removed which backup from the list and who showed it again.
+
 ## Setting up with "Backup target WebDAV" { #einrichten-mit-sicherungsziel-webdav }
 
 1. **Workbench → Packages**, install *Backup target WebDAV*. The preview shows the permissions: *Read the encrypted backup in order to copy it off site – can't open it* and *Reacts to: A backup is finished*.

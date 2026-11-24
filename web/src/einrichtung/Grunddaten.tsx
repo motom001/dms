@@ -3,6 +3,7 @@ import {
   schluesselAus,
   zieleVon,
   ERKENNBAR_AN_MAX,
+  MEHRZAHL_MAX,
   type Feld as FeldDef,
   type Mappentyp,
   type Register,
@@ -60,6 +61,19 @@ export function GrunddatenBereich({ z }: { z: TypZustand }) {
           />
         </Feld>
       </div>
+      {/* Mehrzahl (#1446): Listen zeigen „12 Verträge“ statt „12 × Vertrag“. */}
+      <SprachText
+        beschriftung={t('mappentypen.editor.mehrzahl')}
+        optional
+        hinweis={t('mappentypen.editor.mehrzahl-hilfe')}
+        id="typ-mehrzahl"
+        wert={e.mehrzahl}
+        placeholder={t('mappentypen.editor.mehrzahl-beispiel')}
+        teil="mehrzahl"
+        beschriftungen={e.beschriftungen}
+        setzeWert={(mehrzahl) => setE({ ...e, mehrzahl: mehrzahl.slice(0, MEHRZAHL_MAX) })}
+        setzeBeschriftungen={(b) => setE({ ...e, beschriftungen: b as Beschriftungen<TypTeile> | undefined })}
+      />
       <SprachText
         beschriftung={t('mappentypen.editor.beschreibung')}
         optional

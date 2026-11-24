@@ -46,6 +46,9 @@ art: minor
 
 Dazu kommt bei jedem Bau der Kurz-Hash des Commits (`:sha-…`).
 
+- **Image nur mit stabilen Versionen** (#1480): `ghcr.io/motom001/ablago:<Version>` trägt nur Versionen, die zu `:stabil` befördert wurden. Den Tag legt *:stabil befördern* (stabil.yml) mit `docker buildx imagetools create` an – ohne neuen Bau, mit demselben Digest wie `dms:<Version>`, also beide Architekturen und derselbe Herkunftsnachweis (`gh attestation verify oci://ghcr.io/motom001/ablago:<Version> -R motom001/dms`). Ein Handstart von *:stabil befördern* ohne neue Version legt den Tag der jetzigen stabilen Version an (so entsteht der erste Tag sofort). Es gibt dort kein `:latest` und kein `:stabil`. *:stabil zurücksetzen* legt dort nichts an; ein schon veröffentlichter Tag bleibt. Gedacht für App-Kataloge mit eigener Aktualisierung (Renovate im TrueNAS-Katalog), die sonst jedes Release nähmen. Nur `dms`, kein `dms-komplett`.
+- **Version im Image** (#1447): Der Bau setzt `DMS_VERSION` auf die Version aus `package.json` (Build-Argument in image.yml, in der Probe und beim Bau auf `main`). Protokoll, Werkbank und Lasttest lasen sie schon vorher aus `package.json`. Neu ist der **Abgleich der Fassungen beim Start** (`FassungenDienst.abgleich`): Er läuft einmal je Version (Merker `fassungen_abgleich`). Was Migrationen und Umzüge geändert haben, bekommt dann die Fassung „Update auf Ablago <Version>“, Einträge ohne Fassung ihre erste, verschwundene einen Löschvermerk. Ohne `DMS_VERSION` hieß die Version immer „Entwicklung“: Der Abgleich lief nur beim allerersten Start, danach nie wieder, und die Fassungen hießen „Update auf Ablago Entwicklung“. Mit der echten Version holt der erste Start nach dem Update alles in einer Fassung je geändertem Eintrag nach. Weil nur Abweichendes eine Fassung bekommt, entstehen keine doppelten Fassungen und keine doppelten oder verlorenen Typen. Lokal (`npm run dev`, Tests) bleibt es bei „Entwicklung“, ebenso bei einem eigenen `docker build` ohne `--build-arg DMS_VERSION=…`. Der Update-Test prüft dieselben Mappentypen vor und nach dem Update und höchstens eine Update-Fassung je Typ, auch nach einem weiteren Neustart.
+
 - **`:latest`** wandert nur bei einer neuen Version, also im selben Lauf wie die Versionsnummer, und erst, wenn das Release angelegt ist. Der wöchentliche Neubau und Pushes ohne neue Nummer setzen nur `:main`. Der Job hängt das fertige Manifest beider Architekturen mit `docker buildx imagetools create` um und prüft danach, dass `:latest` und `:<Version>` denselben Digest haben. Gibt es schon ein höheres Release (zwei Merges kurz hintereinander), bleibt `:latest`, wo es ist. `docker/metadata-action` setzt `:latest` nicht mehr von selbst (`flavor: latest=false`), auch nicht bei einem von Hand gepushten Tag.
 - **Zwei verschiedene „Latest“:** Die Markierung „Latest“ bei den GitHub-Releases trägt die **stabile** Version (`:stabil`), danach richtet sich der Hinweis „neue Version“ in Ablago. Das Image-Tag `:latest` ist die **neueste** Version. Zwischen zwei Wochenläufen zeigen beide meist auf verschiedene Versionen.
 - Prüfen: `docker buildx imagetools inspect ghcr.io/motom001/dms:latest` (und `dms-komplett:latest`) nennt amd64 und arm64; der Digest ist derselbe wie bei `:<Version>` des neuesten Releases.
@@ -87,6 +90,29 @@ So liest du sie: Stimmt der Satz noch? Wenn nicht, korrigieren. Ist er gewollt (
 - **`package-lock.json`** hält die genauen Versionen fest; CI und Image installieren mit `npm ci`. Ändert sich eine `package.json` ohne passende Lockfile, legt der Workflow *Lockfile erzeugen* eine neue auf den Branch `werkzeug/lockfile`; von dort wird sie mit einem normalen Commit übernommen.
 - **Node-Version an zwei Stellen** (#1272): `engines` in `package.json` (alle Workflows lesen sie mit `node-version-file`) und das Basis-Image einmal im `Dockerfile` (Stufe `node-basis`, auf der Bau und Laufzeit aufbauen). Ein Wechsel der Hauptversion ändert beide.
 - **Sicherheitskorrektur = Patch-Release** mit dem Hinweis „Sicherheitsupdate – bitte aktualisieren“ in den Release-Notes. Meldungen von außen laufen vertraulich, siehe [`SECURITY.md`](https://github.com/motom001/dms/blob/main/SECURITY.md).
+
+### Wechsel der Node-Hauptversion { #node-wechsel }
+
+Ablago läuft seit Version 0.306 auf **Node.js 26** (#1473; vorher 24). Node 24 ist seit 20.10.2026 in der Wartungsphase und bekommt Sicherheitsupdates bis **30.04.2028**; **Node 26** ist seit Oktober 2026 aktives LTS. Ab 2027 erscheint nur noch eine Node-Version im Jahr. Der Wechsel war früh und ohne Zeitdruck geplant und kam schließlich schon in KW48 2026, nach einem Probeumstieg (#1456) und der Korrektur ungelesener Datei-Ströme (#1461). Der ursprüngliche Plan ([#1473](https://github.com/motom001/dms/issues/1473), Folgeschritt aus dem Risikosteckbrief [#1413](https://github.com/motom001/dms/issues/1413)):
+
+| Wann | Was |
+| --- | --- |
+| Januar 2027 | Branch mit Node 26 anlegen, Prüfliste unten abarbeiten, auffällige Pakete notieren |
+| Februar 2027 | Umstellung mergen, Release mit Hinweis für Betreiber |
+| **spätestens 31.03.2027** | Node 26 in allen Images und Workflows |
+| bis 30.04.2028 | Node 24 nur noch als Rückfall für ein älteres Image; danach keine Sicherheitsupdates mehr |
+| **24.11.2026** | umgesetzt: Basis-Image `node:26-alpine`, `engines` 26.x, `@types/node` 26, alle Workflows (über `node-version-file`) |
+
+**Prüfliste für den Wechsel** (gilt sinngemäß für jeden Wechsel der Hauptversion):
+
+1. **Version an beiden Stellen** (#1272): `engines` in `package.json` und das Basis-Image `node:26-alpine` in der Stufe `node-basis` des `Dockerfile`. Dazu `@types/node` auf die neue Hauptversion (kommt bewusst nicht über Dependabot).
+2. **Basis-Image:** Ob das Image dabei per Digest festgehalten wird, entscheidet der PR. Bisher gilt bewusst „ohne festen Prüfwert“ (Abschnitt [OpenSSF Scorecard](#openssf-scorecard-und-regeln-fur-workflows)); #1473 nennt den Digest – die Abwägung steht im PR.
+3. **CI:** alle Workflows grün – Tests (alle drei Teile), Rauchtests mit einem und zwei Prozessen, `image-probe` für beide Architekturen, Bilder des Handbuchs.
+4. **Läufer und Werkzeugdienst:** WebAssembly-Pakete (WASI), Worker und das Berechtigungsmodell von Node (`--permission`) gegen den Läufer testen – Änderungen am Berechtigungsmodell zwischen den Hauptversionen gezielt im Änderungsprotokoll von Node nachlesen. Ebenso den Werkzeugdienst (`DMS_WERKZEUG_DIENST`) und die Pakete mit Code ([Pakete mit Code](pakete-code.md)).
+5. **Pakete mit Bezug zur Laufzeit** gegen Node 26 prüfen, mindestens `@simplewebauthn/server` (Passkeys, Rauchtest „Passkey“), `postgres` (Datenbank, Server-Tests mit PostgreSQL), die Mail-Pakete (`nodemailer`, `imapflow`, `mailparser`) und alles mit nativen Teilen oder `node:`-Modulen, die sich geändert haben.
+6. **Sicherheitsabgleich:** Der Abgleich bei NVD liest die Node-Version aus dem Image (`binaer: node` in `.github/werkzeuge/upstream-programme.json`) – einzutragen ist nichts; nach dem ersten Lauf prüfen, dass er Node 26 meldet.
+7. **Release-Notiz** mit „Beim Update beachten“, wenn sich für Betreiber etwas ändert (z. B. eigene Images, die auf `node:24` aufbauen, oder eine neue Mindestversion für Entwickler). Sonst `art: minor` mit einem Satz unter „Geändert“.
+8. **Entwicklerhandbuch:** „Loslegen“ (Node-Version für Entwickler) und diese Seite nachziehen.
 
 ### Images prüfen, Herkunftsnachweis und Stückliste
 

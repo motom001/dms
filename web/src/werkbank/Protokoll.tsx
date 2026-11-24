@@ -55,7 +55,7 @@ export function useProtokoll(sichtbar = true) {
   const [gespeichert, setGespeichert] = useState(0);
   const [live, setLive] = useState(true);
   const [fehler, setFehler] = useState<string>();
-  const letzte = useRef(0);
+  const letzte = useRef<number | string>(0);
   const [suche, setSuche] = useState('');
   useEffect(() => {
     const timer = setTimeout(() => setSuche(filter.suche.trim()), 250);
@@ -173,14 +173,17 @@ export function ProtokollListe({ p, offen }: { p: ProtokollZustand; offen?: stri
       ) : (
         <ul className="mappenliste protokoll">
           {p.eintraege.map((e) => (
-            <li key={e.nr}>
-              <Link to={`/werkbank/protokoll/${e.nr}`} className={`eintrag werk stufe-${e.stufe} ${offen === String(e.nr) ? 'an' : ''}`}>
+            <li key={eintragId(e)}>
+              <Link
+                to={`/werkbank/protokoll/${eintragId(e)}`}
+                className={`eintrag werk stufe-${e.stufe} ${offen === eintragId(e) ? 'an' : ''}`}>
                 <span className="zeile1">
                   <span className="mono klein">{uhr(e.zeit)}</span>{' '}
                   <Etikett art={STUFE_ETIKETT[e.stufe] ?? 'leise'}>{STUFENNAME[e.stufe]}</Etikett>{' '}
                   <span className="leise klein" title={e.modul}>
                     {modulName(e.modul)}
                   </span>
+                  {e.prozess !== undefined && <span className="leise klein"> · {t('werkbank.protokoll.prozess', { nr: e.prozess })}</span>}
                 </span>
                 <span className="titel">{e.text}</span>
                 {e.benutzer && <span className="unter">{e.benutzer}</span>}
@@ -193,8 +196,11 @@ export function ProtokollListe({ p, offen }: { p: ProtokollZustand; offen?: stri
   );
 }
 
+/** Kennung eines Eintrags in Liste und Adresse: mit mehreren Prozessen (#1490) „Prozess-Nummer“, sonst die Nummer. */
+const eintragId = (e: Protokolleintrag) => (e.prozess !== undefined ? `${e.prozess}-${e.nr}` : String(e.nr));
+
 export function ProtokollDetail({ p, nr }: { p: ProtokollZustand; nr?: string }) {
-  const e = nr ? p.eintraege.find((x) => String(x.nr) === nr) : undefined;
+  const e = nr ? p.eintraege.find((x) => eintragId(x) === nr) : undefined;
   const [kopiert, setKopiert] = useState(false);
   if (nr && !e)
     return (
@@ -235,6 +241,12 @@ export function ProtokollDetail({ p, nr }: { p: ProtokollZustand; nr?: string })
               {modulName(e.modul)} <span className="mono leise klein">{e.modul}</span>
             </dd>
           </div>
+          {e.prozess !== undefined && (
+            <div>
+              <dt>{t('werkbank.protokoll.prozess-titel')}</dt>
+              <dd>{t('werkbank.protokoll.prozess', { nr: e.prozess })}</dd>
+            </div>
+          )}
           {e.benutzer && (
             <div>
               <dt>{t('werkbank.protokoll.benutzer')}</dt>
@@ -301,14 +313,20 @@ function DebugPanel({ p }: { p: ProtokollZustand }) {
           <div className="hinweis warn">
             <p>
               {t('werkbank.protokoll.eingeschaltet-bis-uhr-danach', {
-                uhrzeit: new Date(d.bis!).toLocaleTimeString(gebietsschema(), { hour: '2-digit', minute: '2-digit' }),
-              })}
+                uhrzeit: new Date(d.bis!).toLocaleString(gebietsschema(), { dateStyle: 'medium', timeStyle: 'short' }),
+              })}{' '}
+              {d.quelle === 'variable' ? t('werkbank.protokoll.quelle.variable') : t('werkbank.protokoll.quelle.werkbank')}
             </p>
           </div>
         ) : (
           <p className="leise">
             {t('werkbank.protokoll.aus-protokolliert-wird-ab', { wert: d?.grundstufe ?? t('werkbank.protokoll.info-2') })}
           </p>
+        )}
+        {!d?.an && d?.variableBeendet && (
+          <div className="hinweis info">
+            <p>{t('werkbank.protokoll.variable-beendet')}</p>
+          </div>
         )}
         <p className="leise">{t('werkbank.protokoll.im-debug-modus-kommen')}</p>
         <div className="knoepfe">

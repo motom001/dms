@@ -10,7 +10,7 @@ import { type Bedingung } from '../../../../shared/src/sichten';
 import { Fachfehler } from '../../grundlagen/fehler';
 import { istVerschluesselt } from '../../geheimnisse/tresor';
 import { t } from '../../sprache/sprache';
-import { gebietsschema } from '../../../../shared/src/sprache';
+import { zeitText as regionZeitText } from '../../../../shared/src/region';
 import { type UmbauLage } from '../index';
 import { type Manifest, type Paket, type PaketCodeTeil, type PaketSicht, type PaketTyp } from './format';
 import { bedingungAus } from './inhalt-pruefen';
@@ -154,7 +154,7 @@ export const paketFelderAus = (ty: PaketTyp | undefined, paketId: string): Feld[
 
 export const zeitText = (iso: string) => {
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? iso : d.toLocaleString(gebietsschema(), { dateStyle: 'medium', timeStyle: 'short' });
+  return Number.isNaN(d.getTime()) ? iso : regionZeitText(d, { dateStyle: 'medium', timeStyle: 'short' });
 };
 
 /**

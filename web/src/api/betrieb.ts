@@ -2,6 +2,8 @@
 import type { Dienstbenutzer } from '../../../shared/src/dienstbenutzer';
 import type { UeberfluessigeVariable } from '../../../shared/src/umgebungsvariablen';
 import type { Akzeptiert, Schwere } from '../../../shared/src/meldungen';
+import type { Darf, DarfStand } from '../../../shared/src/darf';
+import type { EmpfohlenesPaket } from '../../../shared/src/pakete';
 import type { Auftrag } from '../../../shared/src/auftrag';
 import type { BudgetStand, KostenEinstellung } from '../../../shared/src/extern';
 import type { Notfallkontakt, NotfallkontaktEingabe, NotfallkontakteStand, NotfallMailStand } from '../../../shared/src/notfallkontakte';
@@ -100,6 +102,20 @@ export interface SicherungEintrag {
   probe?: { am: string; ok: boolean; info: string };
   extern?: Record<string, ExternStand>;
 }
+/** Zeitplan für „Alle Dateien prüfen“ (#1316). */
+export interface DateienPruefplan {
+  takt: 'aus' | 'monatlich' | 'woechentlich';
+  uhrzeit: string;
+  wochentag: number;
+}
+export interface DateienPruefplanStand {
+  plan: DateienPruefplan | null;
+  ergebnis: { am: string; dateien: number; abweichungen: number; fehlend: number; zeitplan: boolean } | null;
+  /** Angefangener Lauf nach Zeitplan (setzt nach einem Neustart fort). */
+  lauf: { beginn: string; geprueft: number | null; dateien: number | null } | null;
+  /** Uhrzeit der eingeschalteten automatischen Sicherung. */
+  sicherung: string | null;
+}
 export interface SicherungsPlan {
   aktiv: boolean;
   uhrzeit: string;
@@ -151,6 +167,16 @@ export interface SicherungsZustand {
   extern?: ExternZustand | null;
   /** „Lokal nur die neueste“ (#1194): gesetzt im Plan; wählbar nur mit erfolgreicher Kopie außer Haus; wirksam = gesetzt und wählbar. */
   nurNeueste?: { gesetzt: boolean; moeglich: boolean; wirksam: boolean };
+  /** Erste Sicherung samt Probe nach der Einrichtung (#1509); null bei älteren Installationen. */
+  erste?: ErsteSicherung | null;
+}
+export interface ErsteSicherung {
+  status: 'offen' | 'laeuft' | 'ok' | 'fehler';
+  seit: string;
+  am?: string;
+  sicherung?: string;
+  schritt?: 'sicherung' | 'probe';
+  grund?: string;
 }
 /** Sicherung außer Haus ohne lokale Kopie (#976); grund, wenn Ablago sie nicht selbst zurückholen kann. */
 export interface EntfernteSicherung {
@@ -167,6 +193,8 @@ export interface EntfernteSicherung {
 }
 export interface EntferntStand {
   nur: EntfernteSicherung[];
+  /** Aus der Liste genommen (#1320): wer, wann; die Datei liegt weiter am Ziel. */
+  ausgeblendet?: Array<EntfernteSicherung & { von: string; am: string }>;
   auchAmZiel: Record<string, string[]>;
   fehler: Array<{ paket: string; paketName: string; grund: string }>;
 }
@@ -213,15 +241,22 @@ export interface Protokolleintrag {
   benutzer?: string;
   anfrage?: string;
   daten?: Record<string, unknown>;
+  /** Mit mehreren Prozessen (#1490): aus welchem Prozess der Eintrag stammt. */
+  prozess?: number;
 }
 export interface DebugStand {
   an: boolean;
   bis: string | null;
   grundstufe: string;
+  /** #1528: woher – LOG_LEVEL=debug (Variable) oder der Schalter der Werkbank. */
+  quelle?: 'variable' | 'werkbank' | null;
+  /** #1528: LOG_LEVEL=debug lief 24 Stunden und ist seit dann aus. */
+  variableBeendet?: string | null;
 }
 export interface ProtokollAntwort {
   eintraege: Protokolleintrag[];
-  letzte: number;
+  /** Für das nächste `seit`: Nummer (ein Prozess) oder `pid:nr,…` (mehrere Prozesse, #1490). */
+  letzte: number | string;
   gespeichert: number;
   debug: DebugStand;
   module: string[];
@@ -302,6 +337,8 @@ export interface WerkbankUebersicht {
   texterkennung: Record<'keiner' | 'wartet' | 'laeuft' | 'fertig' | 'fehler' | 'ausgelassen' | 'paket', number> | null;
   /** #459: Ein Paket übernimmt die Texterkennung. */
   texterkennungPaket?: boolean;
+  /** #1550: Abbrüche der Texterkennung wegen der Zeitgrenze in den letzten 24 Stunden – nur, wenn sie sich häufen (sonst 0). */
+  texterkennungZeitgrenze?: number;
   /** #1329: Für nicht eingebettete Schriften in PDFs fehlt der Ersatz. */
   schriftenFehlen?: boolean;
   /** #1312: fehlende eingebaute Werkzeuge (leer, wenn alles da ist oder noch nicht geprüft wurde). */
@@ -311,6 +348,8 @@ export interface WerkbankUebersicht {
   ohneLeserecht?: number;
   /** #877: Dokumentdateien, die beim Lesen fehlten und noch fehlen. */
   dateienFehlen?: number;
+  /** #1316: letzter Lauf von „Alle Dateien prüfen“ mit Befund. */
+  dateienBefund?: { am: string; dateien: number; abweichungen: number; fehlend: number; zeitplan: boolean } | null;
   /** #719: Alltags-Benutzer für Aufgaben ohne Empfänger; `moeglich` = aktive Benutzer ohne Admin-Rechte. */
   aufgabenEmpfaenger?: { benutzerId: string | null; moeglich: number } | null;
   unpassend: number;
@@ -343,6 +382,10 @@ export interface WerkbankUebersicht {
   notfallcodeBenutzt?: Array<{ id: string; benutzerId: string; name: string; am: string }>;
   /** #1355: Anfragen mit der Gateway-Adresse des eigenen Netzes (Heimnetz nicht bestimmbar), zuletzt in 24 Stunden. */
   heimnetzGateway?: { adresse: string; zuletzt: string } | null;
+  /** #1465: TRUST_PROXY nennt ein Netz, das das Gateway abdeckt, und Anfragen kamen direkt vom Gateway. */
+  trustProxyNetz?: { netz: string; adresse: string; zuletzt: string } | null;
+  /** #1449: PUID/PGID fehlen, Datenordner auf einem Bind-Mount gehören jetzt der Vorgabe. */
+  kennungHinweis?: { ordner: string[]; benutzer: number; gruppe: number } | null;
   /** Eine zweite Person mit Verwaltungsrecht empfehlen (#821). */
   zweitePerson?: boolean;
   /** Wartungsmodus (#102). */
@@ -381,6 +424,18 @@ export interface WerkbankUebersicht {
   eingangsordner?: EingangMeldungen | null;
   /** Bewusst akzeptierte Meldungen (#816) je Schlüssel: Schwere beim Akzeptieren, wer, wann, Begründung. */
   akzeptiert?: Akzeptiert;
+  /** Was Ablago darf (#1562): Karte oben in der Übersicht. */
+  darf?: DarfStand;
+  /** Einmal nach dem Update (#1562): „Neu: Was Ablago darf – bitte einmal ansehen“. */
+  darfNeu?: boolean;
+  /** Die Installation kommt von einer älteren Version (#1511): nur dann Umstiegs-Hinweise. */
+  umstieg?: boolean;
+  /** Empfohlene Pakete, die noch fehlen (#1511), in fester Reihenfolge. */
+  empfohlenFehlt?: EmpfohlenesPaket[];
+  /** Angehaltene Pakete (#1563) mit Grund in Worten. */
+  angehalten?: Array<{ id: string; name: string; grund: string }>;
+  /** Beschädigte Pakete (#1551): eigene Teile fehlen. */
+  beschaedigt?: Array<{ id: string; name: string }>;
 }
 /* Feste Ordner (#115) und Speicherplatz (#116) */
 export type OrdnerArt = 'dateien' | 'geheim' | 'sicherung';
@@ -450,6 +505,17 @@ export interface Systemuebersicht {
   variablen?: string[];
   /** Eingebaute Werkzeuge (#1189); null, wenn die Prüfung nicht ging. */
   werkzeuge?: Werkzeuge | null;
+  /** Dokumentwerkzeuge getrennt und begrenzt (#1354, #1449); null, wenn nicht feststellbar – ältere Server ohne. */
+  abschirmung?: WerkzeugAbschirmung | null;
+}
+/** Unter welchem Benutzer und mit welchen Grenzen die Dokumentwerkzeuge laufen (#1354); null = ohne Grenze. */
+export interface WerkzeugAbschirmung {
+  getrennt: boolean;
+  benutzer: number | null;
+  gruppe: number | null;
+  speicherMb: number | null;
+  cpuS: number | null;
+  dateiMb: number | null;
 }
 export interface Vergleich {
   komponente: string;
@@ -540,7 +606,11 @@ export const betriebApi = {
   sicherungHolen: (name: string, paket: string) =>
     anfrage<SicherungsLauf>('POST', `/api/werkbank/sicherung/${encodeURIComponent(name)}/holen`, { paket }),
   sicherungLauf: () => anfrage<SicherungsLauf | null>('GET', '/api/werkbank/sicherung/lauf'),
-  sicherungJetzt: () => anfrage<SicherungsLauf>('POST', '/api/werkbank/sicherung/jetzt'),
+  sicherungJetzt: (wozu?: string) => anfrage<SicherungsLauf>('POST', '/api/werkbank/sicherung/jetzt', wozu ? { wozu } : {}),
+  sicherungWozu: (name: string, wozu: string) =>
+    anfrage<{ wozu: string | null }>('PUT', `/api/werkbank/sicherung/${encodeURIComponent(name)}/wozu`, { wozu }),
+  sicherungAusblenden: (namen: string[]) => anfrage<{ namen: string[] }>('POST', '/api/werkbank/sicherung/ausblenden', { namen }),
+  sicherungEinblenden: (name: string) => anfrage<null>('POST', `/api/werkbank/sicherung/${encodeURIComponent(name)}/einblenden`),
   sicherungPlan: (p: Partial<SicherungsPlan>) => anfrage<SicherungsPlan>('PUT', '/api/werkbank/sicherung/plan', p),
   sicherungPruefen: (name: string) => anfrage<SicherungsLauf>('POST', `/api/werkbank/sicherung/${encodeURIComponent(name)}/pruefen`),
   probeStarten: (name?: string) => anfrage<WhLauf>('POST', '/api/werkbank/sicherung/probe', name ? { name } : {}),
@@ -635,6 +705,9 @@ export const betriebApi = {
   akzeptanzAufheben: (schluessel: string[], anlass: 'eingeblendet' | 'erledigt' | 'schwerer') =>
     anfrage<Akzeptiert>('POST', '/api/werkbank/uebersicht/aufheben', { schluessel, anlass }),
   /** „Nein, danke“ bzw. „Gelesen“ an einem Hinweis, der danach nicht wiederkommt (#821, #815). */
+  /** Was Ablago darf (#1562): ändern; Senken mit betroffenen Paketen erst mit `bestaetigt` (sonst 409 mit `betroffen`). */
+  darfSetzen: (e: Partial<Darf> & { bestaetigt?: boolean; hoechstens?: Partial<Darf> }) =>
+    anfrage<DarfStand>('PUT', '/api/werkbank/darf', e),
   meldungErledigt: (schluessel: string) => anfrage<null>('POST', '/api/werkbank/uebersicht/erledigt', { schluessel }),
   fehlermeldungen: (erledigt = false) => anfrage<Fehlermeldung[]>('GET', `/api/werkbank/fehlermeldungen${erledigt ? '?erledigt' : ''}`),
   fehlermeldung: (id: string) => anfrage<Fehlermeldung>('GET', `/api/werkbank/fehlermeldungen/${id}`),
@@ -683,4 +756,6 @@ export const betriebApi = {
   vollexportUmzugGesehen: () => anfrage<null>('POST', '/api/werkbank/export/umzug-gesehen'),
   persoenlicherExport: (erlaubt: boolean) => anfrage<{ erlaubt: boolean }>('PUT', '/api/werkbank/export/persoenlich', { erlaubt }),
   dateienPruefen: () => anfrage<Auftrag>('POST', '/api/werkbank/wartung/dateien'),
+  dateienPruefplan: () => anfrage<DateienPruefplanStand>('GET', '/api/werkbank/wartung/dateien/plan'),
+  dateienPruefplanSpeichern: (p: DateienPruefplan) => anfrage<DateienPruefplanStand>('PUT', '/api/werkbank/wartung/dateien/plan', p),
 };

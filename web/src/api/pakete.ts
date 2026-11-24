@@ -329,6 +329,11 @@ export const paketeApi = {
     }),
   paketLaeufer: () => anfrage<PaketlaeuferStand | null>('GET', '/api/werkbank/pakete/laeufer'),
   /** Vorgaben (#1038): unbenutzte in Typen anderer Pakete nur mit `vorgaben` – ohne fragt der Server (409, `vorgaben`). */
+  /** Anhalten und Fortsetzen (#1563). */
+  paketAnhalten: (id: string) => anfrage<InstalliertesPaket>('POST', `/api/werkbank/pakete/${encodeURIComponent(id)}/anhalten`),
+  paketFortsetzen: (id: string) => anfrage<InstalliertesPaket>('POST', `/api/werkbank/pakete/${encodeURIComponent(id)}/fortsetzen`),
+  /** Beschädigtes Paket reparieren (#1551). */
+  paketReparieren: (id: string) => anfrage<InstalliertesPaket>('POST', `/api/werkbank/pakete/${encodeURIComponent(id)}/reparieren`),
   paketEntfernen: (id: string, einstellungenBehalten = false, spracheBestaetigt = false, vorgaben?: 'entfernen' | 'behalten') => {
     const q = [
       einstellungenBehalten ? 'einstellungenBehalten=1' : '',

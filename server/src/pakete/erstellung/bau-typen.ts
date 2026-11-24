@@ -241,6 +241,8 @@ export function typInsPaket(l: BauLauf, mappentyp: Mappentyp) {
     // Dokument übernehmen (#937): nur, was eingestellt ist; ältere Ablago ignorieren es.
     ...(typeof mappentyp.ausPost === 'boolean' ? { ausPost: mappentyp.ausPost } : {}),
     ...ohneLeere({ erkennbarAn: mappentyp.erkennbarAn || undefined }),
+    // Mehrzahl (#1446): nur, wenn eingetragen (ohneLeere lässt '' weg); ältere Ablago ignorieren sie.
+    ...ohneLeere({ mehrzahl: mappentyp.mehrzahl }),
     // Ist Teil einer anderen Mappe (#1031): wie im Entwurf Rechnungen die Kennung des Verweisfelds.
     ...(mappentyp.teilVon && felder.some((f) => f.key === mappentyp.teilVon) ? { gehoertZu: mappentyp.teilVon } : {}),
     // In der allgemeinen Suche zeigen (#1220): nur „nein“ – „ja“ ist die Vorgabe.

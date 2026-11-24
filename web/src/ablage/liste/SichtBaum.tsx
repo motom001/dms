@@ -1,6 +1,6 @@
 /** Verwaltete Sichten als Baum (#38; #1279 eigene Datei). */
 import type { CSSProperties } from 'react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { sichtName } from '../../../../shared/src/beschriftung';
 import { kinderVon, mitNachkommen, type Sicht } from '../../../../shared/src/sichten';
 import { useDaten } from '../../daten';
@@ -13,7 +13,8 @@ import { ZahlWarte } from '../ZahlWarte';
 
 /**
  * Verwaltete Sichten als Baum (#38). Untersichten lassen sich zuklappen; gemerkt je Gerät
- * und Benutzer. Die Vorfahren der geöffneten Sicht bleiben immer offen.
+ * und Benutzer. Wird eine Sicht geöffnet, klappen ihre Vorfahren auf. Der Pfeil klappt danach immer, auch über der
+ * gewählten Sicht (#1495); liegt sie dann verborgen, ist der zugeklappte Bereich als gewählt markiert.
  */
 export function SichtBaum({ aktiv, ohne = [] }: { aktiv?: string; ohne?: string[] }) {
   const d = useDaten();
@@ -26,10 +27,7 @@ export function SichtBaum({ aktiv, ohne = [] }: { aktiv?: string; ohne?: string[
       return new Set();
     }
   });
-  const umschalten = (id: string) => {
-    const n = new Set(zu);
-    if (n.has(id)) n.delete(id);
-    else n.add(id);
+  const merke = (n: Set<string>) => {
     setZu(n);
     try {
       localStorage.setItem(schluessel, JSON.stringify([...n]));
@@ -37,15 +35,29 @@ export function SichtBaum({ aktiv, ohne = [] }: { aktiv?: string; ohne?: string[
       /* nur für diese Sitzung */
     }
   };
-  const vorfahren = new Set<string>();
-  for (let s = d.sicht(aktiv); s?.elternId && !vorfahren.has(s.elternId); s = d.sicht(s.elternId)) vorfahren.add(s.elternId);
+  const umschalten = (id: string) => {
+    const n = new Set(zu);
+    if (n.has(id)) n.delete(id);
+    else n.add(id);
+    merke(n);
+  };
+  // Vorfahren der gewählten Sicht, von außen nach innen.
+  const vorfahren: string[] = [];
+  for (let s = d.sicht(aktiv); s?.elternId && !vorfahren.includes(s.elternId); s = d.sicht(s.elternId)) vorfahren.unshift(s.elternId);
+  // Eine Sicht öffnen (#1495): ihre Vorfahren klappen auf – einmal, danach entscheidet nur der Pfeil.
+  const vorfahrenKey = vorfahren.join(',');
+  useEffect(() => {
+    if (vorfahren.some((id) => zu.has(id))) merke(new Set([...zu].filter((id) => !vorfahren.includes(id))));
+  }, [aktiv, vorfahrenKey]); // eslint-disable-line react-hooks/exhaustive-deps -- nur, wenn eine andere Sicht gewählt wird
+  // Zugeklappt über der gewählten Sicht (#1495): der äußerste zugeklappte Vorfahr steht für sie und ist markiert.
+  const steht = vorfahren.find((id) => zu.has(id));
 
   const zeilen: Array<{ s: Sicht; tiefe: number; kinder: boolean; offen: boolean }> = [];
   const gehe = (eltern: string | null, tiefe: number) => {
     for (const s of kinderVon(d.sichten, eltern)) {
       if (ohne.includes(s.id)) continue;
       const kinder = kinderVon(d.sichten, s.id).length > 0;
-      const offen = kinder && (!zu.has(s.id) || vorfahren.has(s.id));
+      const offen = kinder && !zu.has(s.id);
       zeilen.push({ s, tiefe, kinder, offen });
       if (offen) gehe(s.id, tiefe + 1);
     }
@@ -77,7 +89,7 @@ export function SichtBaum({ aktiv, ohne = [] }: { aktiv?: string; ohne?: string[
             )}
             <Link
               to={`/ablage/${s.id}`}
-              className={`sicht ${aktiv === s.id ? 'an' : ''}${tiefe === 0 ? ' oben' : ''}`}
+              className={`sicht ${aktiv === s.id || steht === s.id ? 'an' : ''}${tiefe === 0 ? ' oben' : ''}`}
               title={s.beschreibung || undefined}>
               <span className="nm">
                 {s.symbol && (

@@ -7,6 +7,9 @@
 #      geschrieben) gehören jetzt Ablago, mit Meldung im Protokoll, und Ablago läuft nicht als root; ab #1466: Kam der
 #      alte Stand schon ohne root (0.299.0), bleibt alles, wie es war
 #   4. Probe-Wiederherstellung der alten Sicherung mit der neuen Version gelingt
+#   Bringt das neue Image eine andere Hauptversion von PostgreSQL mit (#1464: 17 → 18), startet es mit dem alten
+#   Datenbank-Ordner nicht, sondern zeigt die Startseite mit Grund und Weg. Dann geht der Test den Weg von dort: Ordner
+#   umbenennen, leeren anlegen, neues Image starten, die Sicherung aus Schritt 1 im Assistenten einspielen.
 #
 #   .github/werkzeuge/update-test.sh <altes Image> <neues Image>
 #   z. B. .github/werkzeuge/update-test.sh ghcr.io/motom001/dms-komplett:stabil dms-komplett:probe
@@ -52,6 +55,52 @@ anmelden() {
 api() { curl -fsS -b "$jar" -H 'x-dms: 1' -H 'content-type: application/json' "$@"; }
 version() { docker exec "$NAME" dms status --json | jq -r '.dms.version // "?"'; }
 
+# Hauptversion von PostgreSQL im Image (dms-komplett).
+pg_haupt() { docker run --rm --entrypoint postgres "$1" --version | sed -n 's/.* \([0-9][0-9]*\)\..*/\1/p'; }
+seite() { command curl -sS --connect-timeout 2 --max-time 5 -H 'accept-language: de' "$U/" 2>/dev/null || true; }
+# Neue Hauptversion von PostgreSQL (#1464): Startseite statt Abbruch, dann der Umzug, wie ihn die Seite beschreibt.
+umzug_ueber_sicherung() {
+  echo "PostgreSQL $pg_alt → $pg_neu: Startseite und Umzug über die Sicherung"
+  docker rm -f "$NAME" >/dev/null 2>&1 || true
+  docker run -d --name "$NAME" -p "$PORT:3000" -e DMS_START_FEHLER_WARTEN_S=300 \
+    -v "$arbeit/files:/data/files" -v "$arbeit/geheim:/data/geheim" -v "$arbeit/sicherung:/data/sicherung" -v "$arbeit/postgres:/data/postgres" \
+    "$NEU" >/dev/null
+  local s="" erwartet="anderen Hauptversion von PostgreSQL"
+  [ "$pg_alt" = 17 ] && [ "$pg_neu" = 18 ] && erwartet="letzte Version mit PostgreSQL 17"
+  for _ in $(seq 1 120); do s=$(seite); grep -q "$erwartet" <<< "$s" && break; sleep 1; done
+  grep -q "$erwartet" <<< "$s" || fehler "keine Startseite beim alten Datenbank-Ordner (erwartet: $erwartet)"
+  echo "Startseite: $(grep -oE 'Ziehe mit Ablago [0-9.]+ \(letzte Version mit PostgreSQL 17\)' <<< "$s" || echo "$erwartet")"
+  [ "$(sudo cat "$arbeit/postgres/daten/PG_VERSION")" = "$pg_alt" ] || fehler "alter Datenbank-Ordner verändert"
+  docker rm -f "$NAME" >/dev/null
+  # Wie auf der Startseite: Ordner umbenennen (nicht löschen), leeren anlegen, neue Version starten.
+  sudo mv "$arbeit/postgres" "$arbeit/postgres-$pg_alt"; mkdir -p "$arbeit/postgres"
+  starte "$NEU"; warte
+  [ "$(curl -fsS "$U/api/konto/status" | jq -r '.einrichtungNoetig')" = true ] || fehler "leere Datenbank, aber nicht im Assistenten"
+  local code lauf schluessel=""
+  code=$(sudo cat "$arbeit/geheim/EINRICHTUNGSCODE")
+  wh() { curl -fsS -H 'x-dms: 1' -H "x-einrichtungscode: $code" -H 'content-type: application/json' "$@"; }
+  wh "$U/api/wiederherstellung/sicherungen" | jq -e --arg n "$sicherung" '.liste | any(.name == $n)' >/dev/null || fehler "Sicherung $sicherung im Assistenten nicht zu sehen"
+  if [ "$(wh -X POST "$U/api/wiederherstellung/abgleich" -d "{\"name\":\"$sicherung\"}" | jq -r '.schluesselNoetig')" = true ]; then
+    schluessel=$(sudo cat "$arbeit/geheim/dms.schluessel")
+  fi
+  wh -X POST "$U/api/wiederherstellung/abgleich" -d "$(jq -nc --arg n "$sicherung" --arg s "$schluessel" '{name: $n} + (if $s == "" then {} else {schluessel: $s} end)')" \
+    | jq -e '.probleme == []' >/dev/null || fehler "Abgleich der Sicherung meldet Probleme"
+  wh -X POST "$U/api/wiederherstellung/start" -d "$(jq -nc --arg n "$sicherung" --arg s "$schluessel" '{name: $n} + (if $s == "" then {} else {schluessel: $s} end)')" >/dev/null \
+    || fehler "Wiederherstellung starten"
+  for _ in $(seq 1 150); do
+    lauf=$(curl -sS "$U/api/wiederherstellung/status" 2>/dev/null | jq -r '.lauf.status // .status // empty' 2>/dev/null || true)
+    [ "$(docker inspect -f '{{.State.Running}}' "$NAME")" = true ] || break
+    [ "$lauf" = fehler ] && fehler "Wiederherstellung: $(curl -sS "$U/api/wiederherstellung/status" | jq -c .)"
+    sleep 2
+  done
+  # Nach dem Umschalten beendet sich Ablago (im Betrieb startet Docker es neu); hier startet der Test den Container.
+  for _ in $(seq 1 60); do [ "$(docker inspect -f '{{.State.Running}}' "$NAME")" = false ] && break; sleep 1; done
+  [ "$(docker inspect -f '{{.State.Running}}' "$NAME")" = false ] || fehler "Ablago hat sich nach der Wiederherstellung nicht beendet"
+  docker start "$NAME" >/dev/null; warte
+  [ "$(sudo cat "$arbeit/postgres/daten/PG_VERSION")" = "$pg_neu" ] || fehler "neue Datenbank nicht mit PostgreSQL $pg_neu"
+  [ "$(sudo cat "$arbeit/postgres-$pg_alt/daten/PG_VERSION")" = "$pg_alt" ] || fehler "alter Datenbank-Ordner nicht mehr da"
+}
+
 echo "::group::1. Alter Stand: $ALT"
 docker pull -q "$ALT" >/dev/null || fehler "altes Image $ALT nicht abrufbar"
 starte "$ALT"; warte
@@ -60,6 +109,8 @@ curl -fsS -X POST "$U/api/konto/einrichten" -H 'x-dms: 1' -H "x-einrichtungscode
   -d "{\"mandant\":\"Familie Probe\",\"name\":\"Admin\",\"email\":\"$EMAIL\",\"passwort\":\"$PASS\"}" >/dev/null || fehler "Einrichten scheitert"
 anmelden "alter Stand"
 alt=$(version); echo "Alte Version: $alt"
+# Mappentypen vor dem Update (#1447): danach dieselben, keiner doppelt oder verloren.
+typen_vorher=$(api "$U/api/typen" | jq -c '[.[].id] | sort')
 api -X PUT "$U/api/werkbank/eingangsordner" -d '{"abstand":5}' >/dev/null || fehler "Eingangsordner einstellen"
 printf '%%PDF-1.4\n%% Update-Test\n' | sudo tee "$arbeit/eingang/Update Probe.pdf" >/dev/null
 mappe=""
@@ -95,11 +146,33 @@ echo "::group::2. Neuer Stand: $NEU"
 vorher_root=$(sudo find "$arbeit/files" "$arbeit/geheim" "$arbeit/sicherung" -uid 0 | head -1)
 liste() { sudo find "$arbeit/files" "$arbeit/geheim" "$arbeit/sicherung" -printf '%p|%u:%g %m\n'; }
 vorher=$(liste)
-starte "$NEU"; warte
+pg_alt=$(pg_haupt "$ALT"); pg_neu=$(pg_haupt "$NEU")
+if [ "$pg_alt" != "$pg_neu" ]; then umzug_ueber_sicherung; else starte "$NEU"; warte; fi
 neu=$(version); echo "Neue Version: $neu"
 [ "$(curl -fsS "$U/api/konto/status" | jq -r '.einrichtungNoetig')" = false ] || fehler "nach dem Update wieder uneingerichtet"
 anmelden "neuer Stand"
 [ "$(api "$U/api/mappen/$mappe" | jq '.dokumente | length')" = 1 ] || fehler "Dokument nach dem Update nicht mehr da"
+# Abgleich beim Start (#1447): Das Image setzt DMS_VERSION; dieselben Mappentypen, keiner doppelt, je Typ höchstens
+# eine Fassung „Update auf Ablago <neue Version>“ – auch nach einem weiteren Neustart.
+typen_nachher=$(api "$U/api/typen" | jq -c '[.[].id] | sort')
+[ "$typen_nachher" = "$typen_vorher" ] || fehler "Mappentypen nach dem Update anders: vorher $typen_vorher, nachher $typen_nachher"
+[ "$(api "$U/api/typen" | jq '[.[].name] | (length == (unique | length))')" = true ] || fehler "Mappentyp doppelt nach dem Update"
+dms_version=$(docker exec "$NAME" printenv DMS_VERSION || true)
+update_fassungen() {
+  local n=0 id
+  for id in $(jq -r '.[]' <<< "$typen_nachher"); do
+    n=$((n + $(api "$U/api/typen/$id/fassungen" | jq --arg v "$dms_version" '[.fassungen[] | select(.urheber.art == "update" and .urheber.version == $v)] | length')))
+  done
+  echo "$n"
+}
+if [ -n "$dms_version" ]; then
+  [ "$dms_version" = "$neu" ] || fehler "DMS_VERSION im Image ($dms_version) passt nicht zur Version ($neu)"
+  vor_neustart=$(update_fassungen)
+  [ "$vor_neustart" -le "$(jq length <<< "$typen_nachher")" ] || fehler "mehr als eine Update-Fassung je Mappentyp ($vor_neustart)"
+  docker restart "$NAME" >/dev/null; warte; anmelden "nach Neustart"
+  [ "$(update_fassungen)" = "$vor_neustart" ] || fehler "Abgleich lief nach dem Neustart erneut"
+  echo "Abgleich der Fassungen: $vor_neustart Fassungen (Update auf Ablago $dms_version), nach dem Neustart unverändert"
+fi
 # Ohne root (#1354): Was der alte Stand als root geschrieben hat, gehört jetzt dem Benutzer von Ablago (1000).
 fremd=$(sudo find "$arbeit/files" "$arbeit/geheim" "$arbeit/sicherung" ! -uid 1000 | head -5)
 [ -z "$fremd" ] || fehler "nach dem Update gehört noch nicht alles Ablago: $fremd"

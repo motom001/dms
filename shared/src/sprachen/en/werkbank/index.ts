@@ -5,6 +5,7 @@
  */
 import ablage from './ablage.json';
 import benutzer from './benutzer.json';
+import darf from './darf.json';
 import datenschutz from './datenschutz.json';
 import einstellungen from './einstellungen.json';
 import pakete from './pakete.json';
@@ -22,6 +23,7 @@ import wartung from './wartung.json';
 export default {
   ...ablage,
   ...benutzer,
+  ...darf,
   ...datenschutz,
   ...einstellungen,
   ...pakete,

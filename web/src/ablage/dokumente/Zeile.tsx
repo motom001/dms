@@ -1,52 +1,67 @@
 /** Eine Dokumentzeile (#85, #1211; #1279 in Teile gegliedert): Kopf, Name mit Infozeile, Knöpfe und was darunter aufgeht. */
+import { useState } from 'react';
 import type { Dokument, OcrStand } from '../../../../shared/src/model';
 import { anlagenVon } from '../../../../shared/src/anlagen';
 import { kannStempeln } from '../../../../shared/src/stempel';
 import { t } from '../../sprache';
 import { Hilfe } from '../../Hilfe';
-import { Feld, Knopf, KnopfLink, Menue, Wahlhaken } from '../../bausteine';
-import { AnlageMarke, AnlageZeile } from '../Anlagen';
+import { Feld, Knopf, KnopfLink, Menue, Wahlhaken, type MenuePunkt } from '../../bausteine';
+import { AnlageMarke, anlagePunkte, AnlageUmbenennen, AnlageZu } from '../Anlagen';
 import { Uebersetzbar } from '../Uebersetzung';
 import { Vorschaubild } from '../Vorschaubild';
 import { anlagenFertig, entfernen, erneut, waehle } from './aktionen';
-import { Anzeige } from './Anzeige';
 import { ansichtVon } from './hilfen';
 import type { Kern } from './kern';
 import { PdfSchutzAnzeige } from './PdfSchutzAnzeige';
 import { punkte, type Zeilenlage } from './punkte';
-import { DokTeilen, Herunterladen, Infozeile, Zustand } from './teile';
+import { DokTeilen, Infozeile, Zustand } from './teile';
 import { Versionen } from './Versionen';
 import { ZeileDialoge } from './ZeileDialoge';
 
-/** Anlage (#998): eingeklappte Zeile unter ihrem Hauptdokument; geht mit ihm, wenn es entfernt wird. */
+/**
+ * Anlage (#998, #1487): eine Zeile wie das Dokument, darüber „Anlage zu …“, mit Art und Namen. Sichtbar nur „Ansehen“
+ * und „⋯“ – dasselbe Menü wie am Dokument ohne „Mit Anlagen (ZIP)“, dazu unter „Ordnen“, was nur eine Anlage kann.
+ * Wird das Hauptdokument entfernt, geht sie mit.
+ */
 function AnlageEintrag({ k, x, haupt }: { k: Kern; x: Dokument; haupt: Dokument }) {
   const { p, a } = k;
-  const aWeg = p.entfernt.includes(x.id) || p.entfernt.includes(haupt.id);
-  const aSicht = ansichtVon(x, a.original.has(x.id));
-  const aAuf = x.id === a.ansicht && !aWeg;
+  const [umbenennen, setUmbenennen] = useState(false);
+  const mit = p.entfernt.includes(haupt.id);
+  const weg = p.entfernt.includes(x.id) || mit;
+  const auf = x.id === a.ansicht && !weg;
+  const sicht = ansichtVon(x, a.original.has(x.id));
+  const klickbar = !weg && (!!sicht || !!ansichtVon(x, false));
+  const s = k.ocr.standVon(x);
+  const lage: Zeilenlage = { anlagen: [], ziele: [], sicht, klickbar: !!sicht, auf };
+  const zusatz = anlagePunkte(x, haupt, {
+    bearbeitbar: k.bearbeitbar,
+    erste: anlagenVon(p.dokumente, haupt.id)[0]?.id === x.id,
+    gruppe: t('ablage.dokumente.gruppe.ordnen'),
+    umbenennen: () => setUmbenennen(true),
+    fertig: (m) => anlagenFertig(k, m),
+  });
   return (
-    <AnlageZeile
-      a={x}
-      haupt={haupt}
-      auf={aAuf}
-      weg={aWeg}
-      bearbeitbar={k.bearbeitbar}
-      erste={anlagenVon(p.dokumente, haupt.id)[0]?.id === x.id}
-      umschalten={aSicht ? () => a.umschalten(x) : undefined}
-      fertig={(m) => anlagenFertig(k, m)}
-      herunterladen={
-        !aWeg && !k.stempelPflicht && p.mitnehmen !== false ? <Herunterladen x={x} archiv={aSicht?.art === 'archiv'} /> : undefined
-      }
-      vorschau={
-        <Anzeige
-          x={x}
-          sicht={aSicht}
-          imOriginal={a.original.has(x.id)}
-          wechsle={() => a.wechsle(x)}
-          laden={p.mitnehmen !== false && !k.stempelPflicht}
-        />
-      }
-    />
+    <li
+      ref={auf ? a.offenRef : undefined}
+      className={`anlagezeile ${auf ? 'an' : ''} ${weg ? 'weg' : ''} ${klickbar ? 'klickbar' : ''}`}
+      data-anlage={x.anlageNr ?? undefined}
+      onClick={(e) => a.zeilenKlick(x, e)}>
+      <AnlageZu haupt={haupt} />
+      <div className="dokzeile">
+        <span className="wahlplatz" aria-hidden="true" />
+        <Vorschaubild d={x} />
+        <DokName k={k} x={x} s={s} weg={weg} klickbar={klickbar} auf={auf} />
+        {mit ? (
+          <span className="leise klein">{t('ablage.anlagen.geht-mit')}</span>
+        ) : (
+          <Zeilenaktionen k={k} x={x} weg={weg} klickbar={klickbar} lage={lage} zusatz={zusatz} />
+        )}
+      </div>
+      {umbenennen && !weg && (
+        <AnlageUmbenennen a={x} haupt={haupt} schliessen={() => setUmbenennen(false)} fertig={(m) => anlagenFertig(k, m)} />
+      )}
+      <ZeileDialoge k={k} x={x} s={s} weg={weg} lage={lage} />
+    </li>
   );
 }
 
@@ -135,11 +150,26 @@ function DokName({ k, x, s, weg, klickbar, auf }: { k: Kern; x: Dokument; s?: Oc
 }
 
 /** Jede Zeile genau zwei Knöpfe (#1211): „Ansehen“ (am Handy „Öffnen“) und „⋯“; entfernt nur „Behalten“. */
-function Zeilenaktionen({ k, x, weg, klickbar, lage }: { k: Kern; x: Dokument; weg: boolean; klickbar: boolean; lage: Zeilenlage }) {
+function Zeilenaktionen({
+  k,
+  x,
+  weg,
+  klickbar,
+  lage,
+  zusatz,
+}: {
+  k: Kern;
+  x: Dokument;
+  weg: boolean;
+  klickbar: boolean;
+  lage: Zeilenlage;
+  /** Weitere Punkte im Menü, z. B. was nur eine Anlage kann (#1487). */
+  zusatz: MenuePunkt[];
+}) {
   const { p, a } = k;
   const { handy } = a;
   const { sicht, auf } = lage;
-  const menuePunkte = weg ? [] : punkte(k, x, lage);
+  const menuePunkte = weg ? [] : [...punkte(k, x, lage), ...zusatz];
   return (
     <div className={`zeilenaktionen${handy ? ' dk-handy' : ''}`}>
       {weg ? (
@@ -214,7 +244,7 @@ function DokZeile({ k, x }: { k: Kern; x: Dokument }) {
         />
         <Vorschaubild d={x} />
         <DokName k={k} x={x} s={s} weg={weg} klickbar={klickbar} auf={auf} />
-        <Zeilenaktionen k={k} x={x} weg={weg} klickbar={klickbar} lage={lage} />
+        <Zeilenaktionen k={k} x={x} weg={weg} klickbar={klickbar} lage={lage} zusatz={[]} />
       </div>
       <ZeileDialoge k={k} x={x} s={s} weg={weg} lage={lage} />
     </li>

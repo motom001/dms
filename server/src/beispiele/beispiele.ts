@@ -68,6 +68,7 @@ export async function ladeBeispiele(dienst: Dienst, benutzerId: Benutzer = null)
 const partnerTyp = (id: BeispielIds) => ({
   id: id.partner,
   name: 'Vertragspartner',
+  mehrzahl: 'Vertragspartner',
   beschreibung: 'Firma, Behörde oder Person, mit der es Verträge oder Rechnungen gibt',
   titelVorlage: '{name}',
   trefferliste: ['name', 'art', 'kundennummer', '_geaendert'],
@@ -88,6 +89,7 @@ const partnerTyp = (id: BeispielIds) => ({
 const vertragTyp = (id: BeispielIds, verbleib: Feld[]) => ({
   id: id.vertrag,
   name: 'Vertrag',
+  mehrzahl: 'Verträge',
   beschreibung: 'Laufender Vertrag mit Fristen und Kosten',
   titelVorlage: '{bezeichnung}',
   trefferliste: [
@@ -127,6 +129,7 @@ const vertragTyp = (id: BeispielIds, verbleib: Feld[]) => ({
 const rechnungTyp = (id: BeispielIds, verbleib: Feld[]) => ({
   id: id.rechnung,
   name: 'Rechnung',
+  mehrzahl: 'Rechnungen',
   beschreibung: 'Eingegangene Rechnung, gehört zu einem Vertrag oder steht für sich',
   titelVorlage: '{rechnungsnummer} vom {rechnungsdatum}',
   trefferliste: ['_titel', 'aussteller', 'vertrag', 'betrag', 'rechnungsdatum', 'bezahlt', ...verbleib.map((f) => f.key)],
@@ -155,6 +158,7 @@ const rechnungTyp = (id: BeispielIds, verbleib: Feld[]) => ({
 const zahlungTyp = (id: BeispielIds) => ({
   id: id.zahlung,
   name: 'Zahlung',
+  mehrzahl: 'Zahlungen',
   beschreibung: 'Überweisung oder Lastschrift, kann mehrere Rechnungen begleichen',
   titelVorlage: '{verwendungszweck} vom {zahlungsdatum}',
   trefferliste: ['verwendungszweck', 'betrag', 'zahlungsdatum', 'rechnungen'],

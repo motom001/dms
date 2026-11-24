@@ -103,7 +103,7 @@
   "erweiterung.trgm.fehlt": "The extension pg_trgm is missing in the database. The search therefore shows no similar spellings and no “Did you mean …?” for typos, and searching for parts of words is slower.",
   "erweiterung.trgm.abhilfe": "Ablago creates it on every start in the schema erweiterungen_dms. If that fails, the database user lacks the CREATE permission on the database, or the database server lacks the postgresql-contrib package. Then restart Ablago.",
   "erweiterung.unaccent.fehlt": "The extension unaccent is missing in the database. Ablago therefore folds umlauts, accents and ß itself – only the common letters.",
-  "erweiterung.unaccent.abhilfe": "The search works anyway. The images postgres:17 and dms-komplett include unaccent; for your own database it is part of the postgresql-contrib package.",
+  "erweiterung.unaccent.abhilfe": "The search works anyway. The images postgres (e.g. postgres:18) and dms-komplett include unaccent; for your own database it is part of the postgresql-contrib package.",
   "erweiterung.gefaehrdet": "The extension {name} is in the schema {schema}. A restore would delete it too, and the search would then be worse.",
   "erweiterung.gefaehrdet.abhilfe": "Ablago moves it into the schema erweiterungen_dms on every start. If that fails, it belongs to another database user – then whoever manages the database moves it (see manual).",
   "erweiterung.uebersicht": "A database extension is missing or at risk – the search works worse than it could.",
@@ -212,5 +212,15 @@
   "kennung.benutzer": "Ablago’s user",
   "kennung.gruppe": "Ablago’s group",
   "kennung.wert": "{kennung} – {herkunft}",
-  "kennung.geaendert": "Changed on {zeit}"
+  "kennung.geaendert": "Changed on {zeit}",
+  "werkzeuge": "Document tools",
+  "werkzeuge.getrennt": "separate",
+  "werkzeuge.gemeinsam": "without a user of their own",
+  "werkzeuge.grenze": "memory limit {mb} MB",
+  "werkzeuge.ohne-grenze": "no memory limit",
+  "werkzeuge.gemeinsam.titel": "The document tools run without a user of their own.",
+  "werkzeuge.gemeinsam.text": "The programs Ablago uses to read and rasterise PDFs run as Ablago’s user – usually because the container starts with “docker run --user” or “user:” in the Compose file. The limits still apply, the separation doesn’t: a crafted PDF could then reach Ablago’s files. Without “--user” or “user:”, the image starts the tools separately; Ablago’s user is then determined by the owner of the folders or by PUID and PGID.",
+  "werkzeuge.gemeinsam.mehr": "Learn more",
+  "kennung.hinweis": "PUID and PGID are missing – your data folders now belong to {benutzer}:{gruppe}.",
+  "kennung.hinweis.text": "They are folders on your NAS ({ordner}). Without PUID and PGID, Ablago took the default because the folders belonged to root or to a system user, and took them over for it. You may then no longer reach backups and exports through the NAS file share. Enter the user and group of your NAS user as PUID and PGID in the Compose file, or give the folders back to that user on the NAS (chown).{hilfe}"
 }

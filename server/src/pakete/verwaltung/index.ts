@@ -13,3 +13,5 @@ export { neueKennung, type Manifest, type PaketAutomatisierung } from './format'
 export { Paketverwaltung } from './paketverwaltung';
 export { type Handelnder, type PaketLaeufer, type SprachpaketHaken } from './optionen';
 export { type InstallierenEingabe, type UmbauEingabe } from './plan';
+// Zeitpunkte in Meldungen der Paketverwaltung (#1451: in der Zone der Region; der Test prüft das von außen).
+export { zeitText } from './hilfen';

@@ -13,7 +13,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, describe, it } from 'node:test';
 import { aenderungText, kennungSatz, kennungVorschlag } from '../../shared/src/dienstbenutzer';
-import { dienstbenutzer, rechtefehler, startseitenKennung } from '../src/einrichtung/dienstbenutzer';
+import { datenAufBindMount, dienstbenutzer, kennungHinweis, rechtefehler, startseitenKennung } from '../src/einrichtung/dienstbenutzer';
 import { startseiteHtml, type Startstand } from '../src/einrichtung/startfehler';
 import { t } from '../src/sprache/sprache';
 
@@ -414,5 +414,38 @@ describe('Startseite: Benutzer von Ablago (#1466)', () => {
     assert.match(html, /schreibgeschützt eingebunden/);
     assert.match(html, /- …:\/data\/files/);
     assert.doesNotMatch(html, /PUID: /);
+  });
+});
+
+describe('Hinweis: PUID/PGID fehlen, Datenordner auf einem Bind-Mount (#1449)', () => {
+  /** mountinfo wie im Container: Feld 4 der Pfad in der Quelle, Feld 5 der Einhängepunkt. */
+  const zeile = (quelle: string, punkt: string) => `1 2 0:1 ${quelle} ${punkt} rw,relatime - ext4 /dev/sda1 rw`;
+  const NAS = [
+    zeile('/', '/'),
+    zeile('/volume1/docker/ablago/files', '/data/files'),
+    zeile('/volume1/docker/ablago/geheim', '/data/geheim'),
+  ].join('\n');
+  const VOLUMES = [
+    zeile('/', '/'),
+    zeile('/var/lib/docker/volumes/ablago_files/_data', '/data/files'),
+    zeile('/@docker/volumes/x/_data', '/data/geheim'),
+  ].join('\n');
+  const k = (b: 'daten' | 'vorgabe' | 'gesetzt', g = b) => ({ benutzer: 1000, gruppe: 1000, herkunft: { benutzer: b, gruppe: g } });
+
+  it('erkennt Bind-Mounts, nicht benannte Volumes und nicht Ordner im Container', () => {
+    assert.deepEqual(datenAufBindMount(NAS), ['/data/files', '/data/geheim']);
+    assert.deepEqual(datenAufBindMount(VOLUMES), []);
+    assert.deepEqual(datenAufBindMount(zeile('/', '/')), []);
+    assert.deepEqual(datenAufBindMount(zeile('/srv/ablago', '/data')), ['/data']);
+  });
+
+  it('nur ohne PUID/PGID, mit der Vorgabe und auf einem Bind-Mount', () => {
+    assert.deepEqual(kennungHinweis(k('vorgabe'), NAS), { ordner: ['/data/files', '/data/geheim'], benutzer: 1000, gruppe: 1000 });
+    assert.equal(kennungHinweis(k('gesetzt'), NAS), null, 'PUID/PGID gesetzt');
+    assert.equal(kennungHinweis(k('gesetzt', 'vorgabe'), NAS), null, 'PUID gesetzt');
+    assert.equal(kennungHinweis(k('daten'), NAS), null, 'wie der Besitzer der Ordner: nichts übernommen');
+    assert.equal(kennungHinweis(k('vorgabe'), VOLUMES), null, 'benannte Volumes');
+    assert.equal(kennungHinweis({ benutzer: 1000, gruppe: 1000, herkunft: null }, NAS), null, 'außerhalb des Images (--user)');
+    assert.equal(kennungHinweis(k('vorgabe'), null), null, 'ohne mountinfo');
   });
 });

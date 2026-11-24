@@ -29,6 +29,7 @@ import {
   rundgangFuer,
   rundgangMerkerAus,
   startetVonSelbst,
+  beimBesuch,
   tippDesTages,
   tippHandlung,
   tippPasst,
@@ -401,15 +402,17 @@ export class Entdecken {
                 ? { ziel: { anker: x.ziel } }
                 : {}),
           ...(x.rundgang ? { rundgang: x.rundgang } : {}),
+          ...(x.handbuch ? { handbuch: x.handbuch } : {}),
           neu: q.neu.get(x.schluessel) ?? istNeu(x, vorher, jetzt),
           ausgeblendet: aus.has(x.schluessel),
-          clients: x.rundgang ? false : !!a?.clients,
+          clients: x.rundgang || x.handbuch ? false : !!a?.clients,
         };
       });
     const tippsAn = e[EINSTELLUNG.tippsAn] !== false;
     const heute = tippsAn ? tippDesTages(tipps, stand, this.o.heute()) : null;
     const merker = rundgangMerkerAus(e[EINSTELLUNG.rundgaenge]);
     const starten = o.vertretung ? null : (rundgaenge.find((r) => startetVonSelbst(r, merker, b.letzteAnmeldung))?.schluessel ?? null);
+    const besuch = o.vertretung ? [] : beimBesuch(rundgaenge, merker, b.letzteAnmeldung);
     return {
       rundgaenge,
       tipps,
@@ -418,6 +421,7 @@ export class Entdecken {
         : null,
       tippsAn,
       starten,
+      beimBesuch: besuch,
     };
   }
 

@@ -437,7 +437,7 @@ describe('Beim Auswählen übernehmen – aus Dokument ausfüllen und „Dokumen
     };
     await d.erkennung.setzeStandard({ paket: 'wolke', abfluss: true });
     const r = await d.erkennung.fuerTyp(vertrag.id, { text: 'Ihr Vertrag Mobilfunk\nKündigungsfrist 1 Monat' });
-    assert.deepEqual(r.engine, { art: 'paket', id: 'wolke', name: 'KI Wolke' }, r.hinweis);
+    assert.deepEqual(r.engine, { art: 'paket', id: 'wolke', name: 'KI Wolke' }, String(r.hinweis));
     assert.equal(gerufen.length, 1);
     const gesendet = JSON.stringify(gerufen);
     assert.ok(!gesendet.includes('Rufnummer mitnehmen') && !gesendet.includes('geheim'), 'nichts aus der Vertragsart ging an das Paket');

@@ -956,7 +956,6 @@
   "server/src/protokoll/protokoll.ts": {
     "exports": [
       "AUFBEWAHRUNG_MS",
-      "DEBUG_DAUER_MS",
       "fehlerText"
     ]
   },
@@ -1123,7 +1122,6 @@
       "INFO_PASSWORT",
       "MAX_MB",
       "MAX_SEITEN",
-      "OCR_STANDARD",
       "hatText"
     ]
   },
@@ -1342,8 +1340,7 @@
       "passtFuer"
     ],
     "types": [
-      "Bild",
-      "OeffneSeite"
+      "Bild"
     ]
   },
   "shared/src/erechnung.ts": {
@@ -1411,8 +1408,7 @@
       "beschreibePaketEinstellungen",
       "beschreibePostfach",
       "beschreibeSicht",
-      "beschreibeStempel",
-      "beschreibeTyp"
+      "beschreibeStempel"
     ],
     "types": [
       "AblaufvorlageStand",

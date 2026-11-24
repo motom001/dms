@@ -1,9 +1,17 @@
 import { t, tn } from '../../sprache';
+import { Hilfe } from '../../Hilfe';
 import type { WerkbankUebersicht } from '../../api/betrieb';
 import { ENGPASS_VARIABLE } from '../../../../shared/src/systemlast';
 import { AufrufeUebersicht } from '../AutomatisierungAufruf';
 import { datum, platzText, type Hinweis } from './hilfen';
-import { eingangsordner, sicherungUndAnbindung, paketeUndEinrichtung, mailUndTexterkennung, aufgabenUndMappen } from './hinweise-betrieb';
+import {
+  eingangsordner,
+  sicherungUndAnbindung,
+  paketeUndEinrichtung,
+  paketeUndDarf,
+  mailUndTexterkennung,
+  aufgabenUndMappen,
+} from './hinweise-betrieb';
 
 export type { Hinweis } from './hilfen';
 
@@ -12,12 +20,15 @@ export function hinweiseAus(u: WerkbankUebersicht, mitNotfallblatt = false): Hin
   const h: Hinweis[] = [];
   notfallUndSpeicher(u, h);
   heimnetzGateway(u, h);
+  proxyNetz(u, h);
+  kennung(u, h);
   automatisierungen(u, h);
   lastUndWartung(u, h);
   tresorUndPostfaecher(u, h);
   eingangsordner(u, h);
   sicherungUndAnbindung(u, h, mitNotfallblatt);
   paketeUndEinrichtung(u, h);
+  paketeUndDarf(u, h);
   mailUndTexterkennung(u, h);
   aufgabenUndMappen(u, h);
   return h;
@@ -115,6 +126,42 @@ function heimnetzGateway(u: WerkbankUebersicht, h: Hinweis[]) {
   });
 }
 
+/** Ganzes Netz in TRUST_PROXY statt der Adresse des Proxys (#1465): das Netz deckt das Gateway ab. */
+function proxyNetz(u: WerkbankUebersicht, h: Hinweis[]) {
+  const p = u.trustProxyNetz;
+  if (!p) return;
+  h.push({
+    schluessel: 'proxy.netz',
+    art: 'warn',
+    text: (
+      <>
+        <strong>{t('werkbank.uebersicht.proxy-netz', { netz: p.netz })}</strong>{' '}
+        {t('werkbank.uebersicht.proxy-netz.text', { adresse: p.adresse, datum: datum(p.zuletzt) })}
+      </>
+    ),
+    ziel: '/werkbank/anmeldeschutz#notfallzugang',
+    knopf: t('werkbank.uebersicht.heimnetz-gateway.knopf'),
+  });
+}
+
+/** PUID/PGID fehlen und Datenordner liegen auf einem Bind-Mount (#1449): Zugriff über die Dateifreigabe des NAS. */
+function kennung(u: WerkbankUebersicht, h: Hinweis[]) {
+  const k = u.kennungHinweis;
+  if (!k) return;
+  h.push({
+    schluessel: 'kennung.puid',
+    art: 'warn',
+    text: (
+      <>
+        <strong>{t('systemzustand.kennung.hinweis', { benutzer: k.benutzer, gruppe: k.gruppe })}</strong>{' '}
+        {tn('systemzustand.kennung.hinweis.text', { ordner: k.ordner.join(', '), hilfe: <Hilfe ort="werkbank.ohne-root" /> })}
+      </>
+    ),
+    ziel: '/werkbank/systemzustand#version',
+    knopf: t('werkbank.uebersicht.zum-systemzustand'),
+  });
+}
+
 /** Automatisierungen (#675) und Mappen-Abläufe (#1044). */
 function automatisierungen(u: WerkbankUebersicht, h: Hinweis[]) {
   // Auslastung (#409): CPU oder Arbeitsspeicher seit 5 Minuten über 90 %.
@@ -161,7 +208,10 @@ function automatisierungen(u: WerkbankUebersicht, h: Hinweis[]) {
       ziel: '/werkbank/automatisierungen',
       knopf: t('automatisierung.ui.uebersicht.knopf'),
     });
-  // #678: Ohne Paket „Benachrichtigungen“ schickt niemand die Tägliche Zusammenfassung.
+  // #678: Ohne Paket „Benachrichtigungen“ schickt niemand die Tägliche Zusammenfassung. Fehlt das Paket, steht es seit
+  // #1511 unter „Empfohlene Pakete“ – dann weder dieser Hinweis noch „Post für dich“.
+  const ohnePaket = !!u.empfohlenFehlt?.includes('benachrichtigungen');
+  if (ohnePaket) return automatisierungenRest(au, h);
   if (au?.ohneBenachrichtigungen)
     h.push({
       schluessel: 'automatisierung.ohne-benachrichtigungen',
@@ -187,6 +237,11 @@ function automatisierungen(u: WerkbankUebersicht, h: Hinweis[]) {
       ziel: '/werkbank/automatisierungen',
       knopf: t('automatisierung.ui.uebersicht.knopf'),
     });
+  automatisierungenRest(au, h);
+}
+
+/** Aufrufe von außen (#679) und fehlgeschlagene Läufe (#675). */
+function automatisierungenRest(au: WerkbankUebersicht['automatisierungen'], h: Hinweis[]) {
   // Aufruf von außen (#679): Adressen ohne Anmeldung – sichtbar, mit „Alle abschalten“ (ein Klick); nicht wegzuklicken.
   if (au?.aufrufe?.length)
     h.push({
@@ -282,7 +337,7 @@ function lastUndWartung(u: WerkbankUebersicht, h: Hinweis[]) {
             })}
           </strong>{' '}
           {u.wartung.stufe === 'aktiv'
-            ? t('werkbank.uebersicht.nur-administratoren-koennen-arbeiten')
+            ? `${t('werkbank.uebersicht.nur-administratoren-koennen-arbeiten')} ${t('werkbank.uebersicht.nichts-geht-rein-oder-raus')}`
             : t('werkbank.uebersicht.bald-werden-alle-anderen')}
         </>
       ),

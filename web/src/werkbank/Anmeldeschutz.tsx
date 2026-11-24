@@ -20,7 +20,7 @@ import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { NOTFALLBLATT_SEITE } from '../../../shared/src/werkbankansicht';
 import { Kopf } from './Kopf';
-import { HeimnetzGrund } from './HeimnetzGrund';
+import { HeimnetzGrund, ProxyNetzHinweis } from './HeimnetzGrund';
 import { SperrListe, sperrWer } from './GesperrteAnmeldungen';
 
 /** Werkbank → Anmeldeschutz (#240): Fehlversuche je Konto und je IP, gesperrte Anmeldungen (#1481), Ausnahmen. */
@@ -262,6 +262,7 @@ function NotfallzugangBlatt({ deineIp }: { deineIp: string }) {
             <p className="leise klein">{t('werkbank.notfallzugang.internet.von', { von: n.von, am: zeit(n.am) })}</p>
           )}
           <HeimnetzGrund n={n} deineIp={deineIp} />
+          <ProxyNetzHinweis n={n} />
         </>
       )}
       {meldung && (

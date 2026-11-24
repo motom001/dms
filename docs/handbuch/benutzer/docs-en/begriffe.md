@@ -177,14 +177,14 @@ A folder type whose folders a link may point to; a link has one or several. With
 See also: [Link (field)](#verweis), [Folder type](#mappentyp).
 
 <a id="tipp"></a>**Tip** (*Tipp*) · ✓ everyday word · everyone  
-One sentence showing what else you can do in Ablago – at most one new one a day as the “tip of the day” in the assistant (a dot on its button shows it); “Show me” leads to the place or starts a tour. Switch it off in My account.  
+One sentence showing what else you can do in Ablago – at most one new one a day as the “tip of the day” in the assistant (a dot on its button shows it); “Show me” leads to the place, starts a tour or opens a page in the manual. Switch it off in My account.  
 See also: [Tour](#rundgang), [Discover Ablago](#ablago-entdecken), [Assistant](#assistent).
 
 <a id="titel"></a>**Title** (*Titel*) · ✓ everyday word · everyone  
 The display name of a folder. It is formed from a template with field values.
 
 <a id="rundgang"></a>**Tour** (*Rundgang*) · ✓ everyday word · everyone  
-A short guided walk on the real interface in a few steps; each step highlights one place. Ablago's own tour starts the first time a new account signs in; everyone finds it under "Discover Ablago".  
+A short guided walk on the real interface in a few steps; each step highlights one place. Ablago's own tours start on the first visit to a page (Library, folder, Workbench; My account only with a quiet note); everyone finds them under "Discover Ablago".  
 See also: [Tip](#tipp), [Discover Ablago](#ablago-entdecken).
 
 <a id="eindeutig"></a>**Unique** (*Eindeutig*) · ~ with explanation · administrators  
@@ -541,6 +541,10 @@ An account with which someone signs in. Stored as a system folder in Ablago. Peo
 A saved state of an entry in the Workbench – folder type (with its permission rules), view, number sequence, stamp template, mailbox, package settings or automation – with the time, who saved it (a person, a package with its version, an automation, an update of Ablago) and a readable list of changes. Every save creates a version; the same person within 10 minutes stays one. Two versions can be compared and an earlier one restored – which is itself a new version. When an entry is deleted, its last version stays with a deletion note as a record.  
 See also: [Version](#version), [Version of Ablago](#version-von-ablago).
 
+<a id="was-ablago-darf"></a>**What Ablago may do** (*Was Ablago darf*) · ~ with explanation · administrators  
+Two answers for the whole installation – which packages Ablago may use (none, templates only, also helpers that only work here, also helpers with internet) and how much it does on its own (nothing, recognise and propose, do everything). Ablago keeps to this in the server and no longer asks each time within this limit. Built-in helpers such as text recognition work with every answer. Shown as a card at the top of the workbench overview; raising it needs a fresh sign-in.  
+See also: [Package](#paket), [Overview](#ubersicht).
+
 <a id="was-mitkommt"></a>**What comes with it** (*Was mitkommt*) · ✓ everyday word · administrators  
 Everything a package brings – folder types, views, included folders, examples, word lists, automations, automation templates, actions in the "Folder" menu, settings, permissions and network – in the same order as in the catalogue. Shown on the package page and in the preview; on an update, new things are marked "new in this version". Plus the quick guide "How to use it", which Ablago shows once right after the installation.  
 See also: [Package](#paket), [Package catalogue](#paketkatalog).
@@ -640,4 +644,4 @@ See also: [Version](#version).
 
 Which German words are still being discussed, which questions have been decided and which words the German texts avoid is listed on the [German page](../../begriffe/). It concerns the German wording.
 
-*As of: 2026-11-15*
+*As of: 2026-11-24*

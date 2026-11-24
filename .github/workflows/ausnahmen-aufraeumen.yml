@@ -54,6 +54,8 @@ jobs:
         run: |
           npx eslint --prune-suppressions --quiet .
           npx depcruise server/src server/test web/src web/test shared/src shared/test --config .dependency-cruiser.cjs --output-type baseline --output-to .dependency-cruiser-known-violations.json
+          # ESLint schreibt ohne Zeilenumbruch am Dateiende, auf main steht er (#1483). Fehlt er, hier ergänzen.
+          for f in eslint-suppressions.json .dependency-cruiser-known-violations.json; do sed -i -e '$a\' "$f"; done
           # Nur schrumpfen, nie wachsen – sonst stimmt auf main etwas nicht.
           node .github/werkzeuge/ausnahmen-zaehlen.mjs HEAD
       - name: Branch und Pull Request
@@ -63,7 +65,13 @@ jobs:
         run: |
           set -euo pipefail
           if git diff --quiet -- eslint-suppressions.json .dependency-cruiser-known-violations.json; then
-            echo "Bestandslisten sind aktuell – nichts zu tun."; exit 0
+            echo "Bestandslisten sind aktuell – nichts zu tun."
+            # Ein offener PR aus einem früheren Lauf ist damit überholt (#1483).
+            alt=$(gh pr list --repo "$REPO" --head ausnahmen-aufraeumen --base main --state open --json number -q '.[0].number')
+            if [ -n "$alt" ]; then
+              gh pr close "$alt" --repo "$REPO" --comment "Überholt: Auf main ist nichts mehr zu streichen."
+            fi
+            exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

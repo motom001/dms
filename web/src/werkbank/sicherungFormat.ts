@@ -28,3 +28,20 @@ export function externStatus(s: ExternStand): string {
 }
 /** „extern geprüft“ usw. */
 export const externText = (s: ExternStand) => `${t('werkbank.sicherung.extern.extern')} ${externStatus(s)}`;
+
+/** Art einer Sicherung in Worten (#1529, #1531): „von Hand“, „automatisch“, „automatisch · nachgeholt“ … */
+export function artText(m: { art: string; nachgeholt?: boolean }): string {
+  const art =
+    m.art === 'manuell'
+      ? t('werkbank.sicherung.von-hand')
+      : m.art === 'automatisch'
+        ? t('werkbank.sicherung.art.automatisch')
+        : m.art === 'vor-wiederherstellung'
+          ? t('werkbank.sicherung.vor-einer-wiederherstellung')
+          : m.art;
+  return m.nachgeholt ? `${art} · ${t('werkbank.sicherung.art.nachgeholt')}` : art;
+}
+
+/** Eine Sicherung in einer Zeile: Zeitpunkt, Art und „Wozu?“ – für Meldungen wie „Sicherung fertig“ (#1531). */
+export const sicherungText = (m: { beginn: string; art: string; nachgeholt?: boolean; wozu?: string }) =>
+  [zeit(m.beginn), artText(m), m.wozu ? `„${m.wozu}“` : null].filter(Boolean).join(' · ');

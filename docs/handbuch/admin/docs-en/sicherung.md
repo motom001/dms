@@ -6,6 +6,8 @@ Under **Workbench → Backup**, Ablago creates backups itself: the whole databas
 
 You restore a backup with Ablago. If you additionally want your paperwork in a form you can read **even without Ablago** – for instance to take it into another program –, use the [full export](export.md) in open formats.
 
+If you already back up your server with snapshots (NAS, virtual machine), [Backing up with snapshots](snapshots.md) describes what belongs together and how to handle the key.
+
 ![Backup in the workbench](bilder/werkbank-sicherung.png)
 
 ## What a backup contains { #was-eine-sicherung-enthalt }
@@ -32,7 +34,9 @@ Without a key, no backup can be created; the page then points to encryption.
 
 At the top of the section, the status is in one line: last backup, number and size of the backups, next date according to the schedule, free space and, if set up, the last off-site copy. There is nothing about the emergency sheet there: it belongs to [Encryption](verschluesselung.md#notfallblatt), which also shows when it was last downloaded.
 
-**Back up now** starts a backup in the background, with progress. You can leave the page. If less space is free than the [minimum storage space](#zeitplan-und-aufbewahrung), no backup begins.
+**Back up now** starts a backup in the background, with progress. You can leave the page. If less space is free than the [minimum storage space](#zeitplan-und-aufbewahrung), no backup begins. Ablago also estimates the size of the next backup (the last complete one, otherwise documents and database today): if less than the minimum storage space would remain free afterwards, Ablago skips the backup and reports this in the workbench – Ablago and the database usually live on the same storage, and a full disk would bring them down too.
+
+**What for?** (optional, at most 80 characters): give a backup made by hand a short name, e.g. "Before removing invoices". It appears in the list below the kind, when [restoring](wiederherstellen.md#auf-dem-laufenden-system) and in the log. **Change "What for?"** in the row changes or clears it. The name belongs to the backup: it is in its metadata (`.json`, field `wozu`) and encrypted in the backup itself – so it is still there after restoring and on another device. Named backups count towards retention like all others; retention doesn't clear away backups made by hand anyway. Automatic backups are called "automatic"; if the schedule caught up on a missed one, "automatic · caught up". The message below **Back up now** names the backup that has just finished.
 
 The list shows all backups in the folder with time, kind, size and content. Each row has **Download**, **Check** and **Delete**. [Download](#sicherung-herunterladen) fetches a copy to your computer. **Check** recalculates the file's checksum and compares it with the one from the metadata – "unchanged" means: the file is as Ablago wrote it. **Delete** removes both files.
 
@@ -43,6 +47,8 @@ In the container this also works without a browser with the [command `dms`](kons
 To tidy up, tick the backups you want to remove in the list, or **Select all**. **Delete selected (n)** asks once for all of them and states the number, the period and the space that will be freed. Ablago then deletes them one after the other and shows the progress. Anything that could not be deleted stays selected and is listed with the reason above the list.
 
 No backup has special protection, not even the newest one: **Select all** really selects all of them, and **Delete selected** deletes all selected ones. The protection is the confirmation – if all are selected, it also says that afterwards there is no local backup left. Exactly the selected ones are deleted: a backup created in the meantime is not among them. Copies [off-site](sicherung-ausser-haus.md) stay at the destination and remain in the list. If you want to be sure to keep a backup, [download](#sicherung-herunterladen) it first.
+
+Backups that [only exist off-site](sicherung-ausser-haus.md#nur-ausser-haus) have a checkbox too. They can't be deleted here – for them, next to **Delete selected (n)**, there is **Remove from list (n)** (see [Remove from list](sicherung-ausser-haus.md#aus-der-liste-nehmen)). Each of the two buttons is only active if it fits all selected backups; otherwise the reason is shown next to it.
 
 Above the list it says what [retention](#zeitplan-und-aufbewahrung) clears away by itself, with the link **Change retention**. So you don't need to delete older automatic backups by hand.
 
@@ -79,9 +85,9 @@ Windows shows the checksum in capital letters – that makes no difference.
 
 ![Schedule and retention](bilder/werkbank-sicherung-zeitplan.png)
 
-- **Automatic backup** (switch) daily or weekly at a time (e.g. daily 02:00). If Ablago was off at that time, it backs up as soon as it runs again – but only on the same day. It doesn't catch up on a missed backup from the previous day; it only backs up again at the next scheduled date. There is never more than one automatic backup per day.
+- **Automatic backup** (switch) daily or weekly at a time (e.g. daily 02:00). After a **new setup** it is on from the start (see [First backup after setup](#erste-sicherung)); existing installations keep their setting. If Ablago was off at that time, it backs up as soon as it runs again – but only on the same day. It doesn't catch up on a missed backup from the previous day; it only backs up again at the next scheduled date. There is never more than one automatic backup per day. A caught-up backup is called "automatic · caught up" in the list. If there was already a backup in the last 60 minutes (by hand or before a restore), catching up is skipped – it counts for today. Right after a [restore](wiederherstellen.md#angaben-zur-sicherung) Ablago doesn't catch up on anything.
 - The schedule can only be switched on once the **emergency sheet** has been downloaded – because a backup can only be opened with the key on it. Until then, **Go to emergency sheet** leads to [Encryption](verschluesselung.md#notfallblatt).
-- **Retention** (default **7 daily / 4 weekly / 12 monthly**): of the automatic backups, the newest per day, per week and per month remains, as many as set; Ablago removes older ones after every automatic backup. Backups created by hand stay until you delete them.
+- **Retention** (after a new setup **7 daily / 4 weekly / 3 monthly**, for older installations without a saved schedule 7 / 4 / 12): of the automatic backups, the newest per day, per week and per month remains, as many as set; Ablago removes older ones after every automatic backup. Backups created by hand stay until you delete them. Directly below the numbers is the **storage needed** ("Storage needed: about 14 backups ≈ 1.6 GB") – the same projection as under [Storage space](#speicherplatz). It updates while you change the numbers, before saving.
 - **Keep only the newest locally** (since 0.142): instead of the retention, only the newest automatic backup stays in the folder – for tight space, when an [off-site copy](sicherung-ausser-haus.md) is made. A backup whose copy is currently running stays until it has arrived (at most 2 days). "None locally" doesn't exist. The checkbox can only be ticked once an off-site backup is set up and its last copy succeeded. If the destination goes away (package removed or switched off), the copy fails or lags more than 2 days behind, the checkbox has no effect: Ablago then keeps older backups according to the retention again and points this out.
 - **Minimum storage space** (default 1 GB): if less is free in the backup folder, no backup begins; this is shown as a notice in the workbench and in the log.
 - In active [maintenance mode](wartungsmodus.md), the automatic backup pauses.
@@ -93,6 +99,16 @@ Windows shows the checksum in capital letters – that makes no difference.
 
 The page shows how large documents and database are today, a **projection** for the chosen retention (every backup is complete; the database packs well, documents hardly), how much the backups take up and how much is free in the folder. If it gets tight – less free than the minimum storage space or than two more backups –, it warns. Independently of this, **Workbench → [System health](speicherplatz.md)** monitors all of Ablago's folders with a warning threshold and limit.
 
+## First backup after setup { #erste-sicherung }
+
+After a new setup Ablago backs up by itself. The end of the [setup wizard](installation.md#der-einrichtungsassistent) says so in one line: "Ablago backs up every night at 02:00 – you can change that in the workbench." With **Finish setup** – which only works with the emergency sheet downloaded – the following happens:
+
+1. The automatic backup is on: daily at 02:00, retention 7 / 4 / 3.
+2. Ablago immediately creates the **first backup** in the background and then **restores it as a test** – in a separate area of the database that disappears afterwards, even if the test fails. With an empty archive this takes seconds. The whole path is checked: folder writable, permissions, encryption, restoring.
+3. **Workbench → Backup** shows "First backup and test successful" with the time in the status line. The workbench overview only names the next step: **Set up off-site copy** – the first backup is on the same device as Ablago. If the backups are even on the same disk as the documents, this notice is yellow.
+
+If the first backup or its test fails, the overview shows a red notice pointing to **Workbench → Backup**, where the cause is shown in the status line. That's exactly what the first run is for: fix it and back up again. Both runs are in the [log](fehlersuche.md#protokoll), module *sicherung*, like every backup and test. Existing installations don't change.
+
 ## Notices on problems { #hinweise-bei-problemen }
 
 The workbench overview shows a notice if
@@ -100,7 +116,8 @@ The workbench overview shows a notice if
 - the last backup **failed**,
 - the last successful one is **older than 2 days** (or there is none yet),
 - the emergency sheet is missing, belongs to an earlier key or its emergency code has been used (with the button **Go to emergency sheet**; this notice also appears at the top of this page),
-- the backup folder isn't a separate volume or is on the same disk as the documents,
+- the backup folder isn't a separate volume or is on the same disk as the documents (after a new setup instead: **Set up off-site copy**, see [above](#erste-sicherung)),
+- there probably isn't enough space for the next backup (it was skipped),
 - the [off-site copy](sicherung-ausser-haus.md#anzeige-und-hinweise) failed or no newer backup has arrived there for more than 2 days.
 
 If a backup fails, all administrators get an email – also without a schedule, for instance with **Back up now**. If the last successful backup is too old, the email only comes if the schedule is on. **One** email comes per incident (not hourly) – if [Email sending](installation.md#e-mail-und-adresse) is set up. Everything is also recorded in the [log](fehlersuche.md#protokoll), module *sicherung*.

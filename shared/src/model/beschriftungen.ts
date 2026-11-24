@@ -20,6 +20,8 @@ export interface TypTeile {
   name?: string;
   beschreibung?: string;
   erkennbarAn?: string;
+  /** Mehrzahl des Mappentyps (#1446), z. B. „Contracts“ zu „Contract“. */
+  mehrzahl?: string;
 }
 
 /** Bezeichnung, Hilfetext und Beschriftung der Optionen (fester Wert → Text) eines Felds. */

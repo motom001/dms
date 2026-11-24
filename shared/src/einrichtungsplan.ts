@@ -8,6 +8,8 @@
  * Seit #821 gibt es nur noch „Dein Konto“: die Person, die einrichtet, mit „Gesamte Verwaltung“. Ein Administrator und
  * ein „erster Benutzer“ daneben entfallen; weitere Personen lädt man nach der Einrichtung ein.
  */
+import type { Vorlage } from './werkbankansicht';
+import type { Darf, PaketeGrenze, SelbstStufe } from './darf';
 
 /** Formatversion der Konfigurationsdatei (Kopfzeile `ablago-einrichtung: 1`). */
 export const EINRICHTUNG_FORMAT = 1;
@@ -138,6 +140,17 @@ export interface Einrichtungsplan {
   nutzung?: Nutzung;
   /** Eigene Organisation (#1045, #995) – nur bei beruflich und beides. */
   organisation?: PlanOrganisation;
+  /** Stufe der Werkbank für die Installation (#1319); fehlt = Vorgabe zur Nutzung wie bisher. */
+  werkbank?: Vorlage;
+  /** Was Ablago darf (#1562): beide Antworten; `hoechstens` legt ein Anbieter fest – der Server setzt es durch. Fehlt = Vorgabe. */
+  darf?: PlanDarf;
+}
+
+/** Was Ablago darf in der Einrichtungsdatei (#1562): jede Angabe freiwillig. */
+export interface PlanDarf {
+  pakete?: PaketeGrenze;
+  selbst?: SelbstStufe;
+  hoechstens?: Partial<Darf>;
 }
 
 /** Ein Fehler in der Datei: Zeile (ab 1, wenn bekannt), Feld wie `konto.email` oder `pakete[1].id`, Text. */
