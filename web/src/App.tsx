@@ -32,6 +32,7 @@ import { Entdecken } from './entdecken/Entdecken';
 import { RundgangAnzeige } from './entdecken/Rundgang';
 import { EntdeckenWerkzeuge } from './entdecken/werkzeuge';
 import { useRundgangBeimBesuch } from './entdecken/besuch';
+import { setzeTabSymbol, tabTitel, tabZahl, useHintergrundStand } from './tabzeichen';
 
 /**
  * Suchfeld oben in der Werkbank (#1218)? Vorschlag Qualität (bis Thomas entscheidet): nein – die Werkbank hat ihre
@@ -67,10 +68,19 @@ export function App() {
   const marke = schriftzugVon(d.meinDesign) || 'Ablago';
   const symbol = logoUrl(d.meinDesign);
   const entdeckenSeite = teile[0] === 'entdecken';
+  // Neues im Tab (#922): Zahl im Titel, Punkt im Symbol – nur Zahlen, nicht in Vertretung; im Hintergrund einmal je Minute.
+  const neu = vertretung ? 0 : tabZahl(d.zaehler);
+  useHintergrundStand(!vertretung && d.geladen, d.auffrischen);
   useEffect(() => {
-    document.title = `${marke} – ${entdeckenSeite ? t('entdecken.menue') : { ablage: t('oberflaeche.app.ablage'), werkbank: t('oberflaeche.app.werkbank'), profil: t('oberflaeche.app.mein-konto') }[bereich]}`;
-    setzeSymbol(symbol);
-  }, [marke, symbol, bereich, entdeckenSeite]);
+    document.title = tabTitel(
+      `${marke} – ${entdeckenSeite ? t('entdecken.menue') : { ablage: t('oberflaeche.app.ablage'), werkbank: t('oberflaeche.app.werkbank'), profil: t('oberflaeche.app.mein-konto') }[bereich]}`,
+      neu,
+    );
+  }, [marke, bereich, entdeckenSeite, neu]);
+  const punkt = neu > 0;
+  useEffect(() => {
+    void setzeTabSymbol(symbol, punkt);
+  }, [symbol, punkt]);
   // Rundgänge von selbst (#831, #1512, #1522, #1523): bei der ersten Anmeldung bzw. beim ersten Besuch von Ablage,
   // Mappe und Werkbank – der Server entscheidet, was aussteht; nie in Vertretung (Regeln in entdecken/besuch.tsx).
   useRundgangBeimBesuch({ pfad, aus: !!vertretung || !d.geladen || entdeckenSeite });
@@ -243,15 +253,6 @@ function OhneModus({ paket }: { paket: boolean }) {
       </Knopf>
     </div>
   );
-}
-
-/** Symbol im Browser-Tab: eigenes Logo oder das ursprüngliche (#72). */
-let ursprungsSymbol: string | null = null;
-export function setzeSymbol(url: string | null) {
-  const el = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
-  if (!el) return;
-  ursprungsSymbol ??= el.href;
-  el.href = url ?? ursprungsSymbol;
 }
 
 const uhrzeit = (iso: string) => new Date(iso).toLocaleString(gebietsschema(), { dateStyle: 'short', timeStyle: 'short' });

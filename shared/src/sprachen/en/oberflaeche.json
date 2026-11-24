@@ -543,6 +543,7 @@
   "datum.heute": "Today",
   "muster.datum.titel": "Date",
   "muster.datum.text": "Type a date as usual; a click into the field or on the calendar icon opens the calendar with week numbers (ISO 8601). Alt + Down arrow opens it from the keyboard.",
+  "muster.datum.rechts": "At the right edge",
   "muster.datum.kalender": "Calendar open",
   "muster.beschriftung.faellig": "Due on",
   "muster.hinweis.datum": "End of week 50: Friday, 11 December.",

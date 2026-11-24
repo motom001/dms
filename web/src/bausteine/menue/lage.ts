@@ -1,8 +1,9 @@
 /**
  * Lage einer aufklappenden Liste (#1488): unter dem Knopf, wenn sie dort Platz hat – sonst darüber; passt sie nirgends
  * ganz, auf der Seite mit mehr Platz und mit eigener Rollleiste in der Liste. Der Platz des Assistenten unten rechts
- * (`frei`) zählt nicht als Platz. Die Liste liegt fest im Fenster (`position: fixed`) – so verlängert sie keine Spalte
- * und erzeugt keine Rollleiste für die Seite. Muster für alle Bausteine, die etwas aufklappen (Menü, Kalender).
+ * (`frei`) zählt nicht als Platz. Waagerecht bündig mit dem Knopf, solange die Liste ins Fenster passt (#1556). Die Liste
+ * liegt fest im Fenster (`position: fixed`) – so verlängert sie keine Spalte und erzeugt keine Rollleiste für die Seite.
+ * Muster für alle Bausteine, die etwas aufklappen (Menü, Kalender, #1532).
  */
 export interface Aufklapplage {
   /** Nach oben aufgeklappt. */
@@ -32,15 +33,32 @@ export function aufklapplage(
   knopf: Rechteck,
   hoehe: number,
   fenster: { breite: number; hoehe: number },
-  o: { frei?: number; links?: boolean } = {},
+  o: { frei?: number; links?: boolean; breite?: number } = {},
 ): Aufklapplage {
   const unten = fenster.hoehe - knopf.bottom - ABSTAND - RAND - (o.frei ?? 0);
   const oben = knopf.top - ABSTAND - RAND;
   const nachOben = hoehe > unten && oben > unten;
-  const seite = o.links ? { left: Math.max(RAND, knopf.left) } : { right: Math.max(RAND, fenster.breite - knopf.right) };
+  const seite = waagerecht(knopf, fenster.breite, o.links, o.breite);
   return nachOben
     ? { oben: true, bottom: fenster.hoehe - knopf.top + ABSTAND, ...seite, maxHoehe: Math.max(0, oben) }
     : { oben: false, top: knopf.bottom + ABSTAND, ...seite, maxHoehe: Math.max(0, unten) };
+}
+
+/**
+ * Waagerecht (#1556): bündig mit der bevorzugten Kante des Knopfs (links oder rechts), wenn die Liste dort ganz ins
+ * Fenster passt; sonst bündig mit der anderen Kante; passt beides nicht, mit 8 px Abstand am Fensterrand. Ohne `breite`
+ * (Liste noch nicht gemessen) nur die bevorzugte Kante.
+ */
+function waagerecht(knopf: Rechteck, fensterbreite: number, links?: boolean, breite?: number): { left?: number; right?: number } {
+  const linksBuendig = { left: Math.max(RAND, knopf.left) };
+  const rechtsBuendig = { right: Math.max(RAND, fensterbreite - knopf.right) };
+  if (breite === undefined) return links ? linksBuendig : rechtsBuendig;
+  const passtLinks = knopf.left >= RAND && knopf.left + breite <= fensterbreite - RAND;
+  const passtRechts = knopf.right <= fensterbreite - RAND && knopf.right - breite >= RAND;
+  if (links ? passtLinks : passtRechts) return links ? linksBuendig : rechtsBuendig;
+  if (links ? passtRechts : passtLinks) return links ? rechtsBuendig : linksBuendig;
+  // Passt an keiner Kante: so nah an der bevorzugten wie möglich, mit 8 px Abstand zum Fensterrand.
+  return { left: Math.max(RAND, Math.min(links ? knopf.left : knopf.right - breite, fensterbreite - RAND - breite)) };
 }
 
 /** Platz des Assistenten unten rechts aus `--platz-begleiter` (tokens.css); ohne Angabe 0. */
@@ -59,7 +77,7 @@ export function legeFest(liste: HTMLElement, knopf: HTMLElement, links?: boolean
   Object.assign(st, { position: 'fixed', top: '0px', left: '0px', right: 'auto', bottom: 'auto', maxHeight: 'none' });
   const ursprung = liste.getBoundingClientRect();
   const fenster = { breite: innerWidth, hoehe: innerHeight };
-  const l = aufklapplage(knopf.getBoundingClientRect(), ursprung.height, fenster, { frei: platzUnten(), links });
+  const l = aufklapplage(knopf.getBoundingClientRect(), ursprung.height, fenster, { frei: platzUnten(), links, breite: ursprung.width });
   const hoehe = Math.min(ursprung.height, l.maxHoehe);
   const top = l.oben ? fenster.hoehe - (l.bottom ?? 0) - hoehe : (l.top ?? 0);
   const left = l.left ?? Math.max(RAND, fenster.breite - (l.right ?? 0) - ursprung.width);

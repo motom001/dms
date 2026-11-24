@@ -8,7 +8,7 @@ import { Link } from '../../ort';
 import { t, tn } from '../../sprache';
 import { titelOder } from '../../seiten';
 import { Mehrfachauswahl } from '../../ablage/Mehrfachauswahl';
-import { Feld, FeldGruppe, HakenFeld, Knopf } from '../../bausteine';
+import { DatumEingabe, Feld, FeldGruppe, HakenFeld, Knopf } from '../../bausteine';
 import { AuskunftFertig } from './AuskunftFertig';
 import { erteilenAktionen, useAuskunftErteilen, type ErteilenZustand } from './erteilen-zustand';
 import { groesse, heute } from './hilfen';
@@ -161,7 +161,7 @@ function gewaehltePerson(x: ErteilenZustand, d: Daten, a: Aktionen) {
       />
       <div className="zeile-umbruch">
         <Feld beschriftung={t('werkbank.datenschutz.anfrage-eingegangen-am')}>
-          <input type="date" value={eingang} max={heute()} onChange={(e) => setEingang(e.target.value)} />
+          <DatumEingabe wert={eingang} max={heute()} setze={setEingang} />
         </Feld>
         <Knopf onClick={() => frist()} title={t('werkbank.datenschutz.aufgabe-fuer-dich-faellig')}>
           {t('werkbank.datenschutz.frist-als-aufgabe-anlegen')}

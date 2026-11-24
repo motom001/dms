@@ -54,8 +54,24 @@ const E = 'einsteiger',
   S = 'selbstaendig',
   B = 'organisation',
   A = 'alles';
-/** Zahlen links aus der Übersicht (#375): Name in `WerkbankZahlen` (server/src/werkbank/werkbankzahlen.ts). */
-type Zaehlername = 'pakete' | 'nummernkreise' | 'benutzer' | 'postfaecher' | 'darfWeg';
+/**
+ * Zahlen links aus der Übersicht (#375): Name in `WerkbankZahlen` (server/src/werkbank/werkbankzahlen.ts). Jeder
+ * Bereich mit Zahl hat einen Zähler (#1585), damit die Zahl schon dasteht, bevor jemand den Bereich öffnet.
+ */
+type Zaehlername =
+  | 'pakete'
+  | 'nummernkreise'
+  | 'benutzer'
+  | 'postfaecher'
+  | 'darfWeg'
+  | 'automatisierungen'
+  | 'ablaufvorlagen'
+  | 'rundgaenge'
+  | 'tipps'
+  | 'stempel'
+  | 'auskuenfte'
+  | 'woerter'
+  | 'anmeldeschutz';
 
 /** Ein Eintrag der Liste der Werkbank-Seiten (#1281). */
 interface Eintrag {
@@ -94,23 +110,23 @@ const EINTRAEGE = [
   { pfad: 'sichten', gruppe: 'ablage', ab: H, hilfe: 'werkbank.sichten', mitte: true },
   { pfad: 'nummernkreise', gruppe: 'ablage', ab: S, hilfe: 'werkbank.nummernkreise', mitte: true, zaehler: 'nummernkreise' },
   // Automatisierungen (#675): ab Haushalt (#987, vorher dort nur im Expertenmodus).
-  { pfad: 'automatisierungen', gruppe: 'ablage', ab: H, hilfe: 'werkbank.automatisierungen', mitte: true },
+  { pfad: 'automatisierungen', gruppe: 'ablage', ab: H, hilfe: 'werkbank.automatisierungen', mitte: true, zaehler: 'automatisierungen' },
   // Automatisierungsvorlagen (#1044): daneben, gleich sichtbar – „Aufgabe vergeben“, „Erinnern“, Wiedervorlage …
-  { pfad: 'ablaufvorlagen', gruppe: 'ablage', ab: H, hilfe: 'werkbank.ablaufvorlagen', mitte: true },
+  { pfad: 'ablaufvorlagen', gruppe: 'ablage', ab: H, hilfe: 'werkbank.ablaufvorlagen', mitte: true, zaehler: 'ablaufvorlagen' },
   // Rundgänge (#941): alle sehen, an/aus, eigene schreiben – zum Schluss, weil sie auf allem anderen aufbauen. Ab Betrieb
   // (#1298): Eigene Rundgänge legen eher Betriebe mit 10 bis 20 Mitarbeitern an; wer sie schon eingerichtet hat, behält
   // den Bereich als Einblendung (Migration 120). Die Rundgänge selbst laufen für alle weiter.
-  { pfad: 'rundgaenge', gruppe: 'ablage', ab: B, hilfe: 'werkbank.rundgaenge', mitte: true },
+  { pfad: 'rundgaenge', gruppe: 'ablage', ab: B, hilfe: 'werkbank.rundgaenge', mitte: true, zaehler: 'rundgaenge' },
   // Tipps (#942): daneben – Tipps können Rundgänge starten.
-  { pfad: 'tipps', gruppe: 'ablage', ab: H, hilfe: 'werkbank.tipps', mitte: true },
+  { pfad: 'tipps', gruppe: 'ablage', ab: H, hilfe: 'werkbank.tipps', mitte: true, zaehler: 'tipps' },
   { pfad: 'benutzer', gruppe: 'benutzer', ab: E, hilfe: 'werkbank.benutzer', mitte: true, zaehler: 'benutzer' },
   { pfad: 'verschluesselung', gruppe: 'benutzer', ab: E, hilfe: 'werkbank.verschluesselung' },
   // „Aufbewahrung abgelaufen“ (#725, früher „Darf weg“) und Stempel (#717) regeln, was die Ablage verlässt.
   { pfad: 'aufbewahrung', gruppe: 'benutzer', ab: S, hilfe: 'werkbank.aufbewahrung', zaehler: 'darfWeg' },
-  { pfad: 'stempel', gruppe: 'benutzer', ab: H, hilfe: 'werkbank.stempel', mitte: true },
+  { pfad: 'stempel', gruppe: 'benutzer', ab: H, hilfe: 'werkbank.stempel', mitte: true, zaehler: 'stempel' },
   // Datenschutz (#1184, vorher unter „Benutzer und Sicherheit“, #668): Auskünfte (mit Mitte, wachsende Sammlung),
   // Löschkonzept und Löschprotokoll (vorher Abschnitt des Löschkonzepts) als drei klar getrennte Einträge.
-  { pfad: 'auskuenfte', gruppe: 'datenschutz', ab: S, hilfe: 'werkbank.auskuenfte', mitte: true },
+  { pfad: 'auskuenfte', gruppe: 'datenschutz', ab: S, hilfe: 'werkbank.auskuenfte', mitte: true, zaehler: 'auskuenfte' },
   { pfad: 'loeschkonzept', gruppe: 'datenschutz', ab: S, hilfe: 'werkbank.loeschkonzept' },
   { pfad: 'loeschprotokoll', gruppe: 'datenschutz', ab: S, hilfe: 'werkbank.loeschprotokoll', auchMit: ['loeschkonzept'] },
   { pfad: 'postfaecher', gruppe: 'post', ab: H, hilfe: 'werkbank.postfaecher', mitte: true, zaehler: 'postfaecher' },
@@ -119,7 +135,7 @@ const EINTRAEGE = [
   // Suche und Volltext (#725): Texterkennung samt Unscharfer Suche und Gleichbedeutenden Wörtern (früher „Suche“).
   { pfad: 'texterkennung', gruppe: 'post', ab: H, hilfe: 'werkbank.texterkennung' },
   // Gleichbedeutende Wörter (#992): eigener Bereich mit Mitte direkt darunter, sichtbar wie „Suche und Volltext“.
-  { pfad: 'woerter', gruppe: 'post', ab: H, hilfe: 'werkbank.woerter', mitte: true },
+  { pfad: 'woerter', gruppe: 'post', ab: H, hilfe: 'werkbank.woerter', mitte: true, zaehler: 'woerter' },
   // Sicherung mit Wiederherstellen als Abschnitt (#725).
   { pfad: 'sicherung', gruppe: 'sichern', ab: E, hilfe: 'werkbank.sicherung' },
   { pfad: 'vollexport', gruppe: 'sichern', ab: H, hilfe: 'werkbank.vollexport' },
@@ -137,7 +153,7 @@ const EINTRAEGE = [
   // Ab Haushalt, weil der Haken „auch beruflich genutzt“ gerade für den Haushalt erreichbar sein muss.
   { pfad: 'organisation', gruppe: 'einstellungen', ab: H, hilfe: 'werkbank.organisation' },
   { pfad: 'aufgaben', gruppe: 'einstellungen', ab: H, hilfe: 'werkbank.aufgaben', mitte: true },
-  { pfad: 'anmeldeschutz', gruppe: 'einstellungen', ab: H, hilfe: 'werkbank.anmeldeschutz' },
+  { pfad: 'anmeldeschutz', gruppe: 'einstellungen', ab: H, hilfe: 'werkbank.anmeldeschutz', zaehler: 'anmeldeschutz' },
   { pfad: 'designs', gruppe: 'einstellungen', ab: B, hilfe: 'werkbank.designs', mitte: true },
   { pfad: 'anbindung', gruppe: 'einstellungen', ab: A, hilfe: 'werkbank.anbindung' },
   // Systemzustand nimmt „Technik“ (Version und Updates) und die Auslastung der Datenbank auf (#725).

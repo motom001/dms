@@ -8,7 +8,7 @@ import { FELDFORMATE, formatName, HEUTE, type Feldformat } from '../../../shared
 import { artenFuer, artVon, ERKENNUNG_HINWEIS_MAX, ERKENNUNGSARTEN, type Erkennungsart } from '../../../shared/src/erkennung';
 import { Link } from '../ort';
 import { t } from '../sprache';
-import { Feld, HakenFeld } from '../bausteine';
+import { DatumEingabe, Feld, HakenFeld } from '../bausteine';
 import type { EntwurfFeld } from './entwurf';
 
 /**
@@ -92,7 +92,7 @@ export function DatumGrenzen({ f, id, setze }: { f: EntwurfFeld; id: (x: string)
           </select>
           {art === 'fest' && (
             <Feld beschriftung={t(prop === 'min' ? 'felder.editor.datum.min' : 'felder.editor.datum.max')} beschriftungVerbergen>
-              <input type="date" value={w} onChange={(e) => setze({ [prop]: e.target.value } as Partial<EntwurfFeld>)} />
+              <DatumEingabe wert={w} setze={(x) => setze({ [prop]: x } as Partial<EntwurfFeld>)} />
             </Feld>
           )}
         </span>

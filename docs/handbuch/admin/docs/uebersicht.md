@@ -164,6 +164,7 @@ Zwei Hinweise schließt du stattdessen mit einem eigenen Knopf ab – sie kommen
 | dms-komplett: Die Datenbank liegt nur im Container (`/data/postgres` ohne Volume) und ginge beim nächsten Update verloren – [Daten retten](https://help.ablago.app/installieren/aktuell/komplett/#datenbank-retten) | rot | `datenbank.ohne-volume` |
 | DATABASE_URL weicht von der Datenbank-Anbindung ab | gelb | `anbindung.abweichend` |
 | Datenbank-Anbindung geändert, Neustart nötig | gelb | `anbindung.neustart` |
+| Ablago meldet sich noch mit MD5 an der Datenbank an – [auf SCRAM umstellen](installation.md#scram); auch im Systemzustand | gelb | `datenbank.md5` |
 | DMS_LASTTEST in einer echten Installation | gelb | `lasttest` |
 | Die [Beispiel-Ablage](beispielablage.md) ist angelegt (bis du sie entfernst) | Hinweis | `beispielablage` |
 | Paket braucht noch Einstellungen | gelb | `paket-einstellungen` |

@@ -2,6 +2,8 @@
 
 **Zu erledigen** ist die oberste Ansicht in der Ablage. Sie zeigt die Mappen, an denen **du etwas tun sollst** – jede davon hat eine offene **Aufgabe** für dich. Die Zahl daneben sagt, wie viele es sind.
 
+<span id="im-tab"></span>**Auch im Hintergrund-Tab:** Gibt es etwas zu erledigen oder neue Post, steht die Zahl vorn im Titel des Browser-Tabs, z. B. „(3) Ablago – Ablage“, und das Symbol des Tabs trägt einen Punkt. Ablago zeigt dort nur die Zahl, nie, worum es geht – und nur, solange der Tab offen ist; im Hintergrund fragt Ablago einmal je Minute nach.
+
 Oben schaltest du um zwischen **Liste**, **Monat** und **Jahr**: Die Liste zeigt, was jetzt zu tun ist; [Monat und Jahr](#monat-und-jahr) zeigen deine Termine im Kalender. Eine Vorschau „demnächst“ gibt es nicht – Erinnerungen an Fristen kommen über [Automatisierungen](https://help.ablago.app/admin/aktuell/automatisierungen/) genau dann in die Liste, wenn es Zeit ist.
 
 ![Zu erledigen mit einer Aufgabe](bilder/eingang.png)

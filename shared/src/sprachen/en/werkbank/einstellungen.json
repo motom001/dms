@@ -139,7 +139,6 @@
   "aufgaben.erledigt-von": "completed by",
   "aufgaben.selbst-mappe-passt-wieder": "itself (folder fits again)",
   "aufgaben.fuer": "for",
-  "aufgaben.weitergeben-an": "· hand over to",
   "aufgaben.aufgabe-weitergeben-an": "Hand over task “{text}” to",
   "aufgaben.aufgaben-entstehen-wenn-eine": "Tasks come up when a folder no longer matches the definition, with mentions, from automations (deadlines, reminders, “Post for you”) or by hand. Every folder with an open task appears under “To do” for its recipient.",
   "aufgaben.waehle-links-eine-aufgabe": "Choose a task on the left to view its folder or hand the task over.{umbruch}{span}",

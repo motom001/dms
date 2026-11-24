@@ -63,4 +63,15 @@ describe('Baustein Datum (#1496)', () => {
     assert.match(html, />KW</);
     assert.match(html, /aria-selected="true"><button[^>]*data-tag="2026-12-11"/);
   });
+
+  // #1532: Überall derselbe Baustein – kein eigenes Datumsfeld des Browsers außerhalb von bausteine/datum.
+  it('kein <input type="date"> außerhalb des Bausteins', async () => {
+    const { readdirSync, readFileSync } = await import('node:fs');
+    const wurzel = new URL('../../web/src/', import.meta.url);
+    const funde = readdirSync(wurzel, { recursive: true, withFileTypes: true })
+      .filter((d) => d.isFile() && d.name.endsWith('.tsx') && !`${d.parentPath}/`.includes('/bausteine/datum/'))
+      .filter((d) => /type="date"/.test(readFileSync(`${d.parentPath}/${d.name}`, 'utf8')))
+      .map((d) => d.name);
+    assert.deepEqual(funde, []);
+  });
 });

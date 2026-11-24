@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { feldLabel, optionText } from '../../../../shared/src/beschriftung';
 import { eingabemodus, formatFehler } from '../../../../shared/src/feldformate';
-import { zieleVon, type Feld as FeldDef, type Mappentyp, type Wert, type Werte } from '../../../../shared/src/model';
+import { betragZahl, leseZahl, zieleVon, type Feld as FeldDef, type Mappentyp, type Wert, type Werte } from '../../../../shared/src/model';
 import type { Bezuege } from '../../api/mappen';
 import { vorbelegungAus } from '../../../../shared/src/sichten';
 import { DatumEingabe, Feld, FeldGruppe, ProzentEingabe, ZeitraumEingabe, type FeldProps } from '../../bausteine';
@@ -154,6 +154,12 @@ function betragEingabe({ roh, setze }: FeldEingabeProps, { rahmen, unter }: Rahm
               placeholder="0,00"
               value={b.betrag}
               onChange={(e) => setze({ ...b, betrag: e.target.value })}
+              onBlur={() => {
+                // Nach dem Verlassen mit den Nachkommastellen der Währung (#1608): „12,5“ wird „12,50“.
+                const n = leseZahl(b.betrag);
+                const schoen = n != null && Number.isFinite(n) ? betragZahl(n, b.waehrung) : b.betrag;
+                if (schoen !== b.betrag) setze({ ...b, betrag: schoen });
+              }}
             />
             <input
               aria-label={t('ablage.mappeformular.waehrung')}

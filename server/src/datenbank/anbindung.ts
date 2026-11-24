@@ -6,6 +6,7 @@ import { Fachfehler } from '../grundlagen/fehler';
 import { protokoll } from '../protokoll/protokoll';
 import { t } from '../sprache/sprache';
 import { aufVolume } from '../geheimnisse/tresor';
+import { anmeldeverfahren, type Anmeldeverfahren } from './anmeldeverfahren';
 
 /**
  * Anbindung an die Datenbank (#119): eine Datei unter /data/geheim, führend vor DATABASE_URL.
@@ -259,7 +260,12 @@ export interface AnbindungStand {
   imContainer: boolean;
   /** dms-komplett (#943): /data/postgres liegt nicht auf einem eigenen Volume – die Datenbank ginge beim Update verloren. */
   ohneVolume: boolean;
+  /** Wie sich Ablago gerade an PostgreSQL anmeldet (#1612); null, wenn PostgreSQL es nicht verrät. */
+  anmeldung: Anmeldeverfahren | null;
 }
+
+/** Das Anmeldeverfahren ändert sich selten: zehn Minuten gemerkt, damit nicht jede Übersicht eine Verbindung öffnet. */
+const VERFAHREN_MERKEN_MS = 10 * 60_000;
 
 export class AnbindungVerwaltung {
   constructor(
@@ -269,7 +275,16 @@ export class AnbindungVerwaltung {
     private neustartFn: () => void,
     private pruefer: (a: Anbindung) => Promise<Pruefung> = (a) => pruefeAnbindung(a),
     private ohneVolume = datenbankOhneVolume(process.env),
+    private verfahrenFn: (a: Anbindung) => Promise<Anmeldeverfahren | null> = (a) => anmeldeverfahren(a),
   ) {}
+
+  private verfahren: { zeit: number; wert: Promise<Anmeldeverfahren | null> } | null = null;
+  /** Anmeldeverfahren der laufenden Verbindung (#1612), gemerkt. */
+  private anmeldung(): Promise<Anmeldeverfahren | null> {
+    if (!this.verfahren || Date.now() - this.verfahren.zeit > VERFAHREN_MERKEN_MS)
+      this.verfahren = { zeit: Date.now(), wert: this.verfahrenFn(this.laufend).catch(() => null) };
+    return this.verfahren.wert;
+  }
 
   /**
    * Gespeicherte Anbindung (#1341): aus der Datei, nicht aus dem Speicher des Prozesses, der gespeichert hat – so zeigen
@@ -288,6 +303,7 @@ export class AnbindungVerwaltung {
       neustartNoetig: !gleicheVerbindung(gespeichert, this.laufend),
       imContainer: process.env.DMS_VARIANTE === 'komplett',
       ohneVolume: this.ohneVolume,
+      anmeldung: await this.anmeldung(),
     };
   }
 

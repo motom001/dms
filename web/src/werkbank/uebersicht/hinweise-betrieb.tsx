@@ -8,6 +8,7 @@ import { exportHinweise } from '../Vollexport';
 import { bytes, datum, zahl } from './hilfen';
 import { empfohlenePakete, umstiegTexterkennung } from './empfohlen';
 import type { Hinweis } from './hilfen';
+import { Md5Text } from '../Datenbank';
 
 /* Meldungen der Übersicht (#68, #816), zweiter Teil: Post, Sicherung, Anbindung, Pakete, Einrichtung, Texterkennung, Aufgaben. */
 
@@ -113,6 +114,15 @@ export function sicherungUndAnbindung(u: WerkbankUebersicht, h: Hinweis[], mitNo
       ),
       ziel: '/werkbank/anbindung',
       knopf: t('werkbank.uebersicht.zur-anbindung'),
+    });
+  // Anmeldung mit MD5 (#1612): ab PostgreSQL 18 abgekündigt; der Text verlinkt die Anleitung im Handbuch.
+  if (u.anbindung?.md5)
+    h.push({
+      schluessel: 'datenbank.md5',
+      art: 'warn',
+      text: <Md5Text />,
+      ziel: '/werkbank/systemzustand#datenbank',
+      knopf: t('werkbank.uebersicht.zum-systemzustand'),
     });
   // DMS_LASTTEST in einer echten Installation (#612): Der Lasttest ist nicht gestartet, das DMS läuft normal.
   if (u.lasttestAbbruch)

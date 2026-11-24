@@ -57,18 +57,18 @@ const ABLAGE: Zusaetze = {
   typen: ({ d }) => ({ zahl: d.typen.length }),
   sichten: ({ d }) => ({ zahl: d.sichten.length }),
   nummernkreise: ({ z, uz }) => ({ zahl: zahl(z.nummernkreise.liste?.length, uz?.nummernkreise) }),
-  automatisierungen: ({ z, automatisierung }) => ({
-    zahl: automatisierung.zahl,
+  automatisierungen: ({ z, automatisierung, uz }) => ({
+    zahl: zahl(automatisierung.zahl, uz?.automatisierungen),
     warn: automatisierung.warn || z.uebersicht.stand?.automatisierungen?.angehalten.length ? '!' : undefined,
     warnTitel: t('automatisierung.ui.leiste'),
   }),
-  ablaufvorlagen: ({ z: { ablaufvorlagen, uebersicht } }) => ({
-    zahl: ablaufvorlagen.stand?.vorlagen.length,
+  ablaufvorlagen: ({ z: { ablaufvorlagen, uebersicht }, uz }) => ({
+    zahl: zahl(ablaufvorlagen.stand?.vorlagen.length, uz?.ablaufvorlagen),
     warn: (ablaufvorlagen.stand?.angehalten.length ?? uebersicht.stand?.ablaeufe?.angehalten.length) ? '!' : undefined,
     warnTitel: t('automatisierung.vorlage.ui.leiste'),
   }),
-  rundgaenge: ({ z }) => ({ zahl: z.rundgaenge.stand?.rundgaenge.length }),
-  tipps: ({ z }) => ({ zahl: z.tipps.stand?.tipps.length }),
+  rundgaenge: ({ z, uz }) => ({ zahl: zahl(z.rundgaenge.stand?.rundgaenge.length, uz?.rundgaenge) }),
+  tipps: ({ z, uz }) => ({ zahl: zahl(z.tipps.stand?.tipps.length, uz?.tipps) }),
 };
 
 /** Benutzer und Sicherheit, Datenschutz (#1184; seit #1319 nur an der Stufe, wie jede andere Gruppe). */
@@ -81,8 +81,8 @@ const BENUTZER: Zusaetze = {
   }),
   // Nur mit Archivmodus an einem Mappentyp.
   aufbewahrung: ({ d, z, uz }) => (d.typen.some((x) => x.archiv) ? { zahl: zahl(z.darfWeg.liste?.length, uz?.darfWeg) } : null),
-  stempel: ({ z }) => ({ zahl: z.stempel.liste?.length }),
-  auskuenfte: ({ z }) => ({ zahl: z.datenschutz.stand?.verzeichnis.filter((e) => istOffen(e.zustand)).length }),
+  stempel: ({ z, uz }) => ({ zahl: zahl(z.stempel.liste?.length, uz?.stempel) }),
+  auskuenfte: ({ z, uz }) => ({ zahl: zahl(z.datenschutz.stand?.verzeichnis.filter((e) => istOffen(e.zustand)).length, uz?.auskuenfte) }),
   // Lücken im Löschkonzept warnen nur bei beruflicher Nutzung (#1319): Sonst holte die Warnung die Gruppe Datenschutz
   // in die Leiste, obwohl die Stufe sie nicht enthält – ein Löschkonzept braucht die private Ablage nicht.
   loeschkonzept: ({ d, z }) => ({
@@ -117,7 +117,7 @@ const POST: Zusaetze = {
     warn: uebersicht.stand?.texterkennung?.fehler ? String(uebersicht.stand.texterkennung.fehler) : undefined,
     warnTitel: t('werkbank.leiste.texterkennung'),
   }),
-  woerter: ({ z }) => ({ zahl: z.woerter.gruppen?.length }),
+  woerter: ({ z, uz }) => ({ zahl: zahl(z.woerter.gruppen?.length, uz?.woerter) }),
 };
 
 /** Daten sichern. */
@@ -155,7 +155,7 @@ const EINSTELLUNGEN: Zusaetze = {
     warn: uebersicht.stand?.ohneLeserecht ? '!' : undefined,
     warnTitel: t('werkbank.ohne-leserecht.titel'),
   }),
-  anmeldeschutz: ({ z }) => ({ zahl: z.anmeldeschutz.stand?.gesperrt.length }),
+  anmeldeschutz: ({ z, uz }) => ({ zahl: zahl(z.anmeldeschutz.stand?.gesperrt.length, uz?.anmeldeschutz) }),
   designs: ({ d }) => ({ zahl: d.designs.length }),
   anbindung: ({ z: { uebersicht } }) => ({
     warn:

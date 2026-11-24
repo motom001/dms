@@ -38,7 +38,7 @@ const OHNE_TUER = {
   beispiele: 'beispiele|beispielablage',
   dateien:
     'dateispeicher|hochladen|verkleinern|schwaerzen|dateiumwandlung|archivfassung|entsperren|ersatzschriften|vorschau|pdfanzeige|pdfseiten|graubild|ordner|speicherplatz',
-  datenbank: 'db|anbindung|mandant|erweiterungen|sperrverbindung|poolmessung|messung|pg-version',
+  datenbank: 'db|anbindung|anmeldeverfahren|mandant|erweiterungen|sperrverbindung|poolmessung|messung|pg-version',
   datenschutz: 'abruf|auskunft',
   demo: 'demo|demo-dokumente|demo-text|zufall',
   dienst: 'dienst|bauteile',

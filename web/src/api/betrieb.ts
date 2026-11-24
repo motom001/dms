@@ -405,7 +405,12 @@ export interface WerkbankUebersicht {
   /** Frühere Variablen, die aus der Compose-Datei entfernt werden können (#115), je mit Grund (#478). */
   variablen?: UeberfluessigeVariable[];
   /** Datenbank-Anbindung (#119): DATABASE_URL abweichend, Neustart nötig. */
-  anbindung?: { umgebung: 'fehlt' | 'gleich' | 'abweichend'; neustartNoetig: boolean; /** #943 */ ohneVolume?: boolean } | null;
+  anbindung?: {
+    umgebung: 'fehlt' | 'gleich' | 'abweichend';
+    neustartNoetig: boolean;
+    /** #943 */ ohneVolume?: boolean;
+    /** #1612: Anmeldung mit MD5 */ md5?: boolean;
+  } | null;
   /** DMS_LASTTEST gesetzt, aber nicht gestartet, weil hier echte Daten liegen (#612). */
   lasttestAbbruch?: string | null;
   /** Beispiel-Mappen aus Paketen (#988, Beispiel-Ablage); 0 = keine. */

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { betriebApi, type DatenbankStand } from '../api/betrieb';
 import { Link } from '../ort';
-import { Hilfe } from '../Hilfe';
+import { Hilfe, HilfeVerweis } from '../Hilfe';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { useTeilMelden, type Melde } from './sammelleiste';
 import { t, tn } from '../sprache';
@@ -16,6 +16,28 @@ import { abfangen, Aufklapper, Etikett, Feld } from '../bausteine';
  */
 const zeit = (iso: string) => new Date(iso).toLocaleString(gebietsschema(), { dateStyle: 'short', timeStyle: 'medium' });
 const dauer = (ms: number) => (ms >= 10_000 ? `${(ms / 1000).toFixed(1).replace('.', ',')} s` : `${ms.toLocaleString(gebietsschema())} ms`);
+
+/** Anmeldung mit MD5 (#1612): was los ist und der Weg zur Anleitung im Handbuch (Übersicht und Systemzustand). */
+export function Md5Text() {
+  return (
+    <>
+      <strong>{t('werkbank.uebersicht.datenbank-md5')}</strong> {t('werkbank.uebersicht.datenbank-md5.text')}{' '}
+      <HilfeVerweis ort="werkbank.scram">{t('werkbank.uebersicht.datenbank-md5.mehr')}</HilfeVerweis>
+    </>
+  );
+}
+
+/** Hinweis oben im Systemzustand (#1612), nur solange Ablago sich mit MD5 anmeldet. */
+export function Md5Hinweis({ md5 }: { md5: boolean | undefined }) {
+  if (!md5) return null;
+  return (
+    <div className="hinweis warn" role="status" id="datenbank-md5">
+      <p>
+        <Md5Text />
+      </p>
+    </div>
+  );
+}
 
 export function useDatenbank(sichtbar: boolean) {
   const [stand, setStand] = useState<DatenbankStand | null>(null);

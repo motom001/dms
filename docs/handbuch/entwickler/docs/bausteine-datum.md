@@ -29,11 +29,11 @@ import { DatumEingabe, Feld } from '../bausteine';
 - **Mit der Tastatur** öffnet sich nichts von selbst. **Alt + Pfeil runter** oder der **Kalenderknopf** rechts im Feld öffnen ihn mit dem Fokus auf dem Tag: Pfeiltasten wandern, Pos1/Ende springen an den Anfang bzw. das Ende der Woche, Bild auf/ab blättern einen Monat (mit Umschalt ein Jahr), Enter wählt, Esc schließt und gibt den Fokus ans Feld zurück.
 - **Am Handy** öffnet ein Tippen ins Feld wie bisher die Auswahl des Systems; den Kalender mit Kalenderwochen öffnet der Kalenderknopf (44 × 44 px). Schmal erscheint der Kalender als Blatt von unten.
 - Das Kalendersymbol des Browsers ist in Chromium und Safari ausgeblendet; an seiner Stelle steht der eigene Knopf.
-- Unten am Bildschirm klappt der Kalender nach oben auf.
+- **Lage wie bei den Menüs** (#1532, #1556, `web/src/bausteine/menue/lage.ts`, siehe [Menü](bausteine-menue.md)): Der Kalender öffnet unter dem Feld, wenn dort Platz ist, sonst darüber – nie über dem Assistenten unten rechts. Waagerecht steht er linksbündig mit dem Feld, wenn er dort ganz ins Fenster passt, sonst rechtsbündig; passt beides nicht, mit 8 px Abstand zum Fensterrand. Er liegt fest im Fenster und verlängert keine Spalte. Am Handy bleibt das Blatt von unten.
 
 **Kalenderwoche:** `kalenderwoche(iso)` in `shared/src/kalender.ts` – Wochen beginnen am Montag, Woche 1 enthält den ersten Donnerstag des Jahres (der 29.12.2025 liegt in KW 1, der 01.01.2027 in KW 53). Die Spalte heißt „KW“ (englisch „Wk“), für Screenreader „Kalenderwoche 50“.
 
-**Wo es steht:** Datumsfelder der Mappe, Paket-Aktionen (z. B. „Als bezahlt markieren“) und die Fenster „Aufgabe vergeben“ und „Erinnern“. Andere Datumseingaben (Werkbank, Profil) nutzen noch das Feld des Browsers.
+**Wo es steht:** überall, wo ein Datum eingegeben wird (#1532) – Datumsfelder der Mappe, Paket-Aktionen (z. B. „Als bezahlt markieren“), die Fenster „Aufgabe vergeben“ und „Erinnern“, in der Werkbank (u. a. Löschprotokoll, Auskunft, Feldeinstellungen und Standardwert im Mappentyp, Bedingungen einer Ansicht, Einstellungen eines Pakets) und im Profil (API-Schlüssel, Abwesenheit). Ein eigenes `<input type="date">` außerhalb des Bausteins gibt es nicht; ein Test (`baustein-datum.test.ts`) achtet darauf. Datum mit Uhrzeit (Wartungsmodus) bleibt ein Feld des Browsers.
 
 ![Bereich „Datum“ dunkel](bilder/muster-datum-dunkel.png){ loading=lazy }
 

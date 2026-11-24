@@ -139,7 +139,6 @@
   "aufgaben.erledigt-von": "erledigt von",
   "aufgaben.selbst-mappe-passt-wieder": "selbst (Mappe passt wieder)",
   "aufgaben.fuer": "für",
-  "aufgaben.weitergeben-an": "· weitergeben an",
   "aufgaben.aufgabe-weitergeben-an": "Aufgabe „{text}“ weitergeben an",
   "aufgaben.aufgaben-entstehen-wenn-eine": "Aufgaben entstehen, wenn eine Mappe nicht mehr zur Definition passt, bei Erwähnungen, aus Automatisierungen (Fristen, Erinnerungen, „Post für dich“) oder von Hand. Jede Mappe mit offener Aufgabe steht unter „Zu erledigen“ ihres Empfängers.",
   "aufgaben.waehle-links-eine-aufgabe": "Wähle links eine Aufgabe aus, um ihre Mappe anzusehen oder die Aufgabe weiterzugeben.{umbruch}{span}",

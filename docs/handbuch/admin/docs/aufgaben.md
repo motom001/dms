@@ -26,7 +26,7 @@ Alle offenen Aufgaben aller Benutzer stehen unter **Werkbank → Einstellungen �
 
 ![Werkbank → Aufgaben](bilder/werkbank-aufgaben.png)
 
-In der Mitte steht die Liste aller offenen Aufgaben aller Benutzer mit Mappe, Art, Datum und Empfänger. Über die Auswahl unter einer Aufgabe gibst du sie an jemand anderen weiter. Wählst du eine Aufgabe, steht rechts ihre Mappe mit den wichtigsten Feldern, **In der Ablage öffnen** und daneben **Weitergeben an** – wie die Auswahl in der Liste. Danach stimmen Empfänger rechts und in der Liste sofort.
+In der Mitte steht die Liste aller offenen Aufgaben aller Benutzer mit Mappe, Art, Datum und Empfänger – kompakt, ohne Auswahl je Zeile (#1605). Wählst du eine Aufgabe, steht rechts ihre Mappe mit den wichtigsten Feldern, **In der Ablage öffnen** und daneben **Weitergeben an**: So gibst du eine Aufgabe an jemand anderen weiter; mehrere auf einmal über Ankreuzen (unten). Danach stimmen Empfänger rechts und in der Liste sofort.
 
 Oben steht das **Suchfeld** – es sucht im Titel der Mappe und im Text der Aufgabe, **Esc** oder **×** leeren es. Darunter grenzen die **Filter** ein nach:
 

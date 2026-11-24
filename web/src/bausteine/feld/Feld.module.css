@@ -31,6 +31,9 @@
 .feld :where(input:not([type="checkbox"], [type="radio"], [type="range"]), select, textarea):focus-visible { border-color: var(--akzent); outline: 2px solid var(--akzent); outline-offset: 1px; }
 /* Gleiche Höhe für Text, Zahl, Datum und Auswahl in einer Zeile (C4, #1211: vorher 36 / 35 / 38 px). */
 .feld :where(input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"]), select:not([multiple])) { box-sizing: border-box; height: calc(1.45em + 16px); }
+/* Steht der Rahmen in einer Zeile mit Text und Knöpfen (#1605: „Weitergeben an“), bleibt die Eingabe einzeilig: Eine
+   Regel der Umgebung für `select` als Teil einer Zeile (flex: 0 1 220px) wirkt im Rahmen sonst als Höhe. */
+.feld > select:not([multiple]), .feld > input:not([type="checkbox"], [type="radio"]) { flex: none; }
 /* Haken und Optionsknöpfe: beim Darüberfahren ein zarter Ring. */
 .feld :where(input[type="checkbox"], input[type="radio"]):hover:not(:disabled) { box-shadow: 0 0 0 3px var(--akzent-zart); }
 

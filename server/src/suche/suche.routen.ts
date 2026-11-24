@@ -20,6 +20,13 @@ export function sucheRouten(k: RoutenKontext): Route[] {
       zugang: 'admin',
       handler: async (a) => ok(await dienst.suche.setzeSuche(a.body, ich(a).email)),
     },
+    // Nur die Wörter der Gruppen (#1548): Die Symbolauswahl einer Ansicht sucht auch mit ihnen.
+    {
+      methode: 'GET',
+      pfad: '/api/werkbank/suche/synonyme',
+      zugang: 'admin',
+      handler: async () => ok(await dienst.suche.gleichbedeutendeWoerter()),
+    },
     {
       methode: 'POST',
       pfad: '/api/werkbank/suche/synonyme',

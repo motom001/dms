@@ -1840,8 +1840,7 @@
   },
   "web/src/App.tsx": {
     "exports": [
-      "SUCHE_OBEN_IN_DER_WERKBANK",
-      "setzeSymbol"
+      "SUCHE_OBEN_IN_DER_WERKBANK"
     ]
   },
   "web/src/Fehlergrenze.tsx": {

@@ -4,7 +4,7 @@
  */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { ANSICHT_SYMBOLE, ANSICHT_SYMBOL_NAMEN, ansichtSymbol } from '../../shared/src/ansichtsymbole';
+import { ANSICHT_SYMBOLE, ANSICHT_SYMBOL_NAMEN, ansichtSymbol, symboleSuchen } from '../../shared/src/ansichtsymbole';
 import { ANSICHT_FORMEN } from '../../web/src/ansichtsymbol-formen';
 
 /** Die 76 Namen vor #1519. */
@@ -41,5 +41,16 @@ describe('Symbol je Ansicht (#428)', () => {
     assert.equal(ansichtSymbol('house-plus'), 'house-plus', 'seit #1519 gültig');
     // Unbekannte Namen (Paket für eine neuere Version) heißen „ohne Symbol“ – nichts bricht.
     for (const x of ['haus', '', null, 3, 'rocket', 'package']) assert.equal(ansichtSymbol(x), null, String(x));
+  });
+
+  // #1548: Die Suche nutzt die gleichbedeutenden Wörter aus der Werkbank – keine eigene Liste je Symbol.
+  it('Suche: „Kfz“ findet mit der Gruppe „Kfz = Auto“ das Auto, ohne sie nicht', () => {
+    const namen = (g: ReturnType<typeof symboleSuchen>) => g.flatMap((x) => x.symbole.map((y) => y.name));
+    assert.ok(!namen(symboleSuchen('Kfz')).includes('car'), 'ohne gleichbedeutende Wörter kein Auto');
+    assert.ok(namen(symboleSuchen('Kfz', [['Kfz', 'Auto']])).includes('car'));
+    assert.ok(namen(symboleSuchen('kf', [['Kfz', 'Auto']])).includes('car'), 'Wortanfang genügt');
+    assert.ok(namen(symboleSuchen('auto')).includes('car'), 'Bedeutung wie bisher');
+    assert.ok(namen(symboleSuchen('house')).includes('house'), 'Name wie bisher');
+    assert.equal(symboleSuchen('  '), ANSICHT_SYMBOLE, 'ohne Suchwort alle');
   });
 });

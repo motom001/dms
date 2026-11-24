@@ -13,7 +13,7 @@ import { useDaten } from '../daten';
 import { pruefwert } from '../pruefwert';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { Feld, Knopf, KnopfLink, Speicherleiste, Suchfeld, useEntwurf } from '../bausteine';
+import { DatumEingabe, Feld, Knopf, KnopfLink, Speicherleiste, Suchfeld, useEntwurf } from '../bausteine';
 import { bereichName } from '../../../shared/src/werkbankansicht';
 import { Kopf } from './Kopf';
 import { DatenschutzPrivatHinweis } from './DatenschutzPrivat';
@@ -103,10 +103,10 @@ function LoeschprotokollBlatt() {
           void laden(f);
         }}>
         <Feld beschriftung={t('werkbank.loeschprotokoll.von')}>
-          <input type="date" value={f.von} onChange={(e) => setze('von', e.target.value)} />
+          <DatumEingabe wert={f.von} setze={(w) => setze('von', w)} />
         </Feld>
         <Feld beschriftung={t('werkbank.loeschprotokoll.bis')}>
-          <input type="date" value={f.bis} onChange={(e) => setze('bis', e.target.value)} />
+          <DatumEingabe wert={f.bis} setze={(w) => setze('bis', w)} />
         </Feld>
         <Feld beschriftung={t('werkbank.loeschprotokoll.mappentyp')}>
           <select value={f.typId} onChange={(e) => setze('typId', e.target.value)}>

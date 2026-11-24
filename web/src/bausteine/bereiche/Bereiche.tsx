@@ -147,7 +147,12 @@ const anker = () => (typeof location === 'undefined' ? '' : decodeURIComponent(l
  */
 const springe = (k: string, fokus = false) =>
   setTimeout(() => {
-    document.getElementById(k)?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    const ziel = document.getElementById(k);
+    // Die Überschrift direkt unter die klebende Sprungleiste (#1604): Abstand so groß wie die Leiste gerade ist (eine
+    // oder mehrere Zeilen) und 8 px Luft. Rollt die Leiste mit (Handy), gilt der Wert aus Bereiche.module.css.
+    const leiste = document.querySelector<HTMLElement>('[data-sprungleiste]');
+    if (ziel && leiste && getComputedStyle(leiste).position === 'sticky') ziel.style.scrollMarginTop = `${leiste.offsetHeight + 8}px`;
+    ziel?.scrollIntoView({ block: 'start', behavior: 'smooth' });
     if (fokus) document.getElementById(`${k}-kopf`)?.focus({ preventScroll: true });
   }, 30);
 

@@ -26,7 +26,7 @@ All open tasks of all users are under **Workbench → Settings → Tasks**. Who 
 
 ![Workbench → Tasks](bilder/werkbank-aufgaben.png)
 
-In the middle is the list of all open tasks of all users with folder, kind, date and recipient. With the selection below a task you pass it on to someone else. If you choose a task, its folder appears on the right with the most important fields, **Open in the Library** and next to it **Pass on to** – like the selection in the list. Afterwards, the recipients on the right and in the list are correct immediately.
+In the middle is the list of all open tasks of all users with folder, kind, date and recipient – compact, without a selection per row (#1605). If you choose a task, its folder appears on the right with the most important fields, **Open in the Library** and next to it **Pass on to**: this is how you pass a task on to someone else; several at once by ticking them (below). Afterwards, the recipients on the right and in the list are correct immediately.
 
 At the top is the **search field** – it searches the folder's title and the task's text; **Esc** or **×** clear it. Below it the **filters** narrow down by:
 

@@ -48,6 +48,10 @@
   /* Platz unter dem letzten Inhalt jeder rollbaren Fläche (#1283), damit der Assistent unten rechts am Rechner nach dem
      Rollen ans Ende nichts verdeckt: 10 px Rand + 56 px Knopf + 30 px Luft. */
   --platz-begleiter: 96px;
+  /* Höhe der Bedienelemente einer Zeile (#1589): Knopf, Auswahl und Eingabe gleich hoch – eine Zeile Text (Schrift der
+     Seite, Zeilenhöhe 1,45) und 8 px Innenabstand oben und unten mit Rand. Klein: Schrift 12,5 px, 5 px Abstand. */
+  --hoehe-bedienung: calc(14px * 1.45 * var(--skala, 1) + 16px);
+  --hoehe-bedienung-klein: calc(12.5px * 1.45 * var(--skala, 1) + 10px);
 }
 @media (prefers-color-scheme: dark) {
   :root {

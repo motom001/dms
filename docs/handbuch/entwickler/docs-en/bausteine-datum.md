@@ -29,11 +29,11 @@ import { DatumEingabe, Feld } from '../bausteine';
 - **With the keyboard** nothing opens by itself. **Alt + Down arrow** or the **calendar button** at the right of the field open it with the focus on the day: arrow keys move, Home/End jump to the start or end of the week, Page Up/Down turn a month (with Shift a year), Enter picks, Esc closes and returns the focus to the field.
 - **On the phone** a tap into the field opens the system's picker as before; the calendar with week numbers opens from the calendar button (44 × 44 px). On narrow screens the calendar is a sheet from the bottom.
 - The browser's calendar icon is hidden in Chromium and Safari; the button of its own takes its place.
-- At the bottom of the screen the calendar opens upwards.
+- **Placed like the menus** (#1532, #1556, `web/src/bausteine/menue/lage.ts`, see [Menu](bausteine-menue.md)): the calendar opens below the field if there is room, otherwise above it – never over the assistant in the bottom right corner. Horizontally it is left-aligned with the field if it fits into the window there, otherwise right-aligned; if neither fits, 8 px from the window edge. It is fixed in the window and never lengthens a column. On phones the bottom sheet stays.
 
 **Week number:** `kalenderwoche(iso)` in `shared/src/kalender.ts` – weeks start on Monday, week 1 contains the first Thursday of the year (29 Dec 2025 is in week 1, 1 Jan 2027 in week 53). The column is called "Wk" (German "KW"), for screen readers "Week 50".
 
-**Where it is used:** date fields of a folder, package actions (e.g. "Mark as paid") and the dialogs "Assign task" and "Remind". Other date inputs (workbench, profile) still use the browser's field.
+**Where it is used:** wherever a date is entered (#1532) – date fields of a folder, package actions (e.g. "Mark as paid"), the dialogs "Assign task" and "Remind", in the workbench (among others deletion log, data access request, field settings and default value of a folder type, conditions of a view, package settings) and in the profile (API keys, absence). There is no `<input type="date">` of its own outside the component; a test (`baustein-datum.test.ts`) watches for it. Date with time (maintenance mode) stays a browser field.
 
 ![Section "Date" dark](bilder/muster-datum-dunkel.png){ loading=lazy }
 

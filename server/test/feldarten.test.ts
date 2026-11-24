@@ -20,7 +20,7 @@ import {
   zeitraumTage,
   zeitraumText,
 } from '../../shared/src/feldarten';
-import { formatiere, istLeer, leseZahl, pruefeMappe, pruefeMappentyp, type Feld, type Mappentyp } from '../../shared/src/model';
+import { betragZahl, formatiere, istLeer, leseZahl, pruefeMappe, pruefeMappentyp, type Feld, type Mappentyp } from '../../shared/src/model';
 import { beschreibeBedingung, bedingungsProblem, erfuellt, filterFuer, type Bedingung } from '../../shared/src/sichten';
 import { inSprache } from '../../shared/src/sprache';
 import { textformen, wertAusText } from '../../shared/src/uebernehmen';
@@ -119,6 +119,17 @@ describe('Zeitraum und Prozent lesen und zeigen (#1035)', () => {
     assert.equal(leseZahl('\u221225,00'), -25);
     // formatiere bleibt beim Bindestrich (Titel, CSV, Programme lesen ihn als Minus).
     assert.match(formatiere({ key: 'b', label: 'B', typ: 'betrag' }, { betrag: -25, waehrung: 'EUR' }), /^-25,00\s€$/);
+    // #1608: immer mit den Nachkommastellen der Währung – angezeigt (formatiere) und zum Bearbeiten (betragZahl).
+    assert.match(formatiere({ key: 'b', label: 'B', typ: 'betrag' }, { betrag: 12.5, waehrung: 'EUR' }), /^12,50\s€$/);
+    assert.match(formatiere({ key: 'b', label: 'B', typ: 'betrag' }, { betrag: 1234, waehrung: 'JPY' }), /^1\.234\s¥$/);
+    assert.equal(betragZahl(12.5, 'EUR', 'de-DE'), '12,50');
+    assert.equal(betragZahl(1234.5, 'EUR', 'de-DE'), '1234,50', 'ohne Tausenderpunkt – so liest leseZahl es wieder');
+    assert.equal(betragZahl(1234, 'JPY', 'de-DE'), '1234');
+    assert.equal(betragZahl(12.5, 'EUR', 'en'), '12.50');
+    assert.equal(betragZahl(-0.5, 'EUR', 'de-DE'), '-0,50');
+    assert.equal(betragZahl(12.345, 'EUR', 'de-DE'), '12,345', 'mehr Stellen als die Währung bleiben stehen');
+    assert.equal(betragZahl(7, 'XYZ', 'de-DE'), '7,00', 'unbekannte Währung: zwei Stellen');
+    for (const x of [12.5, 1234.5, -0.5, 0]) assert.equal(leseZahl(betragZahl(x, 'EUR', 'de-DE')), x);
     assert.deepEqual(['zahl', 'betrag', 'prozent', 'zeitraum', 'text'].map(rechtsbuendig), [true, true, true, false, false]);
   });
 });

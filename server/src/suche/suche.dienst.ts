@@ -162,6 +162,10 @@ export class SucheDienst {
       this.synonymZwischen = { zeit: Date.now(), gruppen: (await this.repo.synonyme()).map((g) => g.woerter) };
     return this.synonymZwischen.gruppen;
   }
+  /** Nur die Wörter der Gruppen, frisch gelesen (#1548: Suche in der Symbolauswahl einer Ansicht). */
+  async gleichbedeutendeWoerter(): Promise<string[][]> {
+    return (await this.repo.synonyme()).map((g) => g.woerter);
+  }
   /** Varianten der Begriffe einer einfachen Suche: gleichbedeutende Wörter und die Schreibweise ohne Bindestrich. */
   async suchVarianten(texte: Array<string | undefined>): Promise<Varianten> {
     const begriffe = texte.flatMap((t) => (t ? (suchbegriffe(t) ?? []) : []));
