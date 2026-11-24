@@ -195,17 +195,54 @@ export class Schreiber {
   }
 }
 
-/** Eindeutige, sichere Namen innerhalb eines Ordners. */
-export function namen() {
-  const vergeben = new Set<string>();
-  return (wunsch: string) => {
-    const s = sichererName(wunsch, 120) || 'Datei';
+/* ---------- Länge der Pfade (#1506) ---------- */
+
+/**
+ * Höchstlänge eines Pfads in der ZIP in Bytes (UTF-8), einschließlich des obersten Ordners: Der Explorer von Windows
+ * lehnt eine ZIP ab 260 Bytes ganz ab; so bleibt Platz für den Zielordner beim Entpacken.
+ */
+export const PFAD_MAX = 200;
+/** Länger ist keine Endung, die beim Kürzen erhalten bleibt (sonst wird der ganze Name gekürzt). */
+const ENDUNG_MAX = 16;
+export const bytes = (s: string) => Buffer.byteLength(s, 'utf8');
+
+/** Text auf höchstens `max` Bytes (UTF-8) kürzen, ohne ein Zeichen zu teilen; ohne Leerzeichen und Punkte am Ende (Windows). */
+export function kuerzeAufBytes(s: string, max: number): string {
+  if (bytes(s) <= max) return s;
+  let r = '';
+  let n = 0;
+  for (const z of s) {
+    n += bytes(z);
+    if (n > max) break;
+    r += z;
+  }
+  return r.replace(/[.\s]+$/u, '');
+}
+
+/**
+ * Eindeutige, sichere Namen innerhalb eines Ordners. Mit `max` (Bytes, #1506) wird ein zu langer Name gekürzt: der
+ * Stamm, die Endung bleibt. `zusaetze`: Dateien, die neben jedem Namen entstehen (z. B. `.txt`) – auch sie dürfen keinen
+ * anderen Namen treffen; `belegt`: Namen, die es im Ordner schon gibt (z. B. `Versionen`). `zeichen`: Höchstlänge in
+ * Zeichen vor dem Kürzen (wie bisher 120).
+ */
+export function namen(o: { zusaetze?: readonly string[]; belegt?: readonly string[]; zeichen?: number } = {}) {
+  const vergeben = new Set((o.belegt ?? []).map((x) => x.toLowerCase()));
+  const zusaetze = o.zusaetze ?? [];
+  const frei = (n: string) => ![n, ...zusaetze.map((z) => n + z)].some((x) => vergeben.has(x.toLowerCase()));
+  return (wunsch: string, max = Infinity) => {
+    const s = sichererName(wunsch, o.zeichen ?? 120) || 'Datei';
     const p = s.lastIndexOf('.');
     const [stamm, endung] = p > 0 ? [s.slice(0, p), s.slice(p)] : [s, ''];
-    let n = s,
+    const name = (zusatz: string) => {
+      const voll = `${stamm}${zusatz}${endung}`;
+      if (bytes(voll) <= max) return voll;
+      const e = bytes(endung) <= ENDUNG_MAX ? endung : '';
+      return `${kuerzeAufBytes(e ? stamm : s, max - bytes(zusatz + e)) || '_'}${zusatz}${e}`;
+    };
+    let n = name(''),
       i = 2;
-    while (vergeben.has(n.toLowerCase())) n = `${stamm} (${i++})${endung}`;
-    vergeben.add(n.toLowerCase());
+    while (!frei(n)) n = name(` (${i++})`);
+    for (const x of [n, ...zusaetze.map((z) => n + z)]) vergeben.add(x.toLowerCase());
     return n;
   };
 }

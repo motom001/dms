@@ -99,6 +99,8 @@ export interface ExportOptionen {
   liesmich?: string;
   /** Zweck im Manifest (Auskunft, #396); das Format bleibt dms-vollexport. */
   zweck?: string;
+  /** Oberster Ordner in der ZIP, wenn er nicht wie der Export heißt (Auskunft, #396) – zählt zur Länge der Pfade (#1506). */
+  wurzel?: string;
 }
 
 export interface ExportQuelle {

@@ -289,6 +289,8 @@
   "vollexport.zip.groesse": "Größe der ZIP",
   "vollexport.zip.bytes": "{mb} ({genau} Bytes)",
   "vollexport.zip.erklaerung": "Damit prüfst du, ob die heruntergeladene ZIP vollständig und unverändert ist. Nach dem Entpacken prüft die Datei SHA256SUMS jede Datei darin – wie, steht in LIESMICH.md.",
+  "vollexport.zip.windows": "Meldet Windows eine ZIP als „ungültig“, sind die Daten trotzdem vollständig: {link}.",
+  "vollexport.zip.windows-link": "So kommst du an sie heran",
   "vollexport.zip.kopieren": "Prüfsumme kopieren",
   "vollexport.zip.kopiert": "Kopiert.",
   "vollexport.zip.kopieren-fehler": "Kopieren geht hier nicht – markiere die Prüfsumme und kopiere sie selbst.",

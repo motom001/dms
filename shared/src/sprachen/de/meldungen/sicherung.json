@@ -74,6 +74,7 @@
   "sicherung.neuere-sicherungen-sind-seit": "{wert} – neuere Sicherungen sind seit mehr als {ZU_ALT_TAGE} Tagen nicht dort angekommen.\n\nZiel: {map}\n{wert2}\n",
   "sicherung.details-stehen-in-der": "{text}Details stehen in der Werkbank unter „Sicherung“ und im Protokoll (Modul sicherung).",
   "vollexport.manifest-json-haushalt": "manifest.json (Haushalt)",
+  "vollexport.liesmich-windows": "## Windows meldet „ungültig“\n\nDer Explorer von Windows lehnt eine ZIP ganz ab („Der ZIP-komprimierte Ordner ist ungültig“), sobald ein Pfad darin 260 Bytes oder länger ist (Umlaute zählen doppelt). Ablago hält die Pfade deshalb unter 200 Bytes; ältere Exporte können länger sein. Deine Daten sind trotzdem vollständig:\n\n- Prüfe die ZIP gegen ihre SHA-256, wie unter „Vollständig?“ beschrieben.\n- Entpacke sie mit einem anderen Programm, z. B. 7-Zip.\n- Wähle beim Entpacken einen kurzen Zielordner, z. B. `C:\\Export`: Lange Pfade machen unter Windows auch nach dem Entpacken Ärger (Kopieren, Löschen, Sichern).\n",
   "vollexport.struktur-synonyme-json-356": "struktur/synonyme.json (#356, gleichbedeutende Wörter der Suche)",
   "vollexport.struktur-automatisierungen-json-674": "struktur/automatisierungen.json (#674, Wenn · Und · Dann · Sonst)",
   "vollexport.struktur-fassungen-json": "struktur/fassungen.json (#1006, Fassungen der Werkbank samt Löschvermerken)",

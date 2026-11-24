@@ -229,4 +229,51 @@ describe('Vollexport (#254)', () => {
     assert.deepEqual(await exporteIn(ziel, new Date('2026-11-21T12:00:01Z')), []);
     assert.deepEqual(await readdir(ziel), []);
   });
+  it('Länge der Pfade (#1506): höchstens 200 Bytes samt oberstem Ordner, Kennung bleibt, nichts doppelt', async () => {
+    const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
+    const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
+    await konten.einrichten({ email: 'anna@example.org', name: 'Anna', passwort: 'ein-langes-passwort' });
+    const typ = await d.mappentypen.legeTypAn({
+      name: `Übergrößenverträge ${'Ä'.repeat(40)}`,
+      titelVorlage: '{name}',
+      felder: [{ key: 'name', label: 'Name', typ: 'text' }],
+      register: [
+        { key: 'daten', name: 'Daten', art: 'felder' },
+        { key: 'dok', name: `Unterlagen und Nachweise ${'ö'.repeat(25)}`, art: 'dokumente', versionierung: true },
+      ],
+    });
+    const titel = `Sehr langer Titel mit Umlauten ${'äöü'.repeat(30)}`.slice(0, 110);
+    const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { name: titel } });
+    const langerName = `Kündigungsbestätigung ${'ß'.repeat(60)}`;
+    // Zwei Dokumente, die erst nach dem Kürzen gleich hießen, eines davon mit älterer Version.
+    const a = (await d.dokumente.ladeHoch(m.id, { register: 'dok', name: `${langerName} A.pdf` }, Buffer.from('%PDF a'), null)).dokument;
+    await d.dokumente.ladeHoch(m.id, { register: 'dok', name: `${langerName} B.pdf` }, Buffer.from('%PDF b'), null);
+    await d.dokumentVersionen.ersetzeDokument(a.id, {}, Buffer.from('%PDF a2'), null);
+    const quelle = d.vollexport.vollexportQuelle({
+      mandant: 'Familie Test',
+      version: '0.0.0',
+      benutzer: () => konten.exportDaten(),
+      designs: async () => [],
+      protokoll: () => [],
+    });
+    for (const wurzel of [undefined, `Auskunft-${'x'.repeat(60)}-2026-11-24`]) {
+      const r = await vollexport(quelle, await mkdtemp(join(tmpdir(), 'dms-export-')), wurzel ? { wurzel } : {});
+      const pfade = (await exportDateien(r.ordner)).map((x) => `${wurzel ?? r.name}/${x.name}`);
+      const zuLang = pfade.filter((x) => Buffer.byteLength(x, 'utf8') > 200);
+      assert.deepEqual(zuLang, [], zuLang.join('\n'));
+      assert.equal(new Set(pfade.map((x) => x.toLowerCase())).size, pfade.length);
+      const ablage = pfade.filter((x) => x.includes('/ablage/Übergr'));
+      // Kennung der Mappe bleibt, Endung bleibt, beide Dokumente und die Version sind da.
+      assert.ok(ablage.every((x) => x.includes(`[${m.id.slice(0, 8)}]`)), ablage.join('\n'));
+      const originale = ablage.filter((x) => x.endsWith('.pdf') && !x.includes('/Versionen/') && !x.endsWith('mappe.pdf'));
+      assert.equal(originale.length, 2, ablage.join('\n'));
+      assert.ok(ablage.some((x) => x.includes('/Versionen/') && x.endsWith('.pdf')));
+      // Der volle Titel steht in den Tabellen.
+      const zeilen = await readFile(join(r.ordner, 'daten', 'dokumente.csv'), 'utf8');
+      assert.ok(zeilen.includes(`${langerName} A.pdf`) && zeilen.includes(`${langerName} B.pdf`));
+      const daten = await readdir(join(r.ordner, 'daten'));
+      const texte = await Promise.all(daten.filter((x) => x.endsWith('.jsonl')).map((x) => readFile(join(r.ordner, 'daten', x), 'utf8')));
+      assert.ok(texte.some((x) => x.includes(titel)));
+    }
+  });
 });

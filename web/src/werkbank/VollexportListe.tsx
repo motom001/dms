@@ -4,6 +4,7 @@ import { betriebApi } from '../api/betrieb';
 import type { VollexportStand } from '../api/konto';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
+import { useHandbuch } from '../Hilfe';
 
 /**
  * Vorhandene Exporte (#254, #797) mit Prüfsummen (#1195): je Export zuerst „Prüfsummen (SHA256SUMS)“, dann „ZIP
@@ -184,17 +185,30 @@ export function VollexportListe({
     }, NACHFRAGEN_MS);
     return () => clearInterval(timer);
   }, [offen.join('|'), laden]); // eslint-disable-line react-hooks/exhaustive-deps -- nur neu starten, wenn sich die wartenden Exporte ändern
+  const handbuch = useHandbuch();
   return (
     <div className="blatt" id="exporte">
       <h2 className="h3">{t('werkbank.vollexport.vorhandene-exporte')}</h2>
       {!exporte.length ? (
         <p className="leise">{t('werkbank.vollexport.noch-kein-export')}</p>
       ) : (
-        <ul className="stapel">
-          {exporte.map((e) => (
-            <Eintrag key={e.name} e={e} laden={laden} melde={melde} geladen={() => setWarte((w) => ({ ...w, [e.name]: Date.now() }))} />
-          ))}
-        </ul>
+        <>
+          <ul className="stapel">
+            {exporte.map((e) => (
+              <Eintrag key={e.name} e={e} laden={laden} melde={melde} geladen={() => setWarte((w) => ({ ...w, [e.name]: Date.now() }))} />
+            ))}
+          </ul>
+          {/* #1505: Windows meldet die ZIP als „ungültig“ – die Daten sind trotzdem vollständig. */}
+          <p className="leise klein">
+            {tn('werkbank.vollexport.zip.windows', {
+              link: (
+                <a href={`${handbuch('admin', 'export/')}#windows-ungueltig`} target="_blank" rel="noreferrer" className="verweis">
+                  {t('werkbank.vollexport.zip.windows-link')}
+                </a>
+              ),
+            })}
+          </p>
+        </>
       )}
     </div>
   );

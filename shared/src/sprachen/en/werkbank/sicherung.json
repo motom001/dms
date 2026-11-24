@@ -289,6 +289,8 @@
   "vollexport.zip.groesse": "Size of the ZIP",
   "vollexport.zip.bytes": "{mb} ({genau} bytes)",
   "vollexport.zip.erklaerung": "Use it to check that the downloaded ZIP is complete and unchanged. After unpacking, the file SHA256SUMS checks every file in it – LIESMICH.md explains how.",
+  "vollexport.zip.windows": "If Windows reports a ZIP as “invalid”, your data is still complete: {link}.",
+  "vollexport.zip.windows-link": "how to get to it",
   "vollexport.zip.kopieren": "Copy checksum",
   "vollexport.zip.kopiert": "Copied.",
   "vollexport.zip.kopieren-fehler": "Copying doesn't work here – select the checksum and copy it yourself.",

@@ -347,14 +347,15 @@ export async function erzeugeAuskunft(
   const arbeit = join(ordner, `${id}.tmp`);
   await mkdir(arbeit, { recursive: true });
   try {
+    const name = auskunftDateiname(d.start.titel, tag(jetzt));
+    // Oberster Ordner der ZIP: zählt zur Länge der Pfade (#1506).
     const r = await vollexport(
       d.quelle,
       arbeit,
-      { passwoerter: false, liesmich: liesmichText(d, jetzt), zweck: 'auskunft-art-15' },
+      { passwoerter: false, liesmich: liesmichText(d, jetzt), zweck: 'auskunft-art-15', wurzel: name },
       fortschritt,
       jetzt,
     );
-    const name = auskunftDateiname(d.start.titel, tag(jetzt));
     const dokListe = await d.quelle.dokumente(d.mappen.map((m) => m.id));
     const zusatz: Array<{ name: string; daten: Buffer }> = [
       { name: 'Deckblatt.pdf', daten: await deckblatt(d, { von: x.von.name || x.von.email, jetzt, mandant: d.quelle.mandant }) },

@@ -27,6 +27,16 @@ Die ZIP setzt Ablago erst beim Herunterladen zusammen und rechnet dabei ihre Pr�
 3. Die ZIP gegen die SHA-256 in der Werkbank prüfen: Windows (PowerShell) `Get-FileHash <datei>.zip -Algorithm SHA256`, macOS `shasum -a 256 <datei>.zip`, Linux `sha256sum <datei>.zip`. Stimmen beide überein, ist die ZIP vollständig angekommen (Groß- und Kleinschreibung spielt keine Rolle).
 4. Nach dem Entpacken prüft `SHA256SUMS` jede Datei darin, auch `manifest.json` und jede `mappe.json`. Im entpackten Ordner: Linux `sha256sum -c SHA256SUMS`, macOS `shasum -a 256 -c SHA256SUMS`; unter Windows steht in `LIESMICH.md` ein Befehl für die PowerShell. Jede Zeile sollte „OK“ melden.
 
+### Windows meldet „ungültig“ { #windows-ungueltig }
+
+Der Explorer von Windows lehnt eine ZIP ganz ab („Der ZIP-komprimierte Ordner ist ungültig“), sobald ein Pfad darin **260 Bytes oder länger** ist – Umlaute zählen doppelt. Ablago hält die Pfade deshalb unter 200 Bytes (siehe [Aufbau](#aufbau)); ältere Exporte können länger sein. **Deine Daten sind trotzdem vollständig:**
+
+- Prüfe die ZIP gegen ihre SHA-256, wie oben beschrieben.
+- Entpacke sie mit einem anderen Programm, z. B. [7-Zip](https://www.7-zip.org/).
+- Wähle beim Entpacken einen **kurzen Zielordner**, z. B. `C:\Export`: Lange Pfade machen unter Windows auch nach dem Entpacken Ärger (Kopieren, Löschen, Sichern).
+
+Derselbe Hinweis steht in `LIESMICH.md` im Export.
+
 !!! warning "Unverschlüsselt"
     Der Vollexport ist absichtlich **nicht verschlüsselt** – das ist sein Zweck. Bewahre ihn so sicher auf wie die Papierakten.
 
@@ -77,6 +87,8 @@ dms-export-2026-10-31-14-05-00/
   passwoerter.csv        nur mit ausdrücklicher Bestätigung
   protokolle/            nur, wenn gewählt
 ```
+
+**Länge der Pfade:** Jeder Pfad in der ZIP ist samt oberstem Ordner höchstens **200 Bytes** lang (UTF-8), damit der Explorer von Windows sie öffnet und beim Entpacken Platz für den Zielordner bleibt. Ist ein Pfad länger, kürzt Ablago zuerst den Namen des Dokuments (die Endung bleibt), dann den Titel der Mappe; die Kennung `[…]` bleibt immer. Nur bei sehr langen Namen von Mappentypen oder Registern kürzt Ablago auch diese. Gleiche Namen nach dem Kürzen unterscheidet „(2)“. Es geht nichts verloren: Der vollständige Name steht in `daten/dokumente.csv`, der Titel in `mappe.json` und in den Tabellen. Das gilt auch für [Meine Daten exportieren](#meine-daten-exportieren) und die [Auskunft nach Art. 15](datenschutz.md).
 
 ## Formate
 

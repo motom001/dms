@@ -9,12 +9,34 @@ import type { Dokument, DokumentVersion, Notiz, Aufgabe } from '../../../shared/
 import { kernTyp } from '../../../shared/src/dateiumwandlung';
 import { aufbewahrenBis } from '../../../shared/src/archiv';
 import { sichererName } from './export';
-import { json, namen, csvZeile, ohnePasswoerter } from './vollexport-formate';
+import { json, namen, csvZeile, ohnePasswoerter, bytes, kuerzeAufBytes } from './vollexport-formate';
 import type { ExportLauf } from './vollexport-lauf';
 
 /** Mappen je Zugriff beim Export (#367) und Dokumente je Zugriff auf die Volltexte. */
 const EXPORT_PAKET = 200;
 const VOLLTEXT_PAKET = 100;
+
+/*
+ * Länge der Pfade (#1506): `ablage/<Typ>/<Mappe> [Id]/<Register>/Versionen/<Dokument><Zusatz>` bleibt im Rahmen
+ * (`ExportLauf.pfadRest`). Gekürzt wird zuerst der Name des Dokuments, dann der Titel der Mappe (die Kennung bleibt);
+ * erst wenn das nicht reicht, das Register. Den Ordner des Typs kürzt `typOrdnerMax` vorab, falls er sehr lang ist.
+ */
+/** Dateien neben einem Dokument: erkannter Text, umgewandelte Fassung, Archivfassung. */
+const ZUSAETZE = ['.txt', '.fassung.pdf', '.fassung.png', '.fassung.jpg', '.pdfa.pdf'] as const;
+const ZUSATZ_MAX = Math.max(...ZUSAETZE.map(bytes));
+const VERSIONEN = 'Versionen';
+/** Mindestens so viele Bytes bleiben für den Namen eines Dokuments, für den Ordner einer Mappe (samt Kennung) und ein Register. */
+const DOKUMENT_MIN = 24;
+const MAPPE_MIN = 24;
+const REGISTER_PLATZ = 40;
+/** Hinter dem Ordner der Mappe: `/<Register>/Versionen/<Dokument><Zusatz>`. */
+const hinterMappe = (register: number) => 1 + register + 1 + bytes(`${VERSIONEN}/`) + DOKUMENT_MIN + ZUSATZ_MAX;
+/** Höchstlänge des Ordners eines Mappentyps, damit Mappe, Register und Dokument noch Platz haben. */
+export const typOrdnerMax = (pfadRest: number) =>
+  Math.max(12, pfadRest - bytes('ablage//') - MAPPE_MIN - hinterMappe(REGISTER_PLATZ));
+/** Ordner eines Registers (wie bisher höchstens 60 Zeichen), mit `max` in Bytes gekürzt. */
+const registerOrdner = (mappentyp: Mappentyp, d: Dokument, max = Infinity) =>
+  kuerzeAufBytes(sichererName(mappentyp.register.find((r) => r.key === d.registerKey)?.name ?? d.registerKey, 60), max);
 function gruppiere<T>(liste: T[], schluessel: (x: T) => string): Map<string, T[]> {
   const r = new Map<string, T[]>();
   for (const x of liste) {
@@ -77,9 +99,15 @@ async function archiv(l: ExportLauf, d: { sha256: string }, rel: string): Promis
 }
 
 /** Ein Dokument mit Volltext, seiner Zeile in `dokumente.csv` und seinen älteren Versionen. */
-async function schreibeDokument(l: ExportLauf, m: Mappe, d: Dokument, ort: { regName: string; dn: string; pfad: string }, p: PaketDaten) {
+async function schreibeDokument(
+  l: ExportLauf,
+  m: Mappe,
+  d: Dokument,
+  ort: { regName: string; dn: string; pfad: string; vn: ReturnType<typeof namen> },
+  p: PaketDaten,
+) {
   const { w, q } = l;
-  const { regName, pfad } = ort;
+  const { regName, pfad, vn } = ort;
   const rel = `${pfad}/${regName}/${ort.dn}`;
   await w.schreibe(rel, () => q.datei(d.sha256));
   l.pfade.dokumente.set(d.id, rel);
@@ -113,9 +141,10 @@ async function schreibeDokument(l: ExportLauf, m: Mappe, d: Dokument, ort: { reg
     ]),
   );
   l.dokumente++;
-  const vn = namen();
+  // Ältere Versionen aller Dokumente eines Registers liegen im selben Ordner: ein Namensvorrat je Register (#1506).
+  const vmax = l.pfadRest - bytes(`${pfad}/${regName}/${VERSIONEN}/`) - ZUSATZ_MAX;
   for (const v of p.versionJe.get(d.id) ?? []) {
-    const vrel = `${pfad}/${regName}/Versionen/${vn(`v${v.nummer} ${v.name}`)}`;
+    const vrel = `${pfad}/${regName}/${VERSIONEN}/${vn(`v${v.nummer} ${v.name}`, vmax)}`;
     await w.schreibe(vrel, () => q.datei(v.sha256));
     await l.listen.dokumente.schreibe(
       csvZeile([
@@ -180,7 +209,8 @@ function merkePasswoerter(l: ExportLauf, mappentyp: Mappentyp, m: Mappe) {
 }
 
 /** Eine Mappe: Ordner mit `mappe.json`, `mappe.pdf`, Verweisen, Dokumenten, Einträgen und Passwörtern. */
-async function schreibeMappe(l: ExportLauf, mappentyp: Mappentyp, m: Mappe, pfad: string, p: PaketDaten) {
+async function schreibeMappe(l: ExportLauf, mappentyp: Mappentyp, m: Mappe, ort: { pfad: string; registerMax: number }, p: PaketDaten) {
+  const { pfad, registerMax } = ort;
   const { w, q, titel } = l;
   l.pfade.mappen.set(m.id, pfad);
   await w.schreibe(
@@ -201,13 +231,14 @@ async function schreibeMappe(l: ExportLauf, mappentyp: Mappentyp, m: Mappe, pfad
     );
     l.zahl.verweise++;
   }
-  const dateiNamen = new Map<string, ReturnType<typeof namen>>();
+  const dateiNamen = new Map<string, { dn: ReturnType<typeof namen>; vn: ReturnType<typeof namen> }>();
   for (const d of p.dokJe.get(m.id) ?? []) {
-    const reg = mappentyp.register.find((r) => r.key === d.registerKey)?.name ?? d.registerKey;
-    const regName = sichererName(reg, 60);
-    if (!dateiNamen.has(regName)) dateiNamen.set(regName, namen());
-    const dn = dateiNamen.get(regName)!(d.name);
-    await schreibeDokument(l, m, d, { regName, dn, pfad }, p);
+    const regName = registerOrdner(mappentyp, d, registerMax);
+    if (!dateiNamen.has(regName))
+      dateiNamen.set(regName, { dn: namen({ zusaetze: ZUSAETZE, belegt: [VERSIONEN] }), vn: namen({ zusaetze: ZUSAETZE }) });
+    const n = dateiNamen.get(regName)!;
+    const dn = n.dn(d.name, l.pfadRest - bytes(`${pfad}/${regName}/`) - ZUSATZ_MAX);
+    await schreibeDokument(l, m, d, { regName, dn, pfad, vn: n.vn }, p);
   }
   await schreibeEintraege(l, m, p);
   if (l.opt.passwoerter) merkePasswoerter(l, mappentyp, m);
@@ -227,8 +258,21 @@ export async function schreibeAblage(l: ExportLauf, mappentyp: Mappentyp, ms: Ma
       paket.map((m) => m.id),
     );
     for (const m of paket) {
-      const pfad = `ablage/${tOrdner}/${mOrdner(`${m.titel || t('meldungen.vollexport.ohne-titel')} [${m.id.slice(0, 8)}]`)}`;
-      await schreibeMappe(l, mappentyp, m, pfad, p);
+      const basis = `ablage/${tOrdner}/`;
+      // Länge der Pfade (#1506): Platz für das längste Register dieser Mappe; reicht er nicht, wird das Register gekürzt.
+      const register = (p.dokJe.get(m.id) ?? []).map((d) => bytes(registerOrdner(mappentyp, d)));
+      let mappeMax = l.pfadRest - bytes(basis) - Math.max(bytes('/mappe.json'), ...register.map(hinterMappe));
+      let registerMax = Infinity;
+      if (mappeMax < MAPPE_MIN) {
+        mappeMax = MAPPE_MIN;
+        registerMax = l.pfadRest - bytes(basis) - MAPPE_MIN - hinterMappe(0);
+      }
+      const kennung = ` [${m.id.slice(0, 8)}]`;
+      // Die Kennung bleibt immer erhalten; gekürzt wird der Titel (Platz für „(2)“ bei gleichen Namen).
+      const roh = [...(m.titel || t('meldungen.vollexport.ohne-titel'))].slice(0, 120 - kennung.length).join('');
+      const titel = kuerzeAufBytes(roh, mappeMax - bytes(kennung) - bytes(' (99)'));
+      const pfad = `${basis}${mOrdner(`${titel}${kennung}`, mappeMax)}`;
+      await schreibeMappe(l, mappentyp, m, { pfad, registerMax }, p);
     }
   }
 }

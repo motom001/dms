@@ -41,6 +41,8 @@ export interface ExportLauf {
   termine: Array<{ id: string; datum: string; text: string; mappeId: string }>;
   passwoerter: string[][];
   pfade: ExportPfade;
+  /** So viele Bytes darf ein Pfad im Export haben, ohne den obersten Ordner der ZIP und den Schrägstrich danach (#1506). */
+  pfadRest: number;
 }
 
 /** Mappentypen und alle Mappen je Typ. */
