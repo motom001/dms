@@ -1,0 +1,5 @@
+art: patch
+
+## Behoben
+
+- **Notfallblatt gleich nach der Einrichtung mit zwei Prozessen** (#1621): Lief Ablago mit zwei Prozessen, meldete der Download des Notfallblatts direkt nach „Jetzt einrichten“ manchmal einen Fehler, weil der andere Prozess den eben erzeugten Schlüssel noch nicht kannte. Jetzt lädt er ihn in diesem Fall sofort nach.

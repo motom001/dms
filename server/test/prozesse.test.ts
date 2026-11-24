@@ -35,6 +35,9 @@ import { kontext } from '../src/protokoll/protokoll';
 import { BEENDEN_MS, einzeln, empfohleneProzesse, haldeJeProzess, haldeLeiter, prozesseAus, type Verbund } from '../src/prozesse/prozesse';
 import { speicherRepo } from '../src/repo/speicher';
 import { Tresor } from '../src/geheimnisse/tresor';
+import { notfallHilfen } from '../src/http/routen-kontext-betrieb';
+import { Konten } from '../src/konten';
+import { speicherKontoRepo } from '../src/konten/konto-repo';
 import { Haushaltsstand, MINDESTENS_MS, Zaehlerspeicher } from '../src/zwischenspeicher/zaehlerspeicher';
 import { zipPuffer } from '../src/formate/zip';
 
@@ -812,6 +815,23 @@ describe('Zustand über Prozessgrenzen (#745)', () => {
     assert.equal(await b.nachladen(), true);
     assert.equal(b.bereit, true);
     assert.equal(b.entschluessele(a.verschluessele('geheim')), 'geheim');
+  });
+
+  it('Notfallblatt gleich nach dem Erzeugen des Schlüssels im anderen Prozess: lädt ihn sofort nach statt 409 (#1621)', async () => {
+    const o = await mkdtemp(join(tmpdir(), 'dms-a1621-'));
+    tmp.push(o);
+    const e = speicherEinstellungen();
+    const a = new Tresor(e, join(o, 'dms.schluessel'), () => null),
+      b = new Tresor(e, join(o, 'dms.schluessel'), () => null);
+    await a.laden();
+    await b.laden();
+    await a.erzeuge();
+    assert.equal(b.bereit, false, 'der andere Prozess hat noch nicht abgeglichen');
+    const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: e });
+    const { notfallblattErzeugen } = notfallHilfen(d, new Konten(speicherKontoRepo(), null, 'http://nas'), {}, () => b);
+    const pdf = await notfallblattErzeugen('lena@example.org');
+    assert.equal(pdf.subarray(0, 5).toString(), '%PDF-');
+    assert.equal(b.fingerabdruck, a.fingerabdruck);
   });
 
   it('Temporäre Uploads: neben anderen Prozessen nur alte löschen', async () => {

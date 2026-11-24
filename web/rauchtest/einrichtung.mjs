@@ -99,6 +99,7 @@ rauchtest(
       await assistentAxe(s, 'Zusammenfassung');
       await s.getByRole('button', { name: 'Jetzt einrichten' }).click();
       await s.getByRole('heading', { name: /ist eingerichtet/ }).waitFor({ timeout: 60_000 });
+      await notfallblattGleich(k);
       const download = s.waitForEvent('download');
       await s.getByRole('button', { name: 'Notfallblatt herunterladen' }).click();
       await (await download).cancel().catch(() => {});
@@ -256,6 +257,22 @@ async function ablagoWaehltPakete(s) {
     await s.getByRole('button', { name: 'Ablagos Auswahl zeigen' }).click();
   } finally {
     for (const muster of Object.keys(routen)) await s.unroute(muster);
+  }
+}
+
+/**
+ * Notfallblatt gleich nach „Jetzt einrichten“ (#1621): Mit zwei Prozessen lag der eben erzeugte Schlüssel nur in einem
+ * davon; landete der Download im anderen, kam bis zu 2 s lang 409. Darum hier sofort mehrmals hintereinander – die
+ * Anfragen gehen reihum an beide Prozesse. Jedes Blatt muss kommen.
+ */
+async function notfallblattGleich(k) {
+  const c = (await k.cookies()).find((x) => x.name === 'dms_sitzung');
+  assert.ok(c, 'Sitzung nach „Jetzt einrichten“');
+  for (let i = 0; i < 4; i++) {
+    const r = await fetch(`${BASIS}/api/werkbank/notfallblatt`, { headers: { 'x-dms': '1', cookie: `${c.name}=${c.value}` } });
+    const daten = Buffer.from(await r.arrayBuffer());
+    assert.equal(r.status, 200, `Notfallblatt Nr. ${i + 1} direkt nach der Einrichtung: ${daten.toString('utf8').slice(0, 300)}`);
+    assert.equal(daten.subarray(0, 5).toString(), '%PDF-');
   }
 }
 
