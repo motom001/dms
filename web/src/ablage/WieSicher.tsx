@@ -4,7 +4,7 @@ import { merkmalsfelder } from '../../../shared/src/erkennung';
 import { SCHWELLE_STANDARD, type Klassbeleg, type Klassifizierung, type Typgrund } from '../../../shared/src/klassifizierung';
 import type { Mappentyp } from '../../../shared/src/model';
 import type { Bezuege } from '../api/mappen';
-import { Aufklapper, HakenFeld } from '../bausteine';
+import { Aufklapper, Knopf } from '../bausteine';
 import { useDaten } from '../daten';
 import { titelOder } from '../seiten';
 import { t } from '../sprache';
@@ -105,9 +105,9 @@ export function WieSicher({
       </Aufklapper>
       {offen && (
         <div id="ue-wie-sicher">
-          <HakenFeld beschriftung={t('ablage.uebernehmen.sicher.als-zahl')}>
-            <input type="checkbox" checked={zahl} onChange={(ev) => setZahl(ev.target.checked)} />
-          </HakenFeld>
+          <Knopf groesse="klein" aria-pressed={zahl} symbol={zahl ? 'haken' : undefined} onClick={() => setZahl(!zahl)}>
+            {t('ablage.uebernehmen.sicher.als-zahl')}
+          </Knopf>
           <ul>
             {eintraege.map(({ typ, e }) => {
               const s = e?.sicherheit ?? 0;

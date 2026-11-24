@@ -35,7 +35,7 @@ rauchtest('Neue Post: „Rechnung R-…“ füllt die Rechnungsnummer, „Wie si
     .locator('#ue-wie-sicher')
     .getByText(/^Rechnung – (sicher|wahrscheinlich)/)
     .waitFor();
-  await mappe.getByRole('checkbox', { name: 'Als Zahl zeigen' }).check();
+  await mappe.getByRole('button', { name: 'Als Zahl zeigen', pressed: false }).click();
   await mappe
     .locator('#ue-wie-sicher')
     .getByText(/\d+ % – ab 30 % schlägt Ablago ihn vor/)
@@ -111,7 +111,7 @@ rauchtest('Werkbank: „Woran man ihn erkennt“ unter Erkennung, Schwelle im Ex
   await s.locator('#erkennung').getByLabel('Woran man ihn erkennt').waitFor();
   assert.equal(await s.locator('#grunddaten').getByLabel('Woran man ihn erkennt').count(), 0);
   await s.goto(BASIS + '/werkbank/pakete/ablago.text');
-  await s.getByRole('button', { name: /Expertenmodus/ }).click();
+  await s.getByRole('button', { name: /^Expertenmodus Ab wann Ablago/ }).click();
   const feld = s.getByLabel('Schwelle für den Vorschlag (Prozent)');
   await s.waitForFunction(() => document.querySelector('#schwelle-inhalt input')?.value === '30');
   await feld.fill('40');
