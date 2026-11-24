@@ -42,15 +42,14 @@ export function anmeldeverfahren(
   zeitgrenzeMs = 3000,
 ): Promise<Anmeldeverfahren | null> {
   return new Promise((fertig) => {
-    let s: Socket;
+    const s: Socket = a.host.startsWith('/') ? connect(join(a.host, `.s.PGSQL.${a.port}`)) : connect(a.port, a.host);
     let puffer = Buffer.alloc(0);
-    const ende = (v: Anmeldeverfahren | null) => {
+    const uhr = setTimeout(() => ende(null), zeitgrenzeMs);
+    function ende(v: Anmeldeverfahren | null) {
       clearTimeout(uhr);
       s.destroy();
       fertig(v);
-    };
-    const uhr = setTimeout(() => ende(null), zeitgrenzeMs);
-    s = a.host.startsWith('/') ? connect(join(a.host, `.s.PGSQL.${a.port}`)) : connect(a.port, a.host);
+    }
     s.on('connect', () => s.write(startnachricht(a.benutzer, a.datenbank)));
     s.on('data', (d: Buffer) => {
       puffer = Buffer.concat([puffer, d]);
