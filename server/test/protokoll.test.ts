@@ -257,6 +257,51 @@ describe('Versionsübersicht', () => {
     assert.equal(komplett.gruppe, 'dms');
     assert.match(komplett.hinweis!, /nächsten Image dms-komplett/);
   });
+
+  it('Bau von :main mit Commit in der Version (#1613): voller Wert angezeigt, verglichen und abgeglichen wie das Release', async () => {
+    const { uebersicht, versionsabgleich, vergleicheVersion, releaseVersion, eigeneVersion, neueStabileVersion } =
+      await import('../src/system/system');
+    assert.equal(releaseVersion('0.309.0+a1b2c3d'), '0.309.0', 'Abgleich der Fassungen je Release');
+    assert.equal(releaseVersion('0.309.0'), '0.309.0');
+    assert.equal(vergleicheVersion('0.309.0+a1b2c3d', '0.309.0'), 0);
+    assert.ok(vergleicheVersion('0.310.0', '0.309.0+a1b2c3d') > 0);
+    const alt = { version: process.env.DMS_VERSION, commit: process.env.DMS_COMMIT };
+    process.env.DMS_VERSION = '0.309.0+a1b2c3d';
+    process.env.DMS_COMMIT = 'a1b2c3d4e5f6a7';
+    try {
+      assert.equal(eigeneVersion(), '0.309.0+a1b2c3d', 'Protokoll, Systemzustand und Fehlervorlage: der volle Wert');
+      const u = await uebersicht(
+        {
+          datenbank: async () => ({ version: '18.1', groesseBytes: 1, mappen: 1, typen: 1, benutzer: 1, dokumente: 0, dokumenteBytes: 0 }),
+        },
+        undefined,
+      );
+      assert.equal(u.dms.version, '0.309.0+a1b2c3d');
+      const abruf = async (url: string): Promise<unknown> => {
+        if (url.endsWith('/releases/latest')) return { tag_name: 'v0.309.0', target_commitish: 'fffffff9999999' };
+        if (url.includes('/commits/main'))
+          return { sha: 'a1b2c3d4e5f6a7', commit: { committer: { date: '2026-11-24T08:00:00Z' }, message: 'x' } };
+        if (url.includes('/compare/')) return { ahead_by: 0 };
+        return [];
+      };
+      const d = (await versionsabgleich(u, {}, abruf)).find((x) => x.komponente === 'Ablago')!;
+      assert.equal(d.installiert, '0.309.0+a1b2c3d', 'der Commit steht einmal da');
+      assert.equal(d.status, 'aktuell');
+      assert.equal(
+        await neueStabileVersion(async () => ({ tag_name: 'v0.309.0' }), eigeneVersion()),
+        null,
+        'kein „neuer“ für dieselbe Nummer',
+      );
+      assert.equal(await neueStabileVersion(async () => ({ tag_name: 'v0.310.0' }), eigeneVersion()), '0.310.0');
+    } finally {
+      for (const [k, v] of [
+        ['DMS_VERSION', alt.version],
+        ['DMS_COMMIT', alt.commit],
+      ] as const)
+        if (v === undefined) delete process.env[k];
+        else process.env[k] = v;
+    }
+  });
 });
 
 describe('Module des Protokolls (#682)', () => {

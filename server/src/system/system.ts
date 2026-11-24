@@ -92,6 +92,12 @@ function suchwurzeln(): string[] {
   return [...new Set([process.cwd(), join(process.cwd(), '..'), join(hier, '..'), join(hier, '..', '..'), join(hier, '..', '..', '..')])];
 }
 
+/**
+ * Release-Nummer ohne den Commit eines Baus von :main (#1613): „0.309.0+a1b2c3d“ → „0.309.0“. Für alles, was je Release
+ * einmal geschehen soll (Abgleich der Fassungen); angezeigt und protokolliert wird der volle Wert.
+ */
+export const releaseVersion = (v: string | undefined) => (v ?? '').split('+')[0];
+
 export function eigeneVersion(): string {
   if (env.DMS_VERSION) return env.DMS_VERSION;
   for (const w of suchwurzeln()) {
@@ -410,8 +416,12 @@ const datumDe = (iso: string) =>
  * Nummer), bekommt wie bisher den Hinweis auf neuere Stände auf main. Ohne Release-Abfrage wie bisher der
  * Vergleich mit main.
  */
+/** Installierte Version mit Commit; ein Bau von :main nennt ihn schon in der Version (#1613) – dann nicht noch einmal. */
+const installiertMitCommit = (d: { version: string; commit: string | null }) =>
+  d.commit && !d.version.includes('+') ? `${d.version} (${d.commit.slice(0, 7)})` : d.version;
+
 async function dmsSelbst(abruf: Abruf, u: Uebersicht): Promise<Vergleich> {
-  const installiert = u.dms.commit ? `${u.dms.version} (${u.dms.commit.slice(0, 7)})` : u.dms.version;
+  const installiert = installiertMitCommit(u.dms);
   type Release = { tag_name?: string; published_at?: string; html_url?: string; target_commitish?: string };
   const release = await abruf(`https://api.github.com/repos/${REPO}/releases/latest`).then(
     (x) => x as Release,
