@@ -18,6 +18,7 @@ import { MODULE, STUFEN, type Stufe } from '../protokoll/protokoll';
 import { protokollStand, setzeDebugAlle } from '../protokoll/alleprozesse';
 import { debugAbgleich, debugWerkbank } from '../protokoll/debugmodus';
 import { werkbankZahlen } from './werkbankzahlen';
+import { auskuenfteIn } from '../datenschutz/auskunft';
 import { BeispielAblage } from '../beispiele/beispielablage';
 import { akzeptanzAufheben, akzeptierteMeldungen, meldungAkzeptieren } from './meldungen';
 import { ueberfluessigeVariablen } from '../../../shared/src/umgebungsvariablen';
@@ -531,6 +532,21 @@ async function uebersichtBetrieb(k: RoutenKontext, sicher: Sicher, anb: Anbindun
       benutzer: () => konten.listeBenutzer(),
       postfaecher: x.postfaecher ? () => x.postfaecher!.ansicht() : undefined,
       darfWeg: () => dienst.mappenArchiv.darfWeg(),
+      // Alle Bereiche mit Zahl (#1585): dieselbe Liste wie im Bereich, nur gezählt.
+      automatisierungen: x.automatisierungen ? async () => (await x.automatisierungen!.uebersicht()).automatisierungen : undefined,
+      ablaufvorlagen: () => dienst.ablaeufe.uebersicht(),
+      rundgaenge: async () => {
+        const q = await k.entdecken.quellen({ alle: true });
+        return k.rundgaengeWerkbank.liste(q.rundgaenge, () => undefined, q.eigeneFehler);
+      },
+      tipps: async () => {
+        const q = await k.entdecken.quellen({ alle: true });
+        return k.rundgaengeWerkbank.tippListe(q.tipps, q.tippOriginale, () => undefined, q.tippFehler);
+      },
+      stempel: () => dienst.stempelvorlagen.stempelVorlagen(),
+      auskuenfte: async () => dienst.datenschutzDienst.auskunftVerzeichnis(await auskuenfteIn(k.auskunftZiel()), null),
+      woerter: async () => (await dienst.suche.sucheStand()).synonyme,
+      anmeldeschutz: () => konten.sperre.gesperrt(),
     }),
     // Postfächer mit abgelaufener oder fehlender OAuth-Anmeldung (#358).
     postfachAnmeldung: x.postfaecher ? ((await sicher(() => x.postfaecher!.anmeldungFehlt())) ?? []) : [],
