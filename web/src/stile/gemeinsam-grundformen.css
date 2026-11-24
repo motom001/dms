@@ -208,6 +208,14 @@ fieldset.eigenschaft legend { font-size: calc(12.5px * var(--skala, 1)); font-we
 /* Speicherleiste der Mappe am unteren Rand der Spalte: Die Spalte hat unten 32 px Innenabstand – ohne Ausgleich
    schaute darunter Formularinhalt hervor („Hochgeladen …“ unter der Leiste). */
 .spalte.mappe .speicherleiste { bottom: -32px; }
+/* Freiraum für den Assistenten am Ende jeder Spalte (#1590), auch wo nicht die Spalte selbst rollt, sondern ihr
+   Listenrumpf (Listen, Übersicht) oder wo die Spalte oben eigene 32 px setzt (Formular der Suche, Einstellungen über
+   der Liste). Eine Speicherleiste klebt unten; rechts lässt sie Platz, damit ihre Knöpfe neben dem Assistenten stehen. */
+@media (min-width: 821px) {
+  .spalte:not(.sichten) > .listenrumpf { padding-bottom: var(--platz-begleiter); }
+  .spalte.liste:is(.sm-formular, :has(> .blatt)):not(:has(.speicherleiste)) { padding-bottom: var(--platz-begleiter); }
+  .spalte:not(.sichten) .speicherleiste { padding-right: calc(var(--platz-begleiter) - 20px); }
+}
 @media (max-width: 600px) {
   .speicherleiste:has(> .knoepfe) .status:not(.schlecht) { display: none; }
 }
