@@ -27,6 +27,16 @@ Ablago puts the ZIP together only while it is downloaded and calculates its chec
 3. Check the ZIP against the SHA-256 in the Workbench: Windows (PowerShell) `Get-FileHash <file>.zip -Algorithm SHA256`, macOS `shasum -a 256 <file>.zip`, Linux `sha256sum <file>.zip`. If both match, the ZIP arrived complete (upper or lower case makes no difference).
 4. After unpacking, `SHA256SUMS` checks every file in it, including `manifest.json` and every `mappe.json`. In the unpacked folder: Linux `sha256sum -c SHA256SUMS`, macOS `shasum -a 256 -c SHA256SUMS`; for Windows, `LIESMICH.md` contains a command for PowerShell. Every line should report "OK".
 
+### Windows reports "invalid" { #windows-ungueltig }
+
+Windows Explorer rejects a whole ZIP ("The compressed (zipped) folder is invalid") as soon as a path in it is **260 bytes or longer** – umlauts and other non-ASCII characters count double. Ablago therefore keeps paths below 200 bytes (see [Structure](#aufbau)); older exports can be longer. **Your data is still complete:**
+
+- Check the ZIP against its SHA-256 as described above.
+- Unpack it with another program, for example [7-Zip](https://www.7-zip.org/).
+- Choose a **short target folder** when unpacking, for example `C:\Export`: long paths also cause trouble in Windows after unpacking (copying, deleting, backing up).
+
+`LIESMICH.md` in the export contains the same note.
+
 !!! warning "Unencrypted"
     The full export is deliberately **not encrypted** – that is its purpose. Keep it as safe as the paper files.
 
@@ -79,6 +89,8 @@ dms-export-2026-10-31-14-05-00/
   passwoerter.csv        only with explicit confirmation
   protokolle/            only if chosen
 ```
+
+**Path length:** Every path in the ZIP, including the top folder, is at most **200 bytes** long (UTF-8), so that Windows Explorer opens it and there is room for the target folder when unpacking. If a path is longer, Ablago first shortens the document name (the extension stays), then the folder title; the identifier `[…]` always stays. Only with very long names of folder types or tabs does Ablago shorten these as well. Names that are equal after shortening are told apart by "(2)". Nothing is lost: the full name is in `daten/dokumente.csv`, the title in `mappe.json` and in the tables. This also applies to [Export my data](#meine-daten-exportieren) and the [access copy under Art. 15](datenschutz.md).
 
 ## Formats {#formate}
 

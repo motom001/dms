@@ -16,14 +16,14 @@ Eine [Sicherung](sicherung.md) spielst du in der Werkbank ein – ohne Kommandoz
 
 ## Neues NAS, alte Sicherung
 
-Du brauchst: die beiden Sicherungsdateien (`.dms-sicherung` und `.json`) und das [Notfallblatt](verschluesselung.md#notfallblatt). Läuft das alte Gerät noch, lädst du beide in der Werkbank [herunter](sicherung.md#sicherung-herunterladen).
+Du brauchst: die Sicherungsdatei (`.dms-sicherung`) und das [Notfallblatt](verschluesselung.md#notfallblatt). Läuft das alte Gerät noch, lädst du sie in der Werkbank [herunter](sicherung.md#sicherung-herunterladen). Liegt die Metadaten-Datei (`.json`) noch daneben – etwa bei einer Kopie des ganzen Sicherungsordners –, nimm sie mit; nötig ist sie nicht.
 
 1. Auf dem neuen NAS den Ordner für Ablago anlegen, darin `postgres`, `files`, `geheim` und `sicherung` (siehe [Installation](installation.md)).
 2. Ablago neu installieren, wie unter [Wie komme ich an ein DMS?](https://help.ablago.app/installieren/aktuell/) beschrieben – empfohlen mit zwei Containern (z. B. die [Compose-Vorlage](https://github.com/motom001/dms/blob/main/deploy/nas/docker-compose.yml) mit einer `.env` mit neuem `DB_PASSWORD`), oder mit [dms-komplett](https://help.ablago.app/installieren/aktuell/komplett/) ohne Passwort.
-3. Die beiden Sicherungsdateien in den Ordner `sicherung` kopieren.
+3. Die Sicherungsdatei (und, falls vorhanden, die `.json` daneben) in den Ordner `sicherung` kopieren.
 4. Das Projekt starten und Ablago im Browser öffnen. Der [Einrichtungsassistent](installation.md#der-einrichtungsassistent) fragt nach dem **Einrichtungscode** und – falls nötig – nach der Datenbank. Dann **Aus einer Sicherung wiederherstellen** wählen; einen „Wegwerf-Admin“ brauchst du nicht.
 5. Die Sicherung auswählen. Der **Abgleich** zeigt, mit welcher Version sie entstand und was heute läuft (Ablago, Datenbank-Stand, PostgreSQL, Architektur, Ablage-Id). Gehört die Sicherung zu einem anderen Mandanten, übernimmt Ablago dessen Id.
-6. Den **Schlüssel vom Notfallblatt** eingeben (Leerzeichen zählen nicht) und **Schlüssel prüfen** – Ablago vergleicht ihn mit dem Fingerabdruck aus den Metadaten.
+6. Den **Schlüssel vom Notfallblatt** eingeben (Leerzeichen zählen nicht) und **Schlüssel prüfen** – Ablago vergleicht ihn mit dem Fingerabdruck aus dem Kopf der Sicherung. Ohne `.json` daneben liest Ablago erst danach Datenbank-Stand, Ablage-Id und Anzahlen aus der Sicherung selbst; die Ablago-Version, mit der sie entstand, steht dann als „unbekannt“ im Abgleich – maßgeblich ist der Datenbank-Stand. Statt der Prüfsumme prüft dann das Entschlüsseln, ob die Datei echt ist (GCM-Prüfwert); umgeschaltet wird erst, wenn alles gelesen ist.
 7. **Wiederherstellen**. Der Bildschirm zeigt jeden Schritt; du kannst die Seite neu laden. Am Ende startet Ablago neu.
 8. **Weiter zur Anmeldung** und mit den bisherigen Zugangsdaten anmelden. Die Schlüsseldatei hat Ablago dabei selbst angelegt.
 
@@ -39,7 +39,7 @@ Ist das Gerät weg, holst du beide Dateien vom [Ziel außer Haus](sicherung-auss
 
 Ablago braucht für eine Wiederherstellung **keinen Zugang zum Internet** – weder den [Paketkatalog](pakete.md) noch einen Download. Ohne Netz lässt sich aber nichts nachholen, was du nicht vorher abgelegt hast. Halte deshalb an einem sicheren Ort bereit:
 
-1. **die Sicherungsdatei** (`.dms-sicherung`) mit der **`.json` daneben**,
+1. **die Sicherungsdatei** (`.dms-sicherung`),
 2. **den Schlüssel**: die Schlüsseldatei aus dem Ordner `geheim` (im Container `/data/geheim`) oder das [Notfallblatt](verschluesselung.md#notfallblatt) – er steht nie in der Sicherung,
 3. **das Ablago-Image** in derselben oder einer neueren Version als die Sicherung, vorher z. B. mit `docker save ghcr.io/motom001/dms:stabil -o ablago.tar` abgelegt und auf dem neuen Gerät mit `docker load -i ablago.tar` geladen. Ohne Internet lässt es sich nicht ziehen. Bei [dms-komplett](https://help.ablago.app/installieren/aktuell/komplett/) dasselbe mit `ghcr.io/motom001/dms-komplett:stabil`; bei zwei Containern auch das Image der Datenbank (z. B. `postgres:18`),
 4. **deine Compose-Datei** und die `.env` bzw. deine Umgebungsvariablen.

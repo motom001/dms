@@ -89,7 +89,7 @@ Every field has a **label** (changeable), a **key** (fixed once saved – it is 
 
 | Field kind | Properties |
 | --- | --- |
-| Text | minimum and maximum length, pattern (regular expression, must match the whole text), unique, [format](#formate-und-datumsgrenzen) |
+| Text | minimum and maximum length, pattern (regular expression, must match the whole text; at most 200 characters, no repeated group containing a repetition or “\|” such as `(a+)+` – such patterns can take a very long time; inputs up to 1000 characters are checked), unique, [format](#formate-und-datumsgrenzen) |
 | Long text | minimum and maximum length |
 | Formatted text | minimum and maximum length (see below) |
 | Number | minimum, maximum, decimal places, unique |
@@ -563,6 +563,21 @@ Below tabs and archive mode you decide who may create, read, edit, delete folder
 ## Services on the network { #ki-dienste }
 
 In the section **Permissions**, right below “Default”, you decide whether the folder type **may go to services on the network**: whether content of this folder type may leave Ablago through a package with network access – for instance for *Ask your library* or a translation. Without the tick it stays in Ablago, and no such package gets anything from it. Who sees the folders is still up to the rules above. The tick takes effect immediately, independently of **Save folder type**. **New folder types – copies too – are blocked until you allow them.** More under [Packages → Services on the network and folder types](pakete.md#ki-dienste).
+
+## Folder types as a file { #als-datei }
+
+You can pass on a proven structure – such as *House → Heating → Maintenance contract* – without a package: **Workbench → Folder types → As a file**.
+
+**Export:** Tick your own folder types and choose **Preview**. The file contains fields, tabs, sections, result list, title template, archive mode and labels – in the format of [Create package](pakete.md), with identifiers instead of ids. **No folders, no documents, no people and no permissions.** The preview shows which texts go along that can be names or numbers (choices, defaults, templates) and what does not come along (e.g. number sequences, permissions). If a type refers to one of your own types that is not included, the preview names it as a dependency – **Include** adds it; otherwise it must already exist at the recipient with the same identifier. Types from packages are not offered: they stay with their package, links to them name the package. Then **Download file** (`ablago-mappentypen-….json`). The export needs the permission for the *Folder types* area, but no fresh sign-in.
+
+**Import:** **Choose file …** – Ablago checks the file and shows, without changing anything, per type: **new**, **already exists** (same identifier) with all changes, or **unchanged**. Only **Import** applies everything in one go; if one type fails, everything stays as it was. The [log](fehlersuche.md#protokoll) records who imported which file (checksum) and which types are new or changed.
+
+Ablago treats a file from outside carefully, even if you exported it yourself:
+
+- It is checked like a package: only known settings, limits for size (512 KB), number of types and fields and the length of texts; [patterns](#felder) without nested repetitions. If it contains anything that brings permissions or ways out – permissions, automations, calculated fields, package actions, ids –, Ablago rejects the whole file and names the place.
+- **Existing types are never weakened:** switching off archive mode, shortening the period, changing the key date or the lock, making a required field optional or changing the type of a field is shown in red in the preview and not applied – that is only possible in the editor with its rules. Making things stricter is allowed. Fields and tabs that are not in the file stay; so do permissions, result lists and the other settings of the type.
+- If the identifier belongs to a type from a package, the file cannot be imported – changes to it go as a supplement to the package.
+- Like every new type, new types are at first not visible to any [service on the network](pakete.md#ki-dienste); the file does not change that.
 
 ## Copying a folder type { #mappentyp-kopieren }
 

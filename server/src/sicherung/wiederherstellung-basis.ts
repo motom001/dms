@@ -57,14 +57,17 @@ export abstract class WiederherstellungBasis {
     const probleme: string[] = [];
     const hinweise: string[] = [];
     // Kopie außer Haus (#585): daneben nur die schlanke Metadaten-Datei – den Rest liest das DMS mit dem Schlüssel aus der Sicherung.
-    const aussen =
-      !eintrag.meta && eintrag.schlank
-        ? await this.metaAusSicherung(eintrag as Eintragsliste & { schlank: SchlankeMetadaten }, schluesselText)
-        : null;
+    // Nur die Sicherungsdatei (#1611, z. B. heruntergeladen): Fingerabdruck und Verfahren aus ihrem Kopf, der Rest ebenso.
+    const schlank = eintrag.meta ? undefined : (eintrag.schlank ?? (await this.schlankAusKopf(eintrag)));
+    const aussen = schlank ? await this.metaAusSicherung({ ...eintrag, schlank }, schluesselText, !eintrag.schlank) : null;
     if (!eintrag.meta && !aussen) throw new Fachfehler(422, t('meldungen.wiederherstellung.zu-dieser-sicherung-fehlt'));
     const m = eintrag.meta ?? aussen!.meta;
     if (aussen) {
-      hinweise.push(t('meldungen.wiederherstellung.neben-dieser-sicherung-liegt'));
+      hinweise.push(
+        eintrag.schlank
+          ? t('meldungen.wiederherstellung.neben-dieser-sicherung-liegt')
+          : t('meldungen.wiederherstellung.nur-sicherungsdatei'),
+      );
       if (aussen.problem) probleme.push(aussen.problem);
       if (!aussen.gelesen) {
         if (!aussen.problem)
@@ -190,11 +193,12 @@ export abstract class WiederherstellungBasis {
   private async metaAusSicherung(
     e: Eintragsliste & { schlank: SchlankeMetadaten },
     schluesselText?: string,
+    nurDatei = false,
   ): Promise<{ meta: Metadaten; gelesen: boolean; mitEingabe: boolean; problem?: string }> {
     const s = e.schlank;
     if (
       s.datei !== `${e.name}.dms-sicherung` ||
-      !/^[0-9a-f]{64}$/.test(String(s.sha256)) ||
+      !(nurDatei ? s.sha256 === '' : /^[0-9a-f]{64}$/.test(String(s.sha256))) ||
       typeof s.verschluesselung?.fingerabdruck !== 'string'
     ) {
       throw new Fachfehler(422, t('meldungen.wiederherstellung.die-metadaten-datei-json'));
@@ -240,6 +244,7 @@ export abstract class WiederherstellungBasis {
       const erst = await it.next();
       await it.return?.(undefined);
       const kopf = (erst.done ? null : erst.value.art === 'M' ? erst.value.kopf : null) as {
+        erstellt?: unknown;
         haushaltId?: unknown;
         migrationen?: unknown;
         tabellen?: unknown;
@@ -257,6 +262,8 @@ export abstract class WiederherstellungBasis {
       return {
         meta: {
           ...meta,
+          // Nur die Sicherungsdatei (#1611): Beginn aus der Inhaltsangabe.
+          ...(!meta.beginn && typeof kopf.erstellt === 'string' ? { beginn: kopf.erstellt, ende: kopf.erstellt } : {}),
           haushaltId: String(kopf.haushaltId ?? ''),
           migrationen,
           // „Wozu?“ (#1529) steht auch verschlüsselt in der Sicherung.
@@ -281,6 +288,27 @@ export abstract class WiederherstellungBasis {
         problem: t('meldungen.wiederherstellung.die-sicherung-laesst-sich', { message: (x as Error).message }),
       };
     }
+  }
+
+  /**
+   * Nur die Sicherungsdatei, ohne `.json` daneben (#1611, z. B. heruntergeladen und auf ein neues Gerät gelegt): schlanke
+   * Angaben aus dem unverschlüsselten Kopf der Datei – Verfahren und Fingerabdruck des Schlüssels. Eine Prüfsumme gibt es
+   * nicht (leer); ob die Datei echt ist, zeigt der GCM-Prüfwert beim Einspielen. Ist es keine Sicherung: dieser Fehler.
+   */
+  private async schlankAusKopf(e: Eintragsliste): Promise<SchlankeMetadaten> {
+    const datei = `${e.name}.dms-sicherung`;
+    const { kopf } = await liesKopf(join(this.q.sicherung.ordner, datei)).catch((x: Error) => {
+      throw new Fachfehler(422, x.message);
+    });
+    return {
+      format: kopf.format,
+      schlank: true,
+      datei,
+      groesse: e.bytes,
+      sha256: '',
+      beginn: '',
+      verschluesselung: { verfahren: String(kopf.verfahren ?? ''), fingerabdruck: String(kopf.fingerabdruck ?? '') },
+    };
   }
 
   protected schluessel(m: Metadaten, schluesselText?: string): Buffer {

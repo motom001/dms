@@ -209,7 +209,7 @@
   "wiederherstellen.lade": "Loading …",
   "wiederherstellen.keine-sicherung-im-ordner": "No backup found in the folder.",
   "wiederherstellen.ablago-mappen": "· {wert} · Ablago {dms} · {mappen} folders · {groesse}",
-  "wiederherstellen.metadaten-json-fehlen": "– metadata (.json) missing",
+  "wiederherstellen.nur-datei": "backup file only – Ablago reads version and scope with the key",
   "wiederherstellen.abgleich-damals-heute": "Comparison: then ↔ now",
   "wiederherstellen.in-der-sicherung": "In the backup",
   "wiederherstellen.diese-installation": "This installation",

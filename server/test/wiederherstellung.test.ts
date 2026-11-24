@@ -30,7 +30,7 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
   const behalten = new Set<Sql>();
   /** Plätze je Pool: genug für Sicherung (Schnappschuss) und Wiederherstellung, klein genug für die Summe (#1462). */
   const PLAETZE = 3;
-  const dbs = [`dms_wh_quelle_${process.pid}`, `dms_wh_ziel_${process.pid}`, `dms_wh_wechsel_${process.pid}`, `dms_wh_fassq_${process.pid}`, `dms_wh_fassz_${process.pid}`, `dms_wh_aussen_${process.pid}`, `dms_wh_kennq_${process.pid}`, `dms_wh_kennz_${process.pid}`, `dms_wh_hookq_${process.pid}`, `dms_wh_hookz_${process.pid}`];
+  const dbs = [`dms_wh_quelle_${process.pid}`, `dms_wh_ziel_${process.pid}`, `dms_wh_wechsel_${process.pid}`, `dms_wh_fassq_${process.pid}`, `dms_wh_fassz_${process.pid}`, `dms_wh_aussen_${process.pid}`, `dms_wh_kennq_${process.pid}`, `dms_wh_kennz_${process.pid}`, `dms_wh_hookq_${process.pid}`, `dms_wh_hookz_${process.pid}`, `dms_wh_datei_${process.pid}`];
   const urlVon = (db: string) => { const u = new URL(url!); u.pathname = `/${db}`; return u.toString(); };
 
   before(async () => {
@@ -204,6 +204,34 @@ describe('Wiederherstellen mit PostgreSQL', { skip: url ? false : 'TEST_DATABASE
     assert.equal(lauf.status, 'neustart', JSON.stringify(lauf, null, 1));
     await new Promise((r) => setTimeout(r, 1700));
     const neu = await frisch(dbs[5]);
+    assert.deepEqual(await zaehle(neu), await zaehle(quelle.sql), 'wie in der Quelle');
+  });
+
+  it('stellt eine heruntergeladene Sicherung ohne Metadaten daneben wieder her (#1611)', async () => {
+    const ziel = await system(dbs[10]);
+    const { cp } = await import('node:fs/promises');
+    await cp(join(quelle.sicherung.ordner, `${sicherungsName}.dms-sicherung`), join(ziel.sicherung.ordner, `${sicherungsName}.dms-sicherung`));
+    // Keine Sicherung, nur der Name passt: der Fehler aus dem Kopf der Datei.
+    await writeFile(join(ziel.sicherung.ordner, 'fremd.dms-sicherung'), 'keine Sicherung');
+    await assert.rejects(ziel.w.abgleich('fremd'), /keine Sicherungsdatei/);
+    const ohne = await ziel.w.abgleich(sicherungsName);
+    assert.equal(ohne.schluesselNoetig, true);
+    assert.deepEqual(ohne.probleme, []);
+    assert.match(ohne.hinweise.join(' '), /keine Angaben/);
+    const falsch = await ziel.w.abgleich(sicherungsName, 'A'.repeat(43));
+    assert.match(falsch.probleme.join(' '), /Fingerabdruck/);
+    await assert.rejects(ziel.w.starte({ name: sicherungsName, schluessel: 'A'.repeat(43) }, null), /Fingerabdruck|Schlüssel/);
+    const schluessel = quelle.tresor.alsText()!;
+    const mit = await ziel.w.abgleich(sicherungsName, schluessel);
+    assert.deepEqual(mit.probleme, []);
+    assert.equal(mit.meta.haushaltId, HAUSHALT, 'aus der Inhaltsangabe der Sicherung');
+    assert.ok(mit.meta.beginn, 'Beginn aus der Inhaltsangabe');
+    await ziel.w.starte({ name: sicherungsName, schluessel }, null);
+    const lauf = await warte(ziel.w);
+    assert.equal(lauf.status, 'neustart', JSON.stringify(lauf, null, 1));
+    assert.match(JSON.stringify(lauf.schritte.find((x: { name: string }) => x.name === 'Prüfsumme der Datei')), /keine Prüfsumme/);
+    await new Promise((r) => setTimeout(r, 1700));
+    const neu = await frisch(dbs[10]);
     assert.deepEqual(await zaehle(neu), await zaehle(quelle.sql), 'wie in der Quelle');
   });
 

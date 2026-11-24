@@ -130,6 +130,11 @@ export abstract class WiederherstellungAusfuehren extends WiederherstellungBasis
     const { lauf, m } = st;
     st.schritt(t('meldungen.wiederherstellung.pruefsumme-der-datei'));
     const pfad = join(this.q.sicherung.ordner, m.datei);
+    // Nur die Sicherungsdatei (#1611): keine Prüfsumme daneben – die Echtheit zeigt der GCM-Prüfwert beim Einspielen.
+    if (!m.sha256) {
+      st.ok(t('meldungen.wiederherstellung.ohne-pruefsumme'));
+      return pfad;
+    }
     lauf.gesamt = (await stat(pfad)).size;
     const sha = await sha256Von(pfad, (n) => {
       lauf.bytes = n;

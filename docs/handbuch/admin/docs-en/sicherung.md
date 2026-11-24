@@ -59,19 +59,20 @@ For a copy on a USB stick, at relatives' or for moving to a new device, you down
 1. In the list, choose **Download** for the backup you want.
 2. If your last sign-in was more than 10 minutes ago, Ablago first asks for your password (and the code) or a passkey – downloading is a [sensitive action](verwalten.md#frische-anmeldung).
 3. Your browser downloads the file `<name>.dms-sicherung`, e.g. `2026-10-29_0200-automatisch.dms-sicherung` – the date is in the name. You will find progress, cancel and resume in the browser's downloads. Several GB work too: Ablago delivers the file as a stream, piece by piece.
-4. Below the list, the notice **"To restore, you need your emergency sheet (key)."** appears with the file name, size (to the byte) and **checksum (SHA-256)**. Download the **metadata** (`.json`) there too and keep it next to the backup: without it, the backup cannot be restored on a new device (see [New NAS, old backup](wiederherstellen.md#neues-nas-alte-sicherung)).
+4. Below the list, the notice **"To restore, you need your emergency sheet (key)."** appears with the file name, size (to the byte) and **checksum (SHA-256)**. **The one file is enough** – also on a new device (see [New NAS, old backup](wiederherstellen.md#neues-nas-alte-sicherung)). The only thing you must keep separately is the key from the emergency sheet.
 
 Good to know:
 
 - The backup is downloaded **encrypted and unchanged**, exactly as it is in the backup folder. Without the key from the [emergency sheet](verschluesselung.md#notfallblatt) nobody can read it – so the emergency sheet doesn't belong on the same stick.
-- You need the **Backup** area in your [administration permission](verwalten.md). The metadata contains no key; for it, Ablago doesn't ask for the password again.
+- You need the **Backup** area in your [administration permission](verwalten.md).
+- What the backup file contains: at the front, unencrypted, the method and the fingerprint of the key; encrypted, the table of contents (Library id, database state, time, counts, "What for?"), the database and the files. The metadata file (`.json`) in the backup folder summarises this in readable form and adds the checksum; it is not needed for restoring.
 - If the download breaks off, the browser resumes it where it stopped (HTTP range). If your sign-in is then more than 10 minutes old, choose **Download** again in the Workbench.
 - Backups that **only exist off-site** are in the list too; **Download** first fetches them back through the destination's package (see [Off-site backup](sicherung-ausser-haus.md#nur-ausser-haus)).
 - Every download is recorded in the [log](fehlersuche.md#protokoll), module *sicherung*: who, when, which backup (when resuming, with the position). Ablago doesn't create a new file for it – neither in the backup folder nor in the export folder.
 
 ### Checking the copy on your computer { #kopie-prufen }
 
-Compare the checksum of the downloaded file with the SHA-256 from the Workbench (or from the `.json`, field `sha256`). If both match, the copy is unchanged:
+Compare the checksum of the downloaded file with the SHA-256 from the Workbench (or from the `.json` in the backup folder, field `sha256`). If both match, the copy is unchanged:
 
 | System | Command |
 | --- | --- |

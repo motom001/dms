@@ -51,6 +51,21 @@ import {
   liesEingabe,
 } from './bau-hilfen';
 import { baue } from './baue';
+import { baueTypenDatei } from './typen-datei';
+import { spieleTypenEin, typenVorschau } from './typen-austausch';
+import {
+  TYPEN_DATEI_TYPEN_MAX,
+  type TypenExport,
+  type TypenImportErgebnis,
+  type TypenImportVorschau,
+} from '../../../../shared/src/typendatei';
+
+/** Inhalt der Datei aus der Anfrage (`inhalt`, Text). */
+const typenText = (e: unknown): string => {
+  const inhalt = (e as { inhalt?: unknown } | null)?.inhalt;
+  if (typeof inhalt !== 'string' || !inhalt) throw new Fachfehler(422, t('meldungen.paketerstellung.typen-datei-json'));
+  return inhalt;
+};
 
 const log = protokoll.modul('werkbank');
 
@@ -75,6 +90,27 @@ export class Paketerstellung {
       [s.rolle.id, 'rolle'],
       ...(a ? [[a.id, 'ablageort'] as [string, string]] : []),
     ]);
+  }
+
+  /* ---------- Mappentypen als Datei (#1315) ---------- */
+
+  /** Export: Vorschau (was die Datei enthält, Abhängigkeiten, Hinweise) und – ohne Probleme – die Datei selbst. */
+  async typenExport(e: unknown): Promise<TypenExport> {
+    const roh = (e ?? {}) as { typen?: unknown };
+    const ids = Array.isArray(roh.typen) ? [...new Set(roh.typen.map(String))].slice(0, TYPEN_DATEI_TYPEN_MAX) : [];
+    const leer = { typen: ids, sichten: [], beispiele: [], wortlisten: [], id: '' } as unknown as PaketErstellenEingabe;
+    return baueTypenDatei(ids, await this.daten(leer));
+  }
+
+  /** Import, Vorschau: neu, vorhanden (gleiche Kennung) und was sich ändern würde. Ändert nichts. */
+  async typenVorschau(e: unknown): Promise<TypenImportVorschau> {
+    return typenVorschau(this.d, typenText(e), await this.dmsTypen());
+  }
+
+  /** Import nach Bestätigung derselben Datei (Prüfsumme aus der Vorschau). */
+  async typenEinspielen(e: unknown, von: string): Promise<TypenImportErgebnis> {
+    const sha = (e as { sha256?: unknown } | null)?.sha256;
+    return spieleTypenEin(this.d, typenText(e), typeof sha === 'string' ? sha : '', von, await this.dmsTypen());
   }
 
   /** Was es zur Auswahl gibt, gemerkte Entwürfe und Vorschläge für den nächsten Export. */

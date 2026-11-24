@@ -2,6 +2,7 @@ import type { InstalliertesPaket } from '../../../../shared/src/pakete';
 import { PaketeListe, PaketLink, PaketePanel } from '../Pakete';
 import { AutomatisierungEditor, AutomatisierungenListe } from '../Automatisierungen';
 import { AussenZiele } from '../AutomatisierungAussen';
+import { TypenDatei } from '../TypenDatei';
 import type { ReactNode } from 'react';
 import { useDaten } from '../../daten';
 import { TypEditor } from '../../einrichtung/Einrichtung';
@@ -38,6 +39,9 @@ export const ablageSeiten = {
       const kopie = new URLSearchParams(location.search).get('kopie');
       const vorlage = kopie ? d.typ(kopie) : undefined;
       rechts = <TypEditor key={`neu-${vorlage?.id ?? ''}`} vorlage={vorlage && !vorlage.system ? vorlage : undefined} />;
+    } else if (id === 'datei') {
+      // Mappentypen als Datei (#1315): exportieren und einspielen.
+      rechts = <TypenDatei pakete={pakete.stand?.installiert ?? []} />;
     } else if (id) {
       const eintrag = d.typ(id);
       rechts = eintrag ? (
@@ -103,6 +107,9 @@ function TypenListe({ offen, pakete }: { offen?: string; pakete: InstalliertesPa
         beschreibung={t('werkbank.werkbank.welche-arten-von-mappen')}>
         <KnopfLink to="/werkbank/typen/neu" art="anlegen" groesse="klein">
           {t('werkbank.werkbank.neu')}
+        </KnopfLink>
+        <KnopfLink to="/werkbank/typen/datei" groesse="klein">
+          {t('werkbank.typendatei.knopf')}
         </KnopfLink>
       </Listenkopf>
       {d.typen.length > 0 && (

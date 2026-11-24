@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { type ExportQuelle, type ExportOptionen, FORMATVERSION, EXPORT_TABELLEN } from './vollexport-quelle';
-import { type Schreiber, json, namen, ohnePasswoerter, ics, falte, jsonl, csv } from './vollexport-formate';
+import { type Schreiber, json, namen, ohnePasswoerter, ics, falte, jsonl, csv, bytes, PFAD_MAX } from './vollexport-formate';
 import { t } from '../sprache/sprache';
 import type { Mappentyp } from '../../../shared/src/model';
 import type { MappenAblauf } from '../../../shared/src/ablaufvorlagen';
@@ -13,7 +13,7 @@ import { LOESCH_SPALTEN, alsZeile } from '../../../shared/src/loeschprotokoll';
 import { PRUEFSUMMEN, pruefsummen } from './vollexport-pruefsummen';
 import { type ExportLauf, type ExportPfade, ladeMappen, oeffneListen } from './vollexport-lauf';
 import { schreibeTabellen, schreibeKontakte } from './vollexport-tabellen';
-import { schreibeAblage } from './vollexport-ablage';
+import { schreibeAblage, typOrdnerMax } from './vollexport-ablage';
 
 type Benutzerdaten = Awaited<ReturnType<ExportQuelle['benutzer']>>;
 
@@ -58,12 +58,19 @@ async function schreibeStruktur(q: ExportQuelle, w: Schreiber, typen: Mappentyp[
 /** Daten je Mappentyp: Tabellen, Ablage und Kontakte. */
 async function schreibeTypen(l: ExportLauf) {
   const ordnerTyp = namen();
+  // Länge der Pfade (#1506): `uebersicht/<typ>.pdf` und `daten/<typ>.jsonl` sind die längsten Dateien je Typ; nach dem
+  // Kürzen gleich lautende Namen bekommen „(2)“.
+  const dateiNamen = namen({ zeichen: 130 });
+  const dateinameMax = l.pfadRest - bytes('uebersicht/.jsonl');
   for (const mappentyp of l.typen) {
     const ms = l.jeTyp.get(mappentyp.id) ?? [];
     // Kennung `paket:schluessel` (#1084): im Dateinamen mit Punkt statt Doppelpunkt (Windows kennt keinen Doppelpunkt).
-    const dateiname = sichererName(mappentyp.schluessel ? kennungAlsDateiname(mappentyp.schluessel) : mappentyp.name, 130);
+    const dateiname = dateiNamen(
+      sichererName(mappentyp.schluessel ? kennungAlsDateiname(mappentyp.schluessel) : mappentyp.name, 130),
+      dateinameMax,
+    );
     await schreibeTabellen(l, mappentyp, ms, dateiname);
-    await schreibeAblage(l, mappentyp, ms, ordnerTyp(mappentyp.name));
+    await schreibeAblage(l, mappentyp, ms, ordnerTyp(mappentyp.name, typOrdnerMax(l.pfadRest)));
     await schreibeKontakte(l, mappentyp, ms, dateiname);
   }
 }
@@ -232,6 +239,7 @@ export async function schreibeExport(
     termine: [],
     passwoerter: [],
     pfade: { mappen: new Map(), dokumente: new Map() },
+    pfadRest: PFAD_MAX - bytes(`${opt.wurzel ?? name}/`),
   };
   await schreibeTypen(l);
   const erinnerungen = await schreibeDaten(l, b);
@@ -301,6 +309,7 @@ fehler = [d['pfad'] for d in m['dateien'] if hashlib.sha256((basis / d['pfad']).
 print('alles in Ordnung' if not fehler else f'abweichend: {fehler}')
 \`\`\`
 
+${t('meldungen.vollexport.liesmich-windows')}
 ## Weiterverarbeiten
 
 - **Excel/LibreOffice:** \`daten/<typ>.xlsx\` öffnen – oder \`.csv\` (Komma, UTF-8).

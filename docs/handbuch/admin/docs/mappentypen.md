@@ -89,7 +89,7 @@ Jedes Feld hat eine **Bezeichnung** (änderbar), eine **Kennung** (fest, sobald 
 
 | Feldart | Eigenschaften |
 | --- | --- |
-| Text | Mindest- und Höchstlänge, Muster (regulärer Ausdruck, muss den ganzen Text treffen), eindeutig, [Format](#formate-und-datumsgrenzen) |
+| Text | Mindest- und Höchstlänge, Muster (regulärer Ausdruck, muss den ganzen Text treffen; höchstens 200 Zeichen, keine wiederholte Gruppe mit Wiederholung oder „\|“ darin wie `(a+)+` – solche Muster können sehr lange rechnen; geprüft werden Eingaben bis 1000 Zeichen), eindeutig, [Format](#formate-und-datumsgrenzen) |
 | Langtext | Mindest- und Höchstlänge |
 | Formatierter Text | Mindest- und Höchstlänge (siehe unten) |
 | Zahl | Minimum, Maximum, Nachkommastellen, eindeutig |
@@ -563,6 +563,21 @@ Unter Registern und Archivmodus legst du fest, wer Mappen dieses Mappentyps anle
 ## Dienste im Netz { #ki-dienste }
 
 Im Abschnitt **Berechtigungen**, direkt unter „Standard“, legst du fest, ob der Mappentyp **an Dienste im Netz gehen darf**: ob Inhalte dieses Mappentyps Ablago über ein Paket mit Netz verlassen dürfen – etwa für *Frag deine Ablage* oder eine Übersetzung. Ohne Haken bleibt er in Ablago, und kein solches Paket bekommt etwas daraus. Wer die Mappen sieht, regeln weiter die Regeln darüber. Der Haken gilt sofort, unabhängig von **Mappentyp speichern**. **Neue Mappentypen – auch Kopien – sind gesperrt, bis du sie zulässt.** Alles Weitere unter [Pakete → Dienste im Netz und Mappentypen](pakete.md#ki-dienste).
+
+## Mappentypen als Datei { #als-datei }
+
+Einen bewährten Aufbau – etwa *Haus → Heizung → Wartungsvertrag* – gibst du ohne Paket weiter: **Werkbank → Mappentypen → Als Datei**.
+
+**Exportieren:** Eigene Mappentypen ankreuzen und **Vorschau** wählen. Die Datei enthält Felder, Register, Abschnitte, Trefferliste, Titel-Vorlage, Archivmodus und Beschriftungen – im Format von [Paket erstellen](pakete.md), mit Kennungen statt Ids. **Keine Mappen, keine Dokumente, keine Personen und keine Rechte.** Die Vorschau zeigt, was an Texten mitgeht, die Namen oder Nummern sein können (Auswahlwerte, Vorgabewerte, Vorlagen), und was nicht mitkommt (z. B. Nummernkreise, Berechtigungen). Verweist ein Typ auf einen eigenen Typ, der nicht dabei ist, nennt die Vorschau ihn als Abhängigkeit – **Mitnehmen** nimmt ihn dazu; sonst muss es ihn beim Empfänger mit derselben Kennung schon geben. Typen aus Paketen stehen nicht zur Wahl: Sie bleiben beim Paket, Verweise darauf nennen das Paket. Dann **Datei herunterladen** (`ablago-mappentypen-….json`). Für den Export braucht es das Recht für den Bereich *Mappentypen*, aber keine frische Anmeldung.
+
+**Einspielen:** **Datei wählen …** – Ablago prüft die Datei und zeigt, ohne etwas zu ändern, je Typ: **neu**, **gibt es schon** (gleiche Kennung) mit allen Änderungen, oder **unverändert**. Erst **Einspielen** übernimmt alles in einem Zug; scheitert ein Typ, bleibt alles, wie es war. Im [Protokoll](fehlersuche.md#protokoll) steht, wer welche Datei (Prüfsumme) eingespielt hat und welche Typen neu oder geändert sind.
+
+Eine Datei von außen behandelt Ablago vorsichtig, auch wenn du sie selbst exportiert hast:
+
+- Geprüft wird wie bei Paketen: nur bekannte Angaben, Grenzen für Größe (512 KB), Anzahl der Typen und Felder und die Länge der Texte; [Prüfmuster](#felder) ohne verschachtelte Wiederholungen. Steht etwas darin, das Rechte oder Wege nach außen mitbringt – Berechtigungen, Automatisierungen, berechnete Felder, Paket-Aktionen, Ids –, lehnt Ablago die ganze Datei ab und nennt die Stelle.
+- **Vorhandene Typen werden nicht abgeschwächt:** Archivmodus ausschalten, die Frist verkürzen, Stichtag oder Sperre ändern, ein Pflichtfeld zur Kür machen oder die Feldart eines Felds ändern steht rot in der Vorschau und wird nicht übernommen – das geht nur im Editor mit seinen Regeln. Verschärfen geht. Felder und Register, die nicht in der Datei stehen, bleiben; Rechte, Trefferlisten und die übrigen Einstellungen des Typs auch.
+- Gehört die Kennung zu einem Typ aus einem Paket, lässt sich die Datei nicht einspielen – Änderungen daran gehen als Nachtrag zum Paket.
+- Neue Typen darf wie jeder neue Typ zunächst kein [Dienst im Netz](pakete.md#ki-dienste) sehen; die Datei ändert daran nichts.
 
 ## Mappentyp kopieren
 

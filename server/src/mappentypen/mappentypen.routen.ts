@@ -48,7 +48,7 @@ function stempelRouten(k: RoutenKontext): Route[] {
 
 /** Mappentypen, eigene Rechte und Beispiele. */
 function mappentypenRouten(k: RoutenKontext): Route[] {
-  const { dienst, typName, zg } = k;
+  const { dienst, typName, zg, paketerstellung } = k;
   return [
     /* ---------- Mappentypen ---------- */
     // Regeln (#123) sehen nur Administratoren; alle anderen erfahren, ob sie anlegen dürfen.
@@ -103,6 +103,20 @@ function mappentypenRouten(k: RoutenKontext): Route[] {
         L.werkbank.info('Mappentyp gelöscht', { typ: name, id: a.params.id });
         return leer;
       },
+    },
+    // Mappentypen als Datei (#1315): Bereich Mappentypen (/api/typen*); keine frische Anmeldung – keine Inhalte darin.
+    { methode: 'POST', pfad: '/api/typen/datei', zugang: 'admin', handler: async (a) => ok(await paketerstellung.typenExport(a.body)) },
+    {
+      methode: 'POST',
+      pfad: '/api/typen/datei/vorschau',
+      zugang: 'admin',
+      handler: async (a) => ok(await paketerstellung.typenVorschau(a.body)),
+    },
+    {
+      methode: 'POST',
+      pfad: '/api/typen/datei/einspielen',
+      zugang: 'admin',
+      handler: async (a) => ok(await paketerstellung.typenEinspielen(a.body, ich(a).email)),
     },
     {
       methode: 'POST',

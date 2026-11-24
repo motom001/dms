@@ -59,19 +59,20 @@ Für eine Kopie auf einem USB-Stick, bei Verwandten oder für den Umzug auf ein 
 1. In der Liste bei der gewünschten Sicherung **Herunterladen** wählen.
 2. Liegt deine letzte Anmeldung mehr als 10 Minuten zurück, fragt Ablago erst dein Passwort (und den Code) oder einen Passkey ab – das Herunterladen ist eine [heikle Handlung](verwalten.md#frische-anmeldung).
 3. Dein Browser lädt die Datei `<name>.dms-sicherung` herunter, z. B. `2026-10-29_0200-automatisch.dms-sicherung` – das Datum steht im Namen. Fortschritt, Abbrechen und Fortsetzen findest du bei den Downloads des Browsers. Auch mehrere GB gehen: Ablago liefert die Datei als Strom, Stück für Stück.
-4. Unter der Liste erscheint der Hinweis **„Zum Wiederherstellen brauchst du dein Notfallblatt (Schlüssel).“** mit Dateiname, Größe (auf das Byte genau) und **Prüfsumme (SHA-256)**. Lade dort auch die **Metadaten** (`.json`) herunter und lege sie neben die Sicherung: Ohne sie lässt sich die Sicherung auf einem neuen Gerät nicht einspielen (siehe [Neues NAS, alte Sicherung](wiederherstellen.md#neues-nas-alte-sicherung)).
+4. Unter der Liste erscheint der Hinweis **„Zum Wiederherstellen brauchst du dein Notfallblatt (Schlüssel).“** mit Dateiname, Größe (auf das Byte genau) und **Prüfsumme (SHA-256)**. **Die eine Datei genügt** – auch auf einem neuen Gerät (siehe [Neues NAS, alte Sicherung](wiederherstellen.md#neues-nas-alte-sicherung)). Getrennt aufbewahren musst du nur den Schlüssel vom Notfallblatt.
 
 Gut zu wissen:
 
 - Heruntergeladen wird die Sicherung **verschlüsselt und unverändert**, genau wie sie im Sicherungsordner liegt. Ohne den Schlüssel vom [Notfallblatt](verschluesselung.md#notfallblatt) kann niemand sie lesen – darum gehört das Notfallblatt nicht auf denselben Stick.
-- Dürfen musst du den Bereich **Sicherung** im [Verwaltungsrecht](verwalten.md). Die Metadaten enthalten keinen Schlüssel; für sie fragt Ablago nicht erneut nach dem Passwort.
+- Dürfen musst du den Bereich **Sicherung** im [Verwaltungsrecht](verwalten.md).
+- Was in der Sicherungsdatei steht: vorn unverschlüsselt das Verfahren und der Fingerabdruck des Schlüssels, verschlüsselt die Inhaltsangabe (Ablage-Id, Datenbank-Stand, Zeitpunkt, Anzahlen, „Wozu?“), die Datenbank und die Dateien. Die Metadaten-Datei (`.json`) im Sicherungsordner fasst das lesbar zusammen und nennt dazu die Prüfsumme; zum Einspielen ist sie nicht nötig.
 - Bricht der Download ab, setzt der Browser ihn fort, wo er aufgehört hat (HTTP-Range). Liegt die Anmeldung dann mehr als 10 Minuten zurück, wähle in der Werkbank erneut **Herunterladen**.
 - Sicherungen, die es **nur noch außer Haus** gibt, stehen mit in der Liste; **Herunterladen** holt sie erst über das Paket des Ziels zurück (siehe [Sicherung außer Haus](sicherung-ausser-haus.md#nur-ausser-haus)).
 - Jedes Herunterladen steht im [Protokoll](fehlersuche.md#protokoll), Modul *sicherung*: wer, wann, welche Sicherung (beim Fortsetzen mit der Stelle). Eine neue Datei legt Ablago dafür nicht an – weder im Sicherungs- noch im Export-Ordner.
 
 ### Kopie am Rechner prüfen { #kopie-prufen }
 
-Vergleiche die Prüfsumme der heruntergeladenen Datei mit der SHA-256 aus der Werkbank (oder aus der `.json`, Feld `sha256`). Stimmen beide überein, ist die Kopie unverändert:
+Vergleiche die Prüfsumme der heruntergeladenen Datei mit der SHA-256 aus der Werkbank (oder aus der `.json` im Sicherungsordner, Feld `sha256`). Stimmen beide überein, ist die Kopie unverändert:
 
 | System | Befehl |
 | --- | --- |
