@@ -18,6 +18,7 @@
 set -euo pipefail
 IMAGE="${1:?Image angeben, z. B. dms-komplett:probe}"
 WERKZEUGE_PRUEFEN="$(cd "$(dirname "$0")/.." && pwd)/.github/werkzeuge/werkzeuge-pruefen.mjs"
+SPRACHE_START="$(cd "$(dirname "$0")/.." && pwd)/shared/src/sprachen/de/start.json"
 PORT=18090
 arbeit=$(mktemp -d)
 NAME=probe-komplett
@@ -56,7 +57,12 @@ s=""
 for _ in $(seq 1 100); do s=$(seite); grep -q "Ablago startet" <<< "$s" && break; sleep 0.2; done
 grep -q "Ablago startet" <<< "$s" || fehler "keine Startseite in den ersten 20 s nach dem Start (#1250)"
 echo "::notice::Startseite sofort: $(schritt "$s")"
-grep -qE "Datenbank wird angelegt|Datenbank startet|Ablago startet|Datenbank wird aktualisiert|Verbindung zur Datenbank" <<< "$(schritt "$s")" \
+# Bekannte Schritte (#1653): alle Texte „schritt.*“ der Startseite, aus der Sprachdatei statt von Hand gepflegt – je bis
+# zum ersten Platzhalter („Migration {nr} von {von}“), verglichen als fester Text. Welcher Schritt beim ersten Abruf
+# gerade läuft, hängt vom Zeitpunkt ab (etwa „Ordner werden für Ablago eingerichtet“).
+bekannte=$(jq -r 'to_entries[] | select(.key | startswith("schritt.")) | .value | sub("\\{.*"; "") | rtrimstr(" ")' "$SPRACHE_START")
+[ -n "$bekannte" ] || fehler "keine Startschritte in $SPRACHE_START"
+grep -qF -- "$bekannte" <<< "$(schritt "$s")" \
   || fehler "Startseite ohne bekannten Schritt: $(schritt "$s")"
 grep -qE "/data/|PostgreSQL [0-9]|$(docker exec "$NAME" sh -c 'cat /etc/hostname' 2>/dev/null || echo kein-rechnername)" <<< "$s" \
   && fehler "Startseite verrät Pfad, Version oder Rechnernamen"
