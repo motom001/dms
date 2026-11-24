@@ -47,7 +47,10 @@ function isoAus(g: Record<string, string | undefined>, n: number, jahr?: number)
 
 /** Alle Zeiträume im Text, in ihrer Reihenfolge – nur, wenn der Beginn nicht nach dem Ende liegt. */
 export function findeZeitraeume(roh: string): Zeitraumfund[] {
-  const text = (roh ?? '').replace(/\r/g, '').replace(/\u00a0/g, ' ').slice(0, 200_000);
+  const text = (roh ?? '')
+    .replace(/\r/g, '')
+    .replace(/\u00a0/g, ' ')
+    .slice(0, 200_000);
   const erg: Zeitraumfund[] = [];
   for (const m of text.matchAll(ZEITRAUM)) {
     const g = m.groups ?? {};
