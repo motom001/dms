@@ -141,7 +141,7 @@ In load test mode with `dms-komplett`, Ablago, PostgreSQL and the load generator
 # Load test with a separate database – only as a test project of its own, never next to your real Library.
 services:
   db:
-    image: postgres:17
+    image: postgres:18
     restart: unless-stopped
     # #894: counts the most expensive queries for the load test (dms-komplett loads it by itself).
     command: postgres -c shared_preload_libraries=pg_stat_statements
@@ -149,6 +149,8 @@ services:
       POSTGRES_DB: dms
       POSTGRES_USER: dms
       POSTGRES_PASSWORD: lasttest
+      # Database in the volume below (#1464): otherwise postgres:18 stores it under /var/lib/postgresql/18/docker.
+      PGDATA: /var/lib/postgresql/data
     volumes:
       - lasttest-postgres:/var/lib/postgresql/data
     healthcheck:

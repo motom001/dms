@@ -29,7 +29,7 @@ Take the template [`deploy/synology/docker-compose.yml`](https://github.com/moto
 ## Good to know {#gut-zu-wissen}
 
 - **Folders:** `files`, `geheim`, `sicherung` and `postgres` must be on the server (volumes). Otherwise they are gone with the next update. More under [Folders and volumes](https://help.ablago.app/admin/aktuell/en/installation/#ordner-und-volumes).
-- **Updates:** `docker compose pull && docker compose up -d` – this fetches Ablago and PostgreSQL (`postgres:17`) anew. With a version number instead of `main`, i.e. `ghcr.io/motom001/dms:<version>` with a number from the [releases](https://github.com/motom001/dms/releases), the installation stays on that release. See [Updating](https://help.ablago.app/admin/aktuell/en/aktualisieren/).
+- **Updates:** `docker compose pull && docker compose up -d` – this fetches Ablago and PostgreSQL (`postgres:18`) anew. With a version number instead of `main`, i.e. `ghcr.io/motom001/dms:<version>` with a number from the [releases](https://github.com/motom001/dms/releases), the installation stays on that release. See [Updating](https://help.ablago.app/admin/aktuell/en/aktualisieren/).
 - **Database service with another name:** the templates without `DATABASE_URL` expect the database at `db:5432`. If your service is called something else or runs on another port, set `DMS_DB_HOST` and `DMS_DB_PORT`.
 - **Console:** for emergencies and operation, the container has the command `dms`, e.g. `docker compose exec app dms hilfe`. See [Console](https://help.ablago.app/admin/aktuell/en/konsole/).
 - **Reachable from outside** only after the setup, ideally with HTTPS via a reverse proxy: [Behind a reverse proxy](https://help.ablago.app/admin/aktuell/en/installation/#hinter-einem-reverse-proxy).

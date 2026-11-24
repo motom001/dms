@@ -23,10 +23,21 @@ Every row names the **Ablago version and the date** of the last test or report. 
 
 **What the GitHub machines test:**
 
-- **x64:** all automated tests with PostgreSQL 17, the images `dms` and `dms-komplett`, the templates for Synology, UGREEN, QNAP, TrueNAS, Unraid and the Raspberry Pi (start, Ablago responds, the setup wizard begins correctly). On top of that comes a weekly [load test](https://help.ablago.app/admin/aktuell/en/verkraftet/); the measurements are in [#576](https://github.com/motom001/dms/issues/576).
+- **x64:** all automated tests with PostgreSQL 18, the images `dms` and `dms-komplett`, the templates for Synology, UGREEN, QNAP, TrueNAS, Unraid and the Raspberry Pi (start, Ablago responds, the setup wizard begins correctly). On top of that comes a weekly [load test](https://help.ablago.app/admin/aktuell/en/verkraftet/); the measurements are in [#576](https://github.com/motom001/dms/issues/576).
 - **arm64:** on a real ARM machine (not emulated), build the images `dms` and `dms-komplett` and start them as a trial, plus the tools in the image.
 
 The templates run on an ordinary Linux with Docker, not on the NAS itself. Whether a NAS's interface (Container Manager, App Center …) plays along only shows on a real device.
+
+### Database: PostgreSQL { #postgresql }
+
+| Major version | Status | Where |
+| --- | --- | --- |
+| **18** | **tested:** all automated tests, the templates, `dms-komplett` (since Ablago 0.306) | templates, `dms-komplett`, app from the [TrueNAS catalogue](truenas.md) |
+| 17 | **no longer tested** (since Ablago 0.306; up to 0.305 all tests). Ablago starts and writes a note to the log. Only the move stays tested: back up on 17, restore on 18, data the same. | older installations with two containers |
+| 16 | not tested; Ablago starts with a note in the log | your own database |
+| 15 and older | Ablago doesn't start and states the reason | – |
+
+How to move from 17 to 18 is described under [Updating → PostgreSQL 18](https://help.ablago.app/admin/aktuell/en/aktualisieren/#postgresql-18). Ablago's backups can be restored between 17 and 18 in both directions.
 
 **The Raspberry Pi 5** is meant to become the next device "tested by the project". For that, the project is still looking for a device, see [What the project needs (#589)](https://github.com/motom001/dms/issues/589).
 
@@ -35,6 +46,8 @@ The templates run on an ordinary Linux with Docker, not on the NAS itself. Wheth
 | Device | Architecture | Level | Last report | Note |
 | --- | --- | --- | --- | --- |
 | *no report yet* | | | | |
+
+A used mini PC, thin client or old notebook is often the cheapest choice – what to look out for is described under [Used hardware](gebrauchte-hardware.md).
 
 Reports are a **hint, not a promise**. The project checks them for plausibility – do the values fit similar devices, are there contradictions? –, not for truth, and asks when something stands out. We never base decisions on reports alone; they can, however, be a reason to look for a device to be "tested by the project".
 

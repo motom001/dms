@@ -725,7 +725,7 @@ Jeder sieht dabei nur Mappen, die er lesen darf. Den Vektor des Suchbegriffs lie
 | 10 000 | 12 MB | 4 MB | 0,4 s | 4 ms | 0,3 s |
 | 100 000 | 118 MB | 33 MB | 3,2 s | 37 ms | 3,0 s |
 
-Ablago braucht dafür keine Datenbank-Erweiterung (wie pgvector, die im Image `postgres:17` fehlt). Es vergleicht im eigenen Arbeitsspeicher mit 8 Bit je Zahl; den Zwischenspeicher lädt es nach dem Start im Hintergrund – bis er da ist, sucht die Suche ohne Ähnlichkeit. Gemessen mit `server/test/vektoren-messen.ts`.
+Ablago braucht dafür keine Datenbank-Erweiterung (wie pgvector, die im Image `postgres:18` fehlt). Es vergleicht im eigenen Arbeitsspeicher mit 8 Bit je Zahl; den Zwischenspeicher lädt es nach dem Start im Hintergrund – bis er da ist, sucht die Suche ohne Ähnlichkeit. Gemessen mit `server/test/vektoren-messen.ts`.
 
 ## Expertenmodus: weitere Kataloge und Hochladen
 

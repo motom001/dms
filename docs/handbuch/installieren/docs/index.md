@@ -14,9 +14,9 @@ Ablago läuft bei dir zu Hause: auf einem NAS, einem kleinen Heimserver oder jed
 | **Synology-NAS** | [Container Manager](synology.md) | ☆☆ gering: Ordner anlegen, Vorlage einfügen, Passwort eintragen |
 | **UGREEN-NAS** (UGOS Pro) | [Docker → Projekt](ugreen.md) | ☆☆ gering: wie bei Synology |
 | **QNAP-NAS** | [Container Station](qnap.md) | ☆☆ gering: wie bei Synology |
-| **TrueNAS** | [Apps → Custom App](truenas.md) | ☆☆ gering: Datensatz anlegen, Vorlage einfügen |
+| **TrueNAS** | [App-Katalog oder Custom App](truenas.md) | ☆ sehr gering aus dem Katalog; ☆☆ gering als Custom App: Datensatz anlegen, Vorlage einfügen |
 | **Unraid** | [Compose Manager](unraid.md) | ☆☆ gering: Plugin installieren, Vorlage einfügen |
-| **PC oder Mini-PC** (Intel, AMD) | [Linux mit Docker](linux.md) | ☆☆☆ mittel: Linux installieren, ein paar Befehle |
+| **PC oder Mini-PC** (Intel, AMD), auch [gebraucht](gebrauchte-hardware.md) | [Linux mit Docker](linux.md) | ☆☆☆ mittel: Linux installieren, ein paar Befehle |
 | **Raspberry Pi** 4 oder 5 | [Schritt für Schritt für Einsteiger](raspberry-pi.md): Raspberry Pi OS, Docker, Ablago mit einem Befehl | ☆☆ gering bis ☆☆☆ mittel: jeder Klick erklärt, ein paar Befehle zum Kopieren |
 | **Windows-PC oder Windows Server** | [Docker Desktop oder Hyper-V](windows.md) | ☆☆☆ mittel: Docker Desktop installieren oder Linux-VM anlegen |
 | **Proxmox**, XCP-ng, ESXi … | [Linux-VM mit Docker](proxmox.md) | ☆☆☆ mittel: VM anlegen, dann wie beim PC |
@@ -33,10 +33,10 @@ Alle Wege brauchen ein Gerät mit **amd64** (Intel, AMD) oder **arm64** (z. B. R
 
 Ablago gibt es in zwei Varianten. **Wir empfehlen zwei Container** – so laufen auch alle Anleitungen und App-Stores hier.
 
-| | **Zwei Container** (empfohlen): `dms` + `postgres:17` | **Ein Container**: `dms-komplett` |
+| | **Zwei Container** (empfohlen): `dms` + `postgres:18` | **Ein Container**: `dms-komplett` |
 | --- | --- | --- |
 | Einrichten | Compose-Projekt bzw. App-Store, ein Passwort für die Datenbank | ein Image, vier Ordner, kein Passwort |
-| Updates von PostgreSQL | sofort, unabhängig von Ablago: `postgres:17` neu ziehen | mit dem nächsten Release (`:stabil` oder feste Version); `:main` wird zum Testen wöchentlich neu gebaut |
+| Updates von PostgreSQL | sofort, unabhängig von Ablago: `postgres:18` neu ziehen | mit dem nächsten Release (`:stabil` oder feste Version); `:main` wird zum Testen wöchentlich neu gebaut |
 | Betrieb | Ablago und Datenbank einzeln neu starten, überwachen, mit Standardwerkzeugen sichern | alles zusammen; Datenbank von außen nicht erreichbar (gewollt) |
 | Neue Hauptversion von PostgreSQL | planbar, im eigenen Takt | nur über Sicherung und Wiederherstellung |
 | App-Stores (umbrelOS, ZimaOS, CasaOS) | ja | nein |

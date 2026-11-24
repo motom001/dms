@@ -4,7 +4,7 @@ How to install Ablago – on Synology, UGREEN, QNAP, TrueNAS, Unraid, umbrelOS, 
 
 --8<-- "ausgeblendet-schritt.md"
 
-Ablago runs – **recommended** – as two containers: the application (`ghcr.io/motom001/dms`) and PostgreSQL (`postgres:17`). Alternatively there is **`ghcr.io/motom001/dms-komplett`**, in which both run in one container (comparison under [One or two containers?](https://help.ablago.app/installieren/aktuell/en/#ein-oder-zwei-container)). With every push to `main`, GitHub Actions rebuilds both images (tag `main`, additionally a short hash per commit and the version number per release).
+Ablago runs – **recommended** – as two containers: the application (`ghcr.io/motom001/dms`) and PostgreSQL (`postgres:18`). Alternatively there is **`ghcr.io/motom001/dms-komplett`**, in which both run in one container (comparison under [One or two containers?](https://help.ablago.app/installieren/aktuell/en/#ein-oder-zwei-container)). With every push to `main`, GitHub Actions rebuilds both images (tag `main`, additionally a short hash per commit and the version number per release).
 
 !!! warning "Set up first, then open up"
     Only make Ablago reachable via a reverse proxy or port forwarding once setup is complete. The setup code does protect against a stranger taking it over – it's still safer.
@@ -143,6 +143,8 @@ The connection to PostgreSQL is in the file `datenbank.json` in the folder `/dat
 - **If neither exists** – or the connection doesn't work –, Ablago starts in **setup mode**: it only delivers the assistant and asks for the connection (with setup code). All other interfaces answer with 503 until then. A saved connection whose database just can't be reached yet (the database container is still starting) it keeps trying every ten seconds.
 
 Under **Workbench → Database connection** you see and change the connection. The section *Connection* says what Ablago is connected to right now ("Currently connected: dms@postgres:5432/dms · in operation"). To change: first **Check connection**, then **Take over**. The new connection applies after a restart (**Restart now** – in the container, Docker starts Ablago again straight away). The data doesn't move along; for moving to another database use a [backup](sicherung.md).
+
+**Which PostgreSQL version:** Ablago is tested with **PostgreSQL 18**; that is what `dms-komplett` and the templates include. At least **16** is needed: with 15 or older Ablago doesn't start and states the reason on the start page. With 16 or 17 it runs but writes a note to the log on start – moving to 18 works via a backup ([Updating → PostgreSQL 18](aktualisieren.md#postgresql-18)). With your own database, Ablago should log in with **SCRAM** (`password_encryption = scram-sha-256`, `scram-sha-256` in `pg_hba.conf`): MD5 passwords are deprecated from PostgreSQL 18. The templates and `dms-komplett` already use SCRAM. You switch a password stored with MD5 by setting it once more after changing `password_encryption` (`ALTER ROLE dms PASSWORD '…'`).
 
 The file also contains the **Library id** (formerly the environment variable `HAUSHALT_ID`). Existing installations take it over at the first start; the variable can be removed afterwards.
 

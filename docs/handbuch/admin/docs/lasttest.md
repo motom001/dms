@@ -141,7 +141,7 @@ Im Lasttest-Modus mit `dms-komplett` laufen Ablago, PostgreSQL und der Lastgener
 # Lasttest mit getrennter Datenbank – nur als eigenes Test-Projekt, nie neben der echten Ablage.
 services:
   db:
-    image: postgres:17
+    image: postgres:18
     restart: unless-stopped
     # #894: zählt die teuersten Abfragen für den Lasttest (dms-komplett lädt es von selbst).
     command: postgres -c shared_preload_libraries=pg_stat_statements
@@ -149,6 +149,8 @@ services:
       POSTGRES_DB: dms
       POSTGRES_USER: dms
       POSTGRES_PASSWORD: lasttest
+      # Datenbank im Volume unten (#1464): postgres:18 legt sie sonst unter /var/lib/postgresql/18/docker ab.
+      PGDATA: /var/lib/postgresql/data
     volumes:
       - lasttest-postgres:/var/lib/postgresql/data
     healthcheck:

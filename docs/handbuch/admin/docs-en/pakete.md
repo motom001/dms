@@ -725,7 +725,7 @@ Everyone only sees folders they may read. The package supplies the vector of the
 | 10,000 | 12 MB | 4 MB | 0.4 s | 4 ms | 0.3 s |
 | 100,000 | 118 MB | 33 MB | 3.2 s | 37 ms | 3.0 s |
 
-Ablago needs no database extension for this (such as pgvector, which is missing in the image `postgres:17`). It compares in its own memory with 8 bits per number; it loads the cache in the background after the start – until it is there, the search works without similarity. Measured with `server/test/vektoren-messen.ts`.
+Ablago needs no database extension for this (such as pgvector, which is missing in the image `postgres:18`). It compares in its own memory with 8 bits per number; it loads the cache in the background after the start – until it is there, the search works without similarity. Measured with `server/test/vektoren-messen.ts`.
 
 ## Expert mode: further catalogues and uploading { #expertenmodus-weitere-kataloge-und-hochladen }
 

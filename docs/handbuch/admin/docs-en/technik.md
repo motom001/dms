@@ -14,7 +14,7 @@ Browser ── HTTP ──▶ Ablago container (Node.js) ──▶ PostgreSQL co
 | --- | --- | --- |
 | Interface | React 19, built with Vite | Library, workbench, My account – everything in the browser |
 | Server | Node.js 24, Fastify 5, TypeScript (bundled with esbuild) | Interface under `/api`, also delivers the user interface |
-| Database | PostgreSQL 17, access with postgres.js, SQL migrations in `server/migrations` | All data except the files |
+| Database | PostgreSQL 18 (at least 16), access with postgres.js, SQL migrations in `server/migrations` | All data except the files |
 | Files | Fixed folders `/data/files`, `/data/geheim`, `/data/sicherung` (volumes, see [Installation](installation.md#ordner-und-volumes)); each file named by its SHA-256; optionally the [Intake folder](eingangsordner.md) `/eingang` | Uploaded documents, the same content only once; key; backups; scans to collect |
 | Email | nodemailer via SMTP for sending; imapflow and mailparser via IMAP for collecting (both optional, set in the workbench) | Invitations, password links, notices, sending folders; collecting emails from [mailboxes](postfaecher.md) as post |
 | Full text and text recognition | poppler (pdftotext, pdftoppm) in the image for the text layer of PDFs; text recognition of scans and images as the package **Text recognition** (Tesseract as WebAssembly in the package runner, #459); PostgreSQL's full-text search | Full text of PDFs, scans and images (#45, #458) |
@@ -26,7 +26,7 @@ Browser ── HTTP ──▶ Ablago container (Node.js) ──▶ PostgreSQL co
 | Encryption | AES-256-GCM (Node.js crypto), key as a file under `/data/geheim` | Stored passwords (#39, #46) |
 | Passkeys | WebAuthn; verified with `@simplewebauthn/server` (MIT), in the browser the built-in interface; only public keys in the database | Signing in without a password, second factor, signing in again ([Passkeys](anmeldeschutz.md#passkeys), #811) |
 | Image | `node:24-alpine`, multi-stage build, for amd64 and arm64 – each architecture on its own matching GitHub machine (without emulation), then merged into one image | Runs on the NAS next to the PostgreSQL image |
-| dms-komplett | The same image with PostgreSQL 17 (Alpine package) in the same container; database in the folder `/data/postgres` | Ablago and database in one container |
+| dms-komplett | The same image with PostgreSQL 18 (Alpine package) in the same container; database in the folder `/data/postgres` | Ablago and database in one container |
 | Checks | GitHub Actions: type check, tests against PostgreSQL, image build | Every push to `main`, every pull request, every version tag and once a week |
 
 ## Limits { #grenzen }
@@ -166,7 +166,7 @@ Sign-in and sign-in protection deliberately stay in one module: a block results 
 
 The image contains Node.js, Alpine Linux and all libraries; you update by pulling `ghcr.io/motom001/dms:stabil` again and restarting (see [Which image tag?](aktualisieren.md#image-tag)). `:stabil` moves once a week (early on Tuesday) to the newest tested version, urgent fixes (label `sofort-stabil`) right after the release; `:main` gets every state at once.
 
-- **Two containers (recommended):** PostgreSQL is an image of its own (`postgres:17`): minor versions (17.x) by pulling again, independently of Ablago.
+- **Two containers (recommended):** PostgreSQL is an image of its own (`postgres:18`): minor versions (18.x) by pulling again, independently of Ablago.
 - **dms-komplett:** PostgreSQL (Alpine package) is in the image `ghcr.io/motom001/dms-komplett` and comes with its updates. Both images are rebuilt with every change and at least every week, with the Alpine packages of the same day (tag `main`); fixed version numbers get new Alpine packages with the next release, `:stabil` with the next stable version (once a week).
 - Changing the major version (e.g. 17 → 18) needs a backup and restore in both cases, see [Growing and moving](wachsen.md#neue-hauptversion-von-postgresql).
 
