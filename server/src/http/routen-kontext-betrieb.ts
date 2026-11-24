@@ -144,6 +144,9 @@ export function exportHilfen(dienst: Dienst, x: RoutenExtras) {
 export function notfallHilfen(dienst: Dienst, konten: Konten, x: RoutenExtras, tresor: ReturnType<typeof betriebsBausteine>['tresor']) {
   const notfallblattErzeugen = async (von: string): Promise<Buffer> => {
     const tresor2 = tresor();
+    // Mehrere Prozesse (#1621): Den eben erzeugten Schlüssel liest ein anderer Prozess sonst erst beim nächsten Abgleich
+    // (bis zu 2 s) – direkt nach „Jetzt einrichten“ meldete der Download dann 409. Fehlt er, jetzt nachladen.
+    if (!tresor2.alsText()) await tresor2.nachladen();
     const text = tresor2.alsText();
     if (!text || !tresor2.fingerabdruck) throw new Fachfehler(409, t('meldungen.routen.es-gibt-noch-keinen'));
     // #814: keine Ordner oder Dateinamen aus Docker oder vom NAS auf dem Blatt – nur Verweise ins Handbuch.
