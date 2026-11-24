@@ -14,6 +14,11 @@
   /* Schmal nur die Nummer – der Name bleibt für Screenreader der Name des Knopfs (#1290: sonst Knöpfe ohne Namen). */
   .assistent-schritte li:not(.aktiv) .name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 }
+@media (max-width: 420px) {
+  /* Zwölf Schritte (#1566): am Handy (390 px) passen sie nur etwas kleiner und enger ganz in die Karte. */
+  .assistent-schritte { gap: 2px; }
+  .assistent-schritte .nr { width: 24px; height: 24px; }
+}
 @media (min-width: 641px) {
   /* Zehn Schritte (#460): lange Namen am Rechner mit Trennstrich statt mitten im Wort umbrechen. */
   .assistent-schritte .name { hyphens: auto; }

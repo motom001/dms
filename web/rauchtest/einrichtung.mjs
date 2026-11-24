@@ -240,7 +240,7 @@ async function ablagoWaehltPakete(s) {
   try {
     await s.getByRole('heading', { name: 'Diese Pakete richtet Ablago für euch ein' }).waitFor();
     const liste = s.getByRole('list', { name: 'Diese Pakete richtet Ablago für euch ein' });
-    await liste.getByText('Haushalt').waitFor();
+    await liste.getByText('Haushalt', { exact: true }).waitFor();
     assert.equal(await liste.getByRole('checkbox').count(), 0, 'Ablagos Auswahl ohne Haken');
     assert.equal(await liste.getByText('Sicherung WebDAV').count(), 0, 'nie ein Paket mit Netz unter „nur hier“');
     const nicht = s.getByRole('region', { name: 'Nicht dabei' });
