@@ -48,7 +48,7 @@ rauchtest(
     // Zwei wählen und gemeinsam löschen; die Rückfrage sagt nichts von „alle“.
     await zeilen.nth(1).getByRole('checkbox').check();
     await zeilen.nth(2).getByRole('checkbox').check();
-    await bearbeitung.getByRole('button', { name: 'Ausgewählte löschen (2)' }).click();
+    await bearbeitung.getByRole('button', { name: 'Ausgewählte löschen (2)', exact: true }).click();
     let frage = s.getByRole('alertdialog', { name: '2 Sicherungen löschen?' });
     await frage.getByText(/Frei werden etwa/).waitFor();
     assert.equal(await frage.getByText(/lokal keine Sicherung mehr/).count(), 0, 'nicht alle gewählt');
@@ -232,7 +232,12 @@ rauchtest(
       await zeilen.nth(1).getByRole('link', { name: 'Anleitung' }).getAttribute('href'),
       /wiederherstellen\/#aus-einer-kopie-ausser-haus$/,
     );
-    assert.equal(await zeilen.nth(1).getByRole('button').count(), 0, 'kein toter Knopf');
+    // Kein toter Knopf: weder Herunterladen noch Prüfen – nur „Aus der Liste nehmen“ (#1320).
+    assert.deepEqual(
+      (await zeilen.nth(1).getByRole('button').allInnerTexts()).map((x) => x.trim()),
+      ['Aus der Liste nehmen'],
+      'kein toter Knopf',
+    );
     await bearbeitung.getByRole('button', { name: 'Ziele außer Haus neu abfragen' }).waitFor();
     // axe hell und dunkel ohne Maus über den Knöpfen und erst nach dem Farbübergang (Hover und Übergang beim Wechsel des
     // Schemas verfälschen sonst den Kontrast, vgl. #1189).
@@ -309,5 +314,162 @@ rauchtest(
     await nurNeuesteStand(s, { gesetzt: false, moeglich: false, wirksam: false });
     const funde = await tippflaechenPruefen(s, ['#zeitplan']);
     assert.deepEqual(funde, [], `Zu kleine Tippflächen am Handy:\n${funde.join('\n')}`);
+  },
+);
+
+// „Wozu?“ (#1529): beim Sichern von Hand ein kurzer Name; er steht in der Liste und in der Meldung und lässt sich ändern.
+rauchtest(
+  'Werkbank: Sicherung von Hand mit „Wozu?“, nachträglich ändern (#1529)',
+  { als: LENA, erwartet: SICHERUNG_ERWARTET },
+  async (s) => {
+    await s.goto(BASIS + '/ablage/start');
+    await verwalten(s);
+    const bearbeitung = await sicherungOeffnen(s);
+    const jetzt = bearbeitung.locator('#jetzt');
+    await jetzt.getByRole('textbox', { name: /Wozu\?/ }).fill('Vor dem Rauchtest');
+    await jetzt.getByRole('button', { name: 'Jetzt sichern' }).click();
+    await jetzt.getByText(/Sicherung fertig .*„Vor dem Rauchtest“/).waitFor({ timeout: 60_000 });
+    const zeile = bearbeitung.locator('#liste tbody tr', { hasText: '„Vor dem Rauchtest“' });
+    await zeile.waitFor();
+    await zeile.getByText('von Hand').waitFor();
+    await zeile.getByRole('button', { name: 'Wozu? ändern' }).click();
+    // Das Feld steht an derselben Stelle in der Zeile (die Zeile zeigt den Namen dann nur im Feld).
+    const liste = bearbeitung.locator('#liste');
+    await liste.getByRole('textbox', { name: /Wozu\?/ }).fill('Nach dem Rauchtest');
+    await liste.getByRole('button', { name: 'Speichern' }).click();
+    await bearbeitung.locator('#liste tbody tr', { hasText: '„Nach dem Rauchtest“' }).waitFor();
+    assert.equal(await jetzt.getByRole('textbox', { name: /Wozu\?/ }).inputValue(), '', 'Feld nach dem Sichern leer');
+    const funde = await axePruefen(s, ['#jetzt', '#liste']);
+    assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
+  },
+);
+
+// „Aus der Liste nehmen“ (#1320): Haken auch an Sicherungen, die nur außer Haus liegen; der Knopf ist nur aktiv, wenn
+// alle gewählten nur außer Haus liegen (sonst mit Grund), die Rückfrage ist nicht rot und sagt, dass die Dateien am Ziel
+// bleiben; danach unter „Ausgeblendete (1)“ mit „Wieder zeigen“. Ohne echtes Ziel beantwortet der Test die Aufrufe.
+rauchtest(
+  'Werkbank: Sicherungen nur außer Haus aus der Liste nehmen und wieder zeigen, axe (#1320)',
+  { als: LENA, erwartet: SICHERUNG_ERWARTET },
+  async (s) => {
+    let stand = structuredClone(ENTFERNT);
+    await s.route(/\/api\/werkbank\/sicherung\/ausblenden$/, async (route) => {
+      const { namen } = route.request().postDataJSON();
+      const weg = stand.nur.filter((e) => namen.includes(e.name)).map((e) => ({ ...e, von: LENA.email, am: new Date().toISOString() }));
+      stand = { ...stand, nur: stand.nur.filter((e) => !namen.includes(e.name)), ausgeblendet: [...(stand.ausgeblendet ?? []), ...weg] };
+      await route.fulfill({ json: { namen } });
+    });
+    await s.route(/\/api\/werkbank\/sicherung\/[^/]+\/einblenden$/, async (route) => {
+      const name = decodeURIComponent(route.request().url().split('/').at(-2));
+      const e = stand.ausgeblendet.find((x) => x.name === name);
+      stand = { ...stand, nur: [...stand.nur, e], ausgeblendet: stand.ausgeblendet.filter((x) => x.name !== name) };
+      await route.fulfill({ status: 204, body: '' });
+    });
+    await s.route(/\/api\/werkbank\/sicherung(\?.*)?$/, async (route) => {
+      if (route.request().method() !== 'GET') return route.continue();
+      const r = await route.fetch();
+      await route.fulfill({ response: r, json: { ...(await r.json()), entfernt: stand } });
+    });
+    await s.goto(BASIS + '/ablage/start');
+    await verwalten(s);
+    const bearbeitung = await sicherungOeffnen(s);
+    const entfernt = bearbeitung.locator('#liste tbody tr', { hasText: 'nur außer Haus' });
+    await entfernt.first().waitFor();
+    const lokal = bearbeitung.locator('#liste tbody tr:not(.entfernt)').first();
+    // Gemischt gewählt: beide Knöpfe gesperrt, mit Grund.
+    await entfernt.nth(1).getByRole('checkbox').check();
+    await lokal.getByRole('checkbox').check();
+    const aus = bearbeitung.getByRole('button', { name: 'Aus der Liste nehmen (2)', exact: true });
+    assert.equal(await aus.getAttribute('aria-disabled'), 'true', 'gemischt: Aus der Liste nehmen gesperrt');
+    assert.equal(
+      await bearbeitung.getByRole('button', { name: 'Ausgewählte löschen (2)', exact: true }).getAttribute('aria-disabled'),
+      'true',
+    );
+    const gemischt = [];
+    for (const schema of ['light', 'dark']) {
+      await schemaWechseln(s, schema);
+      for (const v of await axePruefen(s, ['#liste'])) gemischt.push(`${schema}: ${v}`);
+    }
+    assert.deepEqual(gemischt, [], `axe meldet Verstöße:\n${gemischt.join('\n')}`);
+    await lokal.getByRole('checkbox').uncheck();
+    await bearbeitung.getByRole('button', { name: 'Aus der Liste nehmen (1)', exact: true }).click();
+    const frage = s.getByRole('alertdialog', { name: 'Eine Sicherung aus der Liste nehmen?' });
+    await frage
+      .getByText(/Die Dateien bleiben am Ziel Sicherungsziel WebDAV \(WebDAV https:\/\/cloud\.example\.org\/Ablago\) liegen\./)
+      .waitFor();
+    await frage.getByRole('button', { name: 'Aus der Liste nehmen' }).click();
+    await entfernt.nth(1).waitFor({ state: 'detached' });
+    assert.equal(await entfernt.count(), 1);
+    const abschnitt = bearbeitung.getByRole('button', { name: /^Ausgeblendete \(1\)/ });
+    await abschnitt.click();
+    const liste = bearbeitung.locator('#sicherung-ausgeblendet');
+    await liste.getByText(`Aus der Liste genommen von ${LENA.email}`, { exact: false }).waitFor();
+    await liste.getByRole('button', { name: 'Wieder zeigen' }).click();
+    await entfernt.nth(1).waitFor();
+    assert.equal(await abschnitt.count(), 0, 'nichts mehr ausgeblendet');
+  },
+);
+
+// Wiederherstellen (#1530): „Vorher den jetzigen Stand sichern (empfohlen)“ ist angehakt, mit Größe; Abwählen fragt
+// einmal nach. Scheitert die Sicherung davor schon beim Beginn, steht der Fehler da mit „Trotzdem ohne Sicherung
+// wiederherstellen“ – Ablago wiederholt nichts von selbst. Ohne echten Wartungsmodus beantwortet der Test die Aufrufe.
+rauchtest(
+  'Werkbank: Wiederherstellen – Sicherung vorher sichtbar, abwählbar, ihr Scheitern mit Rückfrage (#1530)',
+  { als: LENA, erwartet: [{ status: 507, pfad: /^\/api\/wiederherstellung\/start$/ }] },
+  async (s) => {
+    await s.goto(BASIS + '/ablage/start');
+    await verwalten(s);
+    const z = await (await s.request.get(BASIS + '/api/werkbank/sicherung', { headers: { 'x-dms': '1' } })).json();
+    const eintrag = z.liste.find((x) => x.meta);
+    assert.ok(eintrag, 'eine Sicherung liegt bereit');
+    await s.route(/\/api\/wartung$/, (r) => r.fulfill({ json: { stufe: 'aktiv', text: '', ende: null, aktivAb: null, sekunden: null } }));
+    await s.route(/\/api\/wiederherstellung\/sicherungen$/, (r) =>
+      r.fulfill({
+        json: { art: 'laufend', ordner: '/data/backup', liste: [{ name: eintrag.name, bytes: eintrag.bytes, meta: eintrag.meta }] },
+      }),
+    );
+    await s.route(/\/api\/wiederherstellung\/abgleich$/, (r) =>
+      r.fulfill({
+        json: {
+          name: eintrag.name,
+          meta: eintrag.meta,
+          vergleich: [],
+          probleme: [],
+          hinweise: [],
+          schluesselNoetig: false,
+          vorher: { reicht: true, frei: 20 * 1024 ** 3, geschaetzt: 1.6 * 1024 ** 3, mindest: 1024 ** 3 },
+        },
+      }),
+    );
+    await s.route(/\/api\/wiederherstellung\/start$/, (r) =>
+      r.fulfill({
+        status: 507,
+        json: {
+          fehler: 'Die Sicherung des jetzigen Stands ließ sich nicht beginnen: Zu wenig freier Speicherplatz.',
+          details: { vorherGescheitert: true },
+        },
+      }),
+    );
+    await sicherungOeffnen(s);
+    await s.getByRole('radio').first().check();
+    const haken = s.getByRole('checkbox', { name: 'Vorher den jetzigen Stand sichern (empfohlen)' });
+    await haken.waitFor();
+    assert.equal(await haken.isChecked(), true, 'angehakt');
+    await s.getByText(/etwa 1,6 GB/).waitFor();
+    // Abwählen fragt einmal nach; „Abbrechen“ lässt den Haken.
+    await haken.click();
+    let frage = s.getByRole('alertdialog', { name: 'Ohne Sicherung wiederherstellen?' });
+    await frage.getByText('Ohne Sicherung kannst du den jetzigen Stand nicht mehr zurückholen.').waitFor();
+    await frage.getByRole('button', { name: 'Abbrechen' }).click();
+    assert.equal(await haken.isChecked(), true, 'nach „Abbrechen“ weiter angehakt');
+    // Starten: Die Sicherung davor scheitert schon beim Beginn – Fehler und „Trotzdem ohne Sicherung“.
+    await s.getByRole('checkbox', { name: /Mir ist klar/ }).check();
+    await s.getByRole('button', { name: 'Wiederherstellen', exact: true }).click();
+    frage = s.getByRole('alertdialog');
+    await frage.getByRole('textbox').fill('wiederherstellen');
+    await frage.getByRole('button', { name: 'Wiederherstellen' }).click();
+    await s.getByText('Die Sicherung des jetzigen Stands ließ sich nicht beginnen: Zu wenig freier Speicherplatz.').waitFor();
+    await s.getByRole('button', { name: 'Trotzdem ohne Sicherung wiederherstellen' }).waitFor();
+    const funde = await axePruefen(s, ['.wiederherstellen']);
+    assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
   },
 );

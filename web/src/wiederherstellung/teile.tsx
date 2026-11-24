@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { einrichtungApi, type SicherungSchlank, type SicherungsMeta, type WhAbgleich } from '../api/einrichtung';
 import { t, tn } from '../sprache';
-import { Etikett, etikettArt, Feld, FeldGruppe, Knopf } from '../bausteine';
+import { Etikett, etikettArt, Feld, FeldGruppe, HakenFeld, Knopf } from '../bausteine';
 import { gebietsschema } from '../../../shared/src/sprache';
+import { ApiFehler } from '../api/anfrage';
+import { rueckfrage } from '../rueckfrage';
 
 /**
  * Teile des Wiederherstellungs-Assistenten (#1279 aus wiederherstellen.tsx gezogen): Laden und Abgleich (Hook),
@@ -29,6 +31,20 @@ export function useWiederherstellung(frisch: boolean, gestartet: () => void) {
   const [schluessel, setSchluessel] = useState('');
   const [verstanden, setVerstanden] = useState(false);
   const [laeuft, setLaeuft] = useState(false);
+  // #1530: vorher den jetzigen Stand sichern (empfohlen); scheitert schon ihr Beginn, steht der Grund hier.
+  const [vorher, setVorherRoh] = useState(true);
+  const [vorherFehler, setVorherFehler] = useState<string | null>(null);
+  /** Abwählen fragt einmal nach. */
+  async function setVorher(an: boolean) {
+    if (an) return setVorherRoh(true);
+    const ok = await rueckfrage({
+      titel: t('oberflaeche.wiederherstellen.vorher.frage'),
+      text: t('oberflaeche.wiederherstellen.vorher.frage.text'),
+      ja: t('oberflaeche.wiederherstellen.vorher.frage.ja'),
+      gefahr: true,
+    });
+    if (ok) setVorherRoh(false);
+  }
 
   const laden = useCallback(async () => {
     setFehler(undefined);
@@ -48,8 +64,12 @@ export function useWiederherstellung(frisch: boolean, gestartet: () => void) {
     setGewaehlt(name);
     setFehler(undefined);
     setLaeuft(true);
+    setVorherFehler(null);
     try {
-      setAbgleich(await einrichtungApi.whAbgleich(name, mitSchluessel));
+      const a = await einrichtungApi.whAbgleich(name, mitSchluessel);
+      setAbgleich(a);
+      // Reicht der Platz voraussichtlich nicht, ist der Haken aus (der Grund steht daneben).
+      setVorherRoh(a.vorher?.reicht !== false);
     } catch (e) {
       setFehler((e as Error).message);
       setAbgleich(null);
@@ -57,19 +77,24 @@ export function useWiederherstellung(frisch: boolean, gestartet: () => void) {
       setLaeuft(false);
     }
   }
-  async function starten() {
+  /** `ohneVorher`: nach gescheiterter Sicherung davor „Trotzdem ohne Sicherung wiederherstellen“ (#1530). */
+  async function starten(ohneVorher = false) {
     if (!abgleich) return;
     setLaeuft(true);
     setFehler(undefined);
+    setVorherFehler(null);
     try {
       await einrichtungApi.whStart({
         name: abgleich.name,
         ...(schluessel.trim() ? { schluessel } : {}),
         bestaetigt: !frisch && verstanden,
+        ...(frisch ? {} : { vorherSichern: !ohneVorher && vorher }),
       });
       gestartet();
     } catch (e) {
-      setFehler((e as Error).message);
+      if (e instanceof ApiFehler && (e.details as { vorherGescheitert?: boolean } | undefined)?.vorherGescheitert)
+        setVorherFehler(e.message);
+      else setFehler((e as Error).message);
       setLaeuft(false);
     }
   }
@@ -77,7 +102,7 @@ export function useWiederherstellung(frisch: boolean, gestartet: () => void) {
   const startbar = !!abgleich && !abgleich.probleme.length && !brauchtSchluessel && (frisch || verstanden);
   return {
     ...{ liste, ordner, fehler, gewaehlt, setGewaehlt, abgleich, setAbgleich, schluessel, setSchluessel },
-    ...{ verstanden, setVerstanden, laeuft, laden, waehle, starten, brauchtSchluessel, startbar },
+    ...{ verstanden, setVerstanden, laeuft, laden, waehle, starten, brauchtSchluessel, startbar, vorher, setVorher, vorherFehler },
   };
 }
 export type Wiederherstellung = ReturnType<typeof useWiederherstellung>;
@@ -135,7 +160,13 @@ export function SicherungsListe({ w }: { w: Wiederherstellung }) {
                   <span className="leise klein">
                     {' '}
                     {t('oberflaeche.wiederherstellen.ablago-mappen', {
-                      wert: ART[x.meta.art] ?? x.meta.art,
+                      wert: [
+                        ART[x.meta.art] ?? x.meta.art,
+                        x.meta.nachgeholt ? t('werkbank.sicherung.art.nachgeholt') : null,
+                        x.meta.wozu ? `„${x.meta.wozu}“` : null,
+                      ]
+                        .filter(Boolean)
+                        .join(' · '),
                       dms: x.meta.umgebung.dms,
                       mappen: x.meta.anzahl.mappen.toLocaleString(gebietsschema()),
                       groesse: groesse(x.bytes),
@@ -229,5 +260,30 @@ export function SchluesselFormular({ w, abgleich }: { w: Wiederherstellung; abgl
         </Knopf>
       </div>
     </form>
+  );
+}
+
+/**
+ * „Vorher den jetzigen Stand sichern (empfohlen)“ (#1530): angehakt, mit Zweck, Ort und Größe. Abwählen fragt einmal
+ * nach; reicht der Platz voraussichtlich nicht, ist der Haken aus und der Grund steht daneben.
+ */
+export function VorherSichern({ w, abgleich }: { w: Wiederherstellung; abgleich: WhAbgleich }) {
+  const v = abgleich.vorher;
+  if (!v) return null;
+  const gb = (b: number) => groesse(Math.max(b, 1024 ** 2));
+  return (
+    <HakenFeld
+      beschriftung={t('oberflaeche.wiederherstellen.vorher')}
+      hinweis={
+        v.reicht
+          ? t('oberflaeche.wiederherstellen.vorher.text', { groesse: gb(v.geschaetzt) })
+          : t('oberflaeche.wiederherstellen.vorher.platz', {
+              groesse: gb(v.geschaetzt),
+              frei: v.frei === null ? '–' : gb(v.frei),
+              mindest: gb(v.mindest),
+            })
+      }>
+      <input type="checkbox" checked={w.vorher} disabled={!v.reicht} onChange={(e) => void w.setVorher(e.target.checked)} />
+    </HakenFeld>
   );
 }

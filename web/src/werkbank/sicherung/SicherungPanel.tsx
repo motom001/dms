@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { betriebApi, type SicherungStand } from '../../api/betrieb';
+import type { SicherungsMeta } from '../../api/einrichtung';
 import { t, tn } from '../../sprache';
 import { Link } from '../../ort';
-import { Knopf, KnopfLink } from '../../bausteine';
+import { Feld, Knopf, KnopfLink } from '../../bausteine';
 import { Kopf } from '../Kopf';
-import { bytes, zeit } from '../sicherungFormat';
+import { bytes, sicherungText, zeit } from '../sicherungFormat';
+import { WOZU_MAX } from '../SicherungWozu';
 import { SicherungListe } from '../SicherungListe';
 import { useVerwaltetVerschluesselung, type SicherungZustand } from './zustand';
 import { sicherungsHinweise, type SicherungsHinweis } from './hinweise';
@@ -26,7 +28,11 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
     );
   if (!s) return <p className="leise">{t('werkbank.sicherung.lade')}</p>;
   const laeuft = s.lauf?.status === 'laeuft';
-  const hinweise = sicherungsHinweise(s.zustand, mitNotfallblatt);
+  // #1509 (C9): Scheitert die erste Sicherung, steht die Ursache hier am Stand – der rote Hinweis nur in der Übersicht.
+  // Der nächste Schritt „Kopie außer Haus“ steht hier im Abschnitt „Außer Haus“, nur in der Übersicht als Hinweis.
+  const hinweise = sicherungsHinweise(s.zustand, mitNotfallblatt).filter(
+    (h) => h.schluessel !== 'sicherung.erste-fehler' && h.schluessel !== 'sicherung.ausser-haus',
+  );
   async function tu(f: () => Promise<unknown>, gut?: string) {
     setMeldung(undefined);
     try {
@@ -53,7 +59,7 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
 
       {hinweisListe(s, hinweise)}
 
-      {jetztSichern(s, meldung, tu)}
+      <JetztSichern s={s} meldung={meldung} tu={tu} />
 
       <SicherungListe s={s} laeuft={laeuft} laden={z.laden} />
 
@@ -71,6 +77,7 @@ export function SicherungPanel({ z }: { z: SicherungZustand }) {
         key={JSON.stringify(s.plan)}
         plan={s.plan}
         nurNeuesteMoeglich={!!s.zustand.nurNeueste?.moeglich}
+        groesseJe={s.speicher.dateienBytes + s.speicher.datenbankBytes}
         notfallblatt={s.zustand.notfallblatt.aktuell}
         mitNotfallblatt={mitNotfallblatt}
         gespeichert={() => void z.laden()}
@@ -115,10 +122,23 @@ function hinweisListe(s: SicherungStand, hinweise: SicherungsHinweis[]) {
   );
 }
 
-/** „Jetzt sichern“: Stand in einer Zeile, Fortschritt oder Knopf, Ergebnis darunter (#986). */
-function jetztSichern(s: SicherungStand, meldung: Meldung | undefined, tu: (f: () => Promise<unknown>, gut?: string) => Promise<void>) {
+/**
+ * „Jetzt sichern“: Stand in einer Zeile, Fortschritt oder Knopf, Ergebnis darunter (#986). Dazu „Wozu?“ (#1529,
+ * freiwillig); die Meldung nach dem Ende nennt die Sicherung, die gerade fertig wurde (#1531).
+ */
+function JetztSichern({
+  s,
+  meldung,
+  tu,
+}: {
+  s: SicherungStand;
+  meldung: Meldung | undefined;
+  tu: (f: () => Promise<unknown>, gut?: string) => Promise<void>;
+}) {
+  const [wozu, setWozu] = useState('');
   const lauf = s.lauf;
   const laeuft = lauf?.status === 'laeuft';
+  const ergebnis = lauf?.art === 'sicherung' ? (lauf.ergebnis as SicherungsMeta | undefined) : undefined;
   return (
     <section className="blatt" id="jetzt">
       <h2 className="h3">{t('werkbank.sicherung.jetzt-sichern')}</h2>
@@ -140,8 +160,19 @@ function jetztSichern(s: SicherungStand, meldung: Meldung | undefined, tu: (f: (
       ) : (
         <>
           <p className="leise">{t('werkbank.sicherung.ablago-laeuft-dabei-weiter')}</p>
+          <Feld beschriftung={t('werkbank.sicherung.wozu')} optional hinweis={t('werkbank.sicherung.wozu.hinweis')}>
+            <input value={wozu} maxLength={WOZU_MAX} onChange={(e) => setWozu(e.target.value)} />
+          </Feld>
           <div className="knoepfe">
-            <Knopf art="haupt" gesperrt={!s.zustand.schluessel} onClick={() => tu(() => betriebApi.sicherungJetzt())}>
+            <Knopf
+              art="haupt"
+              gesperrt={!s.zustand.schluessel}
+              onClick={() =>
+                tu(async () => {
+                  await betriebApi.sicherungJetzt(wozu.trim() || undefined);
+                  setWozu('');
+                })
+              }>
               {t('werkbank.sicherung.jetzt-sichern')}
             </Knopf>
           </div>
@@ -153,7 +184,13 @@ function jetztSichern(s: SicherungStand, meldung: Meldung | undefined, tu: (f: (
           )}
           {lauf?.status === 'fertig' && (lauf.art === 'sicherung' || lauf.art === 'holen') && (
             <p className="gutertext" role="status">
-              {t('werkbank.sicherung.fertig', { titel: lauf.titel, wert: lauf.beendet ? zeit(lauf.beendet) : '' })}
+              {ergebnis?.beginn
+                ? t('werkbank.sicherung.fertig-mit', {
+                    titel: lauf.titel,
+                    wert: lauf.beendet ? zeit(lauf.beendet) : '',
+                    sicherung: sicherungText(ergebnis),
+                  })
+                : t('werkbank.sicherung.fertig', { titel: lauf.titel, wert: lauf.beendet ? zeit(lauf.beendet) : '' })}
             </p>
           )}
         </>

@@ -7,7 +7,8 @@ import { useHandbuch } from '../Hilfe';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { heikelLaden } from '../verwaltungsmodus';
 import { bytes, externStatus, zeit, zielName } from './sicherungFormat';
-import { EntfernteZeile, EntferntKopf, mitEntfernten, useHolen } from './SicherungEntfernt';
+import { Ausgeblendete, ausListeNehmen, EntfernteZeile, EntferntKopf, mitEntfernten, useHolen } from './SicherungEntfernt';
+import { ArtMitWozu } from './SicherungWozu';
 
 /**
  * Liste der Sicherungen (#103, #975, #986) mit Mehrfachauswahl (#1169): Haken je Sicherung, „Alle auswählen“ und
@@ -17,12 +18,6 @@ import { EntfernteZeile, EntferntKopf, mitEntfernten, useHolen } from './Sicheru
  * hinzugekommene ist nie dabei), nacheinander mit Fortschritt; was scheitert, bleibt gewählt und steht mit Grund über der
  * Liste. Darüber ein Hinweis, was die Aufbewahrung von selbst wegräumt.
  */
-
-const ART = {
-  manuell: t('werkbank.sicherung.von-hand'),
-  automatisch: t('werkbank.sicherung.art.automatisch'),
-  'vor-wiederherstellung': t('werkbank.sicherung.vor-einer-wiederherstellung'),
-} as Record<string, string>;
 
 const beginnVon = (x: SicherungEintrag) => x.meta?.beginn ?? x.schlank?.beginn ?? null;
 
@@ -164,6 +159,52 @@ export function sammelFrage(auswahl: SicherungEintrag[], alle: boolean) {
 
 type Fehlschlag = { name: string; wann: string; grund: string };
 
+/**
+ * Leiste über der Liste (#1169): „Alle auswählen“ und „Ausgewählte löschen (n)“; daneben „Aus der Liste nehmen (n)“
+ * (#1320), sobald es Sicherungen gibt, die nur außer Haus liegen. Jeder Knopf ist nur aktiv, wenn er auf alle gewählten
+ * passt – sonst gesperrt mit Grund (Leitsatz 6).
+ */
+function AuswahlLeiste(p: {
+  waehlbar: string[];
+  gewaehlt: SicherungEintrag[];
+  entferntGewaehlt: unknown[];
+  mitEntfernten: boolean;
+  alle: boolean;
+  gesperrt: boolean;
+  setAuswahl(x: Set<string>): void;
+  loeschen(): void;
+  ausblenden(): void;
+}) {
+  const n = p.gewaehlt.length + p.entferntGewaehlt.length;
+  return (
+    <div className="zeile sicherung-auswahl">
+      <HakenFeld beschriftung={t('werkbank.sicherung.liste.alle')}>
+        <input
+          type="checkbox"
+          disabled={!p.waehlbar.length || p.gesperrt}
+          checked={!!p.waehlbar.length && p.gewaehlt.length === p.waehlbar.length}
+          onChange={(x) => p.setAuswahl(x.target.checked ? new Set(p.waehlbar) : new Set())}
+        />
+      </HakenFeld>
+      {n > 0 && (
+        <Knopf
+          art="gefahr"
+          symbol="geloescht"
+          gesperrt={p.gesperrt || (p.entferntGewaehlt.length > 0 && t('werkbank.sicherung.liste.loeschen.gesperrt'))}
+          rueckfrage={sammelFrage(p.gewaehlt, p.alle)}
+          onClick={p.loeschen}>
+          {t('werkbank.sicherung.liste.loeschen', { anzahl: n })}
+        </Knopf>
+      )}
+      {p.mitEntfernten && n > 0 && (
+        <Knopf gesperrt={p.gesperrt || (p.gewaehlt.length > 0 && t('werkbank.sicherung.ausblenden.gesperrt'))} onClick={p.ausblenden}>
+          {t('werkbank.sicherung.ausblenden.anzahl', { anzahl: n })}
+        </Knopf>
+      )}
+    </div>
+  );
+}
+
 /** Zeile der Tabelle: Haken, Angaben, Herunterladen · Prüfen · Löschen. */
 function Zeile({
   x,
@@ -172,6 +213,7 @@ function Zeile({
   an,
   waehle,
   fehlschlag,
+  art,
   aktionen,
 }: {
   x: SicherungEintrag;
@@ -180,6 +222,8 @@ function Zeile({
   an: boolean;
   waehle(an: boolean): void;
   fehlschlag?: Fehlschlag;
+  /** Art mit „Wozu?“ (#1529). */
+  art: ReactNode;
   aktionen: ReactNode;
 }) {
   const beginn = beginnVon(x);
@@ -202,7 +246,7 @@ function Zeile({
       </td>
       <td>
         {x.meta ? (
-          (ART[x.meta.art] ?? x.meta.art)
+          art
         ) : x.schlank ? (
           <span className="leise">{t('werkbank.sicherung.extern.zurueck')}</span>
         ) : (
@@ -267,6 +311,8 @@ export function SicherungListe({ s, laeuft, laden }: { s: SicherungStand; laeuft
   // Herunterladen (#975): Name der zuletzt geladenen Sicherung – darunter Hinweis, Größe und Prüfsumme.
   const [geladen, setGeladen] = useState<string>();
   const [auswahl, setAuswahl] = useState<Set<string>>(new Set());
+  // Entfernte Sicherungen (#1320): eigene Auswahl – „Aus der Liste nehmen“ statt Löschen.
+  const [entferntWahl, setEntferntWahl] = useState<Set<string>>(new Set());
   const [fortschritt, setFortschritt] = useState<{ fertig: number; gesamt: number } | null>(null);
   const [fehlschlaege, setFehlschlaege] = useState<Fehlschlag[]>([]);
   // Sicherungen mit einem früheren Schlüssel (#47).
@@ -279,7 +325,12 @@ export function SicherungListe({ s, laeuft, laden }: { s: SicherungStand; laeuft
   // Kein Sonderschutz (#1310): wählbar ist jede lokale Sicherung.
   const waehlbar = s.liste.map((x) => x.name);
   const gewaehlt = gewaehlteSicherungen(s.liste, auswahl);
+  const entferntGewaehlt = nurEntfernt.filter((e) => entferntWahl.has(e.name));
   const loescht = fortschritt !== null;
+  const ausblenden = (liste: typeof nurEntfernt) =>
+    void tu(async () => {
+      if (await ausListeNehmen(liste)) setEntferntWahl(new Set());
+    });
   const waehle = (name: string, an: boolean) =>
     setAuswahl((x) => {
       const y = new Set(x);
@@ -389,28 +440,17 @@ export function SicherungListe({ s, laeuft, laden }: { s: SicherungStand; laeuft
         </p>
       ) : (
         <>
-          <div className="zeile sicherung-auswahl">
-            <HakenFeld beschriftung={t('werkbank.sicherung.liste.alle')}>
-              <input
-                type="checkbox"
-                disabled={!waehlbar.length || loescht}
-                checked={!!waehlbar.length && gewaehlt.length === waehlbar.length}
-                onChange={(x) => setAuswahl(x.target.checked ? new Set(waehlbar) : new Set())}
-              />
-            </HakenFeld>
-            {gewaehlt.length > 0 && (
-              <Knopf
-                art="gefahr"
-                symbol="geloescht"
-                gesperrt={laeuft || loescht}
-                rueckfrage={sammelFrage(gewaehlt, gewaehlt.length === s.liste.length)}
-                onClick={() => {
-                  void sammelLoeschen();
-                }}>
-                {t('werkbank.sicherung.liste.loeschen', { anzahl: gewaehlt.length })}
-              </Knopf>
-            )}
-          </div>
+          <AuswahlLeiste
+            waehlbar={waehlbar}
+            gewaehlt={gewaehlt}
+            entferntGewaehlt={entferntGewaehlt}
+            mitEntfernten={nurEntfernt.length > 0}
+            alle={gewaehlt.length === s.liste.length}
+            gesperrt={laeuft || loescht}
+            setAuswahl={setAuswahl}
+            loeschen={() => void sammelLoeschen()}
+            ausblenden={() => ausblenden(entferntGewaehlt)}
+          />
           {fortschritt && (
             <div className="stapel" role="status">
               <p>{t('werkbank.sicherung.liste.fortschritt', { fertig: fortschritt.fertig + 1, gesamt: fortschritt.gesamt })}</p>
@@ -466,6 +506,16 @@ export function SicherungListe({ s, laeuft, laden }: { s: SicherungStand; laeuft
                         setMeldung(undefined);
                         void hole(e, danach);
                       }}
+                      an={entferntWahl.has(e.name)}
+                      waehle={(an) =>
+                        setEntferntWahl((w) => {
+                          const y = new Set(w);
+                          if (an) y.add(e.name);
+                          else y.delete(e.name);
+                          return y;
+                        })
+                      }
+                      ausblenden={() => ausblenden([e])}
                     />
                   ) : (
                     x && (
@@ -477,6 +527,7 @@ export function SicherungListe({ s, laeuft, laden }: { s: SicherungStand; laeuft
                         an={auswahl.has(x.name) || geladen === x.name}
                         waehle={(an) => waehle(x.name, an)}
                         fehlschlag={fehlschlaege.find((f) => f.name === x.name)}
+                        art={x.meta && <ArtMitWozu x={x} gesperrt={laeuft || loescht} laden={laden} />}
                         aktionen={
                           <>
                             {ladeKnopf(x.name)}
@@ -503,6 +554,7 @@ export function SicherungListe({ s, laeuft, laden }: { s: SicherungStand; laeuft
           </div>
         </>
       )}
+      {s.entfernt && <Ausgeblendete stand={s.entfernt} laden={laden} />}
       {heruntergeladen && <Heruntergeladen e={heruntergeladen} schliessen={() => setGeladen(undefined)} />}
       <p className="leise klein">{t('werkbank.sicherung.pruefen-rechnet-die-pruefsumme')}</p>
     </section>

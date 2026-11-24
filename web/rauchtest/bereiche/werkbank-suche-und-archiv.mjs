@@ -378,3 +378,32 @@ rauchtest(
     assert.equal(await liste.locator('.vorschaubild.ohne').count(), 0);
   },
 );
+
+// Zeitplan für „Alle Dateien prüfen“ (#1316): aus, monatlich, wöchentlich; nicht gleichzeitig mit der Sicherung (seit
+// #1509 nach der Einrichtung täglich um 02:00) – der Server nennt den Abstand, danach „Gespeichert.“. Zum Schluss wieder aus.
+rauchtest(
+  'Werkbank: Zeitplan für „Alle Dateien prüfen“, nicht gleichzeitig mit der Sicherung, axe (#1316)',
+  { als: LENA, erwartet: [{ status: 422, pfad: /^\/api\/werkbank\/wartung\/dateien\/plan$/ }] },
+  async (s) => {
+    await s.goto(BASIS + '/ablage/start');
+    await verwalten(s);
+    await s.goto(BASIS + '/werkbank/wartung');
+    const dateien = s.locator('#dateien');
+    await dateien.getByRole('heading', { name: 'Zeitplan' }).waitFor();
+    const takt = dateien.getByRole('combobox', { name: 'Regelmäßig prüfen' });
+    assert.equal(await takt.inputValue(), 'aus');
+    await takt.selectOption('monatlich');
+    await dateien.getByText(/Nicht gleichzeitig mit der automatischen Sicherung \(02:00\)/).waitFor();
+    await dateien.getByLabel('Uhrzeit').fill('02:30');
+    await dateien.getByRole('button', { name: 'Zeitplan speichern' }).click();
+    await dateien.getByText(/mindestens 60 Minuten Abstand/).waitFor();
+    await dateien.getByLabel('Uhrzeit').fill('03:30');
+    await dateien.getByRole('button', { name: 'Zeitplan speichern' }).click();
+    await dateien.getByText('Gespeichert.').waitFor();
+    const funde = await axePruefen(s, ['#dateien']);
+    assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
+    await takt.selectOption('aus');
+    await dateien.getByRole('button', { name: 'Zeitplan speichern' }).click();
+    await dateien.getByText('Gespeichert.').waitFor();
+  },
+);
