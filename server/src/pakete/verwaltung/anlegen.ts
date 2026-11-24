@@ -388,6 +388,11 @@ export abstract class PaketAnlegen extends PaketAnlegenSchritte {
     // In der Transaktion (#1385; mit Umbau schon vorher) nimmt sie alles in der Datenbank zurück; außerhalb liegen nur
     // die Einstellungen. Ohne Transaktion (Aufruf von außen) wie bisher Schritt für Schritt.
     if (!lage.schritte.length && !this.d.kern.inEigenerTransaktion()) await this.zurueck(l);
+    // Die Transaktion nimmt nur die Datenbank zurück: Dateien der Beispiel-Mappen und Vorgaben gehen hier mit weg.
+    else if (this.d.kern.inEigenerTransaktion()) {
+      await this.d.loeschen.entferneMappenEndgueltig(l.mappen).catch(() => {});
+      await this.d.loeschen.entferneMappenEndgueltig(l.vorgabenErg.angelegt).catch(() => {});
+    }
     if (umbauErg)
       await nimmEinstellungenZurueck(this.d, umbauErg.einstellungenVorher).catch((e) =>
         log.error('Umbau: Einstellungen nicht zurückgenommen', {
