@@ -135,10 +135,23 @@ rauchtest('Werkbank → Aufgaben: Auswahl in Knopfhöhe, keine Auswahl je Zeile 
     await wahl.waitFor();
     // Eine Zeile: Text, Auswahl und Knopf auf einer Linie, die Auswahl so hoch wie der Knopf.
     const knopf = rechts.getByRole('button', { name: 'Weitergeben', exact: true });
-    const [w, k] = [await wahl.boundingBox(), await knopf.boundingBox()];
-    assert.ok(w.height <= 44, `Auswahl einzeilig (${w.height} px)`);
-    assert.ok(Math.abs(w.height - k.height) < 1, `so hoch wie der Knopf (${w.height} / ${k.height})`);
-    assert.ok(Math.abs(w.y + w.height / 2 - (k.y + k.height / 2)) < 2, 'auf einer Linie');
+    const zeilePruefen = async (wann) => {
+      const [w, k] = [await wahl.boundingBox(), await knopf.boundingBox()];
+      const lage = `${wann}: Auswahl y ${w.y} h ${w.height} b ${w.width}, Knopf y ${k.y} h ${k.height}`;
+      assert.ok(w.height <= 44, `Auswahl einzeilig (${lage})`);
+      assert.ok(Math.abs(w.height - k.height) < 1, `so hoch wie der Knopf (${lage})`);
+      assert.ok(Math.abs(w.y + w.height / 2 - (k.y + k.height / 2)) < 2, `auf einer Linie (${lage})`);
+      assert.ok(w.width <= 220.5, `Auswahl höchstens 220 px breit (${lage})`);
+    };
+    await zeilePruefen('wie geladen');
+    // Ein langer Name (etwa mit Abwesenheit) macht die Auswahl nicht breiter als 220 px und schiebt „Weitergeben“ nicht
+    // in eine eigene Zeile – so lief der Fall im ganzen Lauf rot, als dort mehr Personen da waren.
+    await wahl.evaluate((e) => {
+      const o = document.createElement('option');
+      o.textContent = 'Jonas Beispiel – abwesend bis 31.12.2026, Vertretung: Lena Beispiel';
+      e.append(o);
+    });
+    await zeilePruefen('mit langem Namen');
     // Liste kompakt: keine Auswahl je Zeile; mehrere über Ankreuzen und Sammelleiste.
     const liste = s.locator('.spalte.liste');
     assert.equal(await liste.locator('.sammel-liste select').count(), 0, 'keine Auswahl je Zeile');
