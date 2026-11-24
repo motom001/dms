@@ -1,4 +1,3 @@
-import fastifyStatic from '@fastify/static';
 import Fastify, { type FastifyInstance } from 'fastify';
 import { fork, spawn, type ChildProcess } from 'node:child_process';
 import { existsSync } from 'node:fs';
@@ -22,7 +21,8 @@ import {
 } from '../../../shared/src/lasttest';
 import { ablaufAusPlan, ablaufMelden, type AblaufMeldung, type LasttestStandMitAblauf } from '../../../shared/src/lasttestablauf';
 import { Fachfehler } from '../grundlagen/fehler';
-import { oberflaecheSenden, statischeDateien } from '../oberflaeche/oberflaeche';
+import { oberflaecheSenden } from '../oberflaeche/oberflaeche';
+import { richteOberflaecheEin } from '../oberflaeche/auslieferer';
 import { einbettenAus, sicherheitsKoepfe, type Einbetten } from '../http/koepfe';
 import { protokoll } from '../protokoll/protokoll';
 import { ursprungAus, type ProxyVertrauen } from '../http/proxy';
@@ -558,7 +558,7 @@ export class Lasttestmodus {
     );
 
     if (this.o.webDir && existsSync(this.o.webDir)) {
-      await app.register(fastifyStatic, { root: this.o.webDir, wildcard: false, ...statischeDateien(this.o.webDir) });
+      richteOberflaecheEin(app, this.o.webDir);
       app.setNotFoundHandler((req, reply) => oberflaecheSenden(req.url, reply, this.o.webDir));
     }
     await app.listen({ port: this.o.port, host: this.o.host });

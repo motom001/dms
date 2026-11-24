@@ -11,7 +11,6 @@ Ablago includes only a few packages **directly** (**level 1**). What they need c
 
 | Package | Purpose | Licence | Brings along |
 | --- | --- | --- | ---: |
-| `@fastify/static` | Serves the web interface and the offline manual as files. | MIT | 25 |
 | `@pdf-lib/fontkit` | Embedding own fonts (Noto Sans) as a subset in PDFs. | MIT | 1 |
 | `@simplewebauthn/server` | Verifying passkeys (WebAuthn: CBOR, COSE keys, signatures, counters). | MIT | 23 |
 | `fastify` | HTTP server: routes, request validation, responses. | MIT | 46 |
@@ -23,9 +22,6 @@ Ablago includes only a few packages **directly** (**level 1**). What they need c
 | `yaml` | Reading and writing packages, tours and setup files in YAML. | ISC | 0 |
 
 <!-- mitgebracht:anfang -->
-
-??? note "@fastify/static brings along 25 packages"
-    @fastify/accept-negotiator, @fastify/error, @fastify/send, @isaacs/nonrecursive-glob-match, @lukeed/ms, balanced-match, brace-expansion, content-disposition, depd, escape-html, fast-decode-uri-component, fastify-plugin, fastq, glob, http-errors, inherits, lru-cache, mime, minimatch, minipass, path-scurry, reusify, setprototypeof, statuses, toidentifier
 
 ??? note "@pdf-lib/fontkit brings along 1 package"
     pako
@@ -123,7 +119,7 @@ These packages are only needed by whoever builds or checks Ablago (`devDependenc
 
 <!-- mitgebracht:anfang -->
 
-Together 307 packages that are installed only for development and test.
+Together 311 packages that are installed only for development and test.
 
 <!-- mitgebracht:ende -->
 

@@ -11,7 +11,6 @@ Ablago bindet nur wenige Pakete **direkt** ein (**Ebene 1**). Was diese brauchen
 
 | Paket | Wozu | Lizenz | Bringt mit |
 | --- | --- | --- | ---: |
-| `@fastify/static` | Liefert die Weboberfläche und das Offline-Handbuch als Dateien aus. | MIT | 25 |
 | `@pdf-lib/fontkit` | Eigene Schriften (Noto Sans) als Teilmenge in PDFs einbetten. | MIT | 1 |
 | `@simplewebauthn/server` | Passkeys prüfen (WebAuthn: CBOR, COSE-Schlüssel, Signaturen, Zähler). | MIT | 23 |
 | `fastify` | HTTP-Server: Routen, Prüfung der Anfragen, Antworten. | MIT | 46 |
@@ -23,9 +22,6 @@ Ablago bindet nur wenige Pakete **direkt** ein (**Ebene 1**). Was diese brauchen
 | `yaml` | Pakete, Rundgänge und Einrichtungsdateien im YAML-Format lesen und schreiben. | ISC | 0 |
 
 <!-- mitgebracht:anfang -->
-
-??? note "@fastify/static bringt 25 Pakete mit"
-    @fastify/accept-negotiator, @fastify/error, @fastify/send, @isaacs/nonrecursive-glob-match, @lukeed/ms, balanced-match, brace-expansion, content-disposition, depd, escape-html, fast-decode-uri-component, fastify-plugin, fastq, glob, http-errors, inherits, lru-cache, mime, minimatch, minipass, path-scurry, reusify, setprototypeof, statuses, toidentifier
 
 ??? note "@pdf-lib/fontkit bringt 1 Paket mit"
     pako
@@ -123,7 +119,7 @@ Diese Pakete braucht nur, wer Ablago baut oder prüft (`devDependencies` und das
 
 <!-- mitgebracht:anfang -->
 
-Zusammen 307 Pakete, die nur für Entwicklung und Test installiert werden.
+Zusammen 311 Pakete, die nur für Entwicklung und Test installiert werden.
 
 <!-- mitgebracht:ende -->
 

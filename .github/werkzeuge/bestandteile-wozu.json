@@ -81,12 +81,6 @@
       "wozu": "HTTP-Server: Routen, Prüfung der Anfragen, Antworten.",
       "en": "HTTP server: routes, request validation, responses."
     },
-    "@fastify/static": {
-      "einsatz": "Betrieb",
-      "teil": "Server",
-      "wozu": "Liefert die Weboberfläche und das Offline-Handbuch als Dateien aus.",
-      "en": "Serves the web interface and the offline manual as files."
-    },
     "postgres": {
       "einsatz": "Betrieb",
       "teil": "Server",

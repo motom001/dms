@@ -1,10 +1,8 @@
-import fastifyStatic from '@fastify/static';
 import Fastify, { type FastifyInstance } from 'fastify';
-import { existsSync, statSync } from 'node:fs';
-import { join, normalize, sep } from 'node:path';
+import { existsSync } from 'node:fs';
 import { hilfeAntwort, hilfeSenden } from '../oberflaeche/hilfe';
 import { einbettenAus, sicherheitsKoepfe, type Einbetten } from '../http/koepfe';
-import { statischeDateien } from '../oberflaeche/oberflaeche';
+import { richteOberflaecheEin } from '../oberflaeche/auslieferer';
 import { protokoll } from '../protokoll/protokoll';
 import { ursprungAus, type ProxyVertrauen } from '../http/proxy';
 import { mitSprache, t } from '../sprache/sprache';
@@ -224,17 +222,16 @@ export class Startmodus {
 
     // Handbücher (#219) ohne Anmeldung, wie im Einrichtungsmodus – nur Dateien unter web/dist/hilfe.
     const webDir = this.o.webDir && existsSync(this.o.webDir) ? this.o.webDir : null;
-    if (webDir) await app.register(fastifyStatic, { root: webDir, serve: false, ...statischeDateien(webDir) });
+    const dateien = webDir ? richteOberflaecheEin(app, webDir) : null;
     const hilfe = async (req: { url: string }, reply: Parameters<typeof hilfeSenden>[0] & { sendFile(p: string): unknown }) => {
-      const pfad = decodeURIComponent(req.url.split('?')[0]);
-      const rel = normalize(pfad.slice(1));
-      if (webDir && rel.startsWith(`hilfe${sep}`) && !rel.split(sep).includes('..')) {
-        try {
-          if (statSync(join(webDir, rel)).isFile()) return reply.sendFile(rel);
-        } catch {
-          /* keine Datei: weiter unten */
-        }
+      // Nur Einträge der beim Start gelesenen Liste (#1468) – kein Pfad aus der URL geht an das Dateisystem.
+      let rel = '';
+      try {
+        rel = decodeURIComponent(req.url.split('?')[0]).slice(1);
+      } catch {
+        /* kaputt kodiert: keine Datei */
       }
+      if (rel.startsWith('hilfe/') && dateien?.has(rel)) return reply.sendFile(rel);
       const a = hilfeAntwort(req.url, webDir ?? undefined);
       return a ? hilfeSenden(reply, a) : null;
     };

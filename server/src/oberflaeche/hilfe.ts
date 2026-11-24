@@ -47,7 +47,7 @@ function nichtGefunden(webDir: string, letztes: string): HilfeAntwort {
   return (!letztes.includes('.') || letztes.endsWith('.html')) && existsSync(seite) ? { fehlt: true, seite } : { fehlt: true };
 }
 
-/** Antwort für Fastify (reply mit @fastify/static). */
+/** Antwort für Fastify (reply mit `sendFile` aus dem Auslieferer, #1468). */
 export function hilfeSenden(
   reply: {
     redirect(url: string, code: number): unknown;

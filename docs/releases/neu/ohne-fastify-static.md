@@ -1,0 +1,9 @@
+art: patch
+
+## Sicherheit
+
+- **Oberfläche ohne `@fastify/static`** (#1468): Ablago liefert die Oberfläche und das Offline-Handbuch jetzt mit einem kleinen eigenen Auslieferer aus. Damit fallen 22 Pakete aus dem Image weg, darunter `glob`, `minimatch`, `send` und `mime`. Beim Start liest Ablago die Dateien in `web/dist` einmal ein, und zwar nur reguläre Dateien, ohne Symlinks und ohne Punktdateien. Eine Anfrage trifft danach nur einen exakten Eintrag dieser Liste, kein Pfad aus der URL erreicht das Dateisystem. Zwischenspeichern, ETag, Vorkomprimierung und Sicherheitsköpfe bleiben wie bisher. Teilbereiche (`Range`) beantwortet Ablago nicht mehr, die Oberfläche braucht sie nicht.
+
+## Für Entwickler
+
+- **Eigener Auslieferer** (#1468): `server/src/oberflaeche/auslieferer.ts` ersetzt `@fastify/static` in allen Betriebsarten (normal, Einrichtungsmodus, Startmodus, Lasttest). Das `overrides` für `minimatch` (#288) entfällt. Die Seite „Abhängigkeiten“ im Entwicklerhandbuch begründet, wo wir selbst bauen und wo nicht.

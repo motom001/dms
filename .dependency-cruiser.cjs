@@ -59,7 +59,7 @@ const OHNE_TUER = {
   mail: 'mail|mailsuche',
   mappen: 'aufkleber|erwaehnungen',
   notfall: 'notfall|notfallcode|notfallblatt|notfallqr',
-  oberflaeche: 'oberflaeche|designs|hilfe',
+  oberflaeche: 'oberflaeche|designs|hilfe|auslieferer',
   pakete: 'katalogsignatur|projektschluessel|lizenztexte|paketpruefung|umwandlung',
   post: 'postfach|postfach-typen|postfach-anhaenge|postfach-oauth|imap|eingangsordner|fotostapel',
   protokoll: 'protokoll|nachweisjournal|alleprozesse|debugmodus',

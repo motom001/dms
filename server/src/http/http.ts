@@ -5,7 +5,6 @@ import type { Einrichtung } from '../einrichtung/einrichtung';
 import type { AnbindungVerwaltung } from '../datenbank/anbindung';
 import type { OrdnerPruefung } from '../dateien/ordner';
 import { existsSync } from 'node:fs';
-import fastifyStatic from '@fastify/static';
 import { randomBytes } from 'node:crypto';
 import Fastify, { LogController, type FastifyBaseLogger, type FastifyInstance, type FastifyReply, type FastifyRequest } from 'fastify';
 import { Hochgeladen, nimmAuf } from '../dateien/hochladen';
@@ -17,7 +16,8 @@ import type { SystemQuelle } from '../system/system';
 import type { Designs } from '../oberflaeche/designs';
 import type { ApiSchluesselDienst } from '../anmeldung/apischluessel';
 import { wer } from './api-v1';
-import { oberflaecheSenden, statischeDateien } from '../oberflaeche/oberflaeche';
+import { oberflaecheSenden } from '../oberflaeche/oberflaeche';
+import { richteOberflaecheEin } from '../oberflaeche/auslieferer';
 import { einbettenAus, sicherheitsKoepfe, type Einbetten } from './koepfe';
 import { istHeimnetz } from '../notfall/notfallcode';
 import { GatewayBeobachtung, gatewayBeobachtung, gegenstellenBeobachtung, gegenstellenMit, type Gateways } from './gateway';
@@ -240,7 +240,7 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
   if (opt.webdav) await registriereWebdav(app, opt.webdav, opt);
 
   if (opt.webDir && existsSync(opt.webDir)) {
-    await app.register(fastifyStatic, { root: opt.webDir, wildcard: false, ...statischeDateien(opt.webDir) });
+    richteOberflaecheEin(app, opt.webDir);
     // Alle Nicht-API-Pfade liefern die Oberfläche aus (Routing im Browser) – fehlende Dateien nicht (#932).
     app.setNotFoundHandler((req, reply) => {
       if (req.url.startsWith('/api/')) return reply.code(404).send({ fehler: t('meldungen.http.diese-schnittstelle-gibt-es') });
