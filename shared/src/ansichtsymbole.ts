@@ -1,4 +1,5 @@
 import { t } from './texte';
+import { falte } from './suche';
 /**
  * Symbole für Ansichten (#428): eine feste Auswahl aus Lucide (https://lucide.dev, lucide-static 1.76.0, ISC) –
  * seit #1519 259 Symbole in 16 Gruppen (Auswahl: Qualität, Entscheidung Thomas 20.11.2026). Die Symbole des Katalogs
@@ -365,6 +366,27 @@ export const SYSTEM_SYMBOLE = {
   eingegangen: 'mailbox',
   versendet: 'send',
 } as const;
+
+/**
+ * Suche in der Symbolauswahl (#1519, #1548): nach Bedeutung, Name und Gruppe der Symbole. Der Suchbegriff wird vorher um
+ * die gleichbedeutenden Wörter aus der Werkbank erweitert („Kfz“ findet mit der Gruppe „Kfz, Auto“ das Auto) – eine
+ * Gruppe zählt, wenn eines ihrer Wörter mit dem Suchbegriff beginnt (Wortformen kommen mit #1321). Groß- und
+ * Kleinschreibung, Umlaute und ß zählen nicht (`falte`). Keine eigene Liste von Suchwörtern je Symbol.
+ */
+export function symboleSuchen(suche: string, gleichbedeutend: ReadonlyArray<readonly string[]> = []): AnsichtSymbolGruppe[] {
+  const q = falte(suche.trim());
+  if (!q) return ANSICHT_SYMBOLE;
+  const begriffe = new Set([q]);
+  for (const g of gleichbedeutend) if (g.some((w) => falte(w).startsWith(q))) for (const w of g) begriffe.add(falte(w.trim()));
+  const passt = (text: string) => {
+    const f = falte(text);
+    return [...begriffe].some((b) => b && f.includes(b));
+  };
+  return ANSICHT_SYMBOLE.map((g) => ({
+    ...g,
+    symbole: g.symbole.filter((x) => passt(x.titel) || passt(x.name) || passt(g.gruppe)),
+  })).filter((g) => g.symbole.length);
+}
 
 export const ANSICHT_SYMBOL_NAMEN: ReadonlySet<string> = new Set(ANSICHT_SYMBOLE.flatMap((g) => g.symbole.map((s) => s.name)));
 

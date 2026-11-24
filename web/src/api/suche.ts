@@ -157,6 +157,8 @@ export const sucheApi = {
   sucheStand: () => anfrage<SucheStand>('GET', '/api/werkbank/suche'),
   sucheSetze: (e: { unscharf?: boolean; meintest?: Meintest }) => anfrage<SucheStand>('PUT', '/api/werkbank/suche', e),
   // Gleichbedeutende Wörter (#356, #992): Wörter als Liste in ihrer Reihenfolge; `stand` = `geaendert` der Gruppe (#917).
+  /** Nur die Wörter der Gruppen (#1548), z. B. für die Suche in der Symbolauswahl. */
+  gleichbedeutend: () => anfrage<string[][]>('GET', '/api/werkbank/suche/synonyme'),
   synonymNeu: (woerter: string[]) => anfrage<SucheStand & { id: string }>('POST', '/api/werkbank/suche/synonyme', { woerter }),
   synonymAendern: (id: string, woerter: string[], stand?: string) =>
     anfrage<SucheStand>('PUT', `/api/werkbank/suche/synonyme/${encodeURIComponent(id)}`, { woerter, ...(stand ? { stand } : {}) }),

@@ -1,5 +1,6 @@
-import { useId, useState } from 'react';
-import { ANSICHT_SYMBOLE } from '../../../../shared/src/ansichtsymbole';
+import { useEffect, useId, useState } from 'react';
+import { ANSICHT_SYMBOLE, symboleSuchen } from '../../../../shared/src/ansichtsymbole';
+import { sucheApi } from '../../api/suche';
 import { AnsichtSymbol, Symbol } from '../../Symbol';
 import { t } from '../../sprache';
 import { Aufklapper, Knopf, KeineTreffer, Suchfeld, Zahl } from '../../bausteine';
@@ -7,13 +8,14 @@ import { Aufklapper, Knopf, KeineTreffer, Suchfeld, Zahl } from '../../bausteine
 /**
  * Symbol der Ansicht (#428): Raster aus der festen Auswahl (Lucide), mit Suche nach Namen, Bedeutung und Gruppe.
  * Seit #1519 (259 Symbole) stehen die 16 Gruppen eingeklappt mit Anzahl da; offen ist zuerst nur die Gruppe mit dem
- * gewählten Symbol. Beim Suchen sind alle Gruppen mit Treffern offen. Gespeichert wird nur der Name; „Ohne Symbol“
- * bleibt möglich.
+ * gewählten Symbol. Beim Suchen sind alle Gruppen mit Treffern offen; gesucht wird auch mit den gleichbedeutenden
+ * Wörtern aus der Werkbank (#1548). Gespeichert wird nur der Name; „Ohne Symbol“ bleibt möglich.
  */
 export function SymbolWahl({ wert, setze }: { wert: string | null; setze(n: string | null): void }) {
   const [offen, setOffen] = useState(false);
   const [suche, setSuche] = useState('');
-  const q = suche.trim().toLowerCase();
+  const gleich = useGleichbedeutend(offen);
+  const q = suche.trim();
   const titel = ANSICHT_SYMBOLE.flatMap((g) => g.symbole).find((x) => x.name === wert)?.titel;
   return (
     <div className="eigenschaft symbolwahl">
@@ -49,6 +51,7 @@ export function SymbolWahl({ wert, setze }: { wert: string | null; setze(n: stri
           />
           <SymbolGruppen
             q={q}
+            gleich={gleich}
             wert={wert}
             zuruecksetzen={() => setSuche('')}
             waehle={(n) => {
@@ -62,14 +65,33 @@ export function SymbolWahl({ wert, setze }: { wert: string | null; setze(n: stri
   );
 }
 
+/** Gleichbedeutende Wörter (#1548), einmal beim Öffnen der Auswahl geladen; ohne sie sucht die Auswahl wie bisher. */
+function useGleichbedeutend(offen: boolean) {
+  const [gruppen, setGruppen] = useState<string[][]>([]);
+  useEffect(() => {
+    if (!offen) return;
+    let aktuell = true;
+    sucheApi
+      .gleichbedeutend()
+      .then((g) => aktuell && setGruppen(g))
+      .catch(() => undefined);
+    return () => {
+      aktuell = false;
+    };
+  }, [offen]);
+  return gruppen;
+}
+
 /** Die Gruppen als Abschnitte zum Auf- und Zuklappen (#1519); mit Suchwort nur die Treffer, alle offen. */
 function SymbolGruppen({
   q,
+  gleich,
   wert,
   waehle,
   zuruecksetzen,
 }: {
   q: string;
+  gleich: string[][];
   wert: string | null;
   waehle(n: string): void;
   zuruecksetzen(): void;
@@ -78,10 +100,7 @@ function SymbolGruppen({
   const [offen, setOffen] = useState<ReadonlySet<string>>(
     () => new Set(ANSICHT_SYMBOLE.filter((g) => g.symbole.some((x) => x.name === wert)).map((g) => g.gruppe)),
   );
-  const gruppen = ANSICHT_SYMBOLE.map((g) => ({
-    ...g,
-    liste: g.symbole.filter((x) => !q || x.titel.toLowerCase().includes(q) || x.name.includes(q) || g.gruppe.toLowerCase().includes(q)),
-  })).filter((g) => g.liste.length);
+  const gruppen = symboleSuchen(q, gleich).map((g) => ({ ...g, liste: g.symbole }));
   if (!gruppen.length) return <KeineTreffer zuruecksetzen={zuruecksetzen} />;
   return (
     <>

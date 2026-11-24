@@ -111,6 +111,8 @@ const REGELN: Regel[] = [
   R('*', '/api/werkbank/webdav', 'webdav'),
   R('*', '/api/werkbank/texterkennung*', 'texterkennung', 'wartung'),
   // Gleichbedeutende Wörter (#992): eigener Bereich; den Stand der Suche (mit den Gruppen) lesen beide Seiten.
+  // Die Wörter allein liest auch der Editor einer Ansicht (#1548: Suche in der Symbolauswahl).
+  R('GET', '/api/werkbank/suche/synonyme', 'woerter', 'sichten'),
   R('*', '/api/werkbank/suche/synonyme*', 'woerter'),
   R('GET', '/api/werkbank/suche', 'texterkennung', 'woerter'),
   R('*', '/api/werkbank/suche*', 'texterkennung'),
