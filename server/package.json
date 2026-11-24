@@ -15,7 +15,7 @@
     "test:dateien": "node --expose-gc --import tsx --import ./test/schnell.ts --import ./test/offene-dateien.ts --test --test-reporter=tap test/auskunft-zustellen.test.ts test/auskunft.test.ts test/aufgaben-zaehler.test.ts test/datei-fehlt.test.ts test/dokument-uebernehmen.test.ts test/exportordner.test.ts test/geheimnis-sperre.test.ts test/geheimnisse.test.ts test/pg.test.ts test/routen-liste.test.ts test/sicherung.test.ts test/sicherung-extern.test.ts test/sicherung-herunterladen.test.ts test/strom.test.ts test/zwischenspeicher.test.ts"
   },
   "dependencies": {
-    "@fastify/static": "^10.1.11",
+    "@fastify/static": "^10.1.12",
     "@pdf-lib/fontkit": "1.1.1",
     "@simplewebauthn/server": "14.1.0",
     "fastify": "^5.12.8",
