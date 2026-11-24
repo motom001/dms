@@ -18,7 +18,7 @@ import { kontoApi } from '../api/konto';
 import { useDaten } from '../daten';
 import { useKonto } from '../konto';
 import { Hilfe } from '../Hilfe';
-import { Feld, Knopf, KnopfLink, Schalter, Suchfeld } from '../bausteine';
+import { DatumEingabe, Feld, Knopf, KnopfLink, Schalter, Suchfeld } from '../bausteine';
 import { t, tn } from '../sprache';
 import type { Hilfeort } from '../../../shared/src/hilfe';
 import { gebietsschema } from '../../../shared/src/sprache';
@@ -190,10 +190,10 @@ export function AbwesenheitFelder({
       )}
       <div className="raster">
         <Feld beschriftung={t('profil.abwesenheit.von')} optional>
-          <input type="date" value={a.von ?? ''} onChange={(e) => setA({ ...a, von: e.target.value || null })} />
+          <DatumEingabe wert={a.von ?? ''} setze={(w) => setA({ ...a, von: w || null })} />
         </Feld>
         <Feld beschriftung={t('profil.abwesenheit.bis-2')} optional hinweis={t('profil.abwesenheit.einschliesslich')}>
-          <input type="date" value={a.bis ?? ''} min={a.von ?? undefined} onChange={(e) => setA({ ...a, bis: e.target.value || null })} />
+          <DatumEingabe wert={a.bis ?? ''} min={a.von ?? undefined} setze={(w) => setA({ ...a, bis: w || null })} />
         </Feld>
         {/* Vertreter: Pflicht, sobald „Abwesend“ an ist (nicht markiert, C4); sonst freiwillig und für später hinterlegt. */}
         <Feld

@@ -20,6 +20,8 @@
 /* #1210: Karten über die ganze Breite (Speicherleiste, Reiter, geöffnete Erklärung), Platz über einer stehend offenen
    Erklärung (sie öffnet sich über dem Knopf und läge sonst über der Karte davor), Zustände nebeneinander. */
 .breit { grid-column: 1 / -1; }
+/* #1556: ein schmales Feld am rechten Rand der Karte (Datum: Kalender öffnet rechtsbündig). */
+.rechtsbuendig { align-self: flex-end; width: min(100%, 200px); }
 .platz { padding-top: 230px; }
 /* #1288: Platz unter einer stehend offenen Vorschlagsliste (Mehrfachauswahl), damit sie nicht über der nächsten Karte liegt. */
 .platzunten { padding-bottom: 200px; }

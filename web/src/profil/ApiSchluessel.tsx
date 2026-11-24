@@ -5,7 +5,7 @@ import { Link } from '../ort';
 import { useKonto } from '../konto';
 import { t, tn } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
-import { abfangen, Etikett, etikettArt, Feld, HakenFeld, Knopf, knopfAussehen } from '../bausteine';
+import { DatumEingabe, abfangen, Etikett, etikettArt, Feld, HakenFeld, Knopf, knopfAussehen } from '../bausteine';
 
 /** API-Schlüssel im eigenen Profil (#20): erzeugen, ändern, löschen; ganz sichtbar nur beim Erzeugen. */
 const datum = (iso: string | null) =>
@@ -208,7 +208,7 @@ function SchluesselFormular({
         </select>
       </Feld>
       <Feld beschriftung={t('profil.apischluessel.gueltig-bis-2')} optional hinweis={t('profil.apischluessel.leer-ohne-ablauf')}>
-        <input type="date" value={ablauf} min={new Date().toISOString().slice(0, 10)} onChange={(e) => setAblauf(e.target.value)} />
+        <DatumEingabe wert={ablauf} min={new Date().toISOString().slice(0, 10)} setze={setAblauf} />
       </Feld>
       {recht !== 'zaehler' && (
         <HakenFeld

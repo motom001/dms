@@ -14,7 +14,7 @@ import {
 import { useDaten } from '../../daten';
 import { MappenSuche } from '../MappenSuche';
 import { t } from '../../sprache';
-import { Feld, FeldGruppe, ZeitraumEingabe, type ZeitraumRoh } from '../../bausteine';
+import { DatumEingabe, Feld, FeldGruppe, ZeitraumEingabe, type ZeitraumRoh } from '../../bausteine';
 import type { Zeitraumeinheit } from '../../../../shared/src/feldarten';
 
 /* ---------- Vergleich und Wert einer Feldbedingung (Ansichten, Auswahlfilter, Automatisierungen, Berechtigungen) ---------- */
@@ -158,7 +158,7 @@ function Einzelwert({ feld, w, setze }: { feld: Bedingungsfeld; w?: WertAngabe; 
         </Feld>
         {w?.art === 'fest' ? (
           <Feld beschriftung={t('werkbank.sichten.datum')} beschriftungVerbergen>
-            <input type="date" value={String(w.wert)} onChange={(x) => setze({ art: 'fest', wert: x.target.value })} />
+            <DatumEingabe wert={String(w.wert)} setze={(x) => setze({ art: 'fest', wert: x })} />
           </Feld>
         ) : (
           <Versatz w={w?.art === 'heute' ? w : { art: 'heute' }} setze={setze} einheiten />

@@ -38,4 +38,31 @@ describe('Menü: Lage der Liste (#1488)', () => {
     assert.equal(l.left, 200);
     assert.equal(l.right, undefined);
   });
+
+  // #1556: Datumsfeld ganz rechts – der Kalender (linksbündig bevorzugt) ist breiter als der Platz bis zum Rand.
+  it('Feld am rechten Rand: linksbündig passt nicht, also rechtsbündig mit dem Feld', () => {
+    const feld = { top: 300, bottom: 336, left: 1150, right: 1340 };
+    const l = aufklapplage(feld, 330, fenster, { links: true, breite: 320 });
+    assert.equal(l.left, undefined);
+    assert.equal(l.right, 1366 - 1340, 'rechte Kante des Kalenders an der rechten Kante des Felds');
+  });
+
+  it('Feld links: linksbündig, wenn der Kalender dort ganz ins Fenster passt', () => {
+    const l = aufklapplage({ top: 300, bottom: 336, left: 240, right: 520 }, 330, fenster, { links: true, breite: 320 });
+    assert.equal(l.left, 240);
+    assert.equal(l.right, undefined);
+  });
+
+  it('passt an keiner Kante des Felds: 8 px Abstand zum Fensterrand', () => {
+    const schmal = { breite: 400, hoehe: 800 };
+    const l = aufklapplage({ top: 100, bottom: 136, left: 150, right: 250 }, 330, schmal, { links: true, breite: 320 });
+    assert.equal(l.left, 400 - 8 - 320);
+    assert.equal(l.right, undefined);
+  });
+
+  it('Menü rechtsbündig, links zu wenig Platz: linksbündig mit dem Knopf', () => {
+    const l = aufklapplage({ top: 100, bottom: 128, left: 20, right: 48 }, 200, fenster, { breite: 240 });
+    assert.equal(l.left, 20);
+    assert.equal(l.right, undefined);
+  });
 });

@@ -5,6 +5,7 @@ import { Symbol } from '../../Symbol';
 import { t } from '../../sprache';
 import type { FeldVerknuepfung } from '../feld/Feld';
 import { Knopf } from '../knopf/Knopf';
+import { legeFest } from '../menue/lage';
 import s from './Datum.module.css';
 
 /**
@@ -18,7 +19,9 @@ import s from './Datum.module.css';
  * - **Knopf „Kalender“** rechts im Feld (statt des Symbols des Browsers) und **Alt + Pfeil runter** öffnen den Kalender
  *   mit dem Fokus darin: Pfeiltasten wandern, Bild auf/ab blättert Monate, Enter wählt, Esc schließt und gibt den Fokus
  *   ans Feld zurück. Klick daneben schließt.
- * - Unten am Bildschirm klappt der Kalender nach oben auf; am Handy (schmal) ist er ein Blatt von unten.
+ * - Lage wie bei allen aufklappenden Bausteinen (#1532, #1556, `menue/lage.ts`): unten, wenn Platz ist, sonst oben, nie
+ *   über dem Assistenten; waagerecht bündig mit dem Feld, solange er ganz ins Fenster passt. Am Handy (schmal) ist er
+ *   ein Blatt von unten.
  *
  * Wert wie beim Datumsfeld des Browsers: JJJJ-MM-TT oder leer. Anleitung im Entwicklerhandbuch, „Gestaltung und
  * Bausteine → Datum“.
@@ -140,7 +143,7 @@ function Kalender({ wert, min, max, fokus, fest, waehle, schliessen }: KalenderP
   const [monat, setMonat] = useState(monatVon(start));
   const [tastatur, setTastatur] = useState(fokus);
   const kasten = useRef<HTMLDivElement>(null);
-  const oben = useNachOben(kasten);
+  useKalenderLage(kasten, fest);
   // Getipptes Datum (#1496): Der Kalender folgt dem Feld.
   useEffect(() => {
     if (!istTag(wert)) return;
@@ -172,7 +175,7 @@ function Kalender({ wert, min, max, fokus, fest, waehle, schliessen }: KalenderP
       ref={kasten}
       role="dialog"
       aria-label={t('oberflaeche.datum.kalender')}
-      className={klassen(s.kalender, oben && !fest && s.oben, fest && s.fest)}
+      className={klassen(s.kalender, fest && s.fest)}
       data-anker="datum.kalender"
       onKeyDown={taste}>
       <Kopf monat={monat} blaettern={(n) => setMonat(blaettere(monat, n))} />
@@ -186,18 +189,32 @@ function Kalender({ wert, min, max, fokus, fest, waehle, schliessen }: KalenderP
   );
 }
 
-/** Unten zu wenig Platz, oben mehr? Dann klappt der Kalender nach oben auf. */
-function useNachOben(kasten: RefObject<HTMLElement | null>) {
-  const [oben, setOben] = useState(false);
+/**
+ * Lage des Kalenders (#1532, #1556): nach der gemeinsamen Regel der Menüs (`legeFest`), am Feld ausgerichtet und
+ * linksbündig bevorzugt – beim Öffnen, bei jedem Rollen und jeder neuen Größe. Schmal liegt er als Blatt unten
+ * (Datum.module.css), auf der Musterseite im Fluss (`fest`).
+ */
+function useKalenderLage(kasten: RefObject<HTMLElement | null>, fest?: boolean) {
   useLayoutEffect(() => {
-    const el = kasten.current;
-    const feld = el?.parentElement?.getBoundingClientRect();
-    if (!el || !feld || typeof window === 'undefined') return;
-    const hoehe = el.getBoundingClientRect().height;
-    const unten = window.innerHeight - feld.bottom;
-    setOben(unten < hoehe + 8 && feld.top > unten);
-  }, [kasten]);
-  return oben;
+    if (fest) return;
+    const setze = () => {
+      const el = kasten.current;
+      const feld = el?.previousElementSibling;
+      if (!el || !(feld instanceof HTMLElement)) return;
+      if (matchMedia('(max-width: 600px)').matches) {
+        el.removeAttribute('style');
+        return;
+      }
+      legeFest(el, feld, true);
+    };
+    setze();
+    addEventListener('resize', setze);
+    document.addEventListener('scroll', setze, true);
+    return () => {
+      removeEventListener('resize', setze);
+      document.removeEventListener('scroll', setze, true);
+    };
+  }, [fest]); // eslint-disable-line react-hooks/exhaustive-deps -- der Ref ist fest
 }
 
 function Kopf({ monat, blaettern }: { monat: string; blaettern: (n: number) => void }) {

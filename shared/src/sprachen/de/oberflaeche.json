@@ -543,6 +543,7 @@
   "datum.heute": "Heute",
   "muster.datum.titel": "Datum",
   "muster.datum.text": "Datum tippen wie gewohnt; ein Klick ins Feld oder auf das Kalendersymbol öffnet den Kalender mit Kalenderwochen (ISO 8601). Alt + Pfeil runter öffnet ihn mit der Tastatur.",
+  "muster.datum.rechts": "Am rechten Rand",
   "muster.datum.kalender": "Kalender offen",
   "muster.beschriftung.faellig": "Fällig am",
   "muster.hinweis.datum": "Ende KW 50: Freitag, 11. Dezember.",

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { textFehler, zahlFehler, type EinstellungFeld, type FeldVerweis } from '../../../../shared/src/paketeinstellungen';
 import { Mehrfachauswahl } from '../../ablage/Mehrfachauswahl';
-import { Etikett, Feld, FeldGruppe, type FeldProps, HakenFeld, Knopf } from '../../bausteine';
+import { DatumEingabe, Etikett, Feld, FeldGruppe, type FeldProps, HakenFeld, Knopf } from '../../bausteine';
 import type { PaketEinstellungenStand } from '../../api/pakete';
 import { t } from '../../sprache';
 
@@ -238,11 +238,7 @@ function Steuerelement({
     case 'zahl':
       return <ZahlEingabe f={f} wert={wert} setze={setze} rahmen={rahmen} />;
     case 'datum':
-      return (
-        <Feld {...rahmen}>
-          {(v) => <input {...v} type="date" value={String(wert ?? '')} onChange={(e) => setze(e.target.value || null)} />}
-        </Feld>
-      );
+      return <Feld {...rahmen}>{(v) => <DatumEingabe {...v} wert={String(wert ?? '')} setze={(w) => setze(w || null)} />}</Feld>;
     case 'auswahl':
       return liste((f.optionen ?? []).map((o) => ({ id: o, name: o })));
     case 'geheim':

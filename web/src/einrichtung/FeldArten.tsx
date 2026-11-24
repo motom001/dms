@@ -7,7 +7,7 @@ import { kreisImStandard } from '../../../shared/src/nummernkreis';
 import { einzigesZiel, gemeinsameFelder, jedeMappe, zieleVon, type Feld as FeldDef, type Mappentyp } from '../../../shared/src/model';
 import { optionText } from '../../../shared/src/beschriftung';
 import { t } from '../sprache';
-import { Feld, FeldGruppe, HakenFeld } from '../bausteine';
+import { DatumEingabe, Feld, FeldGruppe, HakenFeld } from '../bausteine';
 import { standardAnzeige, type EntwurfFeld, type EntwurfRegister, type Zahlprop } from './entwurf';
 import { DatumGrenzen, FolgtAusEditor, FormatEditor, FristEditor, ZielTypenWahl } from './FeldEigenschaften';
 
@@ -336,7 +336,7 @@ export function StandardWert({ f, id, setze }: Basis) {
   if (f.typ === 'datum')
     return (
       <Feld beschriftung={t('mappentypen.editor.standardwert-2')} optional>
-        <input id={id('std')} type="date" value={String(f.standard ?? '')} onChange={(e) => setze({ standard: e.target.value })} />
+        <DatumEingabe id={id('std')} wert={String(f.standard ?? '')} setze={(w) => setze({ standard: w })} />
       </Feld>
     );
   if (f.typ === 'janein')
