@@ -44,6 +44,9 @@ import { zahlformat } from '../../../shared/src/region';
  */
 
 const log = protokoll.modul('texterkennung');
+/** „Dafür fehlt ein Anbieter“ (#1570): kein Fehler der Datei, sondern ein Grund zum Auslassen. */
+const keinAnbieter = (f: unknown) =>
+  f instanceof Fachfehler && (f.details as { code?: unknown } | undefined)?.code === 'leistung.kein-anbieter';
 
 /** Dateitypen, für die das DMS einen Volltext erzeugt (Textebene bzw. Texterkennung durch das Paket). */
 export const DATEITYPEN: Record<string, string> = {
@@ -497,10 +500,13 @@ export class Texterkennung {
       const m = (f as Error).message;
       e = abbruch.signal.aborted
         ? { stand: 'ausgelassen', info: t('meldungen.texterkennung.vom-administrator-abgebrochen'), text: null }
-        : // Ein erneuter Versuch ändert nichts: als ausgelassen mit klarem Grund (#61).
+        : // Ein erneuter Versuch ändert nichts: als ausgelassen mit klarem Grund (#61) – auch, wenn „Text lesen“ gerade
+          // niemand macht (#1570: ausgeschaltet, kein Ersatz); der Grund nennt den Weg in den Katalog.
           /password|passwort|encrypt/i.test(m)
           ? { stand: 'ausgelassen', info: INFO_PASSWORT, text: null }
-          : { stand: 'fehler', info: m.slice(0, 500) };
+          : keinAnbieter(f)
+            ? { stand: 'ausgelassen', info: m.slice(0, 500), text: null }
+            : { stand: 'fehler', info: m.slice(0, 500) };
     } finally {
       this.laeufe.delete(d.id);
     }

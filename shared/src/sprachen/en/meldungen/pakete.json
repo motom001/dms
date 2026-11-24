@@ -178,8 +178,8 @@
   "pakete.alias-ohne-ziel": "“{vw}” stands for “{neu}” – this folder type doesn’t exist here. The storage location comes with the Basis package: please install Basis {version} or later first.",
   "pakete.aus-ablago": "{name} (from Ablago)",
   "pakete.nutzt-mappentypen-aus-ablago": "Uses folder types from Ablago: {map}.",
-  "pakete.bringt-gruppen-gleichbedeutender_one": "Brings one group of synonyms for the search (Workbench → Search and full text).",
-  "pakete.bringt-gruppen-gleichbedeutender_other": "Brings {anzahl} groups of synonyms for the search (Workbench → Search and full text).",
+  "pakete.bringt-gruppen-gleichbedeutender_one": "Brings one group of synonyms for the search (Workbench → Synonyms).",
+  "pakete.bringt-gruppen-gleichbedeutender_other": "Brings {anzahl} groups of synonyms for the search (Workbench → Synonyms).",
   "pakete.einige-beispiele-zeigen-auf": "Some examples point to examples of “{name}”. Those aren’t installed here – these references stay empty.",
   "pakete.entdecken.texte-in-datei": "The tours and tips of this package exist in one language only: their texts are written directly in the file instead of texte/<language>/entdecken.json.",
   "pakete.entdecken.uebersetzung-fehlt_one": "Tours and tips in {sprache}: one text is missing, the German one appears there.",
@@ -346,5 +346,9 @@
   "leistungen.grund.zu-klein": "“{pfad}” is too small.",
   "leistungen.grund.zu-gross": "“{pfad}” is too large.",
   "leistungen.grund.wert": "“{pfad}” has no allowed value.",
-  "leistungen.grund.muster": "“{pfad}” does not have the expected form."
+  "leistungen.grund.muster": "“{pfad}” does not have the expected form.",
+  "leistungen.wahl-nicht-gespeichert": "The choice cannot be saved right now: the database is not connected.",
+  "leistungen.anbieter-unbekannt": "Ablago does not include this.",
+  "leistungen.an-ungueltig": "Switch on or off: an must be true or false.",
+  "leistungen.wahl-ungueltig": "The chosen package cannot do “{name}”."
 }

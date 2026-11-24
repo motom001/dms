@@ -178,8 +178,8 @@
   "pakete.alias-ohne-ziel": "„{vw}“ steht für „{neu}“ – diesen Mappentyp gibt es hier nicht. Den Ablageort bringt das Paket Basis mit: bitte zuerst Basis ab {version} installieren.",
   "pakete.aus-ablago": "{name} (aus Ablago)",
   "pakete.nutzt-mappentypen-aus-ablago": "Nutzt Mappentypen aus Ablago: {map}.",
-  "pakete.bringt-gruppen-gleichbedeutender_one": "Bringt eine Gruppe gleichbedeutender Wörter für die Suche mit (Werkbank → Suche und Volltext).",
-  "pakete.bringt-gruppen-gleichbedeutender_other": "Bringt {anzahl} Gruppen gleichbedeutender Wörter für die Suche mit (Werkbank → Suche und Volltext).",
+  "pakete.bringt-gruppen-gleichbedeutender_one": "Bringt eine Gruppe gleichbedeutender Wörter für die Suche mit (Werkbank → Gleichbedeutende Wörter).",
+  "pakete.bringt-gruppen-gleichbedeutender_other": "Bringt {anzahl} Gruppen gleichbedeutender Wörter für die Suche mit (Werkbank → Gleichbedeutende Wörter).",
   "pakete.einige-beispiele-zeigen-auf": "Einige Beispiele zeigen auf Beispiele von „{name}“. Die sind hier nicht installiert – diese Verweise bleiben leer.",
   "pakete.entdecken.texte-in-datei": "Die Rundgänge und Tipps dieses Pakets gibt es nur in einer Sprache: Ihre Texte stehen direkt in der Datei statt in texte/<sprache>/entdecken.json.",
   "pakete.entdecken.uebersetzung-fehlt_one": "Rundgänge und Tipps auf {sprache}: Ein Text fehlt, dort erscheint der deutsche.",
@@ -346,5 +346,9 @@
   "leistungen.grund.zu-klein": "„{pfad}“ ist zu klein.",
   "leistungen.grund.zu-gross": "„{pfad}“ ist zu groß.",
   "leistungen.grund.wert": "„{pfad}“ hat keinen erlaubten Wert.",
-  "leistungen.grund.muster": "„{pfad}“ hat nicht die erwartete Form."
+  "leistungen.grund.muster": "„{pfad}“ hat nicht die erwartete Form.",
+  "leistungen.wahl-nicht-gespeichert": "Die Wahl lässt sich gerade nicht speichern: Die Datenbank ist nicht verbunden.",
+  "leistungen.anbieter-unbekannt": "Das bringt Ablago nicht mit.",
+  "leistungen.an-ungueltig": "Ein- oder ausschalten: an muss true oder false sein.",
+  "leistungen.wahl-ungueltig": "„{name}“ kann das gewählte Paket nicht."
 }

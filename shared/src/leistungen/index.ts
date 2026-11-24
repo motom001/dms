@@ -6,3 +6,4 @@ export * from './katalog';
 export * from './schema';
 export * from './auftrag';
 export * from './eingebaut';
+export * from './werkbank';

@@ -1,7 +1,8 @@
 /**
  * Leistungen (#1569): Katalog, Aufträge direkt und im Hintergrund, Stand eines Auftrags; dazu die Aufbewahrung
  * abgeschlossener Aufträge (Werkbank → Daten sichern → Einstellungen, Bereich `daten`). Pakete rufen Leistungen erst
- * mit #1571 über /api/v1 – mit den im Manifest angemeldeten Leistungen; bis dahin hier nur Personen.
+ * mit #1571 über /api/v1 – mit den im Manifest angemeldeten Leistungen; bis dahin hier nur Personen. Dazu Schalter und
+ * „Wer macht das?“ der Werkbank (#1570, Bereich `pakete`).
  */
 import type { Leistungsanfrage } from '../../../shared/src/leistungen';
 import { Fachfehler } from '../grundlagen/fehler';
@@ -27,7 +28,16 @@ export function leistungenRouten(k: RoutenKontext): Route[] {
     };
   };
   return [
-    { methode: 'GET', pfad: '/api/leistungen', zugang: 'angemeldet', lesend: true, handler: async () => ok(dienst.leistungen.katalog()) },
+    {
+      methode: 'GET',
+      pfad: '/api/leistungen',
+      zugang: 'angemeldet',
+      lesend: true,
+      handler: async () => {
+        await dienst.leistungen.wahl.laden();
+        return ok(dienst.leistungen.katalog());
+      },
+    },
     {
       methode: 'POST',
       pfad: '/api/leistungen/:name/abrufen',
@@ -59,6 +69,29 @@ export function leistungenRouten(k: RoutenKontext): Route[] {
       pfad: '/api/werkbank/leistungen/einstellungen',
       zugang: 'admin',
       handler: async (a) => ok(await dienst.leistungen.speichereEinstellungen(b(a))),
+    },
+    // Werkbank → Pakete → Von Ablago mitgeliefert (#1570): Schalter je mitgeliefertem Anbieter und „Wer macht das?“.
+    {
+      methode: 'GET',
+      pfad: '/api/werkbank/leistungen/anbieter',
+      zugang: 'admin',
+      lesend: true,
+      handler: async () => ok(await dienst.leistungen.wahl.stand()),
+    },
+    {
+      methode: 'PUT',
+      pfad: '/api/werkbank/leistungen/anbieter/:id',
+      zugang: 'admin',
+      handler: async (a) => ok(await dienst.leistungen.wahl.schalte(a.params.id, b(a).an)),
+    },
+    {
+      methode: 'PUT',
+      pfad: '/api/werkbank/leistungen/wahl',
+      zugang: 'admin',
+      handler: async (a) => {
+        const x = b(a);
+        return ok(await dienst.leistungen.wahl.waehle(x.leistung, x.anbieter ?? null));
+      },
     },
   ];
 }
