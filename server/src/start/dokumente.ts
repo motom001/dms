@@ -18,7 +18,7 @@ import type { richteBetriebEin } from './betrieb';
 import type { verbindeDatenbank } from './datenbank';
 import type { vorbereiten } from './vorbereiten';
 import type { baueDienst } from './dienst';
-import { pgAuftraege } from '../leistungen';
+import { pgAuftraege, textAnbieter } from '../leistungen';
 
 /** Was richteDokumenteEin von früher braucht. */
 type Bisher = Pick<Awaited<ReturnType<typeof richteBetriebEin>>, 'messung' | 'tresor'> &
@@ -39,6 +39,10 @@ export async function richteDokumenteEin(bisher: Bisher) {
   wartung.beimAusschalten(() => texterkennung.anstossen());
   // Leistungen (#1569): Aufträge in der Datenbank; der Wartungsmodus hält den Hintergrund an, danach geht es weiter.
   dienst.leistungen.verbindeSpeicher(pgAuftraege(sql, cfg.haushalt));
+  // „Text aus PDF und Texterkennung“ (#1570): Die Textebene liest die Texterkennung – als Anbieter; selbst ruft sie
+  // sie über die Leistung „Text lesen“ ab.
+  dienst.leistungen.anbieter.melde(textAnbieter((d, o) => texterkennung.alsAnbieter(d, o)));
+  texterkennung.leistung = dienst.kern.leistung;
   dienst.leistungen.pause = () => wartung.aktiv;
   wartung.beimAusschalten(() => dienst.leistungen.anstossen());
   // Vorschaubilder der ersten Seite (#332): außerhalb des Haushaltsordners, damit sie nicht in die Sicherung gehen.

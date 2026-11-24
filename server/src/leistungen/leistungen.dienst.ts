@@ -16,6 +16,8 @@
 import { randomUUID } from 'node:crypto';
 import {
   AUFBEWAHRUNG_VORGABE,
+  anbieterSchluessel,
+  einschraenkungSchluessel,
   LEISTUNGEN,
   KONTEXT_MAX,
   dokumentFelder,
@@ -30,6 +32,7 @@ import {
   type Leistungsanfrage,
   type Leistungsergebnis,
   type Leistungsname,
+  type Leistungsweg,
   type Ziel,
 } from '../../../shared/src/leistungen';
 import type { Dokument, Herkunft, Mappentyp } from '../../../shared/src/model';
@@ -39,7 +42,7 @@ import { protokoll } from '../protokoll/protokoll';
 import { istUuid } from '../repo';
 import { t } from '../sprache/sprache';
 import type { ZugriffDienst } from '../zugriff';
-import { Anbieterliste, type Anbieter, type Anbieterergebnis } from './anbieter';
+import { Anbieterliste, type Anbieter, type Anbieterergebnis, type Einschraenkungspruefung } from './anbieter';
 import { Leistungsfehler, anzeigename, eingabeFehler, hatDatei, keinAnbieter, loeseDokumente, pruefeAusgabe } from './pruefen';
 import { speicherAuftraege, type Auftragsspeicher, type Auftragszeile, type Fragender } from './speicher';
 
@@ -96,8 +99,10 @@ export class LeistungenDienst {
   pause: () => boolean = () => false;
   /** So viele Aufträge laufen in diesem Prozess gleichzeitig im Hintergrund. */
   parallel = 2;
-  /** Zeitgrenze in ms (in Tests kürzer). */
+  /** Zeitgrenze in ms nach Katalog (in Tests kürzer); ein Anbieter kann eine eigene melden (`Anbieter.zeitgrenzeMs`). */
   zeitgrenzeMs = (l: Leistung) => l.zeitgrenzeS * 1000;
+  /** Einschränkungen der Eingabe prüfen (#1570, vom Dienst gesetzt); ohne gilt keine als erfüllt. */
+  pruefeEinschraenkung: Einschraenkungspruefung = async () => false;
   /** Abstand des regelmäßigen Nachsehens (verlorene Wecksignale, andere Prozesse, abgelaufene Fristen). */
   nachsehenMs = 10_000;
   private laufend = 0;
@@ -178,29 +183,43 @@ export class LeistungenDienst {
       throw new Leistungsfehler('nur-verwaltung', t('meldungen.leistungen.nur-verwaltung'));
     await this.pruefeZiel(wer, l, a.ziel);
     const eingabe = (await loeseDokumente(l.eingabe, a.eingabe, (id) => this.datei(wer, id))) as Record<string, unknown>;
-    const mimes = dateienIn(l, eingabe).map((d) => d.mime);
-    const wahl = this.anbieter.waehle(name, mimes);
-    if ('grund' in wahl) throw keinAnbieter(name, wahl.grund, mimes.find(Boolean));
+    const dateien = dateienIn(l, eingabe);
+    const wahl = await this.anbieter.waehle(name, dateien, this.pruefeEinschraenkung);
+    if ('grund' in wahl) throw keinAnbieter(name, wahl.grund, dateien[0]?.mime);
     return { name, l, anbieter: wahl.anbieter, eingabe };
   }
 
   /* ---------- Arbeiten ---------- */
 
-  /** Beim Anbieter ausführen, mit Zeitgrenze; was er wirft, wird ein `anbieter-fehler`. */
-  private async beimAnbieter(x: Angenommen): Promise<Anbieterergebnis> {
+  /**
+   * Beim Anbieter ausführen, mit Zeitgrenze (die des Anbieters, sonst die des Katalogs); was er wirft, wird ein
+   * `anbieter-fehler` – für Ablago selbst (`o.durchreichen`) bleibt der Fehler, wie er ist, damit Meldungen gleich bleiben.
+   */
+  private async beimAnbieter(
+    x: Angenommen,
+    o: { intern?: Record<string, unknown>; signal?: AbortSignal; durchreichen?: boolean } = {},
+  ): Promise<Anbieterergebnis> {
     const ab = new AbortController();
-    const ms = this.zeitgrenzeMs(x.l);
+    const eigene = x.anbieter.zeitgrenzeMs?.(x.name, x.eingabe);
+    // `null` heißt: Der Aufrufer begrenzt selbst – das gilt nur für Ablago, alle anderen bekommen die des Katalogs.
+    const ms = eigene === undefined || (eigene === null && !o.durchreichen) ? this.zeitgrenzeMs(x.l) : eigene;
     let uhr: NodeJS.Timeout | undefined;
     const grenze = new Promise<never>((_, nein) => {
-      uhr = setTimeout(() => {
-        ab.abort();
-        nein(new Leistungsfehler('zeitgrenze', t('meldungen.leistungen.zeitgrenze', { s: Math.ceil(ms / 1000) })));
-      }, ms);
+      if (ms !== null)
+        uhr = setTimeout(() => {
+          ab.abort();
+          nein(new Leistungsfehler('zeitgrenze', t('meldungen.leistungen.zeitgrenze', { s: Math.ceil(ms / 1000) })));
+        }, ms);
     });
+    const weiter = () => ab.abort();
+    o.signal?.addEventListener('abort', weiter, { once: true });
     try {
-      return await Promise.race([x.anbieter.fuehreAus({ leistung: x.name, eingabe: x.eingabe, signal: ab.signal }), grenze]);
+      // `intern` nur an eingebaute Anbieter, nie an ein Paket.
+      const intern = o.intern && x.anbieter.art === 'eingebaut' ? { intern: o.intern } : {};
+      const auftrag = { leistung: x.name, eingabe: x.eingabe, signal: ab.signal, ...intern };
+      return await Promise.race([x.anbieter.fuehreAus(auftrag), grenze]);
     } catch (e) {
-      if (e instanceof Leistungsfehler) throw e;
+      if (e instanceof Leistungsfehler || o.durchreichen) throw e;
       throw new Leistungsfehler(
         'anbieter-fehler',
         t('meldungen.leistungen.anbieter-fehler', { anbieter: x.anbieter.id, meldung: (e as Error).message }),
@@ -210,6 +229,7 @@ export class LeistungenDienst {
       );
     } finally {
       clearTimeout(uhr);
+      o.signal?.removeEventListener('abort', weiter);
     }
   }
 
@@ -262,6 +282,40 @@ export class LeistungenDienst {
       throw e;
     }
   }
+
+  /**
+   * Ablago selbst (#1570, `kern.leistung`): direkt, mit Dateien statt Dokument-Ids, Ergebnis samt Datei und den
+   * Angaben eingebauter Anbieter (`intern`). Fehler des Anbieters bleiben, wie sie sind; der Auftrag steht in der Liste
+   * (scheitert nur das Festhalten, läuft die Arbeit trotzdem).
+   */
+  readonly intern: Leistungsweg = async (name, eingabe, o = {}) => {
+    const wer: Wer = { fragender: { art: 'ablago' } };
+    const x = await this.nimmAn(wer, name, { eingabe });
+    const id = randomUUID();
+    const kopf = { id, leistung: x.name, art: 'direkt' as const, kontext: undefined, ziel: null, wer: wer.fragender };
+    const merke = (f: () => Promise<void>) =>
+      f().catch((e) => log.warn('Auftrag nicht festgehalten', { leistung: x.name, fehler: (e as Error).message }));
+    await merke(() =>
+      this.speicher.lege({
+        ...kopf,
+        zustand: 'laeuft',
+        eingabe: null,
+        wirkung: x.l.ergebnis === 'wirkung',
+        zeitgrenzeS: x.l.zeitgrenzeS,
+        anbieter: x.anbieter.id,
+      }),
+    );
+    try {
+      const r = await this.beimAnbieter(x, { ...o, durchreichen: true });
+      pruefeAusgabe(x.l, x.anbieter.id, r);
+      // Ohne Daten: Niemand liest sie später nach, und ein Volltext gehört nicht in die Liste der Aufträge.
+      await merke(() => this.speicher.setze(id, { zustand: 'fertig', dokument: null }));
+      return { anbieter: x.anbieter.id, daten: r.daten, ...(r.datei ? { datei: r.datei } : {}), ...(r.intern ? { intern: r.intern } : {}) };
+    } catch (e) {
+      await this.scheitert(id, e, x.anbieter.id);
+      throw e;
+    }
+  };
 
   /** Im Hintergrund: prüfen wie direkt, dann in die Warteschlange; das Ergebnis kommt als Ereignis. */
   async beauftragen(wer: Wer, name: string, a: Leistungsanfrage): Promise<Leistungsergebnis> {
@@ -402,7 +456,14 @@ export class LeistungenDienst {
         ergebnis: l.ergebnis,
         formate: l.formate,
         dateitypen: l.dateitypen,
-        anbieter: this.anbieter.fuer(name).map((a) => ({ id: a.id, art: a.art, an: this.anbieter.an(a.id) })),
+        einschraenkungen: (l.einschraenkungen ?? []).map((e) => ({ id: e, text: t.frei(einschraenkungSchluessel(e)) })),
+        anbieter: this.anbieter.fuer(name).map((a) => ({
+          id: a.id,
+          art: a.art,
+          name: a.art === 'eingebaut' ? t.frei(anbieterSchluessel(a.id)) : a.id,
+          an: this.anbieter.an(a.id),
+          meldung: a.bietet[name] ?? {},
+        })),
       };
     });
   }

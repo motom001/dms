@@ -40,7 +40,25 @@ export interface Leistung {
   /** Zeitgrenze je Auftrag in Sekunden. */
   zeitgrenzeS: number;
   testfaelle: readonly Testfall[];
+  /**
+   * Einschränkungen der Eingabe, die ein Anbieter melden darf (#1570): Er kann dann nur Eingaben, die sie erfüllen;
+   * Ablago prüft das vor der Wahl. Die Bedeutung steht in {@link EINSCHRAENKUNGEN}.
+   */
+  einschraenkungen?: readonly Einschraenkung[];
 }
+
+/**
+ * Einschränkungen der Eingabe (#1570), die ein Anbieter melden kann, wenn er nicht alles kann, was die Leistung
+ * beschreibt – neben engeren `dateitypen`. Ablago prüft sie selbst (server/src/leistungen/eingebaut.ts) und wählt nur
+ * Anbieter, deren Meldung die Eingabe erfüllt; sonst `leistung.kein-anbieter` mit Grund `eingabe`.
+ */
+export const EINSCHRAENKUNGEN = {
+  /** Nur Dateien, die schon gültiges PDF/A sind (sie werden übernommen, nicht umgewandelt). */
+  'bereits-pdfa': { dateitypen: ['application/pdf'] },
+} as const;
+export type Einschraenkung = keyof typeof EINSCHRAENKUNGEN;
+/** Schlüssel der Beschreibung einer Einschränkung (Bereich `pakete`). */
+export const einschraenkungSchluessel = (e: Einschraenkung) => `pakete.leistung.einschraenkung.${e}`;
 
 /** Testdateien der Testfälle (shared/leistungen/testdateien/), mit Mime. */
 export const TESTDATEIEN = {
@@ -155,6 +173,7 @@ export const LEISTUNGSKATALOG = {
     dateitypen: [PDF, ...BILDER],
     zeitgrenzeS: 300,
     testfaelle: [{ name: 'pdf', eingabe: { datei: datei('brief.pdf') }, erwartet: { format: PDF, daten: { seiten: 1 } } }],
+    einschraenkungen: ['bereits-pdfa'],
   },
   'dokument.bearbeiten.seiten@1': {
     ergebnis: 'exakt',
@@ -212,7 +231,8 @@ export const LEISTUNGSKATALOG = {
       ['datei', 'bereiche'],
     ),
     ausgabe: NUR_SEITEN,
-    formate: [PDF],
+    // Ergebnis im Format der Eingabe: ein geschwärztes Foto bleibt ein Bild (#392).
+    formate: [PDF, 'image/jpeg', 'image/png'],
     dateitypen: [PDF, 'image/jpeg', 'image/png'],
     zeitgrenzeS: 300,
     testfaelle: [

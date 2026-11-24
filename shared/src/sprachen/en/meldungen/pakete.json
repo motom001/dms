@@ -320,6 +320,7 @@
   "leistungen.kein-anbieter.keiner": "Nobody does “{name}” here: nothing is installed for it. Look in the catalogue: {katalog}",
   "leistungen.kein-anbieter.aus": "Nobody does “{name}” here right now: what could do it is switched off. Look in the catalogue: {katalog}",
   "leistungen.kein-anbieter.dateityp": "“{name}” is not possible here for {mime}: what is installed cannot handle this file type. Look in the catalogue: {katalog}",
+  "leistungen.kein-anbieter.eingabe": "“{name}” is not possible here for this file: what is installed can only do part of it (for example only files that are already PDF/A). Look in the catalogue: {katalog}",
   "leistungen.kein-schreibrecht": "You may not file documents in this folder. Nothing has happened.",
   "leistungen.kein-leserecht": "A document in the input does not exist, or you may not read it. Nothing has happened.",
   "leistungen.ziel-noetig": "The result is a file – say which folder it should go to (target). Nothing has happened.",

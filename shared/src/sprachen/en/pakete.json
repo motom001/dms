@@ -718,5 +718,12 @@
   "leistung.name.text.uebersetzen": "Translate",
   "leistung.name.text.vektor": "Prepare for search by meaning",
   "leistung.name.nachricht.senden.mail": "Send email",
-  "leistung.name.nachricht.aufrufen.url": "Call address"
+  "leistung.name.nachricht.aufrufen.url": "Call address",
+  "leistung.einschraenkung.bereits-pdfa": "only files that are already PDF/A",
+  "anbieter.name.ablago.text": "Text from PDF and text recognition",
+  "anbieter.name.ablago.archiv": "Archive version (PDF/A)",
+  "anbieter.name.ablago.umwandeln": "Convert",
+  "anbieter.name.ablago.pdf": "Edit PDF",
+  "anbieter.name.ablago.briefsatz": "Letter layout",
+  "anbieter.name.ablago.erechnung": "Read e-invoice"
 }

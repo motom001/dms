@@ -62,7 +62,9 @@ import { WerkbankDienst } from '../werkbank';
 import { OrganisationDienst } from '../organisation';
 import { NotfallkontakteDienst } from '../notfallkontakte';
 import { TextsatzDienst } from '../textsatz';
-import { LeistungenDienst } from '../leistungen';
+import { LeistungenDienst, eingebauteAnbieter, pruefeEinschraenkung } from '../leistungen';
+import { leseERechnungDatei } from '../erkennung/erechnung';
+import { eingebetteteERechnung } from '../pdf';
 import { PaketAktionen } from '../paketaktionen';
 import type { MailText } from '../mail/mail';
 import type { Repo } from '../repo';
@@ -287,13 +289,18 @@ export class Dienst extends DienstBauteile {
    * Person; den Speicher in der Datenbank und den Wartungsmodus setzt der Start.
    */
   get leistungen(): LeistungenDienst {
-    return (this.leistungenDienst ??= new LeistungenDienst(this.kern, this.rechtepruefung, {
+    if (this.leistungenDienst) return this.leistungenDienst;
+    const l = new LeistungenDienst(this.kern, this.rechtepruefung, {
       ladeHoch: (id, e, inhalt, von) => this.dokumente.ladeHoch(id, e, inhalt, von),
       darfAblegen: async (z, id) => {
         const m = await this.repo.holeMappe(id);
         return !!m && (await this.rechtepruefung.rechteAn(z, m)).U;
       },
-    }));
+    });
+    // Eingebaute Anbieter (#1570); „Text aus PDF“ meldet der Start mit der Texterkennung an.
+    for (const a of eingebauteAnbieter({ erechnung: (d) => leseERechnungDatei(d, eingebetteteERechnung) })) l.anbieter.melde(a);
+    l.pruefeEinschraenkung = pruefeEinschraenkung;
+    return (this.leistungenDienst = l);
   }
   private paketaktionenDienst?: PaketAktionen;
   /**
@@ -438,6 +445,7 @@ export class Dienst extends DienstBauteile {
       ausstatten: () => this.systemausstattung.anlegen(),
       zugriff: (ich) => this.rechtepruefung.zugriff(ich),
       fassungen: () => this.fassungen.fuerKern(),
+      leistung: (n, e, o) => this.leistungen.intern(n, e, o),
     });
   }
 

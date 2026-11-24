@@ -1,10 +1,9 @@
 /** Erkennung (#1278 aus erkennung.ts): E-Rechnung, Positionen und Nummern im Text, Abgleich mit vorhandenen Mappen. */
 import { ErkennungBasis } from './erkennung-basis';
 import { type ERechnung, erechnungText, positionAusERechnung } from '../../../shared/src/erechnung';
-import { istXmlDatei, liesERechnung } from './erechnung';
+import { istXmlDatei } from './erechnung';
 import { ERECHNUNG_XML_MAX } from '../grundlagen/grenzen';
 import { log, type TypVorschlaege, MAX_MAPPEN, TEXT_MAX } from './erkennung-hilfen';
-import { eingebetteteERechnung } from '../pdf';
 import { t } from '../sprache/sprache';
 import { Fachfehler } from '../grundlagen/fehler';
 import { type Mappentyp, type Mappe, type Feld, type MappenBezug, zieleVon } from '../../../shared/src/model';
@@ -23,20 +22,14 @@ export abstract class ErkennungPositionen extends ErkennungBasis {
    */
   async erechnungAus(lies: () => Promise<Buffer>, name: string, mime: string, groesse?: number): Promise<ERechnung | null> {
     try {
-      if (istXmlDatei(name, mime)) {
-        if (groesse != null && groesse > ERECHNUNG_XML_MAX) return null;
-        const inhalt = await lies();
-        if (inhalt.length > ERECHNUNG_XML_MAX) return null;
-        const r = liesERechnung(inhalt.toString('utf8'));
-        if (r.fehler) log.info('E-Rechnung nicht gelesen', { grund: r.fehler });
-        return r.er;
-      }
-      if (mime !== 'application/pdf') return null;
-      const xml = await eingebetteteERechnung(await lies());
-      if (!xml) return null;
-      const r = liesERechnung(xml);
-      if (r.fehler) log.info('E-Rechnung im PDF nicht gelesen', { grund: r.fehler });
-      return r.er;
+      const xml = istXmlDatei(name, mime);
+      if (!xml && mime !== 'application/pdf') return null;
+      if (xml && groesse != null && groesse > ERECHNUNG_XML_MAX) return null;
+      const inhalt = await lies();
+      if (xml && inhalt.length > ERECHNUNG_XML_MAX) return null;
+      // Über die Leistung „E-Rechnung lesen“ (#1570). Ohne E-Rechnung in der Datei: keine (wie bisher, ohne Fehler).
+      const r = await this.d.kern.leistung('dokument.lesen.erechnung@1', { datei: { inhalt, mime: xml ? 'application/xml' : mime, name } });
+      return (r.intern?.er as ERechnung | undefined) ?? (r.daten as unknown as ERechnung);
     } catch (x) {
       log.info('E-Rechnung nicht gelesen', { grund: (x as Error).message.slice(0, 200) });
       return null;

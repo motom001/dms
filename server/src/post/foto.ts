@@ -8,7 +8,8 @@ import { Fachfehler } from '../grundlagen/fehler';
 import type { Anlass, Kern, Zugriff } from '../kern';
 import type { MappenArchiv, MappenHistorie, MappenTitel } from '../mappen';
 import type { PdfBearbeiten } from '../pdf-bearbeiten';
-import { bilderZuPdf, fuegeZusammen, seitenInfo } from '../dateien/pdfseiten';
+import { bilderZuPdf, seitenInfo } from '../dateien/pdfseiten';
+import { zusammenUeber } from '../leistungen';
 import { protokoll } from '../protokoll/protokoll';
 import { istUuid, type Repo } from '../repo';
 import { t } from '../sprache/sprache';
@@ -139,7 +140,7 @@ export class PostFotos {
     const { m, reg } = await this.registerVon(d).then(async (x) => ({ ...x, m: await this.repo.holeMappe(d.mappeId) }));
     if (!m || !reg) throw new Fachfehler(409, t('meldungen.dienst.das-register-dieses-dokuments'));
     await this.pruefeArchivDokument(m.id, 'ersetzen');
-    const buf = await fuegeZusammen([inhalt, ...anhang]);
+    const buf = await zusammenUeber(this.kern.leistung, [inhalt, ...anhang], d.name);
     if (buf.length > MAX_DATEIGROESSE) throw new Fachfehler(413, t('meldungen.dienst.zusammen-waere-das-pdf'));
     let dokument: Dokument;
     if (reg.versionierung)
@@ -239,7 +240,7 @@ export class PostFotos {
       const { inhalt } = await this.pdfVon(zielPdf.id);
       erg = await this.haengeSeitenAn(zielPdf, inhalt, anhang, von, t('meldungen.dienst.seiten-aus-der-post', { qTitel }));
     } else {
-      const buf = await fuegeZusammen(anhang);
+      const buf = await zusammenUeber(this.kern.leistung, anhang);
       const reg = typ.register.find((r) => r.art === 'dokumente')!;
       const dokument = (
         await this.ladeHoch(

@@ -4,3 +4,5 @@ export { type Anbieter } from './anbieter';
 export { pgAuftraege } from './pg';
 export { speicherAuftraege } from './speicher';
 export { pruefeTestfaelle } from './testfaelle';
+export { eingebauteAnbieter, pruefeEinschraenkung, textAnbieter } from './eingebaut';
+export { teileUeber, verkleinereUeber, zusammenUeber } from './aufrufe';

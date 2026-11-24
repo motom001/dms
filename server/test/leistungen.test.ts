@@ -205,6 +205,7 @@ describe('Leistungen: Vermittlung (#1569)', () => {
   it('ungültige Ausgabe: fehlgeschlagen, nichts abgelegt', async () => {
     const x = await aufbau();
     x.d.leistungen.anbieter.melde(testAnbieter({ falsch: true }));
+    x.d.leistungen.anbieter.entferne('ablago.briefsatz'); // sonst macht es Ablago (#1570)
     const vorher = (await x.d.kern.repo.listeDokumente(x.mappe)).length;
     await assert.rejects(
       x.d.leistungen.abrufen(x.katrin, 'dokument.erstellen.aus-text@1', { eingabe: { text: 'Brief' }, ziel: { mappe: x.mappe } }),
@@ -405,7 +406,20 @@ describe('Leistungen: Vermittlung (#1569)', () => {
     const t = k.find((e) => e.name === 'dokument.lesen.text@1')!;
     assert.equal(t.anzeigename, 'Text lesen');
     assert.equal(t.ergebnis, 'exakt');
-    assert.deepEqual(t.anbieter, [{ id: 'test.anbieter', art: 'paket', an: true }]);
+    assert.deepEqual(t.anbieter, [
+      { id: 'test.anbieter', art: 'paket', name: 'test.anbieter', an: true, meldung: { dateitypen: ['application/pdf'] } },
+    ]);
+    const pdfa = k.find((e) => e.name === 'dokument.umwandeln.pdfa@1') as unknown as { einschraenkungen: unknown; anbieter: unknown };
+    assert.deepEqual(pdfa.einschraenkungen, [{ id: 'bereits-pdfa', text: 'nur Dateien, die schon PDF/A sind' }]);
+    assert.deepEqual(pdfa.anbieter, [
+      {
+        id: 'ablago.archiv',
+        art: 'eingebaut',
+        name: 'Archivfassung (PDF/A)',
+        an: true,
+        meldung: { dateitypen: ['application/pdf'], einschraenkungen: ['bereits-pdfa'] },
+      },
+    ]);
     assert.deepEqual(k.find((e) => e.name === 'text.vektor@1')!.anbieter, []);
   });
 });

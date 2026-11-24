@@ -13,12 +13,13 @@ import { protokoll } from '../protokoll/protokoll';
 import type { OcrErgebnis, Repo } from '../repo';
 import { INFO_TEXTEBENE, infoWartet, NICHT_GESPEICHERT } from '../../../shared/src/volltext';
 import { dateitypName, infoFassung, infoUmwandlung, katalogUmwandlung, UMWANDELN_MAX_BYTES } from '../../../shared/src/dateiumwandlung';
-import { infoVolltextPaket, katalogVolltext, VOLLTEXT_PAKET_MAX_BYTES } from '../../../shared/src/paketvolltext';
+import { infoVolltextPaket, katalogVolltext, VOLLTEXT_PAKET_MAX_BYTES, VOLLTEXT_ZEICHEN_MAX } from '../../../shared/src/paketvolltext';
 import { t } from '../sprache/sprache';
 import { AUSGABE_GROSS, MB, TEXTERKENNUNG_MAX_MB as MAX_MB } from '../grundlagen/grenzen';
 import type { Werkzeuge } from '../../../shared/src/werkzeuge';
 import { pruefeSchriften, schriftfehlerGesehen } from '../dateien/ersatzschriften';
 import { wiederkehrend } from '../zeitplan/streuung';
+import type { Leistungsweg } from '../../../shared/src/leistungen';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { zahlformat } from '../../../shared/src/region';
 
@@ -319,6 +320,11 @@ export class Texterkennung {
   umwandlung: TexterkennungUmwandlung | null = null;
   /** Volltext aus Paketen (#614); ohne: andere Dateitypen wie bisher (Umwandlung oder ausgelassen). */
   volltextPaket: TexterkennungVolltextPaket | null = null;
+  /**
+   * Leistungen (#1570): Die Textebene liest Ablago über „Text lesen“ (`dokument.lesen.text@1`) – eingebaut ist das
+   * `leseTextebene` hier, ein Paket kann es übernehmen. Ohne (Tests, Werkzeuge einzeln): direkt.
+   */
+  leistung: Leistungsweg | null = null;
   /** Entsperrte Fassung eines geschützten PDFs (#827); ohne: geschützte PDFs bleiben ausgelassen. */
   entsperrt: ((sha: string) => Promise<{ inhalt: Buffer } | null>) | null = null;
 
@@ -667,49 +673,88 @@ export class Texterkennung {
     return { stand: 'paket', info: infoVolltextPaket(p), seiten: d.ocr?.seiten ?? null, ausPaket: p } as OcrErgebnis;
   }
 
-  /** Datei lesen: Textebene (poppler). Mit `fassung` (#577) deren Inhalt statt der Datei des Dokuments. */
-  private async lese(d: Dokument, signal?: AbortSignal, fassung?: Lesefassung): Promise<OcrErgebnis & { ohneText?: number[] }> {
+  /**
+   * Textebene einer Datei lesen (poppler im Werkzeugdienst) – die Arbeit des eingebauten Anbieters „Text aus PDF und
+   * Texterkennung“ (#1570). Dasselbe Ergebnis wie bisher, das Ganze für Ablago in `intern.ergebnis`.
+   */
+  async leseTextebene(inhalt: Uint8Array, mime: string, o: { signal?: AbortSignal; maxSeiten?: number } = {}) {
     const dir = await werkzeugOrdner('dms-ocr-');
     try {
       const pfad = join(dir, 'datei');
-      await schreibeWerkzeugDatei(pfad, fassung ? fassung.inhalt : await alsBuffer(await this.dateien.lies(d.sha256)));
-      if (signal?.aborted) throw new Error('abgebrochen');
-      const r = await this.engine(pfad, d.mime, { maxSeiten: MAX_SEITEN, werkzeuge: await this.werkzeugeLaden(), signal });
-      // Erkannte Sprache am Ende des Hinweises (#395) – für Anzeige und Statistik.
-      let sprache = erkenneSprache(r.text);
-      // Aus der umgewandelten Fassung (#577): steht vor der Sprache im Hinweis.
-      const herkunft = fassung ? ` – ${fassung.herkunft ?? infoFassung(fassung.info.paket)}` : '';
-      // Sprache je Seite (#579): Wechselt sie zwischen den Seiten (oder steht eine Seite in zwei Sprachen), gilt die
-      // mit dem meisten Text als Hauptsprache, die anderen als „enthält auch“; der Suchindex nimmt je Seite ihre
-      // Wortstämme. Bei gemischten PDFs (gescannte Seiten erkennt das Paket) bleiben die Seiten auch einsprachig
-      // gespeichert – das Paket setzt den Text damit in der richtigen Reihenfolge zusammen.
-      let mehr: Pick<OcrErgebnis, 'weitere' | 'seitensprachen'> = {};
-      if (r.seitenTexte && r.seitenTexte.length > 1) {
-        const z = seitenZusammensetzen(r.seitenTexte.map((text) => ({ text })));
-        const ds = dokumentsprachen(z.seiten, zeichenzahl(z.text));
-        if (z.text === r.text && (ds.mehrsprachig || (r.ohneText?.length && hatText(r.text)))) {
-          mehr = { weitere: ds.weitere, seitensprachen: z.seiten };
-          if (ds.mehrsprachig && ds.sprache)
-            sprache = {
-              sprache: ds.sprache,
-              konfidenz: sprache?.sprache === ds.sprache ? sprache.konfidenz : 1,
-              schrift: sprache?.schrift ?? 'latein',
-            };
-        }
-      }
-      // Sprache als eigenes Feld (#400): Die Volltextsuche nimmt die Wortstämme dieser Sprache.
-      return {
-        stand: 'fertig',
-        text: r.text,
-        seiten: r.seiten,
-        info: r.info + herkunft + (sprache ? spracheZuInfo(sprache) : ''),
-        sprache: sprache && istTextsprache(sprache.sprache) ? sprache.sprache : null,
-        ...mehr,
-        ohneText: r.ohneText ?? [],
-      };
+      await schreibeWerkzeugDatei(pfad, Buffer.from(inhalt.buffer, inhalt.byteOffset, inhalt.byteLength));
+      if (o.signal?.aborted) throw new Error('abgebrochen');
+      return await this.engine(pfad, mime, {
+        maxSeiten: o.maxSeiten ?? MAX_SEITEN,
+        werkzeuge: await this.werkzeugeLaden(),
+        signal: o.signal,
+      });
     } finally {
       await rm(dir, { recursive: true, force: true });
     }
+  }
+
+  /** Als eingebauter Anbieter (#1570): Ausgabe nach Katalog, das ganze Ergebnis für Ablago in `intern`. */
+  async alsAnbieter(d: { inhalt: Uint8Array; mime: string }, o: { signal: AbortSignal; intern?: Record<string, unknown> }) {
+    const maxSeiten = typeof o.intern?.maxSeiten === 'number' ? o.intern.maxSeiten : undefined;
+    const r = await this.leseTextebene(d.inhalt, d.mime, { signal: o.signal, maxSeiten });
+    return { daten: { text: r.text.slice(0, VOLLTEXT_ZEICHEN_MAX), seiten: Math.min(r.seiten, 5000) }, intern: { ergebnis: r } };
+  }
+
+  /** Über die Leistung (#1570): Ein Paket liefert nur Text und Seiten; der Hinweis nennt es dann. */
+  private async textebene(inhalt: Uint8Array, d: Dokument, signal?: AbortSignal, maxSeiten?: number): Promise<Awaited<ReturnType<Engine>>> {
+    if (!this.leistung) return this.leseTextebene(inhalt, d.mime, { signal, maxSeiten });
+    const r = await this.leistung(
+      'dokument.lesen.text@1',
+      { datei: { inhalt, mime: d.mime, name: d.name } },
+      { signal, intern: { maxSeiten } },
+    );
+    const ganz = r.intern?.ergebnis as Awaited<ReturnType<Engine>> | undefined;
+    return (
+      ganz ?? {
+        text: String(r.daten.text ?? ''),
+        seiten: Number(r.daten.seiten ?? 0),
+        info: t('meldungen.texterkennung.durch-anbieter', { anbieter: r.anbieter }),
+      }
+    );
+  }
+
+  /** Datei lesen: Textebene (poppler). Mit `fassung` (#577) deren Inhalt statt der Datei des Dokuments. */
+  private async lese(d: Dokument, signal?: AbortSignal, fassung?: Lesefassung): Promise<OcrErgebnis & { ohneText?: number[] }> {
+    const inhalt = fassung ? fassung.inhalt : await alsBuffer(await this.dateien.lies(d.sha256));
+    if (signal?.aborted) throw new Error('abgebrochen');
+    const r = await this.textebene(inhalt, d, signal);
+    // Erkannte Sprache am Ende des Hinweises (#395) – für Anzeige und Statistik.
+    let sprache = erkenneSprache(r.text);
+    // Aus der umgewandelten Fassung (#577): steht vor der Sprache im Hinweis.
+    const herkunft = fassung ? ` – ${fassung.herkunft ?? infoFassung(fassung.info.paket)}` : '';
+    // Sprache je Seite (#579): Wechselt sie zwischen den Seiten (oder steht eine Seite in zwei Sprachen), gilt die
+    // mit dem meisten Text als Hauptsprache, die anderen als „enthält auch“; der Suchindex nimmt je Seite ihre
+    // Wortstämme. Bei gemischten PDFs (gescannte Seiten erkennt das Paket) bleiben die Seiten auch einsprachig
+    // gespeichert – das Paket setzt den Text damit in der richtigen Reihenfolge zusammen.
+    let mehr: Pick<OcrErgebnis, 'weitere' | 'seitensprachen'> = {};
+    if (r.seitenTexte && r.seitenTexte.length > 1) {
+      const z = seitenZusammensetzen(r.seitenTexte.map((text) => ({ text })));
+      const ds = dokumentsprachen(z.seiten, zeichenzahl(z.text));
+      if (z.text === r.text && (ds.mehrsprachig || (r.ohneText?.length && hatText(r.text)))) {
+        mehr = { weitere: ds.weitere, seitensprachen: z.seiten };
+        if (ds.mehrsprachig && ds.sprache)
+          sprache = {
+            sprache: ds.sprache,
+            konfidenz: sprache?.sprache === ds.sprache ? sprache.konfidenz : 1,
+            schrift: sprache?.schrift ?? 'latein',
+          };
+      }
+    }
+    // Sprache als eigenes Feld (#400): Die Volltextsuche nimmt die Wortstämme dieser Sprache.
+    return {
+      stand: 'fertig',
+      text: r.text,
+      seiten: r.seiten,
+      info: r.info + herkunft + (sprache ? spracheZuInfo(sprache) : ''),
+      sprache: sprache && istTextsprache(sprache.sprache) ? sprache.sprache : null,
+      ...mehr,
+      ohneText: r.ohneText ?? [],
+    };
   }
 
   /**
@@ -759,15 +804,8 @@ export class Texterkennung {
    */
   async erkenneSofort(inhalt: Buffer, mime: string): Promise<{ text: string; info: string }> {
     if (mime !== 'application/pdf') throw new Fachfehler(422, t('meldungen.texterkennung.fotos-und-bilder-liest'));
-    const dir = await werkzeugOrdner('dms-sofort-');
-    try {
-      const pfad = join(dir, 'datei');
-      await schreibeWerkzeugDatei(pfad, inhalt);
-      const r = await this.engine(pfad, mime, { maxSeiten: 5, werkzeuge: await this.werkzeugeLaden() });
-      return { text: r.text, info: r.info };
-    } finally {
-      await rm(dir, { recursive: true, force: true });
-    }
+    const r = await this.textebene(inhalt, { mime, name: 'datei.pdf' } as Dokument, undefined, 5);
+    return { text: r.text, info: r.info };
   }
 
   /** Für die Werkbank: Stand der Warteschlange und der Werkzeuge. */

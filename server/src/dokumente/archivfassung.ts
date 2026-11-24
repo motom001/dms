@@ -2,7 +2,7 @@
  * Archivfassung (PDF/A, #631, #1075 aus dienst.ts): Paket anbinden, nach dem Volltext melden (#946), Bestand an ein
  * neues Paket melden (#660), Archivfassung und Wortpositionen, Stand je Dokument und für die Werkbank. Schicht 2.
  */
-import { MAIL_TYPEN } from '../../../shared/src/archivfassung';
+import { MAIL_TYPEN, type PdfaKennung } from '../../../shared/src/archivfassung';
 import type { Dokument } from '../../../shared/src/model';
 import { vorgaben } from '../../../shared/src/paketeinstellungen';
 import type { ArchivAblage, ArchivAnbindung, Archivfassung } from '../dateien/archivfassung';
@@ -201,6 +201,12 @@ export class DokumentArchivfassung {
       textebene: (pdf) => textebeneWoerter(pdf),
       seitengroessen: (pdf) => seitenGroessen(pdf),
       liesPdfA: (pdf) => liesPdfA(pdf),
+      // Über die Leistung (#1570): Ablago meldet nur Dateien, die schon PDF/A sind; sonst antwortet sie „kein Anbieter“.
+      bereitsPdfa: async (pdf, name) => {
+        const r = await this.kern.leistung('dokument.umwandeln.pdfa@1', { datei: { inhalt: pdf, mime: 'application/pdf', name } });
+        const pdfa = r.intern?.pdfa as PdfaKennung | undefined;
+        return pdfa ? { seiten: Number(r.daten.seiten), pdfa } : null;
+      },
       notiere: async (d, paket, daten) => {
         const konto = [...this.paketKonten.entries()].find(([, p]) => p === paket)?.[0] ?? null;
         await this.notiere(d.mappeId, konto, 'archivfassung', daten);

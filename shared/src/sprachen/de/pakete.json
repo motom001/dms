@@ -718,5 +718,12 @@
   "leistung.name.text.uebersetzen": "Übersetzen",
   "leistung.name.text.vektor": "Für die Suche nach Bedeutung aufbereiten",
   "leistung.name.nachricht.senden.mail": "E-Mail senden",
-  "leistung.name.nachricht.aufrufen.url": "Adresse aufrufen"
+  "leistung.name.nachricht.aufrufen.url": "Adresse aufrufen",
+  "leistung.einschraenkung.bereits-pdfa": "nur Dateien, die schon PDF/A sind",
+  "anbieter.name.ablago.text": "Text aus PDF und Texterkennung",
+  "anbieter.name.ablago.archiv": "Archivfassung (PDF/A)",
+  "anbieter.name.ablago.umwandeln": "Umwandeln",
+  "anbieter.name.ablago.pdf": "PDF bearbeiten",
+  "anbieter.name.ablago.briefsatz": "Briefsatz",
+  "anbieter.name.ablago.erechnung": "E-Rechnung lesen"
 }

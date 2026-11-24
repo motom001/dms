@@ -32,6 +32,7 @@ import { Anlaesse } from './anlaesse';
 import { Historie } from './historie';
 import { Loeschprotokoll } from './loeschprotokoll';
 import type { FassungArt, Urheber } from '../../../shared/src/fassungen';
+import type { Leistungsweg } from '../../../shared/src/leistungen';
 
 /** Laufende Transaktion je Aufruf (#404): Repo der Transaktion und was erst nach dem Speichern geschehen soll. */
 const transaktionen = new AsyncLocalStorage<{ kern: object; repo: Repo; nachher: Array<() => void> }>();
@@ -138,6 +139,8 @@ export interface KernOptionen {
   zugriff: (ich: Zugreifender) => Promise<Zugriff>;
   /** Fassungen (#1006, `fassungen/`): erst beim ersten Gebrauch gebaut; ohne sie geschieht nichts. */
   fassungen?: () => FassungsAnschluss;
+  /** Leistungen (#1570, `leistungen/`): der Weg, auf dem Ablago selbst Dokumente verarbeiten lässt. */
+  leistung: Leistungsweg;
 }
 
 const OHNE_FASSUNGEN: FassungsAnschluss = { halte: async () => {}, geloescht: async (_a, _e, vorher) => vorher() };
@@ -179,6 +182,12 @@ export class Kern {
   private readonly wecke: () => void;
   private readonly ausstatten: () => Promise<void>;
   private readonly zugriffBilden: (ich: Zugreifender) => Promise<Zugriff>;
+  /**
+   * Leistung abrufen (#1570): Was Ablago selbst mit Dokumenten tut (Text lesen, PDF bearbeiten, Briefsatz …), läuft
+   * über die Vermittlung – so kann ein Paket es übernehmen, und es steht in der Liste der Aufträge. Alle Schichten
+   * brauchen es; die Vermittlung selbst (Schicht 3) reicht der Dienst herein.
+   */
+  readonly leistung: Leistungsweg;
 
   constructor(o: KernOptionen) {
     this.repoOhneTransaktion = o.repo;
@@ -188,6 +197,7 @@ export class Kern {
     this.wecke = o.wecke;
     this.ausstatten = o.ausstatten;
     this.zugriffBilden = o.zugriff;
+    this.leistung = o.leistung;
     this.fassungsQuelle = o.fassungen;
   }
 

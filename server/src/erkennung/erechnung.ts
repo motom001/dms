@@ -12,6 +12,8 @@
 import type { ERechnung, ERechnungPartei, ERechnungPosition } from '../../../shared/src/erechnung';
 import { ERECHNUNG_ELEMENTE_MAX, ERECHNUNG_POSITIONEN_MAX, ERECHNUNG_TIEFE_MAX, ERECHNUNG_XML_MAX } from '../grundlagen/grenzen';
 import { kind, kinder, liesXml, pfad, textAm, XmlFehler, type XmlKnoten } from '../formate/xml';
+import { Fachfehler } from '../grundlagen/fehler';
+import { t } from '../sprache/sprache';
 
 export { XmlFehler };
 
@@ -68,20 +70,70 @@ const ohneLeere = <T extends object>(o: T): T => Object.fromEntries(Object.entri
  * XML einer E-Rechnung lesen. null, wenn es keine E-Rechnung ist (anderes Wurzelelement) oder sich nicht sicher lesen
  * lässt (DTD, Entitäten, zu groß, zu tief, kaputt) – der Grund steht dann in `fehler`.
  */
-export function liesERechnung(xml: string): { er: ERechnung | null; fehler?: string } {
+/** Steueraufteilung je Satz (BG-23) – für die Leistung „E-Rechnung lesen“ (#1570); die ERechnung selbst bleibt, wie sie ist. */
+export interface Steueranteil {
+  satz: number;
+  netto?: number;
+  ust?: number;
+  kategorie?: string;
+}
+
+const anteil = (satz: string | undefined, netto: string | undefined, ust: string | undefined, kategorie: string | undefined) => {
+  const s = zahl(satz);
+  return s === undefined || s < 0 || s > 100
+    ? []
+    : [ohneLeere({ satz: s, netto: zahl(netto), ust: zahl(ust), kategorie: text(kategorie)?.slice(0, 10) })];
+};
+
+function ciiSteuern(w: XmlKnoten): Steueranteil[] {
+  const st = kind(kind(w, 'SupplyChainTradeTransaction'), 'ApplicableHeaderTradeSettlement');
+  return kinder(st, 'ApplicableTradeTax').flatMap((x) =>
+    anteil(textAm(x, 'RateApplicablePercent'), textAm(x, 'BasisAmount'), textAm(x, 'CalculatedAmount'), textAm(x, 'CategoryCode')),
+  );
+}
+
+function ublSteuern(w: XmlKnoten): Steueranteil[] {
+  return kinder(w, 'TaxTotal')
+    .flatMap((x) => kinder(x, 'TaxSubtotal'))
+    .flatMap((x) =>
+      anteil(textAm(x, 'TaxCategory/Percent'), textAm(x, 'TaxableAmount'), textAm(x, 'TaxAmount'), textAm(x, 'TaxCategory/ID')),
+    );
+}
+
+export function liesERechnung(xml: string): { er: ERechnung | null; fehler?: string; steuern?: Steueranteil[] } {
   let w: XmlKnoten;
   try {
     w = liesXml(xml, { zeichen: ERECHNUNG_XML_MAX, tiefe: ERECHNUNG_TIEFE_MAX, elemente: ERECHNUNG_ELEMENTE_MAX });
   } catch (e) {
     return { er: null, fehler: e instanceof XmlFehler ? e.message : 'XML nicht lesbar' };
   }
-  if (w.name === 'CrossIndustryInvoice') return { er: ausCii(w) };
-  if (w.name === 'Invoice' || w.name === 'CreditNote') return { er: ausUbl(w) };
+  if (w.name === 'CrossIndustryInvoice') return { er: ausCii(w), steuern: ciiSteuern(w) };
+  if (w.name === 'Invoice' || w.name === 'CreditNote') return { er: ausUbl(w), steuern: ublSteuern(w) };
   return { er: null };
 }
 
 /** Ist das wohl eine E-Rechnung als Datei (Name oder Art)? */
 export const istXmlDatei = (name: string, mime: string) => /\.xml$/i.test(name) || /^(application|text)\/([\w.+-]+\+)?xml$/i.test(mime);
+
+/**
+ * E-Rechnung aus einer Datei für die Leistung „E-Rechnung lesen“ (#1570, eingebauter Anbieter): XML direkt (bis
+ * ERECHNUNG_XML_MAX), PDF über den eingebetteten Anhang (`anhang`, im Arbeiter). Ohne E-Rechnung ein Fachfehler.
+ */
+export async function leseERechnungDatei(
+  d: { inhalt: Uint8Array; mime: string; name: string },
+  anhang: (pdf: Uint8Array) => Promise<string | null>,
+): Promise<{ er: ERechnung; steuern: Steueranteil[] }> {
+  const xml = istXmlDatei(d.name, d.mime)
+    ? d.inhalt.length > ERECHNUNG_XML_MAX
+      ? null
+      : Buffer.from(d.inhalt).toString('utf8')
+    : d.mime === 'application/pdf'
+      ? await anhang(d.inhalt)
+      : null;
+  const r = xml ? liesERechnung(xml) : { er: null };
+  if (!r.er) throw new Fachfehler(422, t('meldungen.erkennung.keine-erechnung'));
+  return { er: r.er, steuern: r.steuern ?? [] };
+}
 
 /** Positionen bis zur Grenze; der Rest wird gezählt. */
 function begrenzt(liste: XmlKnoten[], lies: (k: XmlKnoten) => ERechnungPosition): { positionen: ERechnungPosition[]; weitere?: number } {

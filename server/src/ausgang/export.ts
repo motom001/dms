@@ -293,6 +293,7 @@ export class AusgangExport {
           mappe: m.titel || t('meldungen.dienst.ohne-titel'),
           archivnummer: d.archivnummer,
           entsperrt: this.entsperrtZu,
+          leistung: this.kern.leistung,
         },
         streng,
       );

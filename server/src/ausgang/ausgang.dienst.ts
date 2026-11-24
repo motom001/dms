@@ -226,6 +226,7 @@ export class AusgangDienst {
         mappe: m.titel || t('meldungen.dienst.ohne-titel'),
         archivnummer: d.archivnummer ?? null,
         entsperrt: this.entsperrtZu,
+        leistung: this.kern.leistung,
       },
     );
   }
@@ -362,6 +363,7 @@ export class AusgangDienst {
         mappe: m!.titel || t('meldungen.dienst.ohne-titel'),
         archivnummer: dokument.archivnummer,
         entsperrt: this.entsperrtZu,
+        leistung: this.kern.leistung,
       },
       true,
     );

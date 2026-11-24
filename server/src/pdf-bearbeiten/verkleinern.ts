@@ -22,8 +22,8 @@ import {
   type Stufe,
   stufeAus,
   STUFEN,
-  verkleinere,
 } from '../dateien/verkleinern';
+import { verkleinereUeber } from '../leistungen';
 import type { Auftrag, Fortschritt, PhasenPlan } from '../../../shared/src/auftrag';
 import type { LoeschDokument, LoeschEintrag, LoeschKontext } from '../../../shared/src/loeschprotokoll';
 import type { Dokument } from '../../../shared/src/model';
@@ -193,7 +193,7 @@ export class PdfVerkleinern {
         { rueckfrage: true, papierkorb: korb },
       );
     }
-    const r = await verkleinere(inhalt, stufe);
+    const r = await verkleinereUeber(this.kern.leistung, inhalt, stufe, d.name);
     if (!r.lohnt) {
       const meldung = t('meldungen.dienst.laesst-sich-kaum-verkleinern', { name: d.name, round: Math.round(MIN_ERSPARNIS * 100) });
       return { dokument: d, unveraendert: true, vorher: r.vorher, nachher: r.vorher, stufe, meldung };
@@ -309,7 +309,7 @@ export class PdfVerkleinern {
     const e = await this.verkleinernEinstellung();
     if (!e.automatisch || ein.groesse < e.abMb * MB) return null;
     try {
-      const r = await verkleinere(await ein.puffer(), e.stufe);
+      const r = await verkleinereUeber(this.kern.leistung, await ein.puffer(), e.stufe, name);
       if (!r.lohnt) return null;
       protokoll
         .modul('dokumente')

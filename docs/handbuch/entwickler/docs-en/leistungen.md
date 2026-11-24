@@ -27,7 +27,7 @@ A test (`shared/test/leistungen-katalog.test.ts`) checks that every entry is com
 | `dokument.bearbeiten.seiten@1` | Rotate and arrange pages | exact | `application/pdf` | `application/pdf` | 120 s |
 | `dokument.bearbeiten.zusammenfuegen@1` | Merge PDFs | exact | `application/pdf` | `application/pdf` | 120 s |
 | `dokument.bearbeiten.verkleinern@1` | Shrink PDF | exact | `application/pdf` | `application/pdf` | 300 s |
-| `dokument.bearbeiten.schwaerzen@1` | Redact | exact | `application/pdf`, `image/jpeg`, `image/png` | `application/pdf` | 300 s |
+| `dokument.bearbeiten.schwaerzen@1` | Redact | exact | `application/pdf`, `image/jpeg`, `image/png` | `application/pdf`, `image/jpeg`, `image/png` | 300 s |
 | `dokument.lesen.text@1` | Read text | exact | 5 types | – | 600 s |
 | `dokument.lesen.erechnung@1` | Read e-invoice | exact | `application/pdf`, `application/xml`, `text/xml` | – | 60 s |
 | `dokument.lesen.barcode@1` | Read barcodes | exact | 5 types | – | 120 s |
@@ -40,6 +40,36 @@ A test (`shared/test/leistungen-katalog.test.ts`) checks that every entry is com
 | `nachricht.aufrufen.url@1` | Call address | effect | – | – | 60 s |
 
 Thumbnails and page sizes are not a service; Ablago’s own emails (invitations, notifications) stay in the core.
+
+## What a provider can do: its declaration { #meldung }
+
+A provider declares per service what it can do (#1570) – Ablago itself just like a package:
+
+- **File types:** narrower `dateitypen` than the catalogue (e.g. Ablago’s “Convert” only JPEG and PNG).
+- **Input restrictions:** entries from the catalogue (`einschraenkungen` of the service, described in `EINSCHRAENKUNGEN`), e.g. `bereits-pdfa` – “only files that are already PDF/A”. Ablago checks them itself before choosing.
+
+A provider never gets input outside its declaration. If nobody can do it, Ablago answers `leistung.kein-anbieter` with reason `dateityp` or `eingabe` and the catalogue address – visibly, never silently.
+
+**Test cases:** all test cases that match the declaration are mandatory and must pass. The others run along visibly as “not declared” (`pruefeTestfaelle` returns `bestanden`, `gescheitert` or `nicht-gemeldet` per test case) – they are not skipped silently.
+
+**Time limit:** a provider can declare its own (`zeitgrenzeMs`, e.g. by page count); otherwise the catalogue’s applies.
+
+## What Ablago does itself: built-in providers { #eingebaut }
+
+| Provider | Services | Declaration |
+|---|---|---|
+| Text from PDF and text recognition (`ablago.text`) | `dokument.lesen.text@1` | PDF only (the text layer; scans and images are recognised by a package) |
+| Archive version (PDF/A) (`ablago.archiv`) | `dokument.umwandeln.pdfa@1` | PDF only, restriction `bereits-pdfa` – Ablago does not create PDF/A, it takes over originals that already are PDF/A |
+| Convert (`ablago.umwandeln`) | `dokument.umwandeln.pdf@1` | JPEG, PNG |
+| Edit PDF (`ablago.pdf`) | `dokument.bearbeiten.seiten@1`, `…zusammenfuegen@1`, `…verkleinern@1`, `…schwaerzen@1` | as in the catalogue |
+| Letter layout (`ablago.briefsatz`) | `dokument.erstellen.aus-text@1`, `…aus-vorlage@1` | as in the catalogue |
+| Read e-invoice (`ablago.erechnung`) | `dokument.lesen.erechnung@1` | as in the catalogue |
+
+The declarations are in `shared/src/leistungen/eingebaut.ts`, the work in `server/src/leistungen/eingebaut.ts` – the same as before (PDF module in the worker, tool service). Each passes the test cases of its declaration (`server/test/leistungen-eingebaut.test.ts`).
+
+**Ablago itself only calls through services:** text recognition (text layer), rotating and splitting pages, merging (also mail), shrinking (by hand, on upload, when passing on), redacting, letter from template, reading e-invoices and “original is already PDF/A” go through `kern.leistung(name, eingabe, { intern?, signal? })`. That is the way for all layers (the core only passes it on). `intern` only goes to built-in providers – what the calling place has already prepared (e.g. the finished letter, the analysis for redacting), so the result stays exactly the same; a package only gets the input. Likewise `intern` only comes back from built-in providers (e.g. page texts of the text layer). Errors of built-in providers stay the previous domain errors; they set no time limit of their own for Ablago because the calling places already have theirs (text recognition by page count, #1550). Ablago’s jobs are in the list – without input and without result.
+
+Not through services: thumbnails and page images, “mail from photos” (several photos as pages of a PDF) and Ablago’s own documents (data access request, deletion log, emergency sheet).
 
 ## Jobs { #auftraege }
 
@@ -59,7 +89,7 @@ Thumbnails and page sizes are not a service; Ablago’s own emails (invitations,
 | `kein-schreibrecht` | 403 | no “edit” permission on the target folder |
 | `ziel-noetig` | 422 | the result is a file, but there is no target |
 | `nur-verwaltung` | 403 | service with `wirkung` requested by a person without administration rights |
-| `kein-anbieter` | 409 | nobody does it: `details.grund` = `keiner`, `aus` or `dateityp`, plus `details.katalog` (address in the catalogue) |
+| `kein-anbieter` | 409 | nobody does it: `details.grund` = `keiner`, `aus`, `dateityp` or `eingabe` (outside the declaration), plus `details.katalog` (address in the catalogue) |
 | `ausgabe-ungueltig` | 502 | the result does not match schema or formats – nothing is filed |
 | `zeitgrenze` | 504 | time limit exceeded |
 | `anbieter-fehler` | 502 | the provider failed |
@@ -74,4 +104,4 @@ Thumbnails and page sizes are not a service; Ablago’s own emails (invitations,
 
 ## Output per release { #ausgabe }
 
-Every release carries the file `ablago-leistungen.json` (from `shared/leistungen/`): the catalogue with name, version, result type, file types, formats, schemas and display names, the built-in providers, Ablago’s folder types and the test cases including test files (Base64) – machine-readable for dms-registry. A test keeps the file in step with the catalogue; if it changes, rewrite it with `CHARAKTER_SCHREIBEN=1 npm run test:datei -w server -- test/leistungen-ausgabe.test.ts`, then Prettier.
+Every release carries the file `ablago-leistungen.json` (from `shared/leistungen/`): the catalogue with name, version, result type, file types, formats, schemas and display names, the input restrictions, the built-in providers with their declaration, Ablago’s folder types and the test cases including test files (Base64) – machine-readable for dms-registry. A test keeps the file in step with the catalogue; if it changes, rewrite it with `CHARAKTER_SCHREIBEN=1 npm run test:datei -w server -- test/leistungen-ausgabe.test.ts`, then Prettier.

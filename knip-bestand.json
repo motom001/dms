@@ -127,7 +127,6 @@
       "ARCHIV_ANGEFORDERT_MS",
       "ARCHIV_ORDNER",
       "WOERTER_ORDNER",
-      "bewertePdfA",
       "pruefeArchivfassung"
     ],
     "types": [
@@ -880,7 +879,6 @@
       "ANSICHT_PX",
       "SCHWAERZEN_DPI",
       "arbeitsPdf",
-      "baueSeiten",
       "hatQpdf"
     ],
     "types": [

@@ -14,6 +14,8 @@ import { einzeilig, ersetzePlatzhalter, kannStempeln, platzhalterIn, type Gelten
 import { Fachfehler } from '../grundlagen/fehler';
 import { bildAlsA4Pdf, seitenInfo, stempelePdf } from '../pdf';
 import { mb, verkleinere, type Stufe } from '../dateien/verkleinern';
+import type { Leistungsweg } from '../../../shared/src/leistungen';
+import { verkleinereUeber } from '../leistungen';
 import { t } from '../sprache/sprache';
 
 export interface Ausgabedatei {
@@ -36,6 +38,8 @@ export interface Ausgabekontext {
    * mit ihr; ohne Bearbeitung geht das Original hinaus.
    */
   entsperrt?: (inhalt: Buffer) => Promise<Buffer | null>;
+  /** Leistungen (#1570): Verkleinern über „PDF verkleinern“; ohne (Tests) direkt. */
+  leistung?: Leistungsweg;
 }
 export interface Ausgabe extends Ausgabedatei {
   /** Der Stempeltext mit ersetzten Platzhaltern (wie auf Seite 1, in einer Zeile), wenn gestempelt wurde. */
@@ -93,7 +97,9 @@ export async function fuerAusgabe(
   let verkleinert: Ausgabe['verkleinert'] = null;
   if (w?.verkleinern && d.mime === 'application/pdf') {
     try {
-      const r = await verkleinere(d.inhalt, w.verkleinern);
+      const r = k.leistung
+        ? await verkleinereUeber(k.leistung, d.inhalt, w.verkleinern, d.name)
+        : await verkleinere(d.inhalt, w.verkleinern);
       if (r.lohnt) {
         d = { ...d, inhalt: r.inhalt };
         verkleinert = { vorher: r.vorher, nachher: r.nachher };

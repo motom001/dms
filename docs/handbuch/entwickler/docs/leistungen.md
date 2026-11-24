@@ -27,7 +27,7 @@ Ein Test (`shared/test/leistungen-katalog.test.ts`) prüft, dass jeder Eintrag v
 | `dokument.bearbeiten.seiten@1` | Seiten drehen und ordnen | exakt | `application/pdf` | `application/pdf` | 120 s |
 | `dokument.bearbeiten.zusammenfuegen@1` | PDFs zusammenfügen | exakt | `application/pdf` | `application/pdf` | 120 s |
 | `dokument.bearbeiten.verkleinern@1` | PDF verkleinern | exakt | `application/pdf` | `application/pdf` | 300 s |
-| `dokument.bearbeiten.schwaerzen@1` | Schwärzen | exakt | `application/pdf`, `image/jpeg`, `image/png` | `application/pdf` | 300 s |
+| `dokument.bearbeiten.schwaerzen@1` | Schwärzen | exakt | `application/pdf`, `image/jpeg`, `image/png` | `application/pdf`, `image/jpeg`, `image/png` | 300 s |
 | `dokument.lesen.text@1` | Text lesen | exakt | 5 Typen | – | 600 s |
 | `dokument.lesen.erechnung@1` | E-Rechnung lesen | exakt | `application/pdf`, `application/xml`, `text/xml` | – | 60 s |
 | `dokument.lesen.barcode@1` | Barcodes lesen | exakt | 5 Typen | – | 120 s |
@@ -40,6 +40,36 @@ Ein Test (`shared/test/leistungen-katalog.test.ts`) prüft, dass jeder Eintrag v
 | `nachricht.aufrufen.url@1` | Adresse aufrufen | Wirkung | – | – | 60 s |
 
 Vorschaubilder und Seitengrößen sind keine Leistung; Ablagos eigene Mails (Einladungen, Benachrichtigungen) bleiben im Kern.
+
+## Was ein Anbieter kann: Meldung { #meldung }
+
+Ein Anbieter meldet je Leistung, was er davon kann (#1570) – Ablago selbst genauso wie ein Paket:
+
+- **Dateitypen:** engere `dateitypen` als im Katalog (z. B. „Umwandeln“ von Ablago nur JPEG und PNG).
+- **Einschränkungen der Eingabe:** Angaben aus dem Katalog (`einschraenkungen` der Leistung, beschrieben in `EINSCHRAENKUNGEN`), z. B. `bereits-pdfa` – „nur Dateien, die schon PDF/A sind“. Ablago prüft sie selbst vor der Wahl.
+
+Eine Eingabe außerhalb der Meldung bekommt ein Anbieter nie. Kann es niemand, antwortet Ablago `leistung.kein-anbieter` mit Grund `dateityp` bzw. `eingabe` und der Katalog-Adresse – sichtbar, nie still.
+
+**Testfälle:** Pflicht sind alle Testfälle, die zur Meldung passen; sie müssen bestehen. Die übrigen laufen sichtbar als „nicht gemeldet“ mit (`pruefeTestfaelle` gibt je Testfall `bestanden`, `gescheitert` oder `nicht-gemeldet`) – sie werden nicht still übersprungen.
+
+**Zeitgrenze:** Ein Anbieter kann eine eigene melden (`zeitgrenzeMs`, z. B. nach Seitenzahl); sonst gilt die des Katalogs.
+
+## Was Ablago selbst macht: eingebaute Anbieter { #eingebaut }
+
+| Anbieter | Leistungen | Meldung |
+|---|---|---|
+| Text aus PDF und Texterkennung (`ablago.text`) | `dokument.lesen.text@1` | nur PDF (die Textebene; Scans und Bilder erkennt ein Paket) |
+| Archivfassung (PDF/A) (`ablago.archiv`) | `dokument.umwandeln.pdfa@1` | nur PDF, Einschränkung `bereits-pdfa` – Ablago erzeugt kein PDF/A, es übernimmt Originale, die schon PDF/A sind |
+| Umwandeln (`ablago.umwandeln`) | `dokument.umwandeln.pdf@1` | JPEG, PNG |
+| PDF bearbeiten (`ablago.pdf`) | `dokument.bearbeiten.seiten@1`, `…zusammenfuegen@1`, `…verkleinern@1`, `…schwaerzen@1` | wie im Katalog |
+| Briefsatz (`ablago.briefsatz`) | `dokument.erstellen.aus-text@1`, `…aus-vorlage@1` | wie im Katalog |
+| E-Rechnung lesen (`ablago.erechnung`) | `dokument.lesen.erechnung@1` | wie im Katalog |
+
+Die Meldungen stehen in `shared/src/leistungen/eingebaut.ts`, die Arbeit in `server/src/leistungen/eingebaut.ts` – dieselbe wie vorher (PDF-Stelle im Arbeiter, Werkzeugdienst). Jeder besteht die Testfälle seiner Meldung (`server/test/leistungen-eingebaut.test.ts`).
+
+**Ablago ruft selbst nur über Leistungen:** Texterkennung (Textebene), Seiten drehen und teilen, Zusammenfügen (auch Post), Verkleinern (von Hand, beim Hochladen, beim Weitergeben), Schwärzen, Brief aus Vorlage, E-Rechnung lesen und „Original ist schon PDF/A“ gehen über `kern.leistung(name, eingabe, { intern?, signal? })`. Das ist der Weg für alle Schichten (der Kern reicht ihn nur durch). `intern` geht nur an eingebaute Anbieter – das, was die Stelle schon vorbereitet hat (z. B. der fertige Brief, die Analyse zum Schwärzen), damit das Ergebnis genau gleich bleibt; ein Paket bekommt nur die Eingabe. Ebenso kommt `intern` nur von eingebauten Anbietern zurück (z. B. Seitentexte der Textebene). Fehler eingebauter Anbieter bleiben die bisherigen Fachfehler; eine eigene Zeitgrenze setzen sie für Ablago nicht, weil die Stellen ihre schon haben (Texterkennung nach Seitenzahl, #1550). Aufträge von Ablago stehen in der Liste – ohne Eingabe und ohne Ergebnis.
+
+Nicht über Leistungen: Vorschaubilder und Seitenbilder, „Post aus Fotos“ (mehrere Fotos als Seiten eines PDFs) und Ablagos eigene Unterlagen (Auskunft, Löschprotokoll, Notfallblatt).
 
 ## Aufträge { #auftraege }
 
@@ -59,7 +89,7 @@ Vorschaubilder und Seitengrößen sind keine Leistung; Ablagos eigene Mails (Ein
 | `kein-schreibrecht` | 403 | kein Recht „Bearbeiten“ an der Mappe des Ziels |
 | `ziel-noetig` | 422 | Ergebnis ist eine Datei, aber kein Ziel |
 | `nur-verwaltung` | 403 | Leistung mit `wirkung` von einer Person ohne Verwaltungsrecht |
-| `kein-anbieter` | 409 | niemand macht es: `details.grund` = `keiner`, `aus` oder `dateityp`, dazu `details.katalog` (Adresse im Katalog) |
+| `kein-anbieter` | 409 | niemand macht es: `details.grund` = `keiner`, `aus`, `dateityp` oder `eingabe` (außerhalb der Meldung), dazu `details.katalog` (Adresse im Katalog) |
 | `ausgabe-ungueltig` | 502 | Ergebnis passt nicht zu Schema oder Formaten – nichts wird abgelegt |
 | `zeitgrenze` | 504 | Zeitgrenze überschritten |
 | `anbieter-fehler` | 502 | der Anbieter ist gescheitert |
@@ -74,4 +104,4 @@ Vorschaubilder und Seitengrößen sind keine Leistung; Ablagos eigene Mails (Ein
 
 ## Ausgabe je Release { #ausgabe }
 
-Jedes Release trägt die Datei `ablago-leistungen.json` (aus `shared/leistungen/`): Katalog mit Name, Version, Ergebnisart, Dateitypen, Formaten, Schemas und Anzeigenamen, die eingebauten Anbieter, die Mappentypen von Ablago und die Testfälle samt Testdateien (Base64) – maschinenlesbar für dms-registry. Ein Test hält die Datei im Gleichschritt mit dem Katalog; ändert er sich, neu schreiben mit `CHARAKTER_SCHREIBEN=1 npm run test:datei -w server -- test/leistungen-ausgabe.test.ts`, danach Prettier.
+Jedes Release trägt die Datei `ablago-leistungen.json` (aus `shared/leistungen/`): Katalog mit Name, Version, Ergebnisart, Dateitypen, Formaten, Schemas und Anzeigenamen, die Einschränkungen der Eingabe, die eingebauten Anbieter mit ihrer Meldung, die Mappentypen von Ablago und die Testfälle samt Testdateien (Base64) – maschinenlesbar für dms-registry. Ein Test hält die Datei im Gleichschritt mit dem Katalog; ändert er sich, neu schreiben mit `CHARAKTER_SCHREIBEN=1 npm run test:datei -w server -- test/leistungen-ausgabe.test.ts`, danach Prettier.
