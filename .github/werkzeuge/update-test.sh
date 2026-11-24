@@ -68,7 +68,7 @@ umzug_ueber_sicherung() {
   local s="" erwartet="anderen Hauptversion von PostgreSQL"
   [ "$pg_alt" = 17 ] && [ "$pg_neu" = 18 ] && erwartet="letzte Version mit PostgreSQL 17"
   for _ in $(seq 1 120); do s=$(seite); grep -q "$erwartet" <<< "$s" && break; sleep 1; done
-  grep -q "$erwartet" <<< "$s" || fehler "keine Startseite mit „$erwartet“ beim alten Datenbank-Ordner"
+  grep -q "$erwartet" <<< "$s" || fehler "keine Startseite beim alten Datenbank-Ordner (erwartet: $erwartet)"
   echo "Startseite: $(grep -oE 'Ziehe mit Ablago [0-9.]+ \(letzte Version mit PostgreSQL 17\)' <<< "$s" || echo "$erwartet")"
   [ "$(sudo cat "$arbeit/postgres/daten/PG_VERSION")" = "$pg_alt" ] || fehler "alter Datenbank-Ordner verändert"
   docker rm -f "$NAME" >/dev/null
