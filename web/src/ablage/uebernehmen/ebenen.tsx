@@ -7,7 +7,7 @@ import { Knopf, Umschalter } from '../../bausteine';
 import { t } from '../../sprache';
 import { Symbol } from '../../Symbol';
 import { ausRoh } from '../../werte';
-import { BrueckeKontext, useBruecke } from '../bruecke';
+import { BrueckeKontext, useBruecke, type Bruecke, type FormularAnschluss } from '../bruecke';
 import { EBENEN_MAX, EbenenKontext, FeldIdPraefix, type EbeneLage, type EbenenWunsch } from '../ebenen';
 import { Formular } from '../MappeFormular';
 import { useFensterBruecke } from '../VerweisFenster';
@@ -101,7 +101,31 @@ export function useEbenen(postId: string, wurzel: Mappentyp | undefined, aktiv: 
   );
   const offen = aktiv && stapel.length > 0;
   const namen = [wurzelName, ...stapel.map((e) => e.name)];
-  return { aktiv, offen, stapel, namen, frage, setFrage, ansicht, setAnsicht, schmal, oeffne, zurueck, gespeichert };
+  // Bereich markieren (#1597): Welches Formular gehört zu welcher Ebene? Mitgeschnitten, wenn es sich an die Brücke hängt.
+  const ziele = useRef(new Map<number, FormularAnschluss>());
+  const mitschnitt = useCallback(
+    (b: Bruecke | null, nr: number): Bruecke | null =>
+      b && {
+        ...b,
+        anschliessen(a) {
+          ziele.current.set(nr, a);
+          const los = b.anschliessen(a);
+          return () => {
+            if (ziele.current.get(nr) === a) ziele.current.delete(nr);
+            los();
+          };
+        },
+      },
+    [],
+  );
+  /** Die gerade offene Ebene: ihr Formular, ihr Mappentyp und ihr Name (z. B. „Rechnung“). */
+  const ziel = () => {
+    const nr = offen ? stapel.length + 1 : 1;
+    const typ = nr === 1 ? wurzel : stapel[nr - 2].w.typ;
+    const anschluss = ziele.current.get(nr);
+    return anschluss && typ ? { anschluss, typ, name: namen[nr - 1], nr } : null;
+  };
+  return { aktiv, offen, stapel, namen, frage, setFrage, ansicht, setAnsicht, schmal, oeffne, zurueck, gespeichert, mitschnitt, ziel };
 }
 export type Ebenen = ReturnType<typeof useEbenen>;
 
@@ -113,13 +137,18 @@ export const ebenenKlassen = (eb: Ebenen) =>
  * Rechte Spalte mit Ebenen: oben die Brotkrümel, darunter die Mappe aus der Post (`children`, bleibt stehen, solange
  * eine Ebene darüber offen ist) und die Ebenen; zu sehen ist immer nur die oberste.
  */
-export function EbenenRahmen({ eb, children }: { eb: Ebenen; children: ReactNode }) {
+export function EbenenRahmen({ eb, oben, children }: { eb: Ebenen; oben?: ReactNode; children: ReactNode }) {
+  const aussen = useBruecke();
+  const eins = useMemo(() => eb.mitschnitt(aussen, 1), [aussen, eb.mitschnitt]); // eslint-disable-line react-hooks/exhaustive-deps -- eb ist je Darstellung neu, mitschnitt nicht
   const lage = useMemo<EbeneLage>(() => ({ nr: 1, oeffne: (w) => eb.oeffne(1, w) }), [eb.oeffne]); // eslint-disable-line react-hooks/exhaustive-deps -- eb ist je Darstellung neu, oeffne nicht
   return (
     <>
       {eb.aktiv && <Kopfleiste eb={eb} />}
+      {oben}
       <div className={s.eins} hidden={eb.offen}>
-        <EbenenKontext.Provider value={eb.aktiv ? lage : null}>{children}</EbenenKontext.Provider>
+        <BrueckeKontext.Provider value={eins}>
+          <EbenenKontext.Provider value={eb.aktiv ? lage : null}>{children}</EbenenKontext.Provider>
+        </BrueckeKontext.Provider>
       </div>
       {eb.aktiv &&
         eb.stapel.map((e, i) => (
@@ -140,7 +169,9 @@ export function EbenenRahmen({ eb, children }: { eb: Ebenen; children: ReactNode
 function EbeneFormular({ e, nr, oben, sichtbar, eb }: { e: Ebene; nr: number; oben: boolean; sichtbar: boolean; eb: Ebenen }) {
   const { typ } = e.w;
   // Rahmen und markierter Text vom Dokument gehen in die oberste Ebene, wie beim Fenster (#935).
-  const innen = useFensterBruecke(useBruecke(), typ, oben);
+  const fenster = useFensterBruecke(useBruecke(), typ, oben);
+  const { mitschnitt } = eb;
+  const innen = useMemo(() => mitschnitt(fenster, nr), [mitschnitt, fenster, nr]);
   // Beim Öffnen: Spalte nach oben (Brotkrümel sichtbar), Fokus auf die Überschrift der neuen Ebene.
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {

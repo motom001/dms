@@ -13,6 +13,7 @@ import { AnlageMarke, anlageZeilentext, OriginalEmailWahl } from '../Anlagen';
 import type { Marke, Nutzlast } from '../bruecke';
 import type { UeMeldung } from './bruecke-zustand';
 import { DokumentBlatt } from './DokumentBlatt';
+import type { BereichLage } from './bereich';
 import type { Woerter } from './hilfen';
 import { Ablageflaeche, PostKopf } from './teile';
 import type { Folge, useReihe } from './wohin';
@@ -26,6 +27,8 @@ export interface BlattLage {
   insAktive(n: Nutzlast, eigenesFeld?: string): void;
   leer: { von(x: Dokument): Leerseiten | null; setze(id: string, l: Leerseiten | null): void };
   herunterladen: boolean;
+  /** Bereich markieren (#1597). */
+  bereich?: BereichLage;
 }
 
 /**
@@ -105,6 +108,7 @@ export function MitteDokumente({
       leer={post ? blatt.leer.von(x) : null}
       setzeLeer={(l) => blatt.leer.setze(x.id, l)}
       herunterladen={blatt.herunterladen}
+      bereich={blatt.bereich}
     />
   );
   return (

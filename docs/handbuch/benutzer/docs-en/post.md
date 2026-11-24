@@ -146,6 +146,13 @@ If a folder for a link field is missing, choose **+ Create …** at the end of i
 
 Elsewhere (e.g. in a new folder via **+ New**), **+ Create …** still opens the [window for a new folder](mappen.md#auf-andere-mappen-verweisen).
 
+**Mark area:** instead of selecting field by field, you drag a rectangle around a whole block. In the document header, to the right of the name, **Mark area** switches the mode on: below it you see which folder Ablago writes to, and the pointer becomes a crosshair. Drag a rectangle with the mouse, a pen or your finger – e.g. around the address. Ablago fills in only the matching fields of the **folder currently open** on the right (the invoice or e.g. the new contract partner), marks them as **Suggestion** and says what it recognised: "Address "Musterweg 1, 01234 Musterstadt" recognised – Street, House number, Postcode, Town filled in as suggestion. Please check." The mode then ends; **Undo** restores the fields as they were. Esc ends the mode without changes; very small rectangles are ignored.
+
+- Ablago recognises addresses (street with house number such as "12a" or "12-14", postcode and town, name or company before them), bank details (IBAN, BIC, bank), contact blocks (phone, fax, email) and invoice headers (invoice, customer and contract number, date). The small return line above the address ("Company · Street · Postcode Town") is not taken as the address.
+- If Ablago finds nothing in the rectangle, it says "Ablago found nothing in the area …" – drag the rectangle around the whole block. If the folder has no matching fields, Ablago says so too, e.g. "… but "Invoice" has no fields for an address."
+- Values are cleaned as when selecting (punctuation at the edges is dropped). Only text Ablago already has is read (the PDF's text layer or text recognition) – nothing leaves your Ablago.
+- **On a phone** you mark in the **Document** tab; afterwards the view switches to the folder with the note "Address filled in from the marked area – please check."
+
 Below a **link field** you see **How Ablago recognises "…"**, e.g. "Contract number WV-1043" or "Customer number 100-4711 (via contract partner)" – values from fields with *Use to find existing folders*, with frames in the document. If Ablago finds several matching folders, **Also found: "…" take this instead** appears below.
 
 **Does the folder exist already?** If all values used to find an existing folder of the chosen type appear in the document, e.g. the same invoice number, the page warns: "Invoice number R-2026-0815 already exists: "…"". **Put it there instead** switches to *Existing folder* with that folder; **Put it into "…"** then puts the post there.

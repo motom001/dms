@@ -146,6 +146,13 @@ Fehlt eine Mappe für ein Verweisfeld, wählst du in seiner Liste **+ … anlege
 
 An anderen Stellen (etwa in einer neuen Mappe über **+ Neu**) öffnet **+ … anlegen** weiter das [Fenster für eine neue Mappe](mappen.md#auf-andere-mappen-verweisen).
 
+**Bereich markieren:** Statt Feld für Feld zu markieren, ziehst du ein Rechteck um einen ganzen Block. Im Kopf des Dokuments, rechts neben dem Namen, schaltet **Bereich markieren** den Modus ein: Darunter steht, in welche Mappe Ablago schreibt, und der Zeiger wird zum Fadenkreuz. Zieh mit Maus, Stift oder Finger ein Rechteck – etwa um die Anschrift. Ablago trägt nur die passenden Felder der **gerade offenen Mappe** rechts ein (die Rechnung oder z. B. der neue Vertragspartner), markiert sie mit **Vorschlag** und sagt, was es erkannt hat: „Anschrift „Musterweg 1, 01234 Musterstadt“ erkannt – Straße, Hausnummer, PLZ, Ort als Vorschlag eingetragen. Bitte prüfen.“ Danach endet der Modus; **Rückgängig** stellt die Felder wie vorher wieder her. Esc beendet den Modus ohne Änderung, sehr kleine Rechtecke zählen nicht.
+
+- Erkannt werden Anschriften (Straße mit Hausnummer wie „12a“ oder „12-14“, PLZ und Ort, davor Name oder Firma), Bankverbindungen (IBAN, BIC, Bank), Kontaktblöcke (Telefon, Fax, E-Mail) und Rechnungsköpfe (Rechnungs-, Kunden- und Vertragsnummer, Datum). Die kleine Rücksendezeile über der Anschrift („Firma · Straße · PLZ Ort“) nimmt Ablago nicht als Anschrift.
+- Findet Ablago im Rechteck nichts, steht dort „Im Bereich hat Ablago nichts erkannt …“ – zieh das Rechteck dann um den ganzen Block. Hat die Mappe keine passenden Felder, sagt Ablago auch das, etwa „… aber „Rechnung“ hat keine Felder für eine Anschrift.“
+- Die Werte säubert Ablago wie beim Markieren (Satzzeichen am Rand fallen weg). Gelesen wird nur der Text, den Ablago schon hat (Textebene des PDF oder Texterkennung) – nichts verlässt dein Ablago.
+- **Am Handy** markierst du im Reiter **Dokument**; danach springt die Ansicht zur Mappe mit dem Hinweis „Anschrift aus dem markierten Bereich eingetragen – bitte prüfen.“
+
 Unter einem **Verweisfeld** steht **Woran Ablago „…“ erkennt**, etwa „Vertragsnummer WV-1043“ oder „Kundennummer 100-4711 (über Vertragspartner)“ – Werte aus Feldern mit *Zum Wiederfinden nutzen*, mit Rahmen im Dokument. Findet Ablago mehrere passende Mappen, steht darunter **Auch gefunden: „…“ stattdessen nehmen**.
 
 **Gibt es die Mappe schon?** Stehen alle Werte zum Wiederfinden einer vorhandenen Mappe des gewählten Typs im Dokument, etwa dieselbe Rechnungsnummer, warnt die Seite: „Rechnungsnummer R-2026-0815 gibt es schon: „…““. **Stattdessen dorthin legen** wechselt zu *Vorhandene Mappe* mit dieser Mappe; **Zu „…“ legen** legt die Post dann hinein.

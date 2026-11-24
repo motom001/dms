@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { registerName } from '../../../../shared/src/beschriftung';
 import type { AnsichtsRegister } from '../../../../shared/src/mappenansicht';
+import type { Wert } from '../../../../shared/src/model';
 import { ersteId } from '../../../../shared/src/folgtaus';
 import { ausRoh, werteAusRoh, zuRoh } from '../../werte';
 import { Reiter, ReiterFlaeche, Speicherleiste, type Entwurf } from '../../bausteine';
@@ -241,10 +242,11 @@ function useVorschlagStart(z: Kern, uebernimmVorschlaege: ReturnType<typeof ausD
 /** Die Brücke setzt Werte vom Dokument und zeigt Felder; über Refs immer mit dem aktuellen Stand. */
 function useBrueckeAnschluss(z: Kern, ein: ReturnType<typeof eingabeWege>) {
   const { typ } = z.p;
-  const { roh, register, felderAuf, oeffneAbschnitte, geschuetzt, nurLesen, merke, setFehler, bruecke } = z;
+  const { roh, register, felderAuf, oeffneAbschnitte, geschuetzt, nurLesen, merke, setFehler, bruecke, vorschlaege } = z;
   const { folge, vorbelege } = ein;
-  const anschluss = useRef({ roh, register, felderAuf, oeffneAbschnitte, geschuetzt, nurLesen, merke, setFehler, folge, vorbelege });
-  anschluss.current = { roh, register, felderAuf, oeffneAbschnitte, geschuetzt, nurLesen, merke, setFehler, folge, vorbelege };
+  const stand = { roh, register, felderAuf, oeffneAbschnitte, geschuetzt, nurLesen, merke, setFehler, folge, vorbelege, vorschlaege };
+  const anschluss = useRef(stand);
+  anschluss.current = stand;
   /* eslint-disable react-hooks/exhaustive-deps -- die Brücke liest über anschluss.current immer den aktuellen Stand */
   useEffect(
     () =>
@@ -267,6 +269,7 @@ function useBrueckeAnschluss(z: Kern, ein: ReturnType<typeof eingabeWege>) {
           void a.folge(k, roh);
           void a.vorbelege(k, roh);
         },
+        vorschlagen: (werte, fundstelle) => vorschlagenIn(z, anschluss.current, werte, fundstelle),
         zeige(k) {
           const a = anschluss.current;
           const r = a.register.find((x) => x.art === 'felder' && a.felderAuf(x).some((f) => f.key === k));
@@ -284,6 +287,50 @@ function useBrueckeAnschluss(z: Kern, ein: ReturnType<typeof eingabeWege>) {
     [bruecke?.anschliessen, typ],
   );
   /* eslint-enable react-hooks/exhaustive-deps */
+}
+
+/**
+ * Bereich markieren (#1597): Werte als „Vorschlag“ eintragen wie die Erkennung (Etikett am Feld, „Zurücknehmen“), das
+ * Register des ersten Felds öffnen. „Rückgängig“ stellt Werte und Vorschläge wie vorher wieder her.
+ */
+function vorschlagenIn(
+  z: Kern,
+  a: { roh: Kern['roh']; geschuetzt: Kern['geschuetzt']; nurLesen: boolean; vorschlaege: Kern['vorschlaege'] },
+  werte: Array<{ key: string; wert: Wert }>,
+  fundstelle: string,
+): (() => void) | null {
+  const felder = werte.flatMap(({ key, wert }) => {
+    const f = z.p.typ.felder.find((x) => x.key === key);
+    return f && !a.nurLesen && a.geschuetzt[key] === undefined ? [{ f, wert }] : [];
+  });
+  if (!felder.length) return null;
+  const keys = felder.map((x) => x.f.key);
+  const vorherRoh = Object.fromEntries(keys.map((k) => [k, a.roh[k]]));
+  const vorherV = Object.fromEntries(keys.map((k) => [k, a.vorschlaege[k]]));
+  z.setRoh((r) => ({ ...r, ...Object.fromEntries(felder.map(({ f, wert }) => [f.key, zuRoh(f, wert)])) }));
+  z.setVorschlaege((v) => ({
+    ...v,
+    ...Object.fromEntries(
+      felder.map(({ f, wert }) => [
+        f.key,
+        { wert, sicherheit: 'mittel' as const, fundstelle, art: 'eingetragen' as const, vorher: a.roh[f.key] },
+      ]),
+    ),
+  }));
+  const r = z.register.find((x) => x.art === 'felder' && z.felderAuf(x).some((f) => f.key === keys[0]));
+  if (r) z.setAktiv(r.key);
+  z.oeffneAbschnitte(keys);
+  return () => {
+    z.setRoh((x) => ({ ...x, ...vorherRoh }));
+    z.setVorschlaege((v) => {
+      const n = { ...v };
+      for (const k of keys) {
+        if (vorherV[k]) n[k] = vorherV[k];
+        else delete n[k];
+      }
+      return n;
+    });
+  };
 }
 
 /** Formular einer neuen Mappe im Fenster „+ … anlegen“ (#935) und „+ Neu“ unter einer Tabelle (#1030). */
