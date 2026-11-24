@@ -12,6 +12,7 @@ import { FEIN_ZIEL } from '../werkbank/uebersicht/Feinabstimmung';
 import { titelOder } from '../seiten';
 import { t } from '../sprache';
 import { MappenWahl } from './MappeFormular';
+import { belegText, WieSicher } from './WieSicher';
 
 /**
  * „Wohin gehört das?“ auf der Seite „Dokument übernehmen“ (#1217): Zuerst die Wahl im Umschalter – Neue Mappe ·
@@ -168,6 +169,8 @@ export function NeueMappeWahl({
         <p className="leise klein">{t('ablage.uebernehmen.kein-typ-vorschlag')}</p>
       )}
       {einschaetzung && <TypBelege e={einschaetzung} vorgeschlagen={vorgeschlagen} bezuege={klass!.bezuege} />}
+      {/* Wie sicher ist Ablago? (#1645): zugeklappt – die besten Typen, Sicherheit und was fehlte. */}
+      {klass && <WieSicher klass={klass} zielTyp={zielTyp} ziele={ziele} />}
       {(klass?.wege ?? [])
         .filter((w) => w.hinweis)
         .map((w, i) => (
@@ -190,28 +193,7 @@ export function NeueMappeWahl({
 
 /** Woran Ablago den Typ erkennt (#939): je Weg ein Beleg – Paket mit Begründung und Zitat, Überschrift, wiedergefundene Mappe. */
 function TypBelege({ e, vorgeschlagen, bezuege }: { e: Einschaetzung; vorgeschlagen: boolean; bezuege: Bezuege }) {
-  const text = (b: Klassbeleg) => {
-    switch (b.weg) {
-      case 'kern':
-        return t('ablage.uebernehmen.weil', { wort: b.wort ?? '', fundstelle: b.fundstelle ?? '' });
-      case 'ki':
-        return t('ablage.uebernehmen.beleg-ki', {
-          paket: b.paket?.name ?? '',
-          begruendung: b.begruendung || t('ablage.uebernehmen.ohne-begruendung'),
-        });
-      case 'aehnlichkeit':
-        return t('ablage.uebernehmen.beleg-aehnlich', {
-          paket: b.paket?.name ?? '',
-          begruendung: b.begruendung || t('ablage.uebernehmen.ohne-begruendung'),
-        });
-      case 'abgleich':
-        return t('ablage.uebernehmen.beleg-abgleich', {
-          feld: b.feld ?? '',
-          titel: titelOder(b.mappeId ? bezuege[b.mappeId]?.titel : ''),
-          merkmal: b.merkmal ?? '',
-        });
-    }
-  };
+  const text = (b: Klassbeleg) => belegText(b, bezuege);
   return (
     <div className="ue-typbelege leise klein" aria-label={t('ablage.uebernehmen.woran-typ')}>
       <p>{vorgeschlagen ? t('ablage.uebernehmen.vorschlag-sicherheit') : t('ablage.uebernehmen.woran-typ')}</p>

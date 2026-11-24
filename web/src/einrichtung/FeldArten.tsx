@@ -9,7 +9,7 @@ import { optionText } from '../../../shared/src/beschriftung';
 import { t } from '../sprache';
 import { DatumEingabe, Feld, FeldGruppe, HakenFeld } from '../bausteine';
 import { standardAnzeige, type EntwurfFeld, type EntwurfRegister, type Zahlprop } from './entwurf';
-import { DatumGrenzen, FolgtAusEditor, FormatEditor, FristEditor, ZielTypenWahl } from './FeldEigenschaften';
+import { AusDatumEditor, DatumGrenzen, FolgtAusEditor, FormatEditor, FristEditor, ZielTypenWahl } from './FeldEigenschaften';
 
 /**
  * Eigenschaften je Feldart und Standardwert im Mappentyp-Editor (#1279 aus `FeldZeile` gezogen). Hier stehen auch die
@@ -228,6 +228,16 @@ function ReferenzEigenschaften({ p, id }: Teil) {
       {/* Folgt aus (#886): nur bei genau einem Ziel-Mappentyp. */}
       {!!einzigesZiel(f) && (
         <FolgtAusEditor
+          f={f}
+          id={id}
+          setze={setze}
+          alleFelder={p.alleFelder}
+          felderVon={(x) => (x === p.eigeneId ? p.alleFelder : p.typen.find((y) => y.id === x)?.felder)}
+        />
+      )}
+      {/* Aus Datum ableiten (#1648): nur bei genau einem Ziel-Mappentyp. */}
+      {!!einzigesZiel(f) && (
+        <AusDatumEditor
           f={f}
           id={id}
           setze={setze}

@@ -34,6 +34,7 @@ import {
 import { bereinigeAbschnitte, festigeDarstellung } from '../../../shared/src/darstellung';
 import { bereinigeAnzeige } from '../../../shared/src/anzeige';
 import { bereinigeFolgtAus } from '../../../shared/src/folgtaus';
+import { bereinigeAusDatum } from '../../../shared/src/ausdatum';
 import { bereinigeVorbelegen } from '../../../shared/src/vorbelegen';
 import { HEUTE, type Feldformat } from '../../../shared/src/feldformate';
 import { bereinigeAuswahlfilter } from '../../../shared/src/sichten';
@@ -127,6 +128,10 @@ export function bereinigeFeld(e: unknown): Feld {
     // Folgt aus (#886): nur an Verweisfeldern mit genau einem Zieltyp; geprüft wird im Mappentyp.
     ...(typ === 'referenz' && einzigesZiel({ zielTypen: ziele }) && bereinigeFolgtAus(f.folgtAus)
       ? { folgtAus: bereinigeFolgtAus(f.folgtAus) }
+      : {}),
+    // Aus Datum ableiten (#1648): nur an Verweisfeldern mit genau einem Zieltyp; ob die Felder passen, prüft der Mappentyp.
+    ...(typ === 'referenz' && einzigesZiel({ zielTypen: ziele }) && bereinigeAusDatum(f.ausDatum)
+      ? { ausDatum: bereinigeAusDatum(f.ausDatum) }
       : {}),
     // Beim Auswählen übernehmen (#1037): nur an Verweisfeldern mit festen Zieltypen; ob die Felder passen, prüft der Mappentyp.
     ...(typ === 'referenz' && !ziele.includes(BELIEBIGER_TYP) && bereinigeVorbelegen(f.vorbelegen).length

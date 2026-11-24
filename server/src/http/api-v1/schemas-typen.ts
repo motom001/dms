@@ -113,6 +113,14 @@ export const SCHEMAS_TYPEN: Record<string, Schema> = {
           'Bei typ=referenz (#886): Das Feld folgt aus einem anderen Verweisfeld dieser Mappe (feld, nur eine Mappe) über ein Verweisfeld der Mappe, auf die es zeigt (zielFeld, nur eine Mappe, auf denselben Zieltyp). Beispiel Person: organisation folgt aus niederlassung → organisation. Beim Anlegen und Ändern füllt Ablago ein leeres Feld, wenn die Quelle neu gesetzt oder geändert wird und die Anfrage das Feld nicht selbst nennt (auch nicht als null) – nur mit Mappen, die der Schlüssel lesen darf; ein vorhandener Wert wird nie überschrieben. Keine Kreise.',
         properties: { feld: { type: 'string' }, zielFeld: { type: 'string' } },
       },
+      ausDatum: {
+        type: 'object',
+        nullable: true,
+        required: ['datumFeld', 'zielFeld'],
+        description:
+          'Bei typ=referenz mit genau einem Zieltyp (#1648): aus einem Datumsfeld dieser Mappe ableiten – z. B. Steuerjahr aus „Bis“. datumFeld: Datumsfeld dieser Mappe; zielFeld: Feld des Zieltyps mit dem Jahr (Text oder Zahl wie „2012“, oder ein Datum im selben Jahr). Nur ein Vorschlag in der Oberfläche und bei „Aus Dokument ausfüllen“: genau eine passende Mappe wird vorgeschlagen, sonst „… anlegen“ angeboten. Speichern füllt nichts von selbst.',
+        properties: { datumFeld: { type: 'string' }, zielFeld: { type: 'string' } },
+      },
       vorbelegen: {
         type: 'array',
         maxItems: 50,
@@ -125,7 +133,15 @@ export const SCHEMAS_TYPEN: Record<string, Schema> = {
         nullable: true,
         description:
           'Aus Dokument füllen (#336, #391; bis #938 „Für die Erkennung nutzen“); vorhanden = an. Nur bei Text, Langtext, Zahl, Betrag, Datum, Auswahl, Verweis, Zeitraum und Prozent. art: was im Feld steht (fehlt = aus Feldart und Bezeichnung), hinweis: Erkennungshinweis, z. B. „Muster 100-####“ (# = Ziffer).',
-        properties: { art: { type: 'string', enum: Object.keys(ERKENNUNGSARTEN) }, hinweis: { type: 'string', maxLength: 300 } },
+        properties: {
+          art: { type: 'string', enum: Object.keys(ERKENNUNGSARTEN) },
+          hinweis: { type: 'string', maxLength: 300 },
+          endeVon: {
+            type: 'string',
+            description:
+              'Nur am Datumsfeld für das Ende eines Zeitraums (#1646): Kennung des Datumsfelds für den Beginn. Steht im Dokument ein Zeitraum („vom 01.07.2012 – 31.07.2012“), bekommt der Beginn das erste und dieses Feld das zweite Datum. Fehlt = aus Kennung und Bezeichnung (Beginn/Ende, Von/Bis, Mietbeginn/Mietende …).',
+          },
+        },
       },
       wiederfinden: {
         type: 'boolean',

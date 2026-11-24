@@ -14,6 +14,8 @@ import { ABGEMELDET, ApiFehler, anfrage } from './anfrage';
 export interface ErkennungStand {
   standard: { paket: string | null; abfluss?: boolean };
   pakete: Array<{ id: string; name: string; netz: boolean; laeuft: boolean }>;
+  /** Ab dieser Sicherheit schlägt „Wohin gehört das?“ einen Mappentyp vor (#1645). */
+  schwelle?: number;
 }
 /** Werkbank → Suche (#356). */
 export interface SucheStand {
@@ -170,6 +172,8 @@ export const sucheApi = {
   erkennungStand: () => anfrage<ErkennungStand>('GET', '/api/werkbank/erkennung'),
   erkennungStandard: (paket: string | null, abfluss = false) =>
     anfrage<ErkennungStand>('PUT', '/api/werkbank/erkennung', { paket, ...(abfluss ? { abfluss: true } : {}) }),
+  /** Nur die Schwelle für den Mappentyp (#1645, Expertenmodus); null = Vorgabe. */
+  erkennungSchwelle: (schwelle: number | null) => anfrage<ErkennungStand>('PUT', '/api/werkbank/erkennung', { schwelle }),
   /* „Frag deine Ablage“ (#444) */
   fragenVerfuegbar: () => anfrage<{ verfuegbar: boolean; paket: string | null }>('GET', '/api/fragen'),
   fragenStand: () => anfrage<FragenStand>('GET', '/api/werkbank/fragen'),

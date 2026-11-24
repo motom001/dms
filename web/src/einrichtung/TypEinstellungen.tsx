@@ -21,6 +21,9 @@ import { abfangen, Bereich, Feld, FeldGruppe, HakenFeld, type Klappe } from '../
 import { betriebApi } from '../api/betrieb';
 import type { SelbstStufe } from '../../../shared/src/darf';
 import { ArchivLeer, mitStichtag } from './ArchivLeer';
+import { SprachText } from './Beschriftung';
+import { ERKENNBAR_AN_MAX } from '../../../shared/src/model';
+import type { Beschriftungen, TypTeile } from '../../../shared/src/beschriftung';
 import type { Entwurf } from './entwurf';
 
 /**
@@ -85,6 +88,21 @@ export function ErkennungBereich({ e, setE, klappe }: Teil) {
         t('mappentypen.editor.felder-wiederfinden', { zahl: e.felder.filter((f) => f.wiederfinden).length }),
         ...(!e.autoZuordnen && !e.archiv ? [t('mappentypen.editor.zuordnen.kurz-nie')] : []),
       ].join(' · ')}>
+      {/* Woran man ihn erkennt (#937): seit #1645 hier statt in den Grunddaten – man sucht es bei der Erkennung. */}
+      {e._teilVon === null && (
+        <SprachText
+          beschriftung={t('mappentypen.editor.woran-erkennt')}
+          optional
+          hinweis={t('mappentypen.editor.woran-erkennt-hilfe', { anzahl: ERKENNBAR_AN_MAX - e.erkennbarAn.length })}
+          id="typ-erkennbar"
+          wert={e.erkennbarAn}
+          placeholder={t('mappentypen.editor.woran-erkennt-beispiel')}
+          teil="erkennbarAn"
+          beschriftungen={e.beschriftungen}
+          setzeWert={(erkennbarAn) => setE((x) => ({ ...x, erkennbarAn: erkennbarAn.slice(0, ERKENNBAR_AN_MAX) }))}
+          setzeBeschriftungen={(b) => setE((x) => ({ ...x, beschriftungen: b as Beschriftungen<TypTeile> | undefined }))}
+        />
+      )}
       <ErkennungTyp
         ad={e.ausDokument}
         setze={(ausDokument) => setE((x) => ({ ...x, ausDokument }))}

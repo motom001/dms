@@ -29,7 +29,7 @@ export interface TypVorschlaege {
     { wert: Wert; sicherheit: Sicherheit; fundstelle: string; stelle?: Vorschlag['stelle']; aus?: Vorschlag['aus']; hinweis?: string }
   >;
   bezuege: Bezuege;
-  neu: Record<string, { typId: string; werte: Record<string, string>; fundstelle: string }>;
+  neu: Record<string, { typId: string; werte: Record<string, string | number>; fundstelle: string }>;
   verworfen: number;
   zeichen: number;
   /** Womit erkannt wurde (#511). */

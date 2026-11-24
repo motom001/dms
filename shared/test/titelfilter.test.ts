@@ -54,6 +54,11 @@ describe('Titel-Filter', () => {
     assert.equal(titel('{nummer} vom {datum}', { nummer: '7' }), '7 vom', 'Wörter bleiben stehen');
     assert.equal(titel('E-Mail {nummer}', {}), 'E-Mail', 'Bindestrich im Wort ist kein Trenner');
     assert.equal(ohneLeereTeile(`a – ${LEER} – ${LEER} – b`), 'a – b');
+    // Satzzeichen hinter einem leeren Platzhalter (#1657, dms-registry#258): kein „ :“, kein „:“ am Anfang oder Ende.
+    assert.equal(ohneLeereTeile(`Werkstatt ${LEER}: 20.11.2026`), 'Werkstatt: 20.11.2026');
+    assert.equal(ohneLeereTeile(`${LEER} ${LEER}: 03.04.2026 – 214,00 €`), '03.04.2026 – 214,00 €');
+    assert.equal(ohneLeereTeile(`Werkstatt: ${LEER}`), 'Werkstatt');
+    assert.equal(ohneLeereTeile(`Strom ${LEER}, 2026`), 'Strom, 2026');
   });
 
   it('Passwörter bleiben draußen, auch mit sonst', () => {

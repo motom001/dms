@@ -168,7 +168,7 @@ export const SCHEMAS_POST: Record<string, Schema> = {
       vorschlag: {
         ...ref('Typeinschaetzung'),
         nullable: true,
-        description: 'Der eine Vorschlag (bester Typ ab Sicherheit 0,3) – null, wenn kein Weg genug fand',
+        description: 'Der eine Vorschlag (bester Typ ab der Schwelle, Vorgabe 0,3) – null, wenn kein Weg genug fand',
       },
       typen: { type: 'array', items: ref('Typeinschaetzung'), description: 'Bis zu drei Typen, bester zuerst' },
       wege: {
@@ -194,6 +194,30 @@ export const SCHEMAS_POST: Record<string, Schema> = {
         type: 'object',
         additionalProperties: { type: 'object', properties: { titel: { type: 'string' }, typId: uuid } },
         description: 'Titel der Mappen aus Belegen des Abgleichs (nur lesbare)',
+      },
+      schwelle: {
+        type: 'number',
+        description: 'Ab dieser Sicherheit ist ein Typ der Vorschlag (#1645): Vorgabe 0,3, in der Werkbank im Expertenmodus einstellbar',
+      },
+      gruende: {
+        type: 'object',
+        description:
+          'Wie sicher ist Ablago? (#1645) Je möglichem Mappentyp (Id), was fehlte bzw. dafür sprach – nur Kennungen und Zahlen, keine Inhalte aus dem Dokument: ueberschrift-fehlt (Name nicht als Überschrift), merkmal-fehlt (feld: Verweisfeld, typId: Typ, von dem keine bekannte Mappe im Dokument steht, z. B. kein bekanntes Konto), erkennbar (gefunden von von Wörtern aus „Woran man ihn erkennt“ stehen im Dokument), erkennbar-leer, aehnlich (anzahl ähnliche abgelegte Mappen, nur mit einem Paket für Ähnlichkeit).',
+        additionalProperties: {
+          type: 'array',
+          items: {
+            type: 'object',
+            required: ['art'],
+            properties: {
+              art: { type: 'string', enum: ['ueberschrift-fehlt', 'merkmal-fehlt', 'erkennbar', 'erkennbar-leer', 'aehnlich'] },
+              feld: { type: 'string' },
+              typId: uuid,
+              gefunden: { type: 'integer' },
+              von: { type: 'integer' },
+              anzahl: { type: 'integer' },
+            },
+          },
+        },
       },
     },
   },

@@ -446,11 +446,19 @@ export const mappenApi = {
       id,
     }),
   folgen: (typId: string, werte: Werte) =>
-    anfrage<{ felder: Record<string, { quelle: string; wert: string | null; titel?: string; typId?: string }> }>(
-      'POST',
-      '/api/mappen/folgen',
-      { typId, werte },
-    ),
+    anfrage<{
+      felder: Record<
+        string,
+        {
+          quelle: string;
+          wert: string | null;
+          titel?: string;
+          typId?: string;
+          /** Aus Datum ableiten (#1648): keine passende Mappe – so ließe sie sich anlegen. */
+          neu?: { typId: string; werte: Record<string, string | number> };
+        }
+      >;
+    }>('POST', '/api/mappen/folgen', { typId, werte }),
   aehnlicheZurMappe: (id: string) =>
     anfrage<{ verfuegbar: boolean; berechnet: boolean; mappen: AehnlicheMappe[] }>('GET', `/api/mappen/${id}/aehnliche`),
   /** Baum über Verweise (#396, #424). */

@@ -69,6 +69,11 @@ export interface Feld {
    */
   vorbelegen?: import('./angaben').Vorbelegung[];
   /**
+   * Referenzfeld (#1648): aus einem Datumsfeld dieser Mappe ableiten – z. B. Steuerjahr = das Steuerjahr, dessen „Jahr“
+   * dem Jahr von „Bis“ entspricht. Nur ein Vorschlag (shared/src/ausdatum.ts); nur bei genau einem Zieltyp.
+   */
+  ausDatum?: import('./angaben').AusDatum;
+  /**
    * „Aus Dokument füllen“ (#336, #391; bis #938 „Für die Erkennung nutzen“): vorhanden = an, mit Art und
    * Erkennungshinweis. Der Name im Code bleibt `erkennung` – gespeicherte Daten und Pakete ändern sich nicht.
    */

@@ -9,6 +9,7 @@ import { ausRoh, type Roh } from '../../werte';
 import { anzeigeImFormular } from '../anzeige';
 import type { Kern } from './kern';
 import { gleichRoh, leereVorschlaege, leerRoh } from './werte';
+import { ableitenWeg } from './ausdatum';
 
 /**
  * Beim Auswählen übernehmen (#1037) nach einer Eingabe im Verweisfeld `k` (von Hand, über „folgt aus“ oder die Brücke).
@@ -155,16 +156,21 @@ function folgenWeg(z: Kern, vorbelege: (k: string, v: Roh) => Promise<void>) {
   return folge;
 }
 
-/** Eingabe in ein Feld: Wert setzen, Fehler am Feld weg, dann „folgt aus“ (#886) und „beim Auswählen übernehmen“ (#1037). */
+/**
+ * Eingabe in ein Feld: Wert setzen, Fehler am Feld weg, dann „folgt aus“ (#886), „beim Auswählen übernehmen“ (#1037)
+ * und „aus Datum ableiten“ (#1648).
+ */
 export function eingabeWege(z: Kern) {
   const { vorbelege, vorbelegungZuruecknehmen } = vorbelegenWege(z);
   const folge = folgenWeg(z, vorbelege);
+  const leiteAb = ableitenWeg(z);
   const setze = (k: string, v: Roh) => {
     z.setRoh((r) => ({ ...r, [k]: v }));
     if (z.fehler?.felder[k])
       z.setFehler((f) => f && { ...f, felder: Object.fromEntries(Object.entries(f.felder).filter(([x]) => x !== k)) });
     void folge(k, v);
     void vorbelege(k, v);
+    void leiteAb(k, v);
   };
   return { vorbelege, vorbelegungZuruecknehmen, folge, setze };
 }

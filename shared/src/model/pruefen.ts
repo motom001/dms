@@ -12,6 +12,7 @@ import { t } from '../texte';
 import { zielErlaubt, zieleVon, jedeMappe, gemeinsameFelder } from '../verweisziele';
 import { vorlageFelder, istIndexplatzhalter, pruefeTitelFilter, INDEXPLATZHALTER, type Indexplatzhalter } from './werte';
 import { folgtAusProbleme, folgtAusKreis } from '../folgtaus';
+import { ausDatumProbleme } from '../ausdatum';
 import { vorbelegenProbleme } from '../vorbelegen';
 import { tabellenProbleme } from '../tabelle';
 import { zusammengesetztProbleme, teileVon, meldefeld } from '../zusammengesetzt';
@@ -181,6 +182,9 @@ export function pruefeMappentyp(mappentypDaten: MappentypDaten, ctx: TypKontext)
       if (f.folgtAus)
         m.push(...folgtAusProbleme(mappentypDaten.felder, f, (id) => (id === ctx.eigeneId ? mappentypDaten.felder : ctx.felderVon?.(id))));
     }
+    // Aus Datum ableiten (#1648): Datumsfeld hier, Feld mit dem Jahr im Zieltyp.
+    if (f.ausDatum)
+      m.push(...ausDatumProbleme(mappentypDaten.felder, f, (id) => (id === ctx.eigeneId ? mappentypDaten.felder : ctx.felderVon?.(id))));
     // Beim Auswählen übernehmen (#1037): Felder gibt es und sie passen zusammen; nie aus oder in Passwortfelder.
     if (f.vorbelegen?.length)
       m.push(...vorbelegenProbleme(mappentypDaten.felder, f, (id) => (id === ctx.eigeneId ? mappentypDaten.felder : ctx.felderVon?.(id))));

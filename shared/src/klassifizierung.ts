@@ -29,6 +29,56 @@ export const ZITAT_MAX = 300;
 export const KURZ_MAX = 200;
 /** Kein Weg sagt „ganz sicher“: Ein einzelner Weg zählt höchstens so viel. */
 export const WEG_HOECHSTENS = 0.95;
+/** Ab dieser verbundenen Sicherheit wird ein Typ vorgeschlagen (die Überschrift im Text allein reicht) – Vorgabe. */
+export const SCHWELLE_STANDARD = 0.3;
+/** Die Schwelle lässt sich im Expertenmodus der Werkbank einstellen (#1645) – nur zwischen diesen Grenzen. */
+export const SCHWELLE_MIN = 0.05;
+export const SCHWELLE_MAX = 0.95;
+/** Gespeicherte Schwelle lesen; ungültig oder fehlend = Vorgabe. */
+export function liesSchwelle(v: unknown): number {
+  const n = typeof v === 'number' ? v : typeof v === 'string' && v.trim() ? Number(v) : NaN;
+  return Number.isFinite(n) && n >= SCHWELLE_MIN && n <= SCHWELLE_MAX ? Math.round(n * 100) / 100 : SCHWELLE_STANDARD;
+}
+
+/**
+ * Was für oder gegen einen Typ spricht (#1645, „Wie sicher ist Ablago?“) – zusätzlich zu den Belegen. Nur Kennungen und
+ * Zahlen, keine Inhalte aus dem Dokument; die Oberfläche macht Sätze daraus.
+ * - `ueberschrift-fehlt`: Der Name des Typs steht nicht als Überschrift im Dokument.
+ * - `merkmal-fehlt`: Der Typ verweist über `feld` auf Mappen vom Typ `typId` (z. B. Konto), aber keine bekannte davon
+ *   steht im Dokument (gesucht über „Zum Wiederfinden nutzen“, z. B. IBAN).
+ * - `erkennbar`: Von den Wörtern aus „Woran man ihn erkennt“ stehen `gefunden` von `von` im Dokument.
+ * - `erkennbar-leer`: „Woran man ihn erkennt“ ist leer.
+ * - `aehnlich`: ähnlich zu `anzahl` abgelegten Mappen dieses Typs (nur mit einem Paket für Ähnlichkeit).
+ */
+export type Typgrund =
+  | { art: 'ueberschrift-fehlt' }
+  | { art: 'merkmal-fehlt'; feld: string; typId: string }
+  | { art: 'erkennbar'; gefunden: number; von: number }
+  | { art: 'erkennbar-leer' }
+  | { art: 'aehnlich'; anzahl: number };
+
+/** Wörter, die in „Woran man ihn erkennt“ nichts unterscheiden. */
+const FUELLWOERTER = new Set(
+  'oder und auch eine einer eines einem einen der die das den dem des mit ohne von vom bis für fuer auf aus als zum zur bei nach über ueber unter steht stehen enthält enthaelt meist immer oben unten oft from with that this the and for'.split(
+    ' ',
+  ),
+);
+/**
+ * Wörter aus „Woran man ihn erkennt“, die im Dokument stehen (#1645): nur Wörter ab 4 Buchstaben, ohne Füllwörter,
+ * jedes einmal; Groß- und Kleinschreibung egal. Nur Zahlen – was im Dokument steht, verlässt die Funktion nicht.
+ */
+export function erkennbarImText(erkennbarAn: string | undefined, text: string): { gefunden: number; von: number } {
+  const norm = (s: string) => s.toLocaleLowerCase('de-DE');
+  const woerter = [
+    ...new Set(
+      norm(erkennbarAn ?? '')
+        .split(/[^\p{L}\p{N}]+/u)
+        .filter((w) => w.length >= 4 && !FUELLWOERTER.has(w) && !/^\d+$/.test(w)),
+    ),
+  ];
+  const t = norm(text);
+  return { gefunden: woerter.filter((w) => t.includes(w)).length, von: woerter.length };
+}
 
 /** Ein Mappentyp, der in Frage kommt – so geht er an ein Paket. */
 export interface Kandidat {
@@ -96,6 +146,10 @@ export interface Klassifizierung {
   wege: Wegstand[];
   /** Dokumente ohne Volltext. */
   ohneText: string[];
+  /** Ab dieser Sicherheit ist ein Typ der Vorschlag (#1645; Vorgabe SCHWELLE_STANDARD, im Expertenmodus einstellbar). */
+  schwelle?: number;
+  /** Was für oder gegen jeden möglichen Typ spricht (#1645) – je Typ-Id, nur Kennungen und Zahlen. */
+  gruende?: Record<string, Typgrund[]>;
 }
 
 /**
