@@ -41,7 +41,7 @@ Ablago does **not need internet access** for a restore – neither the [package 
 
 1. **the backup file** (`.dms-sicherung`) with the **`.json` next to it**,
 2. **the key**: the key file from the `geheim` folder (in the container `/data/geheim`) or the [emergency sheet](verschluesselung.md#notfallblatt) – it is never in the backup,
-3. **the Ablago image** in the same or a newer version than the backup, saved beforehand e.g. with `docker save ghcr.io/motom001/dms:stabil -o ablago.tar` and loaded on the new device with `docker load -i ablago.tar`. Without internet it cannot be pulled. With [dms-komplett](https://help.ablago.app/installieren/aktuell/komplett/) the same with `ghcr.io/motom001/dms-komplett:stabil`; with two containers also the database image (e.g. `postgres:17`),
+3. **the Ablago image** in the same or a newer version than the backup, saved beforehand e.g. with `docker save ghcr.io/motom001/dms:stabil -o ablago.tar` and loaded on the new device with `docker load -i ablago.tar`. Without internet it cannot be pulled. With [dms-komplett](https://help.ablago.app/installieren/aktuell/komplett/) the same with `ghcr.io/motom001/dms-komplett:stabil`; with two containers also the database image (e.g. `postgres:18`),
 4. **your Compose file** and the `.env` or your environment variables.
 
 Then proceed as described under [New NAS, old backup](#neues-nas-alte-sicherung).
@@ -76,6 +76,19 @@ A backup is only good if it can be restored. That's why Ablago restores the newe
 The test also checks the database extensions (see above); if one is missing, the step *Database extensions* shows a notice, and the test still counts as successful.
 
 The result is shown per backup in the list and as a traffic light in the overview: **green** = last test successful and at most 8 days old, **yellow** = older or never, **red** = failed. If a test fails, all administrators get an e-mail. In active maintenance mode and with too little free space, the test pauses. The test needs this installation's **current key**: a backup with an earlier key (after a [key change](verschluesselung.md#schlussel-wechseln)) can't be test-restored; the test then fails with a notice about the key.
+
+## How long it takes { #dauer }
+
+Measured with the data of the [load test](lasttest.md) level *groß* (#1464): **200,000 folders**, almost 4,000 documents, database 461 MB, PostgreSQL 18, computer with 2 cores, Ablago 0.305:
+
+| Step | Duration |
+| --- | ---: |
+| Create the backup (70 MB) | 8 s |
+| Restore into an empty database, total | 102 s |
+| of which *Decrypting and restoring* (tables, indexes, statistics) | 98 s |
+| of which refreshing the database statistics (`ANALYZE`) | just over 2 s |
+
+After importing, Ablago refreshes the statistics of all tables (`ANALYZE`). Without them PostgreSQL wouldn't know how big the tables are and would choose slow paths in the first minutes – with them the collection is as fast as before right after the restart. On a NAS with slower storage everything takes correspondingly longer; with a hard disk instead of an SSD expect several times as long.
 
 ## Not provided for {#nicht-vorgesehen}
 

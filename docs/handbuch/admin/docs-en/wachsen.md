@@ -9,8 +9,8 @@ Ablago starts small and can grow with you. All moves follow the same path: **cre
 | | **dms-komplett** (one container) | **dms** + its own database (two containers or more) |
 | --- | --- | --- |
 | Setup | one image, four folders, done | Compose project or app store, database password |
-| Database | PostgreSQL 17 in the container, only reachable from inside | its own container or server, freely chosen |
-| PostgreSQL updates | with the next Ablago image | immediately (pull `postgres:17` again) |
+| Database | PostgreSQL 18 in the container, only reachable from inside | its own container or server, freely chosen |
+| PostgreSQL updates | with the next Ablago image | immediately (pull `postgres:18` again) |
 | Good for | trying out, testing, environments with only one container | long-term operation (recommended), your own database management, a database on another device |
 | App stores | – | umbrelOS, ZimaOS, CasaOS, TrueNAS, Unraid |
 
@@ -33,12 +33,12 @@ If the address changes (new device, new port), enter it anew under **Workbench �
 
 A database of an older major version (e.g. 17) can't simply be started with a newer one (e.g. 18).
 
-- **dms-komplett:** if a future image brings a new major version, the container deliberately doesn't start with the old `postgres` folder. The log says which version the database has and which the image has. Then:
-  1. Start the previous image (with the old version number) once more and create a backup.
+- **dms-komplett:** if a new image brings a new major version (most recently Ablago 0.306: 17 → 18), the container deliberately doesn't start with the old `postgres` folder. The page at the usual address states the reason and the way out; the log says which version the database has and which the image has. Nothing is deleted. Then:
+  1. Start the previous image (with the old version number; for PostgreSQL 17 that is `dms-komplett:0.305.0`) once more and create a backup.
   2. Rename the `postgres` folder (e.g. `postgres-17`) and create an empty one.
   3. Start the new image and restore the backup in the wizard.
   4. Once everything works, delete the old folder.
-- **Your own database:** the same. Start a new, empty PostgreSQL container in the new version, point Ablago to it, restore the backup.
+- **Your own database:** the same. Start a new, empty PostgreSQL container in the new version, point Ablago to it, restore the backup. Step by step for 17 → 18, including the line `PGDATA` that `postgres:18` needs: [Updating → PostgreSQL 18](aktualisieren.md#postgresql-18).
 
 A snapshot of the server doesn't help here: it contains the database in the format of the old major version (see [Backing up with snapshots](snapshots.md#snapshot-oder-sicherung)).
 

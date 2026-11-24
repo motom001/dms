@@ -41,6 +41,9 @@ Afterwards you can voluntarily measure [how fast your Pi is](#wie-schnell-ist-me
 | **Network cable** | an ordinary LAN cable to the router | More stable and faster than Wi-Fi; the Pi is then easy to find in the router. |
 | **PC or Mac** | you already have one | You use it to write the system to the SSD and later set up everything in the browser. |
 
+!!! tip "Cheaper: used hardware"
+    With power supply, case and SSD, a Raspberry Pi 5 quickly costs more than a used mini PC or an old notebook that is lying in the cupboard anyway. Such devices run with the normal image and the guide [PC with Linux](linux.md). What to look out for: [Used hardware](gebrauchte-hardware.md).
+
 !!! tip "Why an SSD instead of an SD card?"
     Ablago has a **database**. It constantly writes many small changes. **SD cards wear out** doing this. An SSD is built for it, lasts many years and is **many times faster**: search, previews, text recognition and backups are noticeably quicker. The easiest is an SSD with a USB connection: you write the system directly to it and then need no SD card at all.
 

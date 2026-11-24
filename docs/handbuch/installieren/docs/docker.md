@@ -29,7 +29,7 @@ Nimm die Vorlage [`deploy/synology/docker-compose.yml`](https://github.com/motom
 ## Gut zu wissen
 
 - **Ordner:** `files`, `geheim`, `sicherung` und `postgres` müssen auf dem Server liegen (Volumes). Sonst sind sie beim nächsten Update weg. Mehr unter [Ordner und Volumes](https://help.ablago.app/admin/aktuell/installation/#ordner-und-volumes).
-- **Updates:** `docker compose pull && docker compose up -d` – das holt Ablago und PostgreSQL (`postgres:17`) neu. Mit einer Versionsnummer statt `main`, also `ghcr.io/motom001/dms:<Version>` mit einer Nummer aus den [Releases](https://github.com/motom001/dms/releases), bleibt die Installation auf diesem Release. Siehe [Aktualisieren](https://help.ablago.app/admin/aktuell/aktualisieren/).
+- **Updates:** `docker compose pull && docker compose up -d` – das holt Ablago und PostgreSQL (`postgres:18`) neu. Mit einer Versionsnummer statt `main`, also `ghcr.io/motom001/dms:<Version>` mit einer Nummer aus den [Releases](https://github.com/motom001/dms/releases), bleibt die Installation auf diesem Release. Siehe [Aktualisieren](https://help.ablago.app/admin/aktuell/aktualisieren/).
 - **Datenbankdienst mit anderem Namen:** Die Vorlagen ohne `DATABASE_URL` erwarten die Datenbank unter `db:5432`. Heißt dein Dienst anders oder läuft sie auf einem anderen Port, setze `DMS_DB_HOST` und `DMS_DB_PORT`.
 - **Konsole:** Für Notfall und Betrieb gibt es im Container den Befehl `dms`, z. B. `docker compose exec app dms hilfe`. Siehe [Konsole](https://help.ablago.app/admin/aktuell/konsole/).
 - **Von außen erreichbar** erst nach der Einrichtung, am besten mit HTTPS über einen Reverse-Proxy: [Hinter einem Reverse-Proxy](https://help.ablago.app/admin/aktuell/installation/#hinter-einem-reverse-proxy).

@@ -78,8 +78,8 @@ Die Bibliotheken der Oberfläche bündelt Vite beim Bauen in eine Datei; im Imag
 | `fontconfig` | Findet die Ersatzschriften für PDFs, die ihre Schriften nicht einbetten. | `dms`, `dms-komplett` |
 | `font-liberation` | Ersatzschriften, metrisch passend für Helvetica/Arial, Times und Courier (Seiten- und Vorschaubilder, Archivfassung). | `dms`, `dms-komplett` |
 | `font-dejavu` | Ersatzschrift für weitere Zeichen. | `dms`, `dms-komplett` |
-| `postgresql17` | Datenbank im Container, nur in dms-komplett (nur innerhalb des Containers erreichbar). | `dms-komplett` |
-| `postgresql17-contrib` | Erweiterungen pg_trgm und unaccent für die unscharfe Suche und die Suche in Wortteilen. | `dms-komplett` |
+| `postgresql18` | Datenbank im Container, nur in dms-komplett (nur innerhalb des Containers erreichbar). | `dms-komplett` |
+| `postgresql18-contrib` | Erweiterungen pg_trgm und unaccent für die unscharfe Suche und die Suche in Wortteilen. | `dms-komplett` |
 | `tini` | Erster Prozess im Container: gibt Signale weiter und beendet Ablago (und in dms-komplett PostgreSQL) sauber. | `dms`, `dms-komplett` |
 | `su-exec` | Startet PostgreSQL unter einem eigenen Benutzer statt als root (dms-komplett). | `dms`, `dms-komplett` |
 | `setpriv` | Startet Ablago und die Dokumentwerkzeuge als eigene Benutzer statt als root, mit „no new privileges“ (aus util-linux). | `dms`, `dms-komplett` |

@@ -12,7 +12,7 @@
 | Vertretung | [Name] |
 | Steuerberatung | [Name, Kanzlei – oder „keine“] |
 | Eingesetzte Software | Ablago (Open Source, https://github.com/motom001/dms), Version [z. B. 0.43.0] (Werkbank → Systemzustand → Version und Updates) |
-| Betrieb | [Gerät, z. B. Synology DS224+], Variante [zwei Container (dms + postgres:17) / dms-komplett], Standort [z. B. Arbeitszimmer] |
+| Betrieb | [Gerät, z. B. Synology DS224+], Variante [zwei Container (dms + postgres:18) / dms-komplett], Standort [z. B. Arbeitszimmer] |
 | Geltungsbereich | [Welche Unterlagen: z. B. Eingangs- und Ausgangsrechnungen, Kontoauszüge, Verträge der Tätigkeit …] |
 | Gültig ab | [Datum] |
 

@@ -3,10 +3,10 @@
 !!! info "Tested: automatically on amd64 and arm64"
     `dms-komplett` is started as a trial on GitHub's machines with every change, on amd64 and arm64. There is no report from a particular device yet. What that means is described under [Tested platforms](plattformen.md).
 
-The alternative to two containers: **one container** in which Ablago and its database (PostgreSQL 17) run together. There is no password to enter, no database container and no Compose project unless you want one. The image is called `ghcr.io/motom001/dms-komplett` and runs on amd64 and arm64.
+The alternative to two containers: **one container** in which Ablago and its database (PostgreSQL 18) run together. There is no password to enter, no database container and no Compose project unless you want one. The image is called `ghcr.io/motom001/dms-komplett` and runs on amd64 and arm64.
 
 !!! info "Two containers are recommended"
-    For long-term operation we recommend two containers (`dms` and `postgres:17`): PostgreSQL then gets security updates independently of Ablago, and both can be run separately. `dms-komplett` is a good fit for **trying out and testing**, for interfaces that can only **"create container from image"**, and for **providers that allow only one container**. The comparison is under [One or two containers?](index.md#ein-oder-zwei-container). You can move between the two at any time via backup and restore, see [Growing and moving](https://help.ablago.app/admin/aktuell/en/wachsen/).
+    For long-term operation we recommend two containers (`dms` and `postgres:18`): PostgreSQL then gets security updates independently of Ablago, and both can be run separately. `dms-komplett` is a good fit for **trying out and testing**, for interfaces that can only **"create container from image"**, and for **providers that allow only one container**. The comparison is under [One or two containers?](index.md#ein-oder-zwei-container). You can move between the two at any time via backup and restore, see [Growing and moving](https://help.ablago.app/admin/aktuell/en/wachsen/).
 
 ## With Docker Compose {#mit-docker-compose}
 

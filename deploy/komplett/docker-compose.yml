@@ -27,7 +27,7 @@ services:
       # Ohne diese Zeile liegen sie im Container; nach dem Herunterladen bzw. nach 7 Tagen sind sie ohnehin weg.
       # Mit eigenem Ort (z. B. für große Exporte zum Kopieren) nie in den Sicherungsordner legen.
       # - ./export:/data/export
-      # Datenbank (PostgreSQL 17) – darf nicht fehlen, sonst ist sie beim nächsten Update weg. Gern auf der SSD;
+      # Datenbank (PostgreSQL 18) – darf nicht fehlen, sonst ist sie beim nächsten Update weg. Gern auf der SSD;
       # die Rechte richtet der Container selbst (#943).
       - ./postgres:/data/postgres
       # Eingangsordner (optional): Scanner und NAS legen hier Dateien ab → neue Post

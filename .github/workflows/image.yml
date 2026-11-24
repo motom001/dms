@@ -28,12 +28,24 @@ jobs:
         teil: [1, 2, 3]
     services:
       postgres:
-        image: postgres:17
+        image: postgres:18
         env:
           POSTGRES_USER: dms
           POSTGRES_PASSWORD: dms
           POSTGRES_DB: dms_test
         ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U dms -d dms_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+      # Nur als Quelle für den Umzug 17 → 18 über die Sicherung (#1464, server/test/umzug-pg17-pg18.test.ts). Getestet
+      # wird Ablago selbst nur noch mit 18 (Entscheidung Thomas 21.11.2026, #1544).
+      postgres17:
+        image: postgres:17
+        env:
+          POSTGRES_USER: dms
+          POSTGRES_PASSWORD: dms
+          POSTGRES_DB: dms_test
+        ports: ['5433:5432']
         options: >-
           --health-cmd "pg_isready -U dms -d dms_test"
           --health-interval 5s --health-timeout 5s --health-retries 10
@@ -72,6 +84,7 @@ jobs:
           }
         env:
           TEST_DATABASE_URL: postgres://dms:dms@localhost:5432/dms_test
+          TEST_DATABASE_URL_PG17: postgres://dms:dms@localhost:5433/dms_test
           TEST_TEIL: ${{ matrix.teil }}/3
       # Ungelesene Datei-Ströme (#1456, Vorbereitung auf Node 26): die Testdateien, die echte Dateien lesen, noch einmal
       # mit regelmäßiger Speicherbereinigung (server/test/offene-dateien.ts). Nur in Teil 1 – etwa 2 Minuten, und die
@@ -98,7 +111,7 @@ jobs:
     timeout-minutes: 40
     services:
       postgres:
-        image: postgres:17
+        image: postgres:18
         env:
           POSTGRES_USER: dms
           POSTGRES_PASSWORD: dms
@@ -284,7 +297,7 @@ jobs:
     timeout-minutes: 20
     services:
       postgres:
-        image: postgres:17
+        image: postgres:18
         env:
           POSTGRES_USER: dms
           POSTGRES_PASSWORD: dms

@@ -136,7 +136,7 @@ HEALTHCHECK --interval=30s --timeout=8s --start-period=20s \
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/ablago-einstieg"]
 CMD ["node", "--enable-source-maps", "server/dist/index.js"]
 
-# dms-komplett (#208): Ablago und PostgreSQL 17 in einem Container. PostgreSQL ist nur innerhalb des
+# dms-komplett (#208): Ablago und PostgreSQL 18 (seit #1464, davor 17) in einem Container. PostgreSQL ist nur innerhalb des
 # Containers erreichbar (127.0.0.1, „trust“) – kein Passwort, das jemand kennen muss. tini startet das
 # Skript, das erst PostgreSQL, dann Ablago startet und beim Stoppen beide sauber beendet. Vom ersten Augenblick an zeigt
 # dabei der Vorstart (server/dist/vorstart.js, #1250) die Seite „Ablago startet …“; er läuft wie Ablago ohne root (#1354).
@@ -144,7 +144,7 @@ FROM laufzeit AS komplett
 # Ohne eigenes „apk upgrade“ (#1397): laufzeit endet mit einer frischen Paketschicht aus demselben Bau. Ein zweites
 # Upgrade hier könnte Pakete heben, die dms nicht bekommt. „apk add“ holt die neuesten PostgreSQL-Pakete und hebt nur,
 # was sie zwingend brauchen.
-RUN apk add --no-cache postgresql17 postgresql17-contrib
+RUN apk add --no-cache postgresql18 postgresql18-contrib
 COPY deploy/komplett/start.sh /usr/local/bin/dms-komplett
 # Eigene pg_hba.conf (#1354): Socket nur für postgres, über 127.0.0.1 nur mit Passwort.
 COPY deploy/komplett/pg_hba.conf /usr/local/share/ablago/pg_hba.conf

@@ -296,7 +296,7 @@
   "technik.aktuell": "Aktuell",
   "technik.status": "Status",
   "technik.und-postgresql": " – und PostgreSQL",
-  "technik.postgresql-ist-ein-eigenes": " PostgreSQL ist ein eigenes Image (postgres:17), das du getrennt neu ziehst.",
+  "technik.postgresql-ist-ein-eigenes": " PostgreSQL ist ein eigenes Image (z. B. postgres:18), das du getrennt neu ziehst.",
   "technik.aktualisieren-das-image-enthaelt": "Aktualisieren: Das Image {span} enthält Node.js, Alpine und die Bibliotheken{wert}. Neu ziehen und den Container neu starten genügt.{wert2} Die Bibliotheken aktualisiert das Projekt; sie kommen mit dem nächsten Ablago-Update.",
   "verkleinern.die-bisherigen-dateien-werden": "Die bisherigen Dateien werden nicht als ältere Version behalten – der Platz ist sofort frei, das Original aber weg (außer während einer Aufbewahrungsfrist).",
   "verkleinern.mit-versionierung-bleibt-das": "Mit Versionierung bleibt das Original als ältere Version (Platz wird erst frei, wenn sie wegfällt). Ohne Versionierung ersetzt das verkleinerte PDF das bisherige, das bisherige kommt in den Papierkorb.",

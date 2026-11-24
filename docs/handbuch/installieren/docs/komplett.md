@@ -3,10 +3,10 @@
 !!! info "Geprüft: automatisch auf amd64 und arm64"
     `dms-komplett` startet bei jeder Änderung probehalber auf den Rechnern von GitHub, auf amd64 und arm64. Von einem bestimmten Gerät gibt es noch keine Meldung. Was das heißt, steht unter [Geprüfte Plattformen](plattformen.md).
 
-Die Alternative zu zwei Containern: **ein Container**, in dem Ablago und seine Datenbank (PostgreSQL 17) zusammen laufen. Es gibt kein Passwort einzutragen, keinen Datenbank-Container und kein Compose-Projekt, wenn du keines willst. Das Image heißt `ghcr.io/motom001/dms-komplett` und läuft auf amd64 und arm64.
+Die Alternative zu zwei Containern: **ein Container**, in dem Ablago und seine Datenbank (PostgreSQL 18) zusammen laufen. Es gibt kein Passwort einzutragen, keinen Datenbank-Container und kein Compose-Projekt, wenn du keines willst. Das Image heißt `ghcr.io/motom001/dms-komplett` und läuft auf amd64 und arm64.
 
 !!! info "Empfohlen sind zwei Container"
-    Für den Dauerbetrieb empfehlen wir zwei Container (`dms` und `postgres:17`): PostgreSQL bekommt Sicherheits-Updates dann unabhängig von Ablago, und beide lassen sich einzeln betreiben. `dms-komplett` passt gut zum **Ausprobieren und Testen**, für Oberflächen, die nur **„Container aus Image erstellen“** können, und für **Anbieter, die nur einen Container erlauben**. Die Gegenüberstellung steht unter [Ein oder zwei Container?](index.md#ein-oder-zwei-container). Ein Umzug zwischen beiden geht jederzeit über Sicherung und Wiederherstellung, siehe [Wachsen und umziehen](https://help.ablago.app/admin/aktuell/wachsen/).
+    Für den Dauerbetrieb empfehlen wir zwei Container (`dms` und `postgres:18`): PostgreSQL bekommt Sicherheits-Updates dann unabhängig von Ablago, und beide lassen sich einzeln betreiben. `dms-komplett` passt gut zum **Ausprobieren und Testen**, für Oberflächen, die nur **„Container aus Image erstellen“** können, und für **Anbieter, die nur einen Container erlauben**. Die Gegenüberstellung steht unter [Ein oder zwei Container?](index.md#ein-oder-zwei-container). Ein Umzug zwischen beiden geht jederzeit über Sicherung und Wiederherstellung, siehe [Wachsen und umziehen](https://help.ablago.app/admin/aktuell/wachsen/).
 
 ## Mit Docker Compose
 

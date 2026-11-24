@@ -8,12 +8,15 @@
 
 services:
   db:
-    image: postgres:17
+    image: postgres:18
     restart: unless-stopped
     environment:
       POSTGRES_DB: dms
       POSTGRES_USER: dms
       POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD in .env setzen}
+      # Datenbank genau im Ordner unten (#1464): postgres:18 legt sie sonst unter /var/lib/postgresql/18/docker ab,
+      # also in einem unbenannten Volume, das beim Neuanlegen des Containers verloren ginge.
+      PGDATA: /var/lib/postgresql/data
     volumes:
       # Datenbank
       - ./postgres:/var/lib/postgresql/data

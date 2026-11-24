@@ -85,6 +85,7 @@ nav:
   - "One container: dms-komplett": komplett.md
   - Your own computer:
       - PC or mini PC with Linux: linux.md
+      - Used hardware: gebrauchte-hardware.md
       - "Raspberry Pi – step by step": raspberry-pi.md
       - Windows: windows.md
       - Proxmox and co.: proxmox.md

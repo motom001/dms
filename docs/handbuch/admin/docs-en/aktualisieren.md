@@ -72,7 +72,7 @@ Without a tag (e.g. `docker pull ghcr.io/motom001/dms`), Docker uses `:latest`. 
 
 If you want new versions earlier, use `:latest`; if you want to see every state before the release, `:main`. The notice about a new version under **Workbench → System health → Version and updates** follows the stable version: with `:stabil` it appears once a week. With `:latest` or `:main` you usually run a version above the stable one; then it names newer states on `main` as before.
 
-With two containers, `postgres:17` stays open for security updates of the 17 series – independently of Ablago's tag.
+With two containers, PostgreSQL gets its security updates through its own image (`postgres:18` for the 18 series) – independently of Ablago's tag.
 
 !!! note "If a stable version has a serious bug"
     The maintainer then sets `:stabil` back to the previous version (workflow *:stabil zurücksetzen*, which also works forwards) and holds back the faulty version so that the next weekly run doesn't pick it again. What happened is in the [Releases](https://github.com/motom001/dms/releases).
@@ -91,6 +91,32 @@ With two containers, `postgres:17` stays open for security updates of the 17 ser
     ```
 
     Before every release, CI also checks the images for known security vulnerabilities. In addition, the project checks the delivered images `:stabil` and `:latest` against new security reports once a week, with a second database and, for important programs such as poppler, also directly against the public NVD database – even if Alpine does not list a case yet. How quickly a fix arrives depends on the severity; the target times are in the [security policy](https://github.com/motom001/dms/blob/main/SECURITY.en.md#responsibility-and-response-times). You get the fix like any update: through `:stabil`, in urgent cases without waiting for the week.
+
+### PostgreSQL 18 (from 0.306) { #postgresql-18 }
+
+From Ablago 0.306, **PostgreSQL 18** is the standard: `dms-komplett` includes 18, the templates suggest `postgres:18`, and all automated tests run with 18. On a NAS, Ablago handled a good third more requests under high load with 18, with shorter response times ([#1456](https://github.com/motom001/dms/issues/1456)). PostgreSQL 18 can't open a database from 17; moving works via a backup.
+
+!!! warning "Note when updating"
+    **dms-komplett** no longer starts with its current database folder. The page at the usual address then shows "Ablago could not start" with the reason and the way out; nothing is deleted. This is how you move:
+
+    1. Set the image to **`ghcr.io/motom001/dms-komplett:0.305.0`** – the last version with PostgreSQL 17 – and start the container. If you already backed up before the update, you can skip this step and the next.
+    2. **Workbench → Backup → Back up now.** Keep the [emergency sheet](verschluesselung.md#notfallblatt) at hand in case the key is no longer in the folder `geheim`.
+    3. Stop the container. **Rename** the folder for `/data/postgres` (e.g. to `postgres-17`) and create an empty folder with the old name.
+    4. Set the image back to `:stabil` (or the new version) and start it. The wizard appears: choose **Restore from a backup** and restore the backup from step 2.
+    5. Log in and check briefly (folders, documents, **Workbench → System status**). Delete the folder `postgres-17` only once everything runs.
+
+    **Two containers** (`dms` and `postgres:17`): you don't have to do anything. Ablago keeps running with PostgreSQL 17 and writes a note to the log on start. You can move whenever it suits you:
+
+    1. **Workbench → Backup → Back up now.**
+    2. In the Compose file, for the service `db`: `image: postgres:18`, under `environment` the line `PGDATA: /var/lib/postgresql/data`, and for the volume a **new, empty folder** instead of the current one (e.g. `…/dms/postgres18:/var/lib/postgresql/data`). The easiest way is to take the lines from the [current template](https://github.com/motom001/dms/tree/main/deploy).
+    3. Recreate the project. The wizard appears: choose **Restore from a backup** and restore the backup.
+    4. Check as above; delete the old folder only once everything runs.
+
+    Without the line `PGDATA`, `postgres:18` doesn't store the database in the mounted folder but under `/var/lib/postgresql/18/docker` in an unnamed volume – it would be gone when the container is recreated. If the volume still points to the old folder, PostgreSQL 18 doesn't start (the data stays unchanged); then the new, empty folder is missing.
+
+- **How long it takes:** backing up and restoring take a few minutes for a collection with 200,000 folders (measured: see [Restore](wiederherstellen.md#dauer)). Afterwards Ablago refreshes the database statistics (`ANALYZE`) so that it is fast again right away.
+- **Backups work for both versions:** Ablago's backup doesn't depend on PostgreSQL's major version. A backup from an installation with 18 (e.g. from the TrueNAS catalogue) can be restored into one with 17 and vice versa – as long as Ablago's version is the same as or newer than the backup's.
+- **Your own database:** Ablago needs at least **PostgreSQL 16**; it is tested with 18. With 15 or older Ablago doesn't start and states the reason. Let Ablago log in with **SCRAM**, not MD5: MD5 passwords are deprecated from PostgreSQL 18 (see [Database connection](installation.md#datenbank-anbindung)).
 
 ### Without administrator rights (root) { #ohne-root }
 
@@ -174,7 +200,7 @@ The folders in the container are now fixed: `/data/files`, `/data/geheim` and `/
 
 ### PostgreSQL { #postgresql }
 
-You get minor versions (17.x) by pulling the image `postgres:17` again. Changing the major version (e.g. 17 → 18) needs a backup and restore – PostgreSQL can't open the data of an older major version directly.
+You get minor versions (18.x) by pulling the image `postgres:18` again. Changing the major version (e.g. 17 → 18) needs a backup and restore – PostgreSQL can't open the data of an older major version directly. How that works is described under [PostgreSQL 18](#postgresql-18).
 
 ## How new versions come about { #wie-neue-versionen-entstehen }
 

@@ -9,6 +9,16 @@ import { HILFE, hilfeUrl } from '../../../shared/src/hilfe';
 import { t } from '../sprache/sprache';
 import { aenderungText, kennungSatz } from '../../../shared/src/dienstbenutzer';
 import type { StartseitenKennung } from './dienstbenutzer';
+import { PG_GETESTET, PG_MINDESTVERSION } from '../datenbank/pg-version';
+
+/**
+ * Letzte Version von Ablago, deren dms-komplett PostgreSQL 17 mitbringt (#1464). Die Startseite nennt sie fest, wenn
+ * der Datenbank-Ordner noch von 17 stammt: Mit genau dieser Version zieht man die Sicherung für den Umzug. Der Test
+ * `pg-umzug-version.test.ts` hält sie gleich mit den Release-Notizen (nach dem Merge) bzw. package.json (davor).
+ */
+export const LETZTE_VERSION_PG17 = '0.305.0';
+/** Werte für die Texte der Startseite (Versionen stehen fest im Programm, nicht aus dem System gelesen). */
+const FESTE_WERTE = { version: LETZTE_VERSION_PG17, mindestens: PG_MINDESTVERSION, getestet: PG_GETESTET };
 
 export type Startschritt =
   /** Vorstart in dms-komplett (#1250): PostgreSQL anlegen, starten, dann Ablago starten. */
@@ -33,12 +43,16 @@ export type Startschritt =
   | 'lasttest';
 
 /** Datenbank nach dem Start nicht erreichbar oder blockiert (#1250). */
-export type DatenbankGrund = 'abgewiesen' | 'sperre' | 'platte' | 'verbindungen';
-/** Fehler des Vorstarts in dms-komplett, bevor Ablago selbst läuft (#1250; Meldungen von deploy/komplett/start.sh). */
-export type VorstartGrund = 'rechte' | 'pg-version' | 'nicht-leer' | 'pg-anlegen' | 'pg-beendet' | 'daten-rechte';
+export type DatenbankGrund = 'abgewiesen' | 'sperre' | 'platte' | 'verbindungen' | 'zu-alt';
+/**
+ * Fehler des Vorstarts in dms-komplett, bevor Ablago selbst läuft (#1250; Meldungen von deploy/komplett/start.sh).
+ * `pg-17` (#1464): Der Datenbank-Ordner stammt noch von PostgreSQL 17, das Image bringt 18 mit.
+ */
+export type VorstartGrund = 'rechte' | 'pg-version' | 'pg-17' | 'nicht-leer' | 'pg-anlegen' | 'pg-beendet' | 'daten-rechte';
 export const VORSTART_GRUENDE: readonly VorstartGrund[] = [
   'rechte',
   'pg-version',
+  'pg-17',
   'nicht-leer',
   'pg-anlegen',
   'pg-beendet',
@@ -109,6 +123,8 @@ export function startfehlerAus(e: unknown, stand: Pick<Startstand, 'schritt' | '
   const neuer = e as { name?: unknown; unbekannt?: unknown } | null;
   if (neuer?.name === 'NeuereDatenbankFehler' && Array.isArray(neuer.unbekannt))
     return { art: 'neuere-datenbank', unbekannt: neuer.unbekannt.filter((n): n is string => typeof n === 'string' && MIGRATION.test(n)) };
+  // Zu alte Hauptversion von PostgreSQL (#1464, datenbank/pg-version.ts), ebenfalls am Namen erkannt.
+  if (neuer?.name === 'ZuAlteDatenbankFehler') return { art: 'datenbank', grund: 'zu-alt' };
   const grund = datenbankGrund(e);
   if (grund) return { art: 'datenbank', grund };
   if (stand.schritt === 'migration' && migration && MIGRATION.test(migration)) {
@@ -138,11 +154,13 @@ function auswege(f: Startfehler, komplett: boolean): string[] {
       sperre: ['start.fehler.tun.sperre'],
       platte: ['start.fehler.tun.speicher'],
       verbindungen: ['start.fehler.tun.verbindungen'],
+      'zu-alt': ['start.fehler.tun.pg-zu-alt'],
     }[f.grund];
   if (f.art === 'vorstart')
     return {
       rechte: ['start.fehler.tun.rechte'],
       'pg-version': ['start.fehler.tun.pg-version'],
+      'pg-17': ['start.fehler.tun.pg-17', 'start.fehler.tun.pg-17-ordner'],
       'nicht-leer': ['start.fehler.tun.nicht-leer'],
       'pg-anlegen': ['start.fehler.tun.speicher', 'start.fehler.tun.rechte'],
       'pg-beendet': ['start.fehler.tun.speicher', 'start.fehler.tun.neustart.komplett'],
@@ -156,8 +174,8 @@ function grundText(f: Startfehler): string {
   if (f.art === 'neuere-datenbank')
     return t('start.fehler.neuere-datenbank', { anzahl: f.unbekannt.length, letzte: f.unbekannt[f.unbekannt.length - 1] ?? '–' });
   if (f.art === 'migration') return t('start.fehler.migration', { nr: f.nr, von: f.von, datei: f.datei, code: f.code });
-  if (f.art === 'datenbank') return t.frei(`start.fehler.datenbank.${f.grund}`);
-  if (f.art === 'vorstart') return t.frei(`start.fehler.vorstart.${f.grund}`);
+  if (f.art === 'datenbank') return t.frei(`start.fehler.datenbank.${f.grund}`, FESTE_WERTE);
+  if (f.art === 'vorstart') return t.frei(`start.fehler.vorstart.${f.grund}`, FESTE_WERTE);
   return t('start.fehler.allgemein', { schritt: schrittText({ schritt: f.schritt, nr: null, von: null }) });
 }
 
@@ -235,7 +253,7 @@ function fehlerTeile(f: Startfehler, komplett: boolean, sprache: 'de' | 'en', k?
     ...(wege.length
       ? [
           `<p class="zwischen">${html(t('start.fehler.was-tun'))}</p>`,
-          `<ol>${wege.map((k) => `<li>${html(t.frei(k))}</li>`).join('')}</ol>`,
+          `<ol>${wege.map((k) => `<li>${html(t.frei(k, FESTE_WERTE))}</li>`).join('')}</ol>`,
         ]
       : []),
     `<p>${html(t('start.fehler.tun'))}</p>`,

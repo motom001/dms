@@ -7,6 +7,9 @@
 #      geschrieben) gehören jetzt Ablago, mit Meldung im Protokoll, und Ablago läuft nicht als root; ab #1466: Kam der
 #      alte Stand schon ohne root (0.299.0), bleibt alles, wie es war
 #   4. Probe-Wiederherstellung der alten Sicherung mit der neuen Version gelingt
+#   Bringt das neue Image eine andere Hauptversion von PostgreSQL mit (#1464: 17 → 18), startet es mit dem alten
+#   Datenbank-Ordner nicht, sondern zeigt die Startseite mit Grund und Weg. Dann geht der Test den Weg von dort: Ordner
+#   umbenennen, leeren anlegen, neues Image starten, die Sicherung aus Schritt 1 im Assistenten einspielen.
 #
 #   .github/werkzeuge/update-test.sh <altes Image> <neues Image>
 #   z. B. .github/werkzeuge/update-test.sh ghcr.io/motom001/dms-komplett:stabil dms-komplett:probe
@@ -52,6 +55,52 @@ anmelden() {
 api() { curl -fsS -b "$jar" -H 'x-dms: 1' -H 'content-type: application/json' "$@"; }
 version() { docker exec "$NAME" dms status --json | jq -r '.dms.version // "?"'; }
 
+# Hauptversion von PostgreSQL im Image (dms-komplett).
+pg_haupt() { docker run --rm --entrypoint postgres "$1" --version | sed -n 's/.* \([0-9][0-9]*\)\..*/\1/p'; }
+seite() { command curl -sS --connect-timeout 2 --max-time 5 -H 'accept-language: de' "$U/" 2>/dev/null || true; }
+# Neue Hauptversion von PostgreSQL (#1464): Startseite statt Abbruch, dann der Umzug, wie ihn die Seite beschreibt.
+umzug_ueber_sicherung() {
+  echo "PostgreSQL $pg_alt → $pg_neu: Startseite und Umzug über die Sicherung"
+  docker rm -f "$NAME" >/dev/null 2>&1 || true
+  docker run -d --name "$NAME" -p "$PORT:3000" -e DMS_START_FEHLER_WARTEN_S=300 \
+    -v "$arbeit/files:/data/files" -v "$arbeit/geheim:/data/geheim" -v "$arbeit/sicherung:/data/sicherung" -v "$arbeit/postgres:/data/postgres" \
+    "$NEU" >/dev/null
+  local s="" erwartet="anderen Hauptversion von PostgreSQL"
+  [ "$pg_alt" = 17 ] && [ "$pg_neu" = 18 ] && erwartet="letzte Version mit PostgreSQL 17"
+  for _ in $(seq 1 120); do s=$(seite); grep -q "$erwartet" <<< "$s" && break; sleep 1; done
+  grep -q "$erwartet" <<< "$s" || fehler "keine Startseite beim alten Datenbank-Ordner (erwartet: $erwartet)"
+  echo "Startseite: $(grep -oE 'Ziehe mit Ablago [0-9.]+ \(letzte Version mit PostgreSQL 17\)' <<< "$s" || echo "$erwartet")"
+  [ "$(sudo cat "$arbeit/postgres/daten/PG_VERSION")" = "$pg_alt" ] || fehler "alter Datenbank-Ordner verändert"
+  docker rm -f "$NAME" >/dev/null
+  # Wie auf der Startseite: Ordner umbenennen (nicht löschen), leeren anlegen, neue Version starten.
+  sudo mv "$arbeit/postgres" "$arbeit/postgres-$pg_alt"; mkdir -p "$arbeit/postgres"
+  starte "$NEU"; warte
+  [ "$(curl -fsS "$U/api/konto/status" | jq -r '.einrichtungNoetig')" = true ] || fehler "leere Datenbank, aber nicht im Assistenten"
+  local code lauf schluessel=""
+  code=$(sudo cat "$arbeit/geheim/EINRICHTUNGSCODE")
+  wh() { curl -fsS -H 'x-dms: 1' -H "x-einrichtungscode: $code" -H 'content-type: application/json' "$@"; }
+  wh "$U/api/wiederherstellung/sicherungen" | jq -e --arg n "$sicherung" '.liste | any(.name == $n)' >/dev/null || fehler "Sicherung $sicherung im Assistenten nicht zu sehen"
+  if [ "$(wh -X POST "$U/api/wiederherstellung/abgleich" -d "{\"name\":\"$sicherung\"}" | jq -r '.schluesselNoetig')" = true ]; then
+    schluessel=$(sudo cat "$arbeit/geheim/dms.schluessel")
+  fi
+  wh -X POST "$U/api/wiederherstellung/abgleich" -d "$(jq -nc --arg n "$sicherung" --arg s "$schluessel" '{name: $n} + (if $s == "" then {} else {schluessel: $s} end)')" \
+    | jq -e '.probleme == []' >/dev/null || fehler "Abgleich der Sicherung meldet Probleme"
+  wh -X POST "$U/api/wiederherstellung/start" -d "$(jq -nc --arg n "$sicherung" --arg s "$schluessel" '{name: $n} + (if $s == "" then {} else {schluessel: $s} end)')" >/dev/null \
+    || fehler "Wiederherstellung starten"
+  for _ in $(seq 1 150); do
+    lauf=$(curl -sS "$U/api/wiederherstellung/status" 2>/dev/null | jq -r '.lauf.status // .status // empty' 2>/dev/null || true)
+    [ "$(docker inspect -f '{{.State.Running}}' "$NAME")" = true ] || break
+    [ "$lauf" = fehler ] && fehler "Wiederherstellung: $(curl -sS "$U/api/wiederherstellung/status" | jq -c .)"
+    sleep 2
+  done
+  # Nach dem Umschalten beendet sich Ablago (im Betrieb startet Docker es neu); hier startet der Test den Container.
+  for _ in $(seq 1 60); do [ "$(docker inspect -f '{{.State.Running}}' "$NAME")" = false ] && break; sleep 1; done
+  [ "$(docker inspect -f '{{.State.Running}}' "$NAME")" = false ] || fehler "Ablago hat sich nach der Wiederherstellung nicht beendet"
+  docker start "$NAME" >/dev/null; warte
+  [ "$(sudo cat "$arbeit/postgres/daten/PG_VERSION")" = "$pg_neu" ] || fehler "neue Datenbank nicht mit PostgreSQL $pg_neu"
+  [ "$(sudo cat "$arbeit/postgres-$pg_alt/daten/PG_VERSION")" = "$pg_alt" ] || fehler "alter Datenbank-Ordner nicht mehr da"
+}
+
 echo "::group::1. Alter Stand: $ALT"
 docker pull -q "$ALT" >/dev/null || fehler "altes Image $ALT nicht abrufbar"
 starte "$ALT"; warte
@@ -95,7 +144,8 @@ echo "::group::2. Neuer Stand: $NEU"
 vorher_root=$(sudo find "$arbeit/files" "$arbeit/geheim" "$arbeit/sicherung" -uid 0 | head -1)
 liste() { sudo find "$arbeit/files" "$arbeit/geheim" "$arbeit/sicherung" -printf '%p|%u:%g %m\n'; }
 vorher=$(liste)
-starte "$NEU"; warte
+pg_alt=$(pg_haupt "$ALT"); pg_neu=$(pg_haupt "$NEU")
+if [ "$pg_alt" != "$pg_neu" ]; then umzug_ueber_sicherung; else starte "$NEU"; warte; fi
 neu=$(version); echo "Neue Version: $neu"
 [ "$(curl -fsS "$U/api/konto/status" | jq -r '.einrichtungNoetig')" = false ] || fehler "nach dem Update wieder uneingerichtet"
 anmelden "neuer Stand"

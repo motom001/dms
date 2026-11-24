@@ -516,7 +516,7 @@ export async function versionsabgleich(
       postgresql.hinweis,
       komplett
         ? 'Kommt mit dem nächsten Image dms-komplett (ghcr.io/motom001/dms-komplett neu ziehen, sobald es erschienen ist).'
-        : `Zum Aktualisieren das Image postgres:${(pg ?? '').split('.')[0] || '17'} neu ziehen und den Datenbank-Container neu starten.`,
+        : `Zum Aktualisieren das Image postgres:${(pg ?? '').split('.')[0] || '18'} neu ziehen und den Datenbank-Container neu starten.`,
     ]
       .filter(Boolean)
       .join(' ');
