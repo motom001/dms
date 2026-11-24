@@ -11,6 +11,7 @@ import { Hilfe } from '../Hilfe';
 import { t, tn } from '../sprache';
 import { Feld, FeldGruppe, Knopf, Schalter, Umschalter } from '../bausteine';
 import type { ProfilZustand } from './useProfil';
+import { TAB_NEUES, tabNeuesAn } from '../tabzeichen';
 
 /** Profil → Darstellung und Benachrichtigungen (#1279 aus Profil.tsx gezogen). */
 export function DarstellungTeil({ z }: { z: ProfilZustand }) {
@@ -105,6 +106,17 @@ export function DarstellungTeil({ z }: { z: ProfilZustand }) {
           setze={(an) => d.setzeEinstellung('geaenderte_hervorheben', an ? null : false)}
           beschriftung={t('profil.profil.geaenderte-favoriten-und-eigene')}
           hinweis={t('profil.profil.mit-einem-punkt-vor')}
+        />
+      </div>
+
+      {/* #1625: Zahl im Titel und Punkt im Symbol des Tabs (#922) – je Konto, Vorgabe an. */}
+      <div className="blatt" data-anker="konto.tab-neues">
+        <h2 className="h3">{t('profil.profil.tab-neues-titel')}</h2>
+        <Schalter
+          an={tabNeuesAn(d.einstellungen)}
+          setze={(an) => d.setzeEinstellung(TAB_NEUES, an ? null : false)}
+          beschriftung={t('profil.profil.tab-neues')}
+          hinweis={t('profil.profil.tab-neues-hinweis')}
         />
       </div>
 

@@ -183,6 +183,11 @@
   beschreibung: Schalter „Tipps auf der Startseite zeigen“ unter Mein Konto → Darstellung
   handy: true
   clients: false
+- anker: konto.tab-neues
+  seite: /profil/darstellung
+  beschreibung: Schalter „Offene Aufgaben und neue Post im Tab zeigen“ unter Mein Konto → Darstellung (#1625)
+  handy: true
+  clients: false
 - anker: konto.zusammenfassung
   seite: /profil/benachrichtigungen
   beschreibung: Tägliche Zusammenfassung unter Mein Konto → Benachrichtigungen

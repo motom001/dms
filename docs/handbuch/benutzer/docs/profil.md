@@ -7,7 +7,7 @@ Ein Klick auf deinen Namen oben rechts öffnet ein Menü:
 ![Benutzermenü](bilder/benutzermenue.png)
 
 - Oben stehen dein Name, deine E-Mail-Adresse und – falls du Ablago verwalten darfst – „darf Ablago verwalten“ bzw. „im Verwaltungsmodus“.
-- **Mein Konto** – dein [Profil](#profil) mit allen Bereichen: Konto, Sicherheit, Darstellung (Design, Schriftgröße, Startseite, geänderte Mappen hervorheben, Spaltenbreiten), Benachrichtigungen, [Abwesenheit](#abwesenheit).
+- **Mein Konto** – dein [Profil](#profil) mit allen Bereichen: Konto, Sicherheit, Darstellung (Design, Schriftgröße, Startseite, geänderte Mappen hervorheben, Neues im Tab, Spaltenbreiten), Benachrichtigungen, [Abwesenheit](#abwesenheit).
 - **Ablago verwalten** – nur, wenn du verwalten darfst: wechselt in den [Verwaltungsmodus](#ablago-verwalten). Im Modus steht hier **Verwaltung beenden**.
 - Solange eine Abwesenheit wirkt, steht oben im Menü „Du bist abwesend“ – ein Klick darauf führt direkt dorthin –, und neben deinem Namen ist ein Punkt.
 - **Fehler melden** – siehe [Fehler melden](#fehler-melden).
@@ -141,6 +141,7 @@ Auch ein Link zum Zurücksetzen des Passworts fragt danach den Code ab. Handy ve
 - **Schriftgröße auf diesem Gerät** – klein, normal oder groß. Gilt nur für das Gerät, an dem du gerade sitzt; am Smartphone kannst du eine andere Größe wählen als am PC.
 - <span id="startseite"></span>**Startseite** – **Mit der Startseite beginnen** schaltet die [Startseite](startseite.md) ein oder aus; ohne sie geht es nach der Anmeldung direkt zu *Zu erledigen*. **Vierte Kachel** wählt, was neben Zu erledigen, Neue Post und Nächster Termin steht: deine Favoriten oder eine Ansicht. **Tipp des Tages** schaltet den Punkt am [Assistenten](assistent.md#tipps) für den [Tipp des Tages](entdecken.md#tipps) ein oder aus.
 - <span id="geaenderte"></span>**Geänderte Mappen** – **Geänderte Favoriten und eigene Mappen in Listen hervorheben** (Standard: an) setzt einen Punkt vor den Titel, bis du die Mappe öffnest. Was dahintersteckt, steht unter [Favoriten als Abo](ablage.md#favoriten-als-abo).
+- <span id="im-tab"></span>**Neues im Tab** – **Offene Aufgaben und neue Post im Tab zeigen** (Standard: an): Liegt Ablago in einem Tab im Hintergrund, steht die Zahl vorn im Titel des Tabs und das Symbol trägt einen Punkt ([mehr](eingang.md#im-tab)). Aus: keine Zahl, kein Punkt, und Ablago fragt dafür auch nicht im Hintergrund nach. Gilt für dein Konto auf allen Geräten.
 - **Darstellung auf diesem Gerät** – die Breite der Spalten und eingeklappte Bereiche merkt sich jedes Gerät. Ist etwas nicht mehr zu finden, stellt **Standard-Darstellung wiederherstellen** die ursprüngliche Aufteilung her.
 - **Entwicklermodus** – zeigt unten rechts, wie lange ein Seitenaufruf gedauert hat.
 
