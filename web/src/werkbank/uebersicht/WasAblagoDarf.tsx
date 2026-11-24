@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { t } from '../../sprache';
-import { Etikett, FeldGruppe, Knopf } from '../../bausteine';
+import { Knopf } from '../../bausteine';
 import { betriebApi } from '../../api/betrieb';
 import { ApiFehler } from '../../api/anfrage';
 import { useKonto } from '../../konto';
 import { hatGesamt } from '../../../../shared/src/verwaltungsrecht';
 import { DARF_VORGABE, PAKETE_GRENZEN, SELBST_STUFEN, ueberHoechstwert, type Darf, type DarfStand } from '../../../../shared/src/darf';
 import type { UebersichtZustand } from './zustand';
+import { DarfFrage } from './DarfFrage';
 
 /** Paket über der neuen Grenze, wie der Server es beim Senken nennt (#1562, #1563). */
 interface Betroffen {
@@ -85,7 +86,7 @@ function DarfAendern({ d, u, schliessen }: { d: DarfStand; u: UebersichtZustand;
         void speichern();
       }}>
       <p className="leise klein">{t('werkbank.darf.unter')}</p>
-      <Frage
+      <DarfFrage
         name="darf-pakete"
         frage={t('werkbank.darf.frage.pakete')}
         antworten={PAKETE_GRENZEN}
@@ -99,7 +100,7 @@ function DarfAendern({ d, u, schliessen }: { d: DarfStand; u: UebersichtZustand;
           setWahl((w) => ({ ...w, pakete }));
         }}
       />
-      <Frage
+      <DarfFrage
         name="darf-selbst"
         frage={t('werkbank.darf.frage.selbst')}
         antworten={SELBST_STUFEN}
@@ -131,44 +132,5 @@ function DarfAendern({ d, u, schliessen }: { d: DarfStand; u: UebersichtZustand;
         <Knopf onClick={schliessen}>{t('werkbank.darf.abbrechen')}</Knopf>
       </div>
     </form>
-  );
-}
-
-/** Eine Frage als Optionsgruppe: eine Zeile je Antwort, der Satz nur unter der gewählten. */
-function Frage<A extends string>(p: {
-  name: string;
-  frage: string;
-  antworten: readonly A[];
-  bereich: 'pakete' | 'selbst';
-  wert: A;
-  vorgabe: A;
-  gesperrt(a: A): boolean;
-  heisst: string;
-  setze(a: A): void;
-}) {
-  return (
-    <FeldGruppe beschriftung={p.frage}>
-      <div className="wahlkarten darf-antworten">
-        {p.antworten.map((a) => {
-          const aus = p.gesperrt(a);
-          return (
-            <label key={a} className={`wahlkarte${p.wert === a ? ' gewaehlt' : ''}`}>
-              <input type="radio" name={p.name} value={a} checked={p.wert === a} disabled={aus} onChange={() => p.setze(a)} />
-              <span className="wahlkarte-text">
-                <span>
-                  <strong>{t.frei(`werkbank.darf.${p.bereich}.${a}`)}</strong>{' '}
-                  {a === p.vorgabe && <Etikett klein>{t('werkbank.darf.empfohlen')}</Etikett>}
-                </span>
-                {aus && <span className="leise klein">{t('werkbank.darf.anbieter')}</span>}
-                {p.wert === a && <span className="leise klein">{t.frei(`werkbank.darf.${p.bereich}.${a}.text`)}</span>}
-              </span>
-            </label>
-          );
-        })}
-      </div>
-      <p className="klein">
-        <strong>{t('werkbank.darf.heisst')}</strong> {p.heisst}
-      </p>
-    </FeldGruppe>
   );
 }

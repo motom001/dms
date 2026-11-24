@@ -77,8 +77,10 @@ rauchtest(
       await stufen.getByRole('radio', { name: /^Haushalt/ }).check();
       await assistentAxe(s, 'Nutzung');
       await s.getByRole('button', { name: 'Weiter' }).click();
+      await wasDarfAblago(s);
+      await ablagoWaehltPakete(s);
       // Pakete: ohne Internet nur ein Hinweis – die Rauchtests brauchen keine Pakete.
-      await s.getByRole('heading', { name: 'Pakete dazuholen' }).waitFor();
+      await s.getByRole('heading', { name: 'Diese Pakete richtet Ablago für euch ein' }).waitFor();
       await s.getByRole('button', { name: 'Überspringen' }).click({ timeout: 30_000 });
       await s.getByRole('heading', { name: 'Optionales' }).waitFor();
       // Notfallkontakt (#1215): „+ Notfallkontakt“ klein, Entfernen leise mit Rückfrage – danach ist die Liste wieder leer.
@@ -130,6 +132,132 @@ rauchtest(
     }
   },
 );
+
+/**
+ * „Was darf Ablago?“ (#1566): zwei Optionsgruppen, die empfohlenen Antworten gewählt, der Satz nur unter der gewählten.
+ * Die Rauchtests bleiben bei der Vorgabe „Auch Helfer, die nur hier arbeiten“.
+ */
+async function wasDarfAblago(s) {
+  await s.getByRole('heading', { name: 'Was darf Ablago?' }).waitFor();
+  const pakete = s.getByRole('group', { name: 'Welche Pakete darf Ablago nutzen?' });
+  assert.ok(await pakete.getByRole('radio', { name: /^Auch Helfer, die nur hier arbeiten/ }).isChecked(), 'Vorgabe Frage 1');
+  assert.ok(
+    await s
+      .getByRole('group', { name: 'Wie viel soll Ablago von sich aus tun?' })
+      .getByRole('radio', { name: /^Erkennen und vorlegen/ })
+      .isChecked(),
+    'Vorgabe Frage 2',
+  );
+  await pakete.getByText('Nichts verlässt Ablago.', { exact: false }).waitFor();
+  assert.equal(await pakete.getByText(/Sicherung an ein entferntes Ziel/).count(), 0, 'Satz nur unter der gewählten Antwort');
+  // Tastatur: Pfeil nach unten wählt die nächste Antwort, Pfeil nach oben wieder die Vorgabe.
+  await pakete.getByRole('radio', { name: /^Auch Helfer, die nur hier arbeiten/ }).focus();
+  await s.keyboard.press('ArrowDown');
+  await pakete.getByText(/Sicherung an ein entferntes Ziel/).waitFor();
+  await s.keyboard.press('ArrowUp');
+  await pakete.getByText('Nichts verlässt Ablago.', { exact: false }).waitFor();
+  await assistentAxe(s, 'Was darf Ablago?');
+  await s.getByRole('button', { name: 'Weiter' }).click();
+}
+
+/**
+ * Ablago wählt die Pakete (#1566, #1591) – mit einem nachgestellten Katalog (die Rauchtests laufen ohne Internet): Die
+ * Sicherung mit Internet bietet Ablago unter „nur hier“ nicht an, sondern nennt sie mit Grund unter „Nicht dabei“; unter
+ * „Selbst auswählen“ ist sie ausgegraut, mit demselben Grund. Danach ohne Nachstellung weiter.
+ */
+async function ablagoWaehltPakete(s) {
+  const version = (code) => ({
+    version: '1.0.0',
+    dms: '>=0.1.0',
+    abhaengigkeiten: {},
+    inhalt: { mappentypen: [], sichten: [], beispiele: 0 },
+    code,
+    archiv: 'x.zip',
+    sha256: '0'.repeat(64),
+    groesse: 1000,
+    veroeffentlicht: '2026-11-01T00:00:00Z',
+    quelle: '',
+    readme: '',
+    changelog: '',
+  });
+  const paket = (id, name, beschreibung, code) => ({
+    id,
+    name,
+    beschreibung,
+    autor: { name: 'Ablago-Projekt', github: '' },
+    lizenz: 'Apache-2.0',
+    aktuell: '1.0.0',
+    versionen: [version(code)],
+  });
+  const katalog = {
+    format: 1,
+    erstellt: '2026-11-01T00:00:00Z',
+    quelle: '',
+    empfohlen: ['haushalt', 'sicherung_webdav'],
+    pakete: [
+      paket('haushalt', 'Haushalt', 'Mappentypen für den Haushalt. Mit Ansichten.', false),
+      paket('sicherung_webdav', 'Sicherung WebDAV', 'Sicherung an ein WebDAV-Ziel.', true),
+    ],
+  };
+  const grund = '„Sicherung WebDAV“ nutzt das Internet – das habt ihr nicht erlaubt.';
+  const stufen = {
+    signiert: true,
+    pakete: [
+      { id: 'haushalt', stufe: 'vorlagen', erlaubt: true, netz: [], adressen: [] },
+      { id: 'sicherung_webdav', stufe: 'netz', erlaubt: false, grund, netz: ['https://dav.example.org'], adressen: [] },
+    ],
+  };
+  const plan = {
+    pakete: [
+      {
+        schluessel: 'haushalt',
+        id: 'haushalt',
+        name: 'Haushalt',
+        version: '1.0.0',
+        gewaehlt: true,
+        fuer: [],
+        ergaenzt: null,
+        vorschau: { fehlercodes: [], probleme: [], beispiele: 0 },
+        einstellungen: [],
+      },
+    ],
+    probleme: [],
+    herkunft: { art: 'projekt', offiziell: true, bestaetigen: false },
+    herkunftBestaetigen: false,
+    rechte: { bestaetigen: false, stand: 'x' },
+    auswahl: { typen: [], benutzer: [], rollen: [], sichten: [] },
+  };
+  const json = (daten) => ({ status: 200, contentType: 'application/json', body: JSON.stringify(daten) });
+  const routen = {
+    '**/api/einrichtung/pakete/katalog': json({
+      kataloge: [{ url: 'https://catalog.ablago.app/katalog.json', offiziell: true, katalog, fehler: null }],
+      abgerufen: '2026-11-24T10:00:00Z',
+    }),
+    '**/api/einrichtung/pakete/stufen': json(stufen),
+    '**/api/einrichtung/pakete/plan': json(plan),
+  };
+  for (const [muster, antwort] of Object.entries(routen)) await s.route(muster, (r) => r.fulfill(antwort));
+  try {
+    await s.getByRole('heading', { name: 'Diese Pakete richtet Ablago für euch ein' }).waitFor();
+    const liste = s.getByRole('list', { name: 'Diese Pakete richtet Ablago für euch ein' });
+    await liste.getByText('Haushalt').waitFor();
+    assert.equal(await liste.getByRole('checkbox').count(), 0, 'Ablagos Auswahl ohne Haken');
+    assert.equal(await liste.getByText('Sicherung WebDAV').count(), 0, 'nie ein Paket mit Netz unter „nur hier“');
+    const nicht = s.getByRole('region', { name: 'Nicht dabei' });
+    await nicht.getByText(grund).waitFor();
+    assert.equal(await s.getByText(grund).count(), 1, 'jede Meldung einmal');
+    await assistentAxe(s, 'Pakete (Ablagos Auswahl)');
+    await s.getByRole('button', { name: 'Selbst auswählen' }).click();
+    await s.getByRole('heading', { name: 'Pakete dazuholen' }).waitFor();
+    const gesperrt = s.getByRole('group', { name: 'Sicherung WebDAV' }).getByRole('checkbox');
+    assert.ok(await gesperrt.isDisabled(), 'ausgegraut');
+    await s.getByText(grund).waitFor();
+    await assistentAxe(s, 'Pakete (selbst auswählen)');
+    await s.getByRole('button', { name: 'Ablagos Auswahl zeigen' }).click();
+  } finally {
+    for (const muster of Object.keys(routen)) await s.unroute(muster);
+  }
+}
 
 /**
  * Verlauf im Browser für die Fehlermeldung (QS-Runde 11/2026): Seitenwechsel und Neuladen, Antworten der Schnittstelle

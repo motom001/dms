@@ -12,8 +12,8 @@ import { setzeStand, useAssistent, type Ansicht } from './stand';
  * Einrichtungsassistent (#119, #804): erst sammeln, dann eine Zusammenfassung, dann „Jetzt einrichten“.
  *
  *   1 Code · 2 Datenbank · 3 Neu oder Sicherung       – sofort, weil technisch nötig
- *   4 Ablage · 5 Dein Konto · 6 Nutzung · 7 Pakete · 8 Optionales  – nur gesammelt, jederzeit änderbar
- *   9 Zusammenfassung → „Jetzt einrichten“ (mit Fortschritt) · 10 Fertig: Notfallblatt, Zwei-Faktor anbieten, abschließen
+ *   4 Ablage · 5 Dein Konto · 6 Nutzung · 7 Was darf Ablago? · 8 Pakete · 9 Optionales  – nur gesammelt, jederzeit änderbar
+ *   10 Zusammenfassung → „Jetzt einrichten“ (mit Fortschritt) · 11 Fertig: Notfallblatt, Zwei-Faktor anbieten, abschließen
  *
  * Seit #821 gibt es nur „Dein Konto“: die Person, die einrichtet, mit „Gesamte Verwaltung“ – kein Administrator und
  * kein erster Benutzer daneben. Eine zweite Person mit Verwaltungsrecht empfiehlt danach ein Hinweis in der Werkbank.
@@ -29,6 +29,7 @@ export const SCHRITTE = [
   t('einrichtung.schritt.ablage'),
   t('einrichtung.schritt.konto'),
   t('einrichtung.schritt.nutzung'),
+  t('einrichtung.schritt.darf'),
   t('einrichtung.schritt.pakete'),
   t('einrichtung.schritt.optional'),
   t('einrichtung.schritt.zusammenfassung'),
@@ -40,12 +41,13 @@ export const NR: Record<Ansicht | 'fertig', number> = {
   ablage: 4,
   konto: 5,
   nutzung: 6,
-  pakete: 7,
-  optional: 8,
-  zusammenfassung: 9,
-  fertig: 10,
+  darf: 7,
+  pakete: 8,
+  optional: 9,
+  zusammenfassung: 10,
+  fertig: 11,
 };
-export const REIHE: Ansicht[] = ['ablage', 'konto', 'nutzung', 'pakete', 'optional', 'zusammenfassung'];
+export const REIHE: Ansicht[] = ['ablage', 'konto', 'nutzung', 'darf', 'pakete', 'optional', 'zusammenfassung'];
 export const REPO = 'https://github.com/motom001/dms';
 
 /** Hilfe je Schritt (#278): der passende Abschnitt im Online-Handbuch, mit Bildern. */
@@ -57,6 +59,7 @@ const HILFE_JE_SCHRITT: Hilfeort[] = [
   'einrichtung.mandant',
   'einrichtung.konto',
   'einrichtung.nutzung',
+  'einrichtung.darf',
   'einrichtung.pakete',
   'einrichtung.optional',
   'einrichtung.zusammenfassung',

@@ -42,17 +42,19 @@ export interface MailSammlung {
 /** Ausführen bei „Jetzt einrichten“: in dieser Reihenfolge, jede Stufe einzeln wiederholbar. */
 // „nutzung“ vor „pakete“: Pakete schlagen bei beruflicher Nutzung eine längere Aufbewahrung vor (#1051). „organisation“
 // nach „pakete“: Den Mappentyp mit dem Merkmal „eigene Organisation“ bringt das Paket Basis mit (#1045).
+// „darf“ (#1566) vor „pakete“: Installiert wird nur, was die Antwort auf „Welche Pakete darf Ablago nutzen?“ erlaubt.
 // „notfallkontakte“ (#812) nach „mail“: Mit eingerichtetem Versand geht die Info-Mail gleich hinaus.
-// „beispielablage“ (#988) zuletzt: Sie legt die Beispiele der eben installierten Pakete an.
+// „beispielablage“ (#988) zuletzt: Sie legt die Beispiele der eben installierten Pakete an. Seit #1592 die einzige Frage
+// nach Beispielen – „Beispiel-Mappentypen laden“ und Beispiele je Paket entfallen.
 export const STUFEN = [
   'ablage',
   'schluessel',
   'adresse',
   'region',
   'nutzung',
+  'darf',
   'mail',
   'notfallkontakte',
-  'beispiele',
   'pakete',
   'organisation',
   'beispielablage',
@@ -84,9 +86,14 @@ export interface Sammlung {
   pakete: PaketWahl | null;
   /** Aus einer Datei, noch nicht bestätigt (#806). */
   paketeVorgabe: PlanPaket[] | null;
+  /** Wer die Pakete gewählt hat (#1566): Ablago nach „Was darf Ablago?“ oder die Person selbst – fürs Nachweis-Journal. */
+  paketeAuswahl?: 'ablago' | 'selbst';
   /** beruflich: Merkmal „beruflich genutzt“ (#1032) – seit #1045 aus dem Schritt „Nutzung“, bei älteren Dateien direkt. */
   /** notfallkontakte (#812): gesammelt, angelegt bei „Jetzt einrichten“ – nicht in der Konfigurationsdatei (Daten Dritter). */
-  /** beispielablage (#988): „Erst mal umsehen“ – Beispiel-Ablage aus den Paketen; nicht in der Konfigurationsdatei. */
+  /**
+   * beispielablage (#988, #1592): „Mit einer Beispiel-Ablage starten?“ – die einzige Frage nach Beispielen; in der
+   * Konfigurationsdatei als `optional.beispiele`. `beispiele` (Beispiel-Mappentypen laden) fragt der Assistent nicht mehr.
+   */
   optional: {
     adresse: string;
     bundesland: string;
@@ -102,7 +109,7 @@ export interface Sammlung {
   organisation: PlanOrganisation | null;
   /** Stufe der Werkbank (#987); fehlt = Vorgabe zur Nutzung. Seit #1319 auch in der Konfigurationsdatei. */
   werkbank?: Vorlage;
-  /** Was Ablago darf (#1562), aus der Konfigurationsdatei; fehlt = Vorgabe. Fragen im Assistenten kommen mit #1566. */
+  /** Was Ablago darf (#1562): Schritt „Was darf Ablago?“ (#1566) bzw. Konfigurationsdatei, mit Höchstwerten vom Anbieter. */
   darf?: PlanDarf;
   /** Schritte, die schon einmal mit „Weiter“ verlassen wurden. */
   besucht: Ansicht[];
@@ -252,7 +259,8 @@ export function planAus(s: Sammlung, db: PlanDatenbank | null = s.datenbank): Ei
     optional: {
       adresse: s.optional.adresse.trim() || null,
       bundesland: s.optional.bundesland || null,
-      beispiele: s.optional.beispiele,
+      // Eine Frage nach Beispielen (#1592): „Mit einer Beispiel-Ablage starten?“.
+      beispiele: !!s.optional.beispielablage,
       ...(s.optional.beruflich ? { beruflich: true } : {}),
       mail: m
         ? {
@@ -274,6 +282,22 @@ export function planAus(s: Sammlung, db: PlanDatenbank | null = s.datenbank): Ei
   };
 }
 
+/** Eine Frage nach Beispielen (#1592): Beispiele in der Datei – allgemein oder je Paket – heißen Beispiel-Ablage. */
+const mitBeispielen = (p: Einrichtungsplan) => p.optional.beispiele || !!p.pakete?.some((x) => x.beispiele);
+
+/**
+ * Welche Schritte eine Datei schon beantwortet. Ohne `nutzung` (Datei vor #1045) bzw. ohne beide Antworten in `darf`
+ * (vor #1566) fragt der Assistent den Schritt noch ab.
+ */
+const besuchtAus = (p: Einrichtungsplan): Ansicht[] => [
+  'ablage',
+  'konto',
+  ...(p.nutzung ? ['nutzung' as const] : []),
+  ...(p.darf?.pakete && p.darf.selbst ? ['darf' as const] : []),
+  ...(p.pakete ? ['pakete' as const] : []),
+  'optional',
+];
+
 /** Eine geladene Datei als Sammlung: alles sichtbar vorbelegt, Passwörter fehlen (fragt der Assistent ab). */
 export function sammlungAus(p: Einrichtungsplan, hinweise: string[]): Sammlung {
   const m = p.optional.mail;
@@ -289,7 +313,8 @@ export function sammlungAus(p: Einrichtungsplan, hinweise: string[]): Sammlung {
     optional: {
       adresse: p.optional.adresse ?? '',
       bundesland: p.optional.bundesland ?? '',
-      beispiele: p.optional.beispiele,
+      beispiele: false,
+      ...(mitBeispielen(p) ? { beispielablage: true } : {}),
       ...(p.optional.beruflich ? { beruflich: true } : {}),
       mail: m
         ? {
@@ -304,8 +329,7 @@ export function sammlungAus(p: Einrichtungsplan, hinweise: string[]): Sammlung {
           }
         : null,
     },
-    // Ohne `nutzung` (Datei vor #1045) fragt der Assistent den Schritt „Nutzung“ noch ab.
-    besucht: ['ablage', 'konto', ...(p.nutzung ? ['nutzung' as const] : []), ...(p.pakete ? ['pakete' as const] : []), 'optional'],
+    besucht: besuchtAus(p),
     zurZusammenfassung: true,
     verweise: { konto: p.konto.passwort, mail: m?.passwort, datenbank: p.datenbank?.passwort },
     datenbank: p.datenbank,

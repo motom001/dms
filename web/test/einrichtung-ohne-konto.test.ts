@@ -142,7 +142,7 @@ describe('Einrichtungsassistent ohne KontoProvider (#881)', () => {
     assert.match(zeichne(h(Link)), /href="\/hilfe\/benutzer\//);
   });
 
-  for (const ansicht of ['ablage', 'konto', 'pakete', 'optional', 'zusammenfassung'] as const) {
+  for (const ansicht of ['ablage', 'konto', 'darf', 'pakete', 'optional', 'zusammenfassung'] as const) {
     it(`Schritt „${ansicht}“ zeichnet ohne Konto`, () => {
       setzeStand((x: Record<string, unknown>) => ({
         ...x,
@@ -172,7 +172,19 @@ describe('Einrichtungsassistent ohne KontoProvider (#881)', () => {
         h(PaketApiKontext.Provider, { value: ohneNetz }, h(Sammelassistent, { zurWahl: nichts, abschliessen: async () => {} })),
       );
       assert.ok(html.length > 200, html);
-      if (ansicht === 'pakete') assert.match(html, /Pakete dazuholen/, 'Pakete: Schritt mit der Auswahl (Daten kommen erst aus dem Netz)');
+      // #1566: Ablago wählt die Pakete – die Liste kommt erst aus dem Netz.
+      if (ansicht === 'pakete') assert.match(html, /Diese Pakete richtet Ablago für euch ein/, 'Pakete: Ablagos Auswahl');
+      if (ansicht === 'darf') {
+        // Zwei Optionsgruppen, die Vorgaben gewählt und als „Empfohlen“ markiert, der Satz nur unter der gewählten.
+        assert.match(html, /Welche Pakete darf Ablago nutzen\?/);
+        assert.match(html, /Wie viel soll Ablago von sich aus tun\?/);
+        assert.equal((html.match(/type="radio"/g) ?? []).length, 7);
+        assert.equal((html.match(/checked=""/g) ?? []).length, 2);
+        assert.equal((html.match(/Empfohlen/g) ?? []).length, 2);
+        assert.match(html, /Nichts verlässt Ablago\./, 'Satz unter „Auch Helfer, die nur hier arbeiten“');
+        assert.doesNotMatch(html, /Sicherung an ein entferntes Ziel/, 'kein Satz unter nicht gewählten Antworten');
+        assert.match(html, /Was darf Ablago\?/);
+      }
     });
   }
 

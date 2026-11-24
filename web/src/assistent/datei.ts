@@ -1,4 +1,5 @@
 import { SAMMELSCHRITTE, type PlanPaket, type Planprobleme } from '../../../shared/src/einrichtungsplan';
+import { DARF_VORGABE } from '../../../shared/src/darf';
 import { einrichtungApi } from '../api/einrichtung';
 import { t } from '../sprache';
 import type { PaketWahl } from '../werkbank/PaketAblauf';
@@ -19,7 +20,11 @@ async function paketeAusVorgabe(vorgabe: PlanPaket[]): Promise<string | null> {
     if (!k?.katalog) return t('einrichtung.pakete.katalog', { fehler: k?.fehler ?? '' });
     const fehlen = vorgabe.filter((v) => !k.katalog!.pakete.some((p) => p.id === v.id)).map((v) => v.id);
     if (fehlen.length) return t('einrichtung.pakete.unbekannt', { namen: fehlen.join(', ') });
-    const plan = await einrichtungApi.einrichtungPaketPlan({ pakete: vorgabe.map((v) => v.id) });
+    // Mit der Antwort auf „Welche Pakete darf Ablago nutzen?“ (#1591): Ein Paket darüber braucht eine Entscheidung.
+    const plan = await einrichtungApi.einrichtungPaketPlan(
+      { pakete: vorgabe.map((v) => v.id) },
+      holeStand().sammlung.darf?.pakete ?? DARF_VORGABE.pakete,
+    );
     // Rechte, Herkunft, Namen und Pflicht-Einstellungen bestätigt immer ein Mensch – auch mit Datei.
     const fragen =
       plan.probleme.length > 0 ||
@@ -41,7 +46,8 @@ async function paketeAusVorgabe(vorgabe: PlanPaket[]): Promise<string | null> {
           .filter((a) => a.neu)
           .map((a) => [a.schluessel, je(p.id)?.automatisierungen[a.schluessel] !== false]),
       );
-    const beispiele = plan.pakete.filter((p) => je(p.id)?.beispiele && p.vorschau.beispiele > 0 && !p.vorschau.update).map((p) => p.id);
+    // Beispiele je Paket entfallen (#1592): Die Beispiel-Ablage legt sie nach „Jetzt einrichten“ an.
+    const beispiele: string[] = [];
     const wahl: PaketWahl = {
       eingabe: {
         pakete: vorgabe.map((v) => v.id),
@@ -70,7 +76,7 @@ async function paketeAusVorgabe(vorgabe: PlanPaket[]): Promise<string | null> {
       neueTypen: plan.pakete.reduce((n, p) => n + p.vorschau.typen.filter((x) => !x.vorhanden && !x.geloescht).length, 0),
       mitEinstellungen: false,
     };
-    setzeSammlung((s) => ({ ...s, pakete: wahl, paketeVorgabe: null }));
+    setzeSammlung((s) => ({ ...s, pakete: wahl, paketeVorgabe: null, paketeAuswahl: 'selbst' }));
     return null;
   } catch (e) {
     return (e as Error).message;
@@ -86,9 +92,7 @@ export async function pruefeAlles(): Promise<Planprobleme> {
     if (m) p[k] = [...(p[k] ?? []), m];
   };
   if (s.paketeVorgabe?.length && !s.pakete) dazu('pakete', await paketeAusVorgabe(s.paketeVorgabe));
-  const jetzt = holeStand().sammlung;
-  if (jetzt.optional.beispiele && (jetzt.pakete?.neueTypen ?? 0) > 0) dazu('optional', t('einrichtung.optional.beispiele.pakete'));
-  if (jetzt.optional.mail?.mitPasswort && !geheim.mail) dazu('optional', t('einrichtung.plan.mail.passwort'));
+  if (holeStand().sammlung.optional.mail?.mitPasswort && !geheim.mail) dazu('optional', t('einrichtung.plan.mail.passwort'));
   setzeSammlung((x) => ({ ...x, probleme: p }));
   return p;
 }

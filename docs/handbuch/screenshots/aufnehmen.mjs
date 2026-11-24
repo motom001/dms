@@ -583,8 +583,12 @@ async function einrichtenImBrowser(browser, bild) {
   await s.getByLabel(w('Name'), { exact: true }).fill('');
   await s.getByRole('radio', { name: w(/^Für zu Hause/) }).check();
   await s.getByRole('button', { name: w('Weiter') }).click();
-  // Pakete dazuholen (#460): Katalog abrufen (ohne Internet: Hinweis), dann überspringen.
-  await s.getByRole('heading', { name: w('Pakete dazuholen') }).waitFor();
+  // Was darf Ablago? (#1566): die empfohlenen Antworten, so wie sie vorgewählt sind.
+  await s.getByRole('heading', { name: w('Was darf Ablago?') }).waitFor();
+  await bild(s, 'einrichtung-darf', { fullPage: true });
+  await s.getByRole('button', { name: w('Weiter') }).click();
+  // Pakete (#460, #1566): Ablago wählt aus dem Katalog (ohne Internet: Hinweis), dann überspringen.
+  await s.getByRole('heading', { name: w('Diese Pakete richtet Ablago für euch ein') }).waitFor();
   await s.getByRole('button', { name: w('Überspringen') }).waitFor({ timeout: 30_000 });
   await bild(s, 'einrichtung-pakete', { fullPage: true });
   await s.getByRole('button', { name: w('Überspringen') }).click();

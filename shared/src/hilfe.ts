@@ -31,6 +31,8 @@ export const HILFE = {
   'einrichtung.konto': admin('installation/', 'Dein Konto', 'dein-konto'),
   // #1045: „Wofür nutzt du Ablago?“ – privat, beruflich, beides und die eigene Organisation.
   'einrichtung.nutzung': admin('installation/', 'Nutzung', 'nutzung'),
+  // #1566: „Was darf Ablago?“ vor den Paketen; Ablago wählt danach die Pakete.
+  'einrichtung.darf': admin('installation/', 'Was darf Ablago?', 'was-darf-ablago'),
   'einrichtung.pakete': admin('installation/', 'Pakete dazuholen', 'pakete-dazuholen'),
   'einrichtung.optional': admin('installation/', 'Optionales', 'optionales'),
   'einrichtung.zusammenfassung': admin('installation/', 'Zusammenfassung', 'zusammenfassung'),

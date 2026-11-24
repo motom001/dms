@@ -2191,11 +2191,6 @@
       "useOhneLeserecht"
     ]
   },
-  "web/src/werkbank/PaketAblauf.tsx": {
-    "exports": [
-      "Fragen"
-    ]
-  },
   "web/src/werkbank/PaketVerlauf.tsx": {
     "exports": [
       "EreignisKatalogListe",

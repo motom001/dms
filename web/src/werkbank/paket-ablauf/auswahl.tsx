@@ -68,7 +68,8 @@ const inhaltText = (v: KatalogVersion) =>
     .filter(Boolean)
     .join(' · ');
 
-export function kandidaten(q: AblaufQuelle, versionen: Record<string, string>): Kandidat[] {
+/** `sperren`: je Paket-Id ein Grund, warum es nicht wählbar ist – im Einrichtungsassistenten nach „Was Ablago darf“ (#1566). */
+export function kandidaten(q: AblaufQuelle, versionen: Record<string, string>, sperren: Record<string, string> = {}): Kandidat[] {
   if (q.art === 'katalog') {
     return q.katalog.pakete
       .filter((p) => !q.installiert.some((x) => x.id === p.id))
@@ -84,7 +85,11 @@ export function kandidaten(q: AblaufQuelle, versionen: Record<string, string>): 
           code: z.code,
           ergaenzt: z.ergaenzt ?? null,
           abhaengigkeiten: z.abhaengigkeiten,
-          ...(v ? {} : { gesperrt: t('pakete.ablauf.dms', { dms: z.dms, version: q.dms }) }),
+          ...(v
+            ? p.id in sperren
+              ? { gesperrt: sperren[p.id] }
+              : {}
+            : { gesperrt: t('pakete.ablauf.dms', { dms: z.dms, version: q.dms }) }),
           inhalt: inhaltText(z),
           symbol: p.symbol,
           kuerzel: p.kuerzel,

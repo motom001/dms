@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { BUNDESLAENDER } from '../../../shared/src/feiertage';
 import { beruflichBei } from '../../../shared/src/einrichtungsplan';
 import { VORLAGEN, vorlageFuer } from '../../../shared/src/werkbankansicht';
+import { DARF_VORGABE } from '../../../shared/src/darf';
 import { Knopf } from '../bausteine';
 import { t } from '../sprache';
 import { ausfuehren, neuerLauf } from './ausfuehren';
@@ -59,6 +60,9 @@ export function Zusammenfassung({ s, zurWahl, leiste }: { s: Sammlung; zurWahl: 
         </Abschnitt>
         <Abschnitt titel={t('einrichtung.zf.nutzung')} ziel="nutzung" probleme={p.nutzung}>
           <ZfNutzung s={s} />
+        </Abschnitt>
+        <Abschnitt titel={t('einrichtung.zf.darf')} ziel="darf" probleme={p.darf}>
+          <ZfDarf s={s} />
         </Abschnitt>
         <Abschnitt titel={t('einrichtung.zf.pakete')} ziel="pakete" probleme={p.pakete}>
           <ZfPakete s={s} />
@@ -124,13 +128,26 @@ function ZfNutzung({ s }: { s: Sammlung }) {
   );
 }
 
+/** Was Ablago darf (#1566): beide Antworten als die zwei Sätze der Werkbank-Karte. */
+function ZfDarf({ s }: { s: Sammlung }) {
+  const d = { ...DARF_VORGABE, ...s.darf };
+  return (
+    <p>
+      {t.frei(`werkbank.darf.pakete.${d.pakete}.satz`)} {t.frei(`werkbank.darf.selbst.${d.selbst}.satz`)}
+    </p>
+  );
+}
+
 function ZfPakete({ s }: { s: Sammlung }) {
   const autoAn = s.pakete?.pakete.reduce((n, q) => n + Object.values(q.automatisierungen).filter(Boolean).length, 0) ?? 0;
   return s.pakete?.pakete.length ? (
-    <p>
-      {s.pakete.pakete.map((q) => q.name).join(', ')}
-      {autoAn ? ` (${t('einrichtung.zf.pakete.automatisierungen', { anzahl: autoAn })})` : ''}
-    </p>
+    <>
+      <p>
+        {s.pakete.pakete.map((q) => q.name).join(', ')}
+        {autoAn ? ` (${t('einrichtung.zf.pakete.automatisierungen', { anzahl: autoAn })})` : ''}
+      </p>
+      {s.paketeAuswahl === 'ablago' && <p className="leise klein">{t('einrichtung.zf.pakete.ablago')}</p>}
+    </>
   ) : s.paketeVorgabe?.length ? (
     <p>
       {s.paketeVorgabe.map((q) => q.id).join(', ')} <span className="leise">– {t('einrichtung.zf.pakete.vorgabe')}</span>
@@ -155,7 +172,7 @@ function ZfOptional({ s }: { s: Sammlung }) {
         )}
       </dd>
       <dt>{t('einrichtung.optional.beispiele.titel')}</dt>
-      <dd>{s.optional.beispiele ? t('einrichtung.zf.ja') : t('einrichtung.zf.nein')}</dd>
+      <dd>{s.optional.beispielablage ? t('einrichtung.zf.beispielablage') : t('einrichtung.zf.nein')}</dd>
       <dt>{t('einrichtung.optional.notfall.titel')}</dt>
       <dd>
         {s.optional.notfallkontakte?.length ? (
