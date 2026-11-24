@@ -1490,6 +1490,7 @@
   "fassungen.karten-reihenfolge": "{bereich}: Reihenfolge der Karten geändert",
   "fassungen.register-geaendert": "Register „{name}“: {was} geändert",
   "model.anlage": "Anlage",
+  "model.dokument-umbenannt": "Dokument umbenannt",
   "anlagen.anlage": "Anlage {nr}",
   "anlagen.in-anlage": "in Anlage {nr}",
   "pakete.anlagen-anlegen": "Legt beim Teilen einer Post Anlagen an – nur in den Posts, die dabei entstehen, an deren Dokument (z. B. für ein Trennblatt mit zweitem Barcode)",

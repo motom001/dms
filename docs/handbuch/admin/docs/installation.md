@@ -84,7 +84,7 @@ Name, E-Mail-Adresse und Passwort **deines eigenen Kontos** – mit deiner einen
 
 Hier legst du **einmal** fest, was Ablago darf – für die ganze Installation (siehe [Was Ablago darf](was-ablago-darf.md)). Zwei Fragen, je eine Zeile pro Antwort; der erklärende Satz steht unter der gewählten, darunter in einem Satz, was das für euch heißt. Vorgewählt sind die empfohlenen Antworten:
 
-- **Welche Pakete darf Ablago nutzen?** *Keine – nur Ablago selbst*, *Nur Vorlagen*, **Auch Helfer, die nur hier arbeiten** (empfohlen) oder *Auch Helfer mit Internet*. Ablagos eingebaute Helfer wie die Texterkennung laufen auf jeder Antwort.
+- **Welche Pakete darf Ablago nutzen?** *Keine – nur Ablago selbst*, *Nur Vorlagen*, **Auch Helfer, die nur hier arbeiten** (empfohlen) oder *Auch Helfer, die Dienste im Netz nutzen*. Was Ablago mitbringt, etwa die Texterkennung, läuft auf jeder Antwort.
 - **Wie viel soll Ablago von sich aus tun?** *Nichts von sich aus*, **Erkennen und vorlegen** (empfohlen) oder *Alles erledigen, ich prüfe danach*.
 
 Gespeichert wird mit **Jetzt einrichten**, vor den Paketen. Hat dein Anbieter in der [Einrichtungsdatei](einrichtungsdatei.md) Höchstwerte festgelegt, sind höhere Antworten gesperrt („Von eurem Anbieter festgelegt“). Ändern kannst du alles später in der [Werkbank-Übersicht](uebersicht.md) unter **Was Ablago darf**. Änderst du hier die Antwort auf die erste Frage, wählt Ablago die Pakete im nächsten Schritt neu.
@@ -95,7 +95,7 @@ Gespeichert wird mit **Jetzt einrichten**, vor den Paketen. Hat dein Anbieter in
 
 Installiert wird erst mit **Jetzt einrichten**; hier siehst du nur, was kommt. Erst in diesem Schritt fragt Ablago den [offiziellen Paketkatalog](pakete.md) ab – vorher baut es keine Verbindung dafür auf. Die Anfrage geht an catalog.ablago.app (ausgeliefert von GitHub Pages); dabei geht nur die Anfrage selbst hinaus, keine Daten aus deiner Ablage.
 
-**Diese Pakete richtet Ablago für euch ein:** Ablago wählt die Pakete selbst – passend zu [Was darf Ablago?](#was-darf-ablago), zu deiner Antwort im Schritt [Nutzung](#nutzung) und zu dem, was der Katalog empfiehlt (darunter Texterkennung und Benachrichtigungen). Die Liste zeigt je Paket einen Satz, ohne Haken. Nutzt ein Paket das Internet, steht das Ziel dabei („Nutzt das Internet: …“). Was die Antwort auf die erste Frage nicht erlaubt, steht darunter unter **Nicht dabei**, mit einem Satz Grund – etwa „„Sicherung WebDAV“ nutzt das Internet – das habt ihr nicht erlaubt.“ Dabei gilt:
+**Diese Pakete richtet Ablago für euch ein:** Ablago wählt die Pakete selbst – passend zu [Was darf Ablago?](#was-darf-ablago), zu deiner Antwort im Schritt [Nutzung](#nutzung) und zu dem, was der Katalog empfiehlt (darunter Texterkennung und Benachrichtigungen). Die Liste zeigt je Paket einen Satz, ohne Haken. Nutzt ein Paket Dienste im Netz, steht das Ziel dabei („Nutzt Dienste im Netz: …“). Was die Antwort auf die erste Frage nicht erlaubt, steht darunter unter **Nicht dabei**, mit einem Satz Grund – etwa „„Sicherung WebDAV“ nutzt Dienste im Netz – das habt ihr nicht erlaubt.“ Dabei gilt:
 
 - Ablago wählt **nur bei der Einrichtung** und **nur aus dem offiziellen, gültig signierten Katalog**. Ist der Katalog nicht gültig signiert, wählt es nichts von selbst.
 - **Nie über die erste Frage hinaus:** Ein Paket über der Grenze kommt nicht in die Auswahl; auch der Server installiert es nicht.

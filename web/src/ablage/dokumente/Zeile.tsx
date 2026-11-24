@@ -17,6 +17,7 @@ import { punkte, type Zeilenlage } from './punkte';
 import { DokTeilen, Infozeile, Zustand } from './teile';
 import { Versionen } from './Versionen';
 import { ZeileDialoge } from './ZeileDialoge';
+import { DokumentUmbenennen } from './Umbenennen';
 
 /**
  * Anlage (#998, #1487): eine Zeile wie das Dokument, darüber „Anlage zu …“, mit Art und Namen. Sichtbar nur „Ansehen“
@@ -230,6 +231,19 @@ function DokZeile({ k, x }: { k: Kern; x: Dokument }) {
   const klickbar = !weg && (!!sicht || !!ansichtVon(x, false));
   const s = k.ocr.standVon(x);
   const lage: Zeilenlage = { anlagen, ziele, sicht, klickbar: !!sicht, auf };
+  // Umbenennen (#1594); Anlagen haben ihr eigenes (#998).
+  const [umbenennen, setUmbenennen] = useState(false);
+  const zusatz: MenuePunkt[] = k.bearbeitbar
+    ? [
+        {
+          key: 'umbenennen',
+          gruppe: t('ablage.dokumente.gruppe.ordnen'),
+          symbol: 'notiz',
+          inhalt: t('ablage.dokumente.menue.umbenennen'),
+          tu: () => setUmbenennen(true),
+        },
+      ]
+    : [];
   return (
     <li
       ref={auf ? a.offenRef : undefined}
@@ -244,8 +258,9 @@ function DokZeile({ k, x }: { k: Kern; x: Dokument }) {
         />
         <Vorschaubild d={x} />
         <DokName k={k} x={x} s={s} weg={weg} klickbar={klickbar} auf={auf} />
-        <Zeilenaktionen k={k} x={x} weg={weg} klickbar={klickbar} lage={lage} zusatz={[]} />
+        <Zeilenaktionen k={k} x={x} weg={weg} klickbar={klickbar} lage={lage} zusatz={zusatz} />
       </div>
+      {umbenennen && !weg && <DokumentUmbenennen d={x} schliessen={() => setUmbenennen(false)} fertig={(m) => anlagenFertig(k, m)} />}
       <ZeileDialoge k={k} x={x} s={s} weg={weg} lage={lage} />
     </li>
   );

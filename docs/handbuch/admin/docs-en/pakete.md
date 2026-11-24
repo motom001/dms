@@ -288,7 +288,7 @@ A package with code can be **paused** instead of removed – by hand with **Paus
 
 - Its code does not run: no events, no tasks, no services; its actions are not in the "Folder" menu, its automations rest. Even if it ran by mistake, it would not reach the network.
 - **Folder types, folders, views and templates stay** and remain usable – they belong to you, not the package. Settings and secrets stay saved.
-- The package list shows **paused**, the package page the reason in words, e.g. "“Translation” uses the internet – you have not allowed that.", with **Allow …** and **Resume**; the [overview](uebersicht.md) shows a note.
+- The package list shows **paused**, the package page the reason in words, e.g. "“Translation” uses services on the network – you have not allowed that.", with **Allow …** and **Resume**; the [overview](uebersicht.md) shows a note.
 - **Resume** works without setting it up again, but only when "What Ablago may do" allows the package again. Raising alone resumes nothing on its own.
 
 ## Damaged package { #beschaedigt }

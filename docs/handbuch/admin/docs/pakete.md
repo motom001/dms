@@ -289,7 +289,7 @@ Ein Paket mit Code lässt sich **anhalten**, statt es zu entfernen – von Hand 
 
 - Sein Code läuft nicht: keine Ereignisse, keine Aufträge, keine Leistungen; seine Aktionen stehen nicht im Menü „Mappe“, seine Automatisierungen ruhen. Auch wenn es durch einen Fehler doch liefe, käme es nicht ins Netz.
 - **Mappentypen, Mappen, Ansichten und Vorlagen bleiben** und sind normal nutzbar – sie gehören euch, nicht dem Paket. Einstellungen und Geheimnisse bleiben gespeichert.
-- In der Paketliste steht **angehalten**, auf der Seite des Pakets der Grund in Worten, etwa „„Übersetzung“ nutzt das Internet – das habt ihr nicht erlaubt.“, mit **Erlauben …** und **Fortsetzen**; die [Übersicht](uebersicht.md) zeigt einen Hinweis.
+- In der Paketliste steht **angehalten**, auf der Seite des Pakets der Grund in Worten, etwa „„Übersetzung“ nutzt Dienste im Netz – das habt ihr nicht erlaubt.“, mit **Erlauben …** und **Fortsetzen**; die [Übersicht](uebersicht.md) zeigt einen Hinweis.
 - **Fortsetzen** geht ohne Neueinrichtung, aber nur, wenn „Was Ablago darf“ das Paket wieder erlaubt. Erhöhen allein setzt nichts von selbst fort.
 
 ## Beschädigtes Paket { #beschaedigt }

@@ -42,6 +42,8 @@ export function speicherDokumente(sp: SpeicherKontext) {
       delete n.anlageNr;
       delete n.eingangNr;
       delete n.eingangFuer;
+      delete n.nameOriginal;
+      delete n.verkleinertDpi;
       if (!n.originalEmail) delete n.originalEmail;
       dokumente.set(d.id, n);
       return kopie(n);
@@ -107,6 +109,24 @@ export function speicherDokumente(sp: SpeicherKontext) {
   } satisfies RepoTeil;
 }
 
+/** Umbenennen (#1594) und der Hinweis „Scan verkleinert“ (#1600). */
+export function speicherDokumentAngaben(sp: SpeicherKontext) {
+  const { dokumente } = sp;
+  return {
+    async benenneDokument(id, name) {
+      const d = dokumente.get(id);
+      if (!d) return false;
+      d.nameOriginal ??= d.name;
+      d.name = name;
+      return true;
+    },
+    async setzeVerkleinert(id, sha256, dpi) {
+      const d = dokumente.get(id);
+      if (d && d.sha256 === sha256) d.verkleinertDpi = dpi;
+    },
+  } satisfies RepoTeil;
+}
+
 /** Ältere Versionen eines Dokuments (#194). */
 export function speicherVersionen(sp: SpeicherKontext) {
   const { dokumente, seitenSpr, versionen, texte } = sp;
@@ -159,6 +179,7 @@ export function speicherVersionen(sp: SpeicherKontext) {
         teilenAb: null,
       };
       delete d.leerseiten;
+      delete d.verkleinertDpi;
       seitenSpr.delete(id);
       dokumente.set(id, d);
       return { ...kopie(d), aeltere: versionen.get(id)!.length };

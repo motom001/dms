@@ -523,7 +523,7 @@ Schlichter Text (Markdown) mit Platzhaltern wie {vertragsnummer}, etwa ein Künd
 Siehe auch: [Vorgabe](#vorgabe), [Paket](#paket), [Brief aus Vorlage](#brief-aus-vorlage).
 
 <a id="was-ablago-darf"></a>**Was Ablago darf** · ~ mit Erklärung · Administratoren  
-Zwei Antworten für die ganze Installation – welche Pakete Ablago nutzen darf (keine, nur Vorlagen, auch Helfer, die nur hier arbeiten, auch Helfer mit Internet) und wie viel es von sich aus tut (nichts, erkennen und vorlegen, alles erledigen). Ablago hält sich im Server daran und fragt innerhalb dieser Grenze nicht mehr einzeln nach. Eingebaute Helfer wie die Texterkennung arbeiten auf jeder Antwort. Festgelegt im Einrichtungsassistenten („Was darf Ablago?“), danach wählt Ablago dort die Pakete; später als Karte oben in der Übersicht der Werkbank, erhöhen geht nur mit frischer Anmeldung.  
+Zwei Antworten für die ganze Installation – welche Pakete Ablago nutzen darf (keine, nur Vorlagen, auch Helfer, die nur hier arbeiten, auch Helfer, die Dienste im Netz nutzen) und wie viel es von sich aus tut (nichts, erkennen und vorlegen, alles erledigen). Ablago hält sich im Server daran und fragt innerhalb dieser Grenze nicht mehr einzeln nach. Was Ablago mitbringt, etwa die Texterkennung, arbeitet auf jeder Antwort. Festgelegt im Einrichtungsassistenten („Was darf Ablago?“), danach wählt Ablago dort die Pakete; später als Karte oben in der Übersicht der Werkbank, erhöhen geht nur mit frischer Anmeldung.  
 Siehe auch: [Paket](#paket), [Übersicht](#ubersicht).
 
 <a id="was-mitkommt"></a>**Was mitkommt** · ✓ Alltagswort · Administratoren  

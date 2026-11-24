@@ -257,6 +257,16 @@ export const SCHEMAS_MAPPEN: Record<string, Schema> = {
         description:
           'Eingangskanäle (#1489): für wen das Dokument kam – beim E-Mail-Abruf „für“ des Postfachs, beim Eingangsordner die Person des Unterordners (Id der Benutzer-Mappe); fehlt sonst',
       },
+      nameOriginal: {
+        type: 'string',
+        description:
+          'Umbenannt (#1594): der Name vor der ersten Umbenennung (meist der Dateiname beim Hochladen); fehlt, solange nie umbenannt',
+      },
+      verkleinertDpi: {
+        type: 'integer',
+        description:
+          'Scan mit hoher Auflösung (#1600): Für Texterkennung und Bildanalyse wurde das Bild intern von dieser Auflösung (dpi des Originals) auf 300 dpi verkleinert; das Original bleibt unverändert. Fehlt sonst.',
+      },
     },
   },
   Anlagen: {
@@ -278,6 +288,11 @@ export const SCHEMAS_MAPPEN: Record<string, Schema> = {
     properties: { reihenfolge: { type: 'array', items: uuid, description: 'Alle Anlagen des Dokuments in neuer Reihenfolge' } },
   },
   AnlageName: { type: 'object', required: ['name'], properties: { name: { type: 'string', maxLength: 200 } } },
+  DokumentName: {
+    type: 'object',
+    required: ['name'],
+    properties: { name: { type: 'string', maxLength: 200, description: 'Neuer Name; die Endung des bisherigen bleibt (#1594)' } },
+  },
   Leerseiten: {
     type: 'object',
     description: 'Markierung leerer Seiten (#997)',

@@ -44,6 +44,13 @@ export interface RepoDokumente {
    */
   setzeAnlage(id: string, anlageZu: string | null, nr: number | null, name?: string): Promise<boolean>;
   /**
+   * Dokument umbenennen (#1594): neuer Name; der bisherige bleibt als ursprünglicher Name, wenn es noch keinen gibt.
+   * false, wenn es das Dokument nicht gibt.
+   */
+  benenneDokument(id: string, name: string): Promise<boolean>;
+  /** Scan verkleinert (#1600): Auflösung des Originals (dpi) für die Datei mit diesem Prüfwert merken. */
+  setzeVerkleinert(id: string, sha256: string, dpi: number): Promise<void>;
+  /**
    * E-Mail-Postfach (#999): Platz in der Eingangsreihenfolge der Post (`nr`, null = keiner) und Kennzeichen
    * „Original-E-Mail“ setzen – was fehlt, bleibt. Auch beim Ersetzen ohne Versionierung (das neue Dokument übernimmt es).
    */

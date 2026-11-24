@@ -8,16 +8,16 @@ The card **What Ablago may do** is at the very top of the [workbench overview](u
 
 | Answer | What is added |
 | --- | --- |
-| **None – only Ablago itself** | You set up folder types and workflows yourselves. Ablago's built-in helpers such as text recognition still work. |
+| **None – only Ablago itself** | You set up folder types and workflows yourselves. What comes with Ablago, such as text recognition, still works. |
 | **Templates only** | Plus ready-made folder types and views such as Household or Contracts – without code of their own. |
 | **Also helpers that only work here** (recommended, default) | Plus packages with code of their own, such as a separator sheet or an AI on this device. Nothing leaves Ablago. |
-| **Also helpers with internet** | Plus packages that use the internet: backup to a remote target, mail through a sending service, an AI assistant. Content only from areas you release; health always stays inside. |
+| **Also helpers that use services on the network** | Plus packages that use services on the network – on the internet or in your home: backup to a remote target, mail through a sending service, an AI assistant. Content only from areas you release; health always stays inside. |
 
-Ablago reads from the package itself where it belongs: without code of its own it is a template, with code and without addresses on the network a helper that only works here, with addresses on the network (including a service address from the settings) a helper with internet.
+Ablago reads from the package itself where it belongs: without code of its own it is a template, with code and without addresses on the network a helper that only works here, with addresses on the network (including a service address from the settings) a helper that uses services on the network – whether the service runs on the internet or in your home, such as an AI on the NAS.
 
-- **Installing and updating:** a package above the limit cannot be installed. The preview says why in words, e.g. "“Translation” uses the internet – you have not allowed that.", and offers **Allow …**.
-- **Updates:** if an update lifts a package above the limit (for example it newly uses the internet), Ablago does not install it: "The update for “Translation” newly uses the internet – you have not allowed that." The installed version keeps running.
-- **Built-in helpers** run with every answer: text recognition, PDF/A, full text and conversion from the official catalogue, without internet – including their add-ons such as further languages for text recognition. A package from another publisher that replaces such a helper follows question 1.
+- **Installing and updating:** a package above the limit cannot be installed. The preview says why in words, e.g. "“Translation” uses services on the network – you have not allowed that.", and offers **Allow …**.
+- **Updates:** if an update lifts a package above the limit (for example it newly uses services on the network), Ablago does not install it: "The update for “Translation” newly uses services on the network – you have not allowed that." The installed version keeps running.
+- **What comes with Ablago** (built-in helpers) runs with every answer: text recognition, PDF/A, full text and conversion from the official catalogue, without internet – including their add-ons such as further languages for text recognition. A package from another publisher that replaces such a helper follows question 1.
 
 ## Question 2: How much should Ablago do on its own? { #selbst }
 
@@ -51,4 +51,4 @@ The [setup file](einrichtungsdatei.md) holds both answers under `darf`. A provid
 
 ## After the update { #update }
 
-Installations that existed before this version get answers that change nothing: "Also helpers with internet" for question 1 – as much as was possible before – and "Recognise and propose" for question 2. Nothing is paused, nothing becomes stricter or looser without asking. Once, the overview shows the note "New: What Ablago may do – please take a look once". New installations start with the recommended answers.
+Installations that existed before this version get answers that change nothing: "Also helpers that use services on the network" for question 1 – as much as was possible before – and "Recognise and propose" for question 2. Nothing is paused, nothing becomes stricter or looser without asking. Once, the overview shows the note "New: What Ablago may do – please take a look once". New installations start with the recommended answers.

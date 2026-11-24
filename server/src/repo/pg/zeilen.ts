@@ -143,6 +143,14 @@ const eingangsfelder = (r: Zeile): Pick<Dokument, 'eingangNr' | 'originalEmail' 
   ...(r.original_email ? { originalEmail: true } : {}),
   ...(r.eingang_fuer ? { eingangFuer: r.eingang_fuer as string } : {}),
 });
+/** Umbenannt (#1594) und Scan verkleinert (#1600, nur solange die Datei dieselbe ist) – nur, wo gesetzt. */
+const angaben = (r: Zeile): Pick<Dokument, 'nameOriginal' | 'verkleinertDpi'> => {
+  const v = r.verkleinert as { sha256?: string; dpi?: number } | null | undefined;
+  return {
+    ...(r.name_original ? { nameOriginal: r.name_original as string } : {}),
+    ...(v && v.sha256 === r.sha256 && typeof v.dpi === 'number' ? { verkleinertDpi: v.dpi } : {}),
+  };
+};
 export const alsDokument = (r: Zeile): Dokument => ({
   id: r.id as string,
   mappeId: r.mappe_id as string,
@@ -167,6 +175,7 @@ export const alsDokument = (r: Zeile): Dokument => ({
   // Anlagen (#998): nur an Anlagen.
   ...(r.anlage_zu ? { anlageZu: r.anlage_zu as string, anlageNr: (r.anlage_nr as number | null) ?? null } : {}),
   ...eingangsfelder(r),
+  ...angaben(r),
   ocr: {
     stand: (r.ocr_stand as OcrStandArt | null) ?? 'keiner',
     info: (r.ocr_info as string | null) ?? null,

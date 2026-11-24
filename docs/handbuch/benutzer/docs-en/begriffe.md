@@ -546,7 +546,7 @@ A saved state of an entry in the Workbench – folder type (with its permission 
 See also: [Version](#version), [Version of Ablago](#version-von-ablago).
 
 <a id="was-ablago-darf"></a>**What Ablago may do** (*Was Ablago darf*) · ~ with explanation · administrators  
-Two answers for the whole installation – which packages Ablago may use (none, templates only, also helpers that only work here, also helpers with internet) and how much it does on its own (nothing, recognise and propose, do everything). Ablago keeps to this in the server and no longer asks each time within this limit. Built-in helpers such as text recognition work with every answer. Shown as a card at the top of the workbench overview; raising it needs a fresh sign-in.  
+Two answers for the whole installation – which packages Ablago may use (none, templates only, also helpers that only work here, also helpers that use services on the network) and how much it does on its own (nothing, recognise and propose, do everything). Ablago keeps to this in the server and no longer asks each time within this limit. What comes with Ablago, such as text recognition, works with every answer. Shown as a card at the top of the workbench overview; raising it needs a fresh sign-in.  
 See also: [Package](#paket), [Overview](#ubersicht).
 
 <a id="was-mitkommt"></a>**What comes with it** (*Was mitkommt*) · ✓ everyday word · administrators  

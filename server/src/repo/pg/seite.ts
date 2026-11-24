@@ -329,11 +329,17 @@ export function pgZaehler(k: PgKontext) {
       const lesen = lesefilter ? sql`AND ${lesefilterSql(sql, lesefilter)}` : sql``;
       const spalten = liste.map((k, i) => sql`, count(*) FILTER (WHERE ${klauselnSql(sql, k)})::int AS ${sql(`s${i}`)}`);
       const sel = spalten.reduce((acc, t) => sql`${acc}${t}`, sql``);
-      const r = await sql`
-        SELECT typ_id, count(*)::int AS anzahl,
-          count(*) FILTER (WHERE passt IS NOT TRUE)::int AS unpassend,
-          count(*) FILTER (WHERE demo)::int AS demo ${sel}
-        FROM mappen WHERE haushalt_id = ${haushaltId} ${lesen} GROUP BY typ_id`;
+      // Ohne JIT (#1631): Mit jeder Ansicht wächst die geschätzte Kostensumme dieser Abfrage; über der Schwelle von
+      // PostgreSQL (jit_above_cost) übersetzt es sie erst – das kostet hier mehr, als es bringt (gemessen 80 → 340 ms).
+      // SET LOCAL gilt nur in dieser Transaktion, nicht für die Verbindung.
+      const r = await sql.begin(async (tx) => {
+        await tx`SET LOCAL jit = off`;
+        return tx`
+          SELECT typ_id, count(*)::int AS anzahl,
+            count(*) FILTER (WHERE passt IS NOT TRUE)::int AS unpassend,
+            count(*) FILTER (WHERE demo)::int AS demo ${sel}
+          FROM mappen WHERE haushalt_id = ${haushaltId} ${lesen} GROUP BY typ_id`;
+      });
       return {
         typen: new Map(
           r.map((z) => [z.typ_id as string, { anzahl: z.anzahl as number, unpassend: z.unpassend as number, demo: z.demo as number }]),

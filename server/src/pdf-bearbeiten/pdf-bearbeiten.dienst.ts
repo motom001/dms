@@ -6,10 +6,9 @@
  */
 import { dateiname, type DokumentAnlagen, type DokumenteDienst, type DokumentUmwandlung, type DokumentVersionen } from '../dokumente';
 import { Fachfehler } from '../grundlagen/fehler';
-import { graubild } from '../dateien/graubild';
+import { bildGraubild, graubild } from '../dateien/graubild';
 import type { Kern, Zugriff } from '../kern';
 import type { MappenArchiv, MappenHistorie, MappenTitel } from '../mappen';
-import { bildSeitePdf } from '../pdf';
 import { pruefeAuswahl, pruefeTeile, Seitenbilder, SEITENBILDER_MAX, seitenInfo, teilName, type SeitenWahl } from '../dateien/pdfseiten';
 import { teileUeber, zusammenUeber } from '../leistungen';
 import { protokoll } from '../protokoll/protokoll';
@@ -206,7 +205,8 @@ export class PdfBearbeiten {
   /**
    * Eine Seite als Graustufenbild (PGM) für eine Texterkennung im Paket (#338). JPEG und PNG (#458) haben genau eine
    * Seite: Das Bild wird ohne Neuberechnung in ein einseitiges PDF gelegt (wie bei den Vorschaubildern) und genauso
-   * gerastert – kein zusätzliches Bildwerkzeug im Image. Bilder kommen in Originalgröße, dpi zählt dort nicht.
+   * gerastert – kein zusätzliches Bildwerkzeug im Image. Bilder kommen in Originalgröße, dpi zählt dort nicht; Scans über
+   * 300 dpi kommen mit 300 dpi (#1600).
    * `farbe` (#716): als Farbbild (PPM) statt Graustufen, z. B. für die Archivfassung.
    */
   async seiteAlsGraubild(id: string, nr: number, dpi: number, farbe = false, gestempelt?: { pdf: Buffer } | null): Promise<Buffer> {
@@ -220,18 +220,24 @@ export class PdfBearbeiten {
       if (!f) throw new Fachfehler(422, t('meldungen.dienst.ist-weder-pdf-noch', { name: d.name }));
       if (f.info.mime === 'application/pdf') return graubild(f.inhalt, nr, dpi, farbe);
       if (nr !== 1) throw new Fachfehler(404, t('meldungen.dienst.seite-gibt-es-nicht', { nr }));
-      return graubild(await bildSeitePdf(f.inhalt, f.info.mime), 1, 72, farbe);
+      return this.bildVerkleinert(d, await bildGraubild(f.inhalt, f.info.mime, farbe));
     }
     if (d.mime === 'image/jpeg' || d.mime === 'image/png') {
       if (nr !== 1) throw new Fachfehler(404, t('meldungen.dienst.seite-gibt-es-nicht', { nr }));
       const s = await this.dateien.lies(d.sha256);
       const bild = Buffer.isBuffer(s) ? s : Buffer.concat((await s.toArray()) as Buffer[]);
-      // Das Bild liegt in Originalgröße (1 Bildpunkt = 1 pt): bei 72 dpi kommen genau seine Bildpunkte.
-      return graubild(await bildSeitePdf(bild, d.mime), 1, 72, farbe);
+      // Originalgröße, Scans über 300 dpi verkleinert (#1600).
+      return this.bildVerkleinert(d, await bildGraubild(bild, d.mime, farbe));
     }
     if (d.mime !== 'application/pdf') throw new Fachfehler(422, t('meldungen.dienst.ist-weder-pdf-noch-2', { name: d.name }));
     const { inhalt } = await this.pdfVon(id);
     return graubild(inhalt, nr, dpi, farbe);
+  }
+
+  /** Scan verkleinert (#1600): für den Hinweis am Dokument merken (einmal je Datei). */
+  private async bildVerkleinert(d: Dokument, g: { bild: Buffer; verkleinertVon: number | null }): Promise<Buffer> {
+    if (g.verkleinertVon && d.verkleinertDpi !== g.verkleinertVon) await this.repo.setzeVerkleinert(d.id, d.sha256, g.verkleinertVon);
+    return g.bild;
   }
 
   /** Seitenzahl und Drehung je Seite. */

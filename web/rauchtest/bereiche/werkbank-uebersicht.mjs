@@ -170,7 +170,7 @@ rauchtest('Werkbank-Übersicht: Was Ablago darf senken und wieder erhöhen (#156
   };
   // Senken: ohne installierte Pakete gibt es nichts anzuhalten.
   await aendern(/Keine – nur Ablago selbst/, /Nichts von sich aus/);
-  await karte.getByText('Ablago nutzt keine Pakete, nur seine eingebauten Helfer. Von sich aus tut Ablago nichts.').waitFor();
+  await karte.getByText('Ablago nutzt keine Pakete, nur was es mitbringt. Von sich aus tut Ablago nichts.').waitFor();
   // Wieder auf die Vorgabe: Erhöhen geht mit frischer Anmeldung (gerade angemeldet).
   await aendern(/Auch Helfer, die nur hier arbeiten/, /Erkennen und vorlegen/);
   await karte.getByText('Ablago nutzt auch Helfer mit eigenem Code, die nur hier arbeiten.', { exact: false }).waitFor();

@@ -84,7 +84,7 @@ Name, email address and password of **your own account** – with your one email
 
 Here you decide **once** what Ablago may do – for the whole installation (see [What Ablago may do](was-ablago-darf.md)). Two questions, one line per answer; the explaining sentence is shown under the chosen one, below it in one sentence what this means for you. The recommended answers are preselected:
 
-- **Which packages may Ablago use?** *None – only Ablago itself*, *Templates only*, **Also helpers that only work here** (recommended) or *Also helpers with internet*. Ablago's built-in helpers such as text recognition run with every answer.
+- **Which packages may Ablago use?** *None – only Ablago itself*, *Templates only*, **Also helpers that only work here** (recommended) or *Also helpers that use services on the network*. What comes with Ablago, such as text recognition, runs with every answer.
 - **How much should Ablago do on its own?** *Nothing on its own*, **Recognise and propose** (recommended) or *Do everything, I check afterwards*.
 
 It is saved with **Set up now**, before the packages. If your provider set maximum values in the [setup file](einrichtungsdatei.md), higher answers are locked ("Set by your provider"). You can change everything later in the [Workbench overview](uebersicht.md) under **What Ablago may do**. If you change the answer to the first question here, Ablago chooses the packages anew in the next step.
@@ -95,7 +95,7 @@ It is saved with **Set up now**, before the packages. If your provider set maxim
 
 Installation only happens with **Set up now**; here you only see what is coming. Only in this step does Ablago query the [official package catalogue](pakete.md) – before that it opens no connection for it. The request goes to catalog.ablago.app (served by GitHub Pages); only the request itself goes out, no data from your Library.
 
-**Ablago sets up these packages for you:** Ablago chooses the packages itself – matching [What may Ablago do?](#was-darf-ablago), your answer in the [Use](#nutzung) step and what the catalogue recommends (including text recognition and notifications). The list shows one sentence per package, without ticks. If a package uses the internet, the destination is named ("Uses the internet: …"). What the answer to the first question does not allow is listed below under **Not included**, with one sentence of reason – for example "“WebDAV backup” uses the internet – you have not allowed that." The rules:
+**Ablago sets up these packages for you:** Ablago chooses the packages itself – matching [What may Ablago do?](#was-darf-ablago), your answer in the [Use](#nutzung) step and what the catalogue recommends (including text recognition and notifications). The list shows one sentence per package, without ticks. If a package uses services on the network, the destination is named ("Uses services on the network: …"). What the answer to the first question does not allow is listed below under **Not included**, with one sentence of reason – for example "“WebDAV backup” uses services on the network – you have not allowed that." The rules:
 
 - Ablago only chooses **during setup** and **only from the official, validly signed catalogue**. If the catalogue is not validly signed, it chooses nothing on its own.
 - **Never beyond the first question:** a package above the limit does not get into the choice; the server does not install it either.

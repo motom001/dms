@@ -77,6 +77,16 @@ export interface Dokument {
    * Anhang oder, ohne Anhänge, als Hauptdokument. Erkennung, Klassifizieren und KI lassen sie weg. Fehlt sonst.
    */
   originalEmail?: boolean;
+  /**
+   * Umbenannt (#1594): der Name vor der ersten Umbenennung (meist der Dateiname beim Hochladen). Fehlt, solange das
+   * Dokument nie umbenannt wurde.
+   */
+  nameOriginal?: string;
+  /**
+   * Scan mit hoher Auflösung (#1600): Für Texterkennung und Bildanalyse hat Ablago das Bild intern von dieser Auflösung
+   * (dpi des Originals) auf 300 dpi verkleinert; das Original bleibt unverändert. Fehlt sonst.
+   */
+  verkleinertDpi?: number;
 }
 
 /** Herkunft einer Dokumentversion (#194). */

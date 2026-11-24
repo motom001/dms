@@ -5,7 +5,7 @@
  * die Werte bei der Einrichtung gesetzt oder beim Update abgeleitet wurden. Neue Installationen bekommen die Vorgabe bei
  * der Einrichtung (einrichtung.ts). Bestehende Installationen bekommen beim ersten Lesen Werte, mit denen nichts
  * Installiertes angehalten wird und nichts ungefragt strenger oder lockerer wird (Thomas 24.11.2026): Frage 1 „Auch
- * Helfer mit Internet“ – so viel, wie bisher ging (jedes Paket nach Bestätigung) –, Frage 2 „Erkennen und vorlegen“.
+ * Helfer, die Dienste im Netz nutzen“ – so viel, wie bisher ging (jedes Paket nach Bestätigung) –, Frage 2 „Erkennen und vorlegen“.
  * Ein einmaliger Hinweis in der Übersicht bittet, die Antworten anzusehen.
  *
  * Erhöhen braucht eine frische Anmeldung (die Route fragt sie über `frisch` ab), steht mit alt und neu im
@@ -72,7 +72,7 @@ export function ueberGrenze(alle: InstalliertesPaket[], grenze: PaketeGrenze) {
 
 /**
  * Werte für eine bestehende Installation beim Update: Bisher ließ sich jedes Paket nach Bestätigung installieren – also
- * „Auch Helfer mit Internet“. So wird nichts angehalten und nichts strenger; strenger stellt es erst jemand selbst ein.
+ * „Auch Helfer, die Dienste im Netz nutzen“. So wird nichts angehalten und nichts strenger; strenger stellt es erst jemand selbst ein.
  */
 const updateWerte = (): DarfStand => ({ pakete: 'netz', selbst: DARF_VORGABE.selbst, hoechstens: {}, herkunft: 'update' });
 

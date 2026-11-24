@@ -189,6 +189,16 @@ function archivnummernRouten(k: RoutenKontext): Route[] {
       },
     },
     {
+      // Umbenennen (#1594): Bearbeiten an der Mappe; Endung, ursprünglicher Name, Historie und Archivmodus im Dienst.
+      methode: 'PUT',
+      pfad: '/api/dokumente/:id/name',
+      zugang: 'angemeldet',
+      handler: async (a) => {
+        await darf(a, await dienst.rechtepruefung.mappeVon('dokument', a.params.id), 'U');
+        return ok(await dienst.dokumente.benenneDokument(a.params.id, b(a), ich(a).id));
+      },
+    },
+    {
       methode: 'GET',
       pfad: '/api/archivnummern/:nr',
       zugang: 'angemeldet',

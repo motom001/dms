@@ -77,6 +77,17 @@ export function pgDokumente(k: PgKontext) {
         WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
       return r.count > 0;
     },
+    async benenneDokument(id, name) {
+      if (!istUuid(id)) return false;
+      const r = await sql`UPDATE dokumente SET name_original = coalesce(name_original, name), name = ${name}
+        WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
+      return r.count > 0;
+    },
+    async setzeVerkleinert(id, sha256, dpi) {
+      if (!istUuid(id)) return;
+      await sql`UPDATE dokumente SET verkleinert = ${sql.json({ sha256, dpi })}
+        WHERE haushalt_id = ${haushaltId} AND id = ${id} AND sha256 = ${sha256}`;
+    },
     async dokumenteJeRegister(typId) {
       const r = await sql`
         SELECT d.register_key, count(*)::int AS n FROM dokumente d JOIN mappen m ON m.id = d.mappe_id

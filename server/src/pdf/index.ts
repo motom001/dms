@@ -42,7 +42,7 @@ import type * as Br from './brief';
 import { TEXTSATZ_ZEIT_MS } from '../grundlagen/grenzen';
 import type * as Er from './erechnung';
 
-export { bildArt, exifAusrichtung, jpegMasse } from './bild';
+export { bildArt, bildDpi, exifAusrichtung, jpegMasse } from './bild';
 export { eigenerPuffer } from './puffer';
 export { groesseText } from './text';
 export type { SeitenWahl } from './seiten';

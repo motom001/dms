@@ -2,13 +2,13 @@
  * Was Ablago darf (#1562, intern: Vertrauensstufen): zwei Grenzen für die ganze Installation.
  *
  * - Frage 1 „Welche Pakete darf Ablago nutzen?“ (`pakete`): keine · nur Vorlagen · auch Helfer, die nur hier arbeiten
- *   (Vorgabe) · auch Helfer mit Internet. Der Server hält sich daran: Ein Paket über der Grenze lässt sich weder
+ *   (Vorgabe) · auch Helfer, die Dienste im Netz nutzen (#1633). Der Server hält sich daran: Ein Paket über der Grenze lässt sich weder
  *   installieren noch aktualisieren.
  * - Frage 2 „Wie viel soll Ablago von sich aus tun?“ (`selbst`): nichts · erkennen und vorlegen (Vorgabe) · alles
  *   erledigen. Hier nur gespeichert; die Wirkung kommt mit #1567 und #1568.
  *
  * Die Stufe eines Pakets leitet Ablago aus dem Manifest ab: ohne Code nur Vorlagen, mit Code und ohne Netz „nur hier“,
- * mit Netz (feste Adressen oder Dienst-Adressen) „mit Internet“. Eingebaute Helfer von Ablago (Texterkennung, PDF/A,
+ * mit Netz (feste Adressen oder Dienst-Adressen) „Dienste im Netz“. Eingebaute Helfer von Ablago (Texterkennung, PDF/A,
  * Volltext, Umwandeln aus dem offiziellen Katalog, ohne Netz) laufen auf jeder Antwort; ein fremdes Paket, das einen
  * davon ersetzt, folgt Frage 1 (Stufe und eingebaute Helfer: shared/src/pakete/stufe.ts). In der Oberfläche stehen nie Stufennummern, nur Antworten und Gründe in Worten.
  */

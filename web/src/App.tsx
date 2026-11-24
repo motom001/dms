@@ -32,7 +32,7 @@ import { Entdecken } from './entdecken/Entdecken';
 import { RundgangAnzeige } from './entdecken/Rundgang';
 import { EntdeckenWerkzeuge } from './entdecken/werkzeuge';
 import { useRundgangBeimBesuch } from './entdecken/besuch';
-import { setzeTabSymbol, tabTitel, tabZahl, useHintergrundStand } from './tabzeichen';
+import { setzeTabSymbol, tabNeuesAn, tabTitel, tabZahl, useHintergrundStand } from './tabzeichen';
 
 /**
  * Suchfeld oben in der Werkbank (#1218)? Vorschlag Qualität (bis Thomas entscheidet): nein – die Werkbank hat ihre
@@ -69,8 +69,10 @@ export function App() {
   const symbol = logoUrl(d.meinDesign);
   const entdeckenSeite = teile[0] === 'entdecken';
   // Neues im Tab (#922): Zahl im Titel, Punkt im Symbol – nur Zahlen, nicht in Vertretung; im Hintergrund einmal je Minute.
-  const neu = vertretung ? 0 : tabZahl(d.zaehler);
-  useHintergrundStand(!vertretung && d.geladen, d.auffrischen);
+  // Abschaltbar je Konto (#1625): dann weder Zahl noch Punkt noch Nachfragen im Hintergrund.
+  const tabAn = !vertretung && tabNeuesAn(d.einstellungen);
+  const neu = tabAn ? tabZahl(d.zaehler) : 0;
+  useHintergrundStand(tabAn && d.geladen, d.auffrischen);
   useEffect(() => {
     document.title = tabTitel(
       `${marke} – ${entdeckenSeite ? t('entdecken.menue') : { ablage: t('oberflaeche.app.ablage'), werkbank: t('oberflaeche.app.werkbank'), profil: t('oberflaeche.app.mein-konto') }[bereich]}`,

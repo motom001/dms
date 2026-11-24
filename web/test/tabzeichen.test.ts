@@ -18,7 +18,7 @@ g.document = {
   addEventListener() {},
   removeEventListener() {},
 };
-const { tabTitel, tabZahl, HINTERGRUND_MS } = await import('../src/tabzeichen');
+const { tabNeuesAn, tabTitel, tabZahl, HINTERGRUND_MS, TAB_NEUES } = await import('../src/tabzeichen');
 
 describe('Neues im Tab (#922)', () => {
   it('zählt Zu erledigen und Neue Post', () => {
@@ -31,6 +31,13 @@ describe('Neues im Tab (#922)', () => {
     assert.equal(tabTitel('Ablago – Ablage', 3), '(3) Ablago – Ablage');
     assert.equal(tabTitel('Ablago – Ablage', 0), 'Ablago – Ablage');
     assert.equal(tabTitel('Ablago – Werkbank', 120), '(99+) Ablago – Werkbank');
+  });
+
+  it('abschaltbar je Konto (#1625): Vorgabe an, nur ausdrücklich false schaltet ab', () => {
+    assert.equal(tabNeuesAn({}), true);
+    assert.equal(tabNeuesAn({ [TAB_NEUES]: null }), true);
+    assert.equal(tabNeuesAn({ [TAB_NEUES]: false }), false);
+    assert.equal(TAB_NEUES, 'tab_neues');
   });
 
   it('im Hintergrund höchstens einmal je Minute', () => {

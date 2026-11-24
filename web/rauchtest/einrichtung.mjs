@@ -200,7 +200,7 @@ async function ablagoWaehltPakete(s) {
       paket('sicherung_webdav', 'Sicherung WebDAV', 'Sicherung an ein WebDAV-Ziel.', true),
     ],
   };
-  const grund = '„Sicherung WebDAV“ nutzt das Internet – das habt ihr nicht erlaubt.';
+  const grund = '„Sicherung WebDAV“ nutzt Dienste im Netz – das habt ihr nicht erlaubt.';
   const stufen = {
     signiert: true,
     pakete: [

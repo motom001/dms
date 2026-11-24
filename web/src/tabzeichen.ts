@@ -11,6 +11,8 @@ import type { Zaehler } from './api/werkbank';
  * - **Nur solange der Tab offen ist,** ohne Push-Dienst Dritter. Im Hintergrund fragt Ablago einmal je Minute den Stand
  *   der Ablage nach (wie das Nachladen #919, das nur im sichtbaren Tab läuft) und frischt die Zahlen bei einer Änderung auf.
  * - Nicht in Vertretung (die Zahlen gehörten der vertretenen Person).
+ * - Abschaltbar je Konto (#1625, Mein Konto → Darstellung, Vorgabe an): aus heißt keine Zahl, kein Punkt und keine
+ *   Abfrage im Hintergrund dafür.
  * - Die echte Benachrichtigung des Browsers (Stufe 2) ist noch nicht freigegeben und fehlt hier bewusst.
  */
 
@@ -18,6 +20,10 @@ import type { Zaehler } from './api/werkbank';
 export function tabZahl(z: Pick<Zaehler, 'eingang' | 'sichten' | 'neuePost'>): number {
   return (z.eingang ?? 0) + (z.neuePost ? (z.sichten?.[z.neuePost] ?? 0) : 0);
 }
+
+/** Persönliche Einstellung (#1625): Schlüssel und ob Neues im Tab erscheint – fehlt sie, ist es an. */
+export const TAB_NEUES = 'tab_neues';
+export const tabNeuesAn = (einstellungen: Record<string, unknown>) => einstellungen[TAB_NEUES] !== false;
 
 /** Titel des Tabs mit der Zahl davor („(3) Ablago – Ablage“), ab 100 „(99+)“; ohne Neues unverändert. */
 export const tabTitel = (titel: string, zahl: number) => (zahl > 0 ? `(${zahl > 99 ? '99+' : zahl}) ${titel}` : titel);

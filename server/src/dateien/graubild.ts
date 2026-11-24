@@ -8,6 +8,11 @@
  * Bildpunkte und Zeit.
  * Gerastert wird mit pdftoppm (im Image für die Texterkennung ohnehin vorhanden).
  *
+ * bildGraubild(): dasselbe für ein Bild (JPEG, PNG). Scans über 300 dpi (#1600, z. B. 600 dpi: rund 35 Megapixel, als
+ * Farbbild gut 100 MB) werden dabei auf 300 dpi verkleinert – die Texterkennung arbeitet dort am besten, und Pakete
+ * bleiben in den Grenzen ihres Läufers. Die Auflösung steht in der Datei (JFIF, EXIF, pHYs); ohne Angabe bleibt das
+ * Bild in Originalgröße. Das gespeicherte Original ändert sich nicht.
+ *
  * lesePgm()/dreheGraubild()/schreibePgm(): ein Graustufenbild drehen (#395) – für gescannte PDF-Seiten.
  * pdftoppm -gray liefert dieses Format; tesseract liest es direkt. So braucht das Image kein
  * zusätzliches Bildwerkzeug, um eine auf dem Kopf stehende oder quer liegende Seite aufzurichten.
@@ -19,14 +24,18 @@ import { Fachfehler } from '../grundlagen/fehler';
 import { merkeSchriftfehler } from './ersatzschriften';
 import { t } from '../sprache/sprache';
 import { AUSGABE_KLEIN } from '../grundlagen/grenzen';
+import { bildDpi, bildSeitePdf } from '../pdf';
 
 export const DPI_MIN = 72;
 export const DPI_MAX = 400;
 /** Höchstens so viele Bildpunkte (≈ A3 bei 400 dpi); bei größeren Seiten bitte mit weniger dpi anfragen. */
 export const PUNKTE_MAX = 6000 * 6000;
 const ZEIT_MS = 60_000;
+/** Bilder darüber rechnet Ablago für Texterkennung und Bildanalyse auf diese Auflösung herunter (#1600). */
+const BILD_ZIEL_DPI = 300;
 
-export async function graubild(pdf: Buffer, nr: number, dpi: number, farbe = false): Promise<Buffer> {
+/** `faktor` (#1600): Anteil der Auflösung, mit dem tatsächlich gerastert wird (Bilder über {@link BILD_ZIEL_DPI}). */
+export async function graubild(pdf: Buffer, nr: number, dpi: number, farbe = false, faktor = 1): Promise<Buffer> {
   if (!Number.isInteger(nr) || nr < 1) throw new Fachfehler(422, t('meldungen.graubild.seite-eine-ganze-zahl'));
   if (!Number.isInteger(dpi) || dpi < DPI_MIN || dpi > DPI_MAX)
     throw new Fachfehler(422, t('meldungen.graubild.dpi-zwischen-und', { DPI_MIN, DPI_MAX }));
@@ -40,7 +49,7 @@ export async function graubild(pdf: Buffer, nr: number, dpi: number, farbe = fal
           '-cropbox',
           ...(farbe ? [] : ['-gray']),
           '-r',
-          String(dpi),
+          String(dpi * faktor),
           '-f',
           String(nr),
           '-l',
@@ -75,6 +84,18 @@ export async function graubild(pdf: Buffer, nr: number, dpi: number, farbe = fal
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
+}
+
+/**
+ * Ein Bild (JPEG, PNG) als Graustufen- bzw. Farbbild (#458): in ein einseitiges PDF in Bildgröße gelegt (1 Bildpunkt =
+ * 1 pt) und mit 72 dpi gerastert – so kommen genau seine Bildpunkte. Über {@link BILD_ZIEL_DPI} (#1600) entsprechend
+ * weniger; `verkleinertVon` ist dann die Auflösung des Originals.
+ */
+export async function bildGraubild(bild: Buffer, mime: string, farbe = false): Promise<{ bild: Buffer; verkleinertVon: number | null }> {
+  const dpi = bildDpi(bild);
+  const verkleinertVon = dpi && dpi > BILD_ZIEL_DPI ? dpi : null;
+  const faktor = verkleinertVon ? BILD_ZIEL_DPI / verkleinertVon : 1;
+  return { bild: await graubild(await bildSeitePdf(bild, mime), 1, 72, farbe, faktor), verkleinertVon };
 }
 
 export interface Graubild {
