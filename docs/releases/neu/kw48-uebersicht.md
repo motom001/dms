@@ -1,0 +1,21 @@
+art: minor
+
+## Neu
+
+- **Was Ablago darf** (#1562): Ganz oben in der Übersicht der Werkbank steht eine Karte mit zwei Antworten für die ganze Installation – *Welche Pakete darf Ablago nutzen?* (keine, nur Vorlagen, auch Helfer, die nur hier arbeiten, auch Helfer mit Internet) und *Wie viel soll Ablago von sich aus tun?* (nichts, erkennen und vorlegen, alles erledigen). Ablago hält sich im Server daran: Ein Paket oder Update über der Grenze lässt sich nicht installieren, und die Vorschau sagt in Worten, warum – etwa „Das Update für „Übersetzung“ nutzt neu das Internet – das habt ihr nicht erlaubt.“ Eingebaute Helfer wie die Texterkennung arbeiten auf jeder Antwort. Erhöhen braucht eine frische Anmeldung, steht im Nachweis-Journal, und alle mit Verwaltungsrecht bekommen eine Mail; Senken nennt vorher die Pakete, die nicht mehr passen. Die zweite Antwort wird schon gespeichert und wirkt, sobald Ablago Post von sich aus erkennt.
+- **Empfohlene Pakete in einem Hinweis** (#1511): Statt drei Hinweisen mit drei verschiedenen Knöpfen steht in der Übersicht ein Hinweis *Empfohlene Pakete* – je Paket eine Zeile mit einem Satz, wozu, und *Installieren*, darunter *Alle Pakete ansehen*. Installierte verschwinden, sind alle da, verschwindet der Hinweis. Alle Hinweise folgen jetzt einem Muster: Handlung und daneben *Zur Kenntnis nehmen*.
+
+## Verbessert
+
+- **Hinweise ohne „Neu laden“** (#1513): Kommst du nach *E-Mail einrichten* oder einer anderen Handlung zur Übersicht zurück oder holst den Tab wieder nach vorn, lädt sie ihre Hinweise selbst neu; Erledigtes ist weg.
+- **Kein „wieder“ nach einer Neueinrichtung** (#1511): Umstiegs-Hinweise wie „Texterkennung ist jetzt ein Paket“ erscheinen nur noch bei Installationen, die von einer älteren Version kommen.
+
+## Beim Aktualisieren beachten
+
+- **Was Ablago darf nach dem Update** (#1562): Bestehende Installationen bekommen Antworten, mit denen sich nichts ändert – *Auch Helfer mit Internet* und *Erkennen und vorlegen*. Nichts wird angehalten, nichts strenger. Einmal erscheint der Hinweis „Neu: Was Ablago darf – bitte einmal ansehen“.
+- **Gruppe Datenschutz nur an der Stufe** (#1319): Ob *Datenschutz-Auskünfte*, *Löschkonzept* und *Löschprotokoll* in der Leiste stehen, entscheidet nur noch die Stufe der Werkbank (ab *Selbständig*) und eure eigenen Ein- und Ausblendungen – nicht mehr zusätzlich „beruflich genutzt“. Wer privat nutzt und eine Stufe ab *Selbständig* (oder *Alles*, etwa bei Installationen von vor der Stufenwahl) hat, sieht die Gruppe jetzt; ausblenden lässt sie sich unter *Werkbank anpassen*. Ob die eigene Organisation in Auskünften erscheint, hängt weiter an „beruflich“.
+
+## Für Administratoren
+
+- **Stufe und Was Ablago darf in der Einrichtungsdatei** (#1319, #1562): Die Konfigurationsdatei kennt `werkbank` (Stufe der Werkbank) und `darf` mit `pakete`, `selbst` und – für Anbieter – `hoechstens`. Höhere Antworten sind dann in der Karte ausgegraut, der Server lehnt sie ab. Fehlen die Angaben, gilt die Vorgabe wie bisher. Schema und Beispieldatei sind nachgezogen.
+- **Neue Schnittstelle** `GET`/`PUT /api/werkbank/darf`; das Handbuch hat die neue Seite *Was Ablago darf*.

@@ -2,6 +2,8 @@
 import type { Dienstbenutzer } from '../../../shared/src/dienstbenutzer';
 import type { UeberfluessigeVariable } from '../../../shared/src/umgebungsvariablen';
 import type { Akzeptiert, Schwere } from '../../../shared/src/meldungen';
+import type { Darf, DarfStand } from '../../../shared/src/darf';
+import type { EmpfohlenesPaket } from '../../../shared/src/pakete';
 import type { Auftrag } from '../../../shared/src/auftrag';
 import type { BudgetStand, KostenEinstellung } from '../../../shared/src/extern';
 import type { Notfallkontakt, NotfallkontaktEingabe, NotfallkontakteStand, NotfallMailStand } from '../../../shared/src/notfallkontakte';
@@ -388,6 +390,14 @@ export interface WerkbankUebersicht {
   eingangsordner?: EingangMeldungen | null;
   /** Bewusst akzeptierte Meldungen (#816) je Schlüssel: Schwere beim Akzeptieren, wer, wann, Begründung. */
   akzeptiert?: Akzeptiert;
+  /** Was Ablago darf (#1562): Karte oben in der Übersicht. */
+  darf?: DarfStand;
+  /** Einmal nach dem Update (#1562): „Neu: Was Ablago darf – bitte einmal ansehen“. */
+  darfNeu?: boolean;
+  /** Die Installation kommt von einer älteren Version (#1511): nur dann Umstiegs-Hinweise. */
+  umstieg?: boolean;
+  /** Empfohlene Pakete, die noch fehlen (#1511), in fester Reihenfolge. */
+  empfohlenFehlt?: EmpfohlenesPaket[];
 }
 /* Feste Ordner (#115) und Speicherplatz (#116) */
 export type OrdnerArt = 'dateien' | 'geheim' | 'sicherung';
@@ -653,6 +663,9 @@ export const betriebApi = {
   akzeptanzAufheben: (schluessel: string[], anlass: 'eingeblendet' | 'erledigt' | 'schwerer') =>
     anfrage<Akzeptiert>('POST', '/api/werkbank/uebersicht/aufheben', { schluessel, anlass }),
   /** „Nein, danke“ bzw. „Gelesen“ an einem Hinweis, der danach nicht wiederkommt (#821, #815). */
+  /** Was Ablago darf (#1562): ändern; Senken mit betroffenen Paketen erst mit `bestaetigt` (sonst 409 mit `betroffen`). */
+  darfSetzen: (e: Partial<Darf> & { bestaetigt?: boolean; hoechstens?: Partial<Darf> }) =>
+    anfrage<DarfStand>('PUT', '/api/werkbank/darf', e),
   meldungErledigt: (schluessel: string) => anfrage<null>('POST', '/api/werkbank/uebersicht/erledigt', { schluessel }),
   fehlermeldungen: (erledigt = false) => anfrage<Fehlermeldung[]>('GET', `/api/werkbank/fehlermeldungen${erledigt ? '?erledigt' : ''}`),
   fehlermeldung: (id: string) => anfrage<Fehlermeldung>('GET', `/api/werkbank/fehlermeldungen/${id}`),

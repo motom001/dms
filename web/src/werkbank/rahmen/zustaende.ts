@@ -60,7 +60,7 @@ export function useWerkbankZustaende1(bereich: string, darf: (pfad: string) => b
   const aufgabenEmpfaenger = useAufgabenEmpfaenger(bereich === 'benutzer');
   const ocr = useTexterkennung(bereich === 'texterkennung' || bereich === 'wartung');
   const woerter = useWoerter(bereich === 'woerter');
-  const uebersicht = useUebersicht();
+  const uebersicht = useUebersicht(bereich === 'uebersicht');
   const meldungen = useFehlermeldungen(bereich === 'fehlermeldungen');
   const wartungsmodus = useWartungsmodus(bereich === 'wartung');
   const sicherung = useSicherung(bereich === 'sicherung');

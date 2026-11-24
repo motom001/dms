@@ -19,6 +19,12 @@ konto:
   passwort: ${DMS_KONTO_PASSWORT}
 # Wofür Ablago genutzt wird: privat, beruflich oder beides.
 nutzung: privat
+# Stufe der Werkbank: einsteiger, haushalt, selbstaendig, organisation oder alles. Fehlt sie, gilt die Vorgabe zur Nutzung.
+werkbank: einsteiger
+# Was Ablago darf: pakete (keine, vorlagen, lokal, netz) und selbst (nichts, vorschlag, alles). hoechstens legt ein Anbieter fest.
+darf:
+  pakete: lokal
+  selbst: vorschlag
 # Aus dem offiziellen Katalog, je die neueste passende Version; Automatisierungen: true = eingeschaltet.
 pakete:
   - id: texterkennung

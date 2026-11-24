@@ -34,6 +34,8 @@ GitHub zählt, wie oft eine Release-Datei heruntergeladen wird; daraus kommen di
 
 ## Installieren
 
+Welche Pakete sich installieren lassen, legt [Was Ablago darf](was-ablago-darf.md) fest. Liegt ein Paket oder ein Update darüber, sagt die Vorschau in Worten, warum, und bietet **Erlauben …** an; installiert wird es dann nicht.
+
 1. Wähle ein Paket unter **Verfügbar** und ggf. eine ältere Version.
 2. Klicke **Installieren …**. Es öffnet sich der [gemeinsame Ablauf](#mehrere-pakete-in-einem-schritt-installieren): oben das Paket, darunter, was es braucht („Braucht: …“), und seine **Ergänzungen** als Häkchen – bei der Texterkennung etwa **Weitere Sprachen?** mit Französisch, Spanisch, Türkisch …
 3. Klicke **Weiter mit … Paketen**. Auf **einer Seite** fragt Ablago jetzt alles, was nötig ist, und nur das:
@@ -534,7 +536,7 @@ Ein KI-Paket bekommt **nur Inhalte aus Mappentypen, die für KI-Dienste zugelass
 - **Je Mappentyp:** Werkbank → Mappentypen → *Mappentyp* → Abschnitt **KI-Dienste** → **Darf an KI-Dienste gehen**. Ohne Haken bekommt kein KI-Paket etwas aus diesem Mappentyp – keine Mappen, keine Dokumente, keine Ausschnitte, keine Ereignisse. Das gilt sofort und für alle KI-Pakete.
 - **Auf der Seite des Pakets:** Werkbank → Pakete → *KI-Paket* zeigt in der **Übersicht** nur eine Zeile „Bekommt Inhalte aus *n* Mappentypen“ mit **Ändern**. Zugelassen und gesperrt wird im Reiter **Einstellungen**, Abschnitt **Was die KI lesen darf**: welche Mappentypen das Paket bekommt, darunter alle Mappentypen mit Haken – gespeichert mit dem Knopf des Reiters. Bei Paketen, die selbst Mappen lesen, zählen dafür auch ihre Rechte und [Pakete am Mappentyp](berechtigungen.md#pakete-am-mappentyp).
 - **Neue Mappentypen sind gesperrt, bis du sie zulässt.** So gehen sensible Mappentypen wie *Gesundheit* nie ungewollt hinaus – auch nicht, wenn ein Paket sie mitbringt oder du einen Mappentyp kopierst. Eine **neue Installation** hat noch nichts zugelassen; nach dem Installieren eines KI-Pakets lässt du auf seiner Seite zu, was es bekommen soll.
-- **Nach dem Update** bleiben deine bisherigen Mappentypen wie vorher zugelassen, damit nichts unbemerkt aufhört zu funktionieren. Die [Übersicht](uebersicht.md) weist einmal darauf hin (*Neu: Mappentypen von KI-Diensten ausschließen*), solange KI-Pakete installiert sind; **Verstanden** blendet den Hinweis aus.
+- **Nach dem Update** bleiben deine bisherigen Mappentypen wie vorher zugelassen, damit nichts unbemerkt aufhört zu funktionieren. Die [Übersicht](uebersicht.md) weist einmal darauf hin (*Neu: Mappentypen von KI-Diensten ausschließen*), solange KI-Pakete installiert sind; **Zur Kenntnis nehmen** blendet den Hinweis aus.
 - **Benutzer** gehen nie an ein Paket.
 
 **Was gesperrt heißt, je Weg:**

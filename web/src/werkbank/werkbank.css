@@ -90,15 +90,25 @@ fieldset.mischung legend { font-weight: 600; padding: 0 4px; }
 .ansichtwahl { display: flex; gap: 16px; flex-wrap: wrap; }
 .ansichtwahl .haken { margin: 0; }
 .handbuchlink { margin-top: 0; }
-.uebersicht .hinweiszeile { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; }
-/* Nur der Meldungstext der Zeile (#882) – nicht der Absatz in „Zur Kenntnis nehmen“: Das Formular stapelt senkrecht, dort würden 22em zur Höhe. */
-.uebersicht .hinweiszeile > p { flex: 1 1 22em; margin: 0; }
+/* Ein Muster für alle Hinweise (#1511): Text oben, darunter Handlung und „Zur Kenntnis nehmen“ nebeneinander. */
+.uebersicht .hinweiszeile { display: flex; flex-direction: column; gap: 8px; align-items: stretch; }
+/* Nur der Meldungstext der Zeile (#882) – seit #1511 steht er über den Knöpfen; ohne Grundgröße, sonst würde sie zur Höhe. */
+.uebersicht .hinweiszeile > p { margin: 0; }
 /* Übersicht (#816, zweigeteilt seit #1284): Kacheln oben, Hinweise nach Schwere – jeder einmal –, „Zur Kenntnis nehmen“ und
    der Abschnitt „Bewusst akzeptiert“. */
 .uebersicht { display: flex; flex-direction: column; gap: 20px; padding-top: 4px; }
 .uebersicht-hinweise { display: flex; flex-direction: column; gap: 8px; }
 .uebersicht-hinweise h2 { margin: 0; }
 .uebersicht-hinweisliste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+/* Empfohlene Pakete (#1511): je Paket eine Zeile, „Installieren“ rechts in gleicher Breite untereinander. */
+.empfohlen { display: flex; flex-direction: column; gap: 8px; }
+.empfohlen-liste { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 16px; align-items: center; }
+.empfohlen-zeile { display: contents; }
+.empfohlen-liste [data-knopf] { justify-self: stretch; text-align: center; }
+/* Was Ablago darf (#1562): Antworten untereinander, eine Zeile je Antwort. */
+.darf-karte > h2 { margin: 0; }
+.darf-karte > p { margin: 0; }
+.darf-antworten.wahlkarten { grid-template-columns: minmax(0, 1fr); margin: 0; }
 .akzeptieren input { width: 100%; max-width: 32em; }
 .akzeptieren p { flex: none; margin: 0; }
 .akzeptiertliste { list-style: none; margin: 0; }

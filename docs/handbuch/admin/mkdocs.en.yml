@@ -86,6 +86,7 @@ nav:
       - Encryption: verschluesselung.md
   - Workbench:
       - Workbench and overview: uebersicht.md
+      - What Ablago may do: was-ablago-darf.md
       - "Versions: who changed what?": fassungen.md
       - Building your Library:
           - Folder types: mappentypen.md

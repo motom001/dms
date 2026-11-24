@@ -200,7 +200,10 @@ function automatisierungen(u: WerkbankUebersicht, h: Hinweis[]) {
       ziel: '/werkbank/automatisierungen',
       knopf: t('automatisierung.ui.uebersicht.knopf'),
     });
-  // #678: Ohne Paket „Benachrichtigungen“ schickt niemand die Tägliche Zusammenfassung.
+  // #678: Ohne Paket „Benachrichtigungen“ schickt niemand die Tägliche Zusammenfassung. Fehlt das Paket, steht es seit
+  // #1511 unter „Empfohlene Pakete“ – dann weder dieser Hinweis noch „Post für dich“.
+  const ohnePaket = !!u.empfohlenFehlt?.includes('benachrichtigungen');
+  if (ohnePaket) return automatisierungenRest(au, h);
   if (au?.ohneBenachrichtigungen)
     h.push({
       schluessel: 'automatisierung.ohne-benachrichtigungen',
@@ -226,6 +229,11 @@ function automatisierungen(u: WerkbankUebersicht, h: Hinweis[]) {
       ziel: '/werkbank/automatisierungen',
       knopf: t('automatisierung.ui.uebersicht.knopf'),
     });
+  automatisierungenRest(au, h);
+}
+
+/** Aufrufe von außen (#679) und fehlgeschlagene Läufe (#675). */
+function automatisierungenRest(au: WerkbankUebersicht['automatisierungen'], h: Hinweis[]) {
   // Aufruf von außen (#679): Adressen ohne Anmeldung – sichtbar, mit „Alle abschalten“ (ein Klick); nicht wegzuklicken.
   if (au?.aufrufe?.length)
     h.push({

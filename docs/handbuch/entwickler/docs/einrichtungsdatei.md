@@ -9,6 +9,7 @@ Die Konfigurationsdatei des Einrichtungsassistenten (#806) beschreibt eine Einri
 - Unbekannte Felder sind Fehler (`additionalProperties: false`), damit Tippfehler nicht still verloren gehen.
 - **Dein Konto (#821):** Abschnitt `konto` – die Person, die einrichtet, mit „Gesamte Verwaltung“. Ältere Dateien (0.191, 0.192) mit `administrator` liest Ablago als `konto`; `erster-benutzer` fällt mit einem Hinweis weg (`hinweise`). Beides steht nicht im Schema – die Umstellung geschieht vor der Prüfung, Zeile und Feld eines Fehlers nennen trotzdem den Namen aus der Datei.
 - **Nutzung (#1045):** `nutzung` (`privat`, `beruflich`, `beides`) bestimmt das Merkmal „beruflich genutzt“ (#1032) im Plan (`optional.beruflich`); `organisation` (Name Pflicht, Anschrift, E-Mail, Telefon) gibt es nur bei beruflicher Nutzung. Ältere Dateien ohne `nutzung` setzen das Merkmal mit `optionales.beruflich` direkt; steht beides da, muss es zusammenpassen. Diese Widersprüche prüft `server/src/einrichtung/einrichtungsdatei.ts` nach dem Schema, mit Zeile und Feld.
+- **Werkbank und Was Ablago darf (#1319, #1562):** `werkbank` (eine der Stufen aus `STUFEN`) und `darf` (`pakete`, `selbst`, `hoechstens`) sind freiwillig und kamen ohne neue Formatversion dazu – wie `nutzung`: Ältere Dateien bleiben gültig, eine Datei mit den neuen Feldern lädt erst Ablago ab dieser Version. Eine Antwort über `hoechstens` ist ein Widerspruch mit Zeile und Feld. „Jetzt einrichten“ setzt die Stufe mit der Ansicht der Werkbank und `darf` über `PUT /api/werkbank/darf`; `hoechstens` nimmt der Server nur an, solange der Assistent offen ist und noch keine Höchstwerte gelten.
 - **Keine Geheimnisse:** Felder `passwort` nehmen nur einen Verweis auf eine Umgebungsvariable an (`${NAME}`, Großbuchstaben, Ziffern, Unterstrich). Einen Schlüssel kennt das Format nicht – Ablago erzeugt ihn immer neu.
 
 ## Im Code
@@ -48,6 +49,12 @@ konto:
   passwort: ${DMS_KONTO_PASSWORT}
 # Wofür Ablago genutzt wird: privat, beruflich oder beides.
 nutzung: privat
+# Stufe der Werkbank: einsteiger, haushalt, selbstaendig, organisation oder alles. Fehlt sie, gilt die Vorgabe zur Nutzung.
+werkbank: einsteiger
+# Was Ablago darf: pakete (keine, vorlagen, lokal, netz) und selbst (nichts, vorschlag, alles). hoechstens legt ein Anbieter fest.
+darf:
+  pakete: lokal
+  selbst: vorschlag
 # Aus dem offiziellen Katalog, je die neueste passende Version; Automatisierungen: true = eingeschaltet.
 pakete:
   - id: texterkennung

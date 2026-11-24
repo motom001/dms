@@ -151,5 +151,15 @@
   "uebersicht.davon-eingerichtet": ", {benutzt} davon eingerichtet",
   "uebersicht.bereiche-ausgeblendet_one": "Ein Bereich ausgeblendet{wert}",
   "uebersicht.bereiche-ausgeblendet_other": "{anzahl} Bereiche ausgeblendet{wert}",
-  "uebersicht.offen": "offen"
+  "uebersicht.offen": "offen",
+  "uebersicht.empfohlen": "Empfohlene Pakete.",
+  "uebersicht.empfohlen.text": "Diese Pakete brauchen die meisten Ablagen:",
+  "uebersicht.empfohlen.texterkennung": "Texterkennung",
+  "uebersicht.empfohlen.texterkennung.satz": "damit Scans durchsuchbar werden.",
+  "uebersicht.empfohlen.benachrichtigungen": "Benachrichtigungen",
+  "uebersicht.empfohlen.benachrichtigungen.satz": "tägliche Zusammenfassung, Post für dich.",
+  "uebersicht.empfohlen.installieren": "Installieren",
+  "uebersicht.empfohlen.installieren.name": "Installieren: {name}",
+  "uebersicht.empfohlen.alle": "Alle Pakete ansehen",
+  "uebersicht.neu-laden.titel": "Hinweise und Stand neu laden"
 }

@@ -110,5 +110,8 @@
   "einrichtungsdatei.beruflich": "The Library is also used for work (attribute “used for work”, default no): folder types then show their work-related fields and sections, and the Workbench starts with the “Self-employed” level.",
   "einrichtungsdatei.nutzung": "What Ablago is used for: privat (home), beruflich (work) or beides (both). Work and both set the attribute “used for work” and preselect suitable packages in the wizard; if missing, the wizard asks.",
   "einrichtungsdatei.organisation": "Your organisation (only for work and both): name required, address, email and phone optional. “Set up now” creates it as your own organisation with the Basis package.",
+  "einrichtungsdatei.werkbank": "Workbench level for the whole installation (Beginner, Household, Self-employed, Business, Everything). If missing, the default for the use applies: Self-employed for work, otherwise Beginner.",
+  "einrichtungsdatei.darf": "What Ablago may do: which packages (pakete: keine, vorlagen, lokal, netz) and how much on its own (selbst: nichts, vorschlag, alles). Anything missing takes the default (lokal, vorschlag).",
+  "einrichtungsdatei.darf.hoechstens": "Maximum values from the provider: higher answers cannot be chosen in Ablago afterwards.",
   "extern.pausiert": "AI features paused until {datum}: the monthly budget for AI services has been reached. An administrator can change the budget under Workbench → System health → AI costs."
 }

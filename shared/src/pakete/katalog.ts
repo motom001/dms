@@ -230,6 +230,13 @@ export interface HerkunftPruefung {
 /** Ab so vielen Tagen warnt das DMS vor einem alten Katalogstand (Sammeldatei ohne Internet, #594). */
 export const KATALOG_ALT_TAGE = 90;
 
+/**
+ * Empfohlene Pakete (#460, #1511): im Einrichtungsassistenten vorgewählt und in der Übersicht der Werkbank als ein
+ * Hinweis „Empfohlene Pakete“, solange eines fehlt – in dieser Reihenfolge.
+ */
+export const EMPFOHLENE_PAKETE = ['texterkennung', 'benachrichtigungen'] as const;
+export type EmpfohlenesPaket = (typeof EMPFOHLENE_PAKETE)[number];
+
 export interface InstalliertesPaket {
   id: string;
   name: string;

@@ -75,6 +75,10 @@ Before something with consequences happens – deleting, signing out, discarding
 - For things with very serious consequences (restoring a backup, changing the key), you type a word to confirm.
 - On a smartphone, the question appears at the bottom of the screen, with large buttons.
 
+## What Ablago may do {#was-ablago-darf}
+
+Whoever administers Ablago decides once **what Ablago may do**: which packages it may use – for example templates only, or also helpers that use the internet – and how much it does on its own. Ablago keeps to this and no longer asks each time within this limit. Nothing changes for your daily work; if you miss a feature from a package, ask the person who administers Ablago. Built-in helpers such as text recognition always work.
+
 ## Signing out {#abmelden}
 
 Via the menu under your name → **Sign out**. On other people's devices you should always sign out.

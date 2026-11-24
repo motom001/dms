@@ -12,6 +12,7 @@ import {
   type PlanDatenbank,
   type Planprobleme,
   type PlanVerbindung,
+  type PlanDarf,
 } from '../../../shared/src/einrichtungsplan';
 import { pruefeAdresse } from '../einstellungen/betrieb';
 import { liesEinrichtungsdatei, schreibeEinrichtungsdatei } from './einrichtungsdatei';
@@ -22,7 +23,8 @@ import { pruefeEmail, pruefePasswortRegeln, type Konten } from '../konten';
 import { protokoll } from '../protokoll/protokoll';
 import { t } from '../sprache/sprache';
 import { liesMerkmale, MERKMALE_EINSTELLUNG } from '../../../shared/src/merkmale';
-import { vorlageFuer } from '../../../shared/src/werkbankansicht';
+import { istVorlage, vorlageFuer } from '../../../shared/src/werkbankansicht';
+import { DARF_EINSTELLUNG, DARF_VORGABE, istPaketeGrenze, istSelbstStufe } from '../../../shared/src/darf';
 
 /**
  * Einrichtungsassistent (#119), sobald die Datenbank steht. Seit #804 sammelt der Assistent erst alles (Ablage,
@@ -136,7 +138,26 @@ export function planAusEingabe(x: unknown): Einrichtungsplan {
     },
     ...(nutzung ? { nutzung } : {}),
     ...(organisation ? { organisation } : {}),
+    // Stufe der Werkbank (#1319) und Was Ablago darf (#1562): nur bekannte Werte.
+    ...(istVorlage(o.werkbank) ? { werkbank: o.werkbank } : {}),
+    ...darfAus(o.darf),
   };
+}
+
+/** Was Ablago darf aus der Eingabe (#1562): nur bekannte Antworten; nichts davon = keine Angabe. */
+function darfAus(x: unknown): { darf?: PlanDarf } {
+  const o = (x && typeof x === 'object' ? x : {}) as Record<string, unknown>;
+  const h = (o.hoechstens && typeof o.hoechstens === 'object' ? o.hoechstens : {}) as Record<string, unknown>;
+  const hoechstens = {
+    ...(istPaketeGrenze(h.pakete) ? { pakete: h.pakete } : {}),
+    ...(istSelbstStufe(h.selbst) ? { selbst: h.selbst } : {}),
+  };
+  const darf: PlanDarf = {
+    ...(istPaketeGrenze(o.pakete) ? { pakete: o.pakete } : {}),
+    ...(istSelbstStufe(o.selbst) ? { selbst: o.selbst } : {}),
+    ...(Object.keys(hoechstens).length ? { hoechstens } : {}),
+  };
+  return Object.keys(darf).length ? { darf } : {};
 }
 
 /** Fehlermeldung einer Prüfung oder null. */
@@ -192,6 +213,9 @@ export class Einrichtung {
       ein: [],
       aus: [],
     });
+    // Was Ablago darf (#1562): neue Installationen bekommen die Vorgabe; „Jetzt einrichten“ setzt danach die Antworten
+    // aus dem Assistenten bzw. der Einrichtungsdatei. Bestehende leitet der Server beim ersten Lesen ab (pakete/darf.ts).
+    await this.d.einstellungen.schreibe(DARF_EINSTELLUNG, { ...DARF_VORGABE, hoechstens: {}, herkunft: 'neu' });
     await this.d.code?.entfernen();
     log.info('Einrichtung: Ablage und eigenes Konto mit „Gesamte Verwaltung“ angelegt', { mandant, email: r.benutzer.email });
     return r;

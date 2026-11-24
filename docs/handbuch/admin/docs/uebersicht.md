@@ -1,13 +1,13 @@
 # Werkbank und Übersicht
 
-Die **Werkbank** gibt es nur im [Verwaltungsmodus](verwalten.md#der-verwaltungsmodus): Benutzermenü → **Ablago verwalten**. Danach landest du in der **Übersicht** – sie zeigt die Meldungen deiner eigenen Bereiche. Führt dich ein Link in die Werkbank (z. B. aus einer E-Mail „Sicherung fehlgeschlagen“), landest du nach „Ablago verwalten“ genau dort. Die **Ablage** erreichst du im Modus jederzeit über **Ablage** oben, etwa um nachzusehen, was eine Mappe enthält. Links stehen die Bereiche, die du verwalten darfst, in Gruppen, geordnet nach dem, was du gerade tun willst – die Ablage aufbauen, Benutzer verwalten, Datenschutz (nur bei beruflicher Nutzung), Post hereinholen, Daten sichern, Grundeinstellungen ändern oder einem Fehler nachgehen. Welche Bereiche du siehst, hängt von der [Vorlage](#werkbank-anpassen) ab:
+Die **Werkbank** gibt es nur im [Verwaltungsmodus](verwalten.md#der-verwaltungsmodus): Benutzermenü → **Ablago verwalten**. Danach landest du in der **Übersicht** – sie zeigt die Meldungen deiner eigenen Bereiche. Führt dich ein Link in die Werkbank (z. B. aus einer E-Mail „Sicherung fehlgeschlagen“), landest du nach „Ablago verwalten“ genau dort. Die **Ablage** erreichst du im Modus jederzeit über **Ablage** oben, etwa um nachzusehen, was eine Mappe enthält. Links stehen die Bereiche, die du verwalten darfst, in Gruppen, geordnet nach dem, was du gerade tun willst – die Ablage aufbauen, Benutzer verwalten, Datenschutz, Post hereinholen, Daten sichern, Grundeinstellungen ändern oder einem Fehler nachgehen. Welche Bereiche du siehst, hängt von der [Vorlage](#werkbank-anpassen) ab:
 
 <!-- bereiche:gruppen -->
 | Gruppe | Bereiche |
 | --- | --- |
 | **Ablage aufbauen** | [Pakete](pakete.md), [Beispiel-Ablage](beispielablage.md), [Mappentypen](mappentypen.md), [Ansichten](sichten.md), [Nummernkreise](nummernkreise.md), [Automatisierungen](automatisierungen.md), [Automatisierungsvorlagen](automatisierungsvorlagen.md), [Rundgänge](rundgaenge.md), [Tipps](tipps.md) |
 | **Benutzer und Sicherheit** | [Benutzer](benutzer.md), [Verschlüsselung](verschluesselung.md), [Aufbewahrung abgelaufen](archiv.md#nach-der-frist-aufbewahrung-abgelaufen) (nur mit Archivmodus), [Stempel](stempel.md) |
-| **Datenschutz** | [Datenschutz-Auskünfte](datenschutz.md#auskunft-erteilen) (nur bei beruflicher Nutzung), [Löschkonzept](loeschkonzept.md#aus-dem-dms-erzeugen) (nur bei beruflicher Nutzung), [Löschprotokoll](datenschutz.md#loschprotokoll) (nur bei beruflicher Nutzung) |
+| **Datenschutz** | [Datenschutz-Auskünfte](datenschutz.md#auskunft-erteilen), [Löschkonzept](loeschkonzept.md#aus-dem-dms-erzeugen), [Löschprotokoll](datenschutz.md#loschprotokoll) |
 | **Post und Eingänge** | [Postfächer](postfaecher.md), [Eingangsordner](eingangsordner.md) (nur wenn der Ordner eingebunden ist), [WebDAV-Laufwerk](webdav.md), [Suche und Volltext](texterkennung.md), [Gleichbedeutende Wörter](suche.md#gleichbedeutende-worter) |
 | **Daten sichern** | [Sicherung](sicherung.md), [Vollexport](export.md), [Papierkorb](papierkorb.md), [Daten sichern → Einstellungen](daten-einstellungen.md) |
 | **Einstellungen** | [E-Mail und Adresse](installation.md#e-mail-und-adresse), [Region](region.md), [Sprachen](sprachen.md), [Eigene Organisation](organisation.md), [Aufgaben](aufgaben.md#werkbank-aufgaben), [Anmeldeschutz](anmeldeschutz.md), [Designs](designs.md), [Datenbank-Anbindung](installation.md#datenbank-anbindung) |
@@ -82,9 +82,9 @@ Seiten zum Aufbauen – Mappentypen, Ansichten, Nummernkreise, Automatisierungen
 
 ## Übersicht
 
-Die Werkbank beginnt mit der **Übersicht**. Sie ist zweigeteilt wie die Startseite der Ablage: links die Bereiche, rechts breit die Übersicht selbst – am Handy die Übersicht allein, die Bereiche erreichst du dort über **Bereiche ›** oben. Oben stehen die **Kacheln**: offene Aufgaben, Warteschlange der Texterkennung, Papierkorb, Gemeldete Fehler, Bestand (Mappen, Dokumente, Speicher, Benutzer) und Version. So siehst du zuerst, was alles ansteht.
+Die Werkbank beginnt mit der **Übersicht**. Sie ist zweigeteilt wie die Startseite der Ablage: links die Bereiche, rechts breit die Übersicht selbst – am Handy die Übersicht allein, die Bereiche erreichst du dort über **Bereiche ›** oben. Ganz oben steht die Karte **[Was Ablago darf](was-ablago-darf.md)** mit deinen beiden Antworten und **Ändern …**. Darunter stehen die **Kacheln**: offene Aufgaben, Warteschlange der Texterkennung, Papierkorb, Gemeldete Fehler, Bestand (Mappen, Dokumente, Speicher, Benutzer) und Version. So siehst du zuerst, was alles ansteht.
 
-Darunter stehen unter **Hinweise** die **Meldungen**, jede genau einmal und jeweils mit einem Knopf in den passenden Bereich. **Das gilt auch für Bereiche, die in deiner Vorlage ausgeblendet sind.** Sie sind nach Schwere sortiert:
+Darunter stehen unter **Hinweise** die **Meldungen**, jede genau einmal: ein, zwei Sätze, darunter ein Knopf mit der Handlung (etwa **E-Mail einrichten**) und daneben **Zur Kenntnis nehmen** – **Nein, danke** nur, wo der Hinweis wirklich eine Frage stellt. **Das gilt auch für Bereiche, die in deiner Vorlage ausgeblendet sind.** Sie sind nach Schwere sortiert:
 
 1. **Rot – kritisch:** Hier geht etwas nicht oder Daten sind in Gefahr. Das musst du erledigen.
 2. **Gelb – Warnung:** Etwas fehlt oder ist riskant eingerichtet.
@@ -93,6 +93,10 @@ Darunter stehen unter **Hinweise** die **Meldungen**, jede genau einmal und jewe
 Innerhalb einer Stufe stehen Meldungen mit Datum (z. B. eine fehlgeschlagene Sicherung) vorn, die neueste zuerst. Ist alles eingerichtet, steht dort „Alles eingerichtet“.
 
 ![Werkbank → Übersicht](bilder/werkbank-uebersicht.png)
+
+Kommst du nach einer Handlung zur Übersicht zurück – oder holst du den Tab wieder nach vorn –, lädt sie ihre Hinweise selbst neu; Erledigtes ist dann weg. **Neu laden** oben rechts brauchst du dafür nicht mehr, es bleibt für Ungeduldige.
+
+**Empfohlene Pakete** stehen als **ein** Hinweis: je fehlendem Paket eine Zeile mit einem Satz, wozu (Texterkennung: damit Scans durchsuchbar werden; Benachrichtigungen: tägliche Zusammenfassung, Post für dich), und **Installieren**; darunter **Alle Pakete ansehen**. Installierte Pakete verschwinden aus der Liste, sind alle da, verschwindet der Hinweis. Umstiegs-Hinweise wie „Texterkennung ist jetzt ein Paket“ erscheinen nur bei Installationen, die von einer älteren Version kommen, nicht nach einer Neueinrichtung.
 
 Die Zahl hinter *Übersicht* in der Leiste nennt die roten und gelben Meldungen, die noch offen sind – ohne Hinweise und ohne bewusst akzeptierte.
 
@@ -128,7 +132,7 @@ Zwei Hinweise schließt du stattdessen mit einem eigenen Knopf ab – sie kommen
 | Geplante Abläufe angehalten (die Person darf sie nicht mehr ausführen) | gelb | `ablaeufe.angehalten` |
 | Automatisierungen mit fehlgeschlagenen Läufen | gelb | `automatisierung.fehlgeschlagen` |
 | Erinnerungen beim Update übernommen | Hinweis | `automatisierung.umgezogen` |
-| Ohne Paket „Benachrichtigungen“ keine Tägliche Zusammenfassung, keine Favoriten-Meldungen und kein „Post für dich“ | Hinweis | `automatisierung.ohne-benachrichtigungen` |
+| Paket „Benachrichtigungen“ installiert, aber keine Tägliche Zusammenfassung eingeschaltet (fehlt das Paket, steht es unter „Empfohlene Pakete“) | Hinweis | `automatisierung.ohne-benachrichtigungen` |
 | Keine eingeschaltete Automatisierung „Post für dich“ (Paket älter als 1.3.0 oder ausgeschaltet) | Hinweis | `automatisierung.ohne-post-fuer-dich` |
 | Adressen nehmen [Aufrufe von außen](automatisierungen.md#aufruf-von-aussen) an – mit **Alle abschalten** statt „Zur Kenntnis nehmen“ | Hinweis | `automatisierung.aufrufe` |
 | CPU oder Arbeitsspeicher seit 5 Minuten über 90 % | gelb | `auslastung` |
@@ -161,11 +165,13 @@ Zwei Hinweise schließt du stattdessen mit einem eigenen Knopf ab – sie kommen
 | DMS_LASTTEST in einer echten Installation | gelb | `lasttest` |
 | Die [Beispiel-Ablage](beispielablage.md) ist angelegt (bis du sie entfernst) | Hinweis | `beispielablage` |
 | Paket braucht noch Einstellungen | gelb | `paket-einstellungen` |
-| Neu: Mappentypen von KI-Diensten ausschließen (einmal nach dem Update, mit KI-Paketen; „Verstanden“) | Hinweis | `ki.typen` |
-| Aus der Einrichtung übersprungen | Hinweis | `einrichtung` |
+| Neu: Mappentypen von KI-Diensten ausschließen (einmal nach dem Update, mit KI-Paketen; „Zur Kenntnis nehmen“) | Hinweis | `ki.typen` |
+| Neu: Was Ablago darf – bitte einmal ansehen (einmal nach dem Update; „Zur Kenntnis nehmen“) | Hinweis | `darf.neu` |
+| Aus der Einrichtung übersprungen (Adresse und E-Mail-Versand; Pakete stehen unter „Empfohlene Pakete“) | Hinweis | `einrichtung` |
 | Gut, wenn noch jemand verwalten kann – nur eine Person darf verwalten | Hinweis | `verwaltung.zweite-person` |
 | Umgebungsvariablen, die nicht mehr nötig sind (je mit Grund) | Hinweis | `variablen` |
 | Der E-Mail-Versand ist nicht eingerichtet | gelb | `mail` |
+| Empfohlene Pakete: Texterkennung, Benachrichtigungen – je Zeile **Installieren** | Hinweis (gelb, sobald Scans auf die Texterkennung warten) | `pakete.empfohlen` |
 | Offene gemeldete Fehler | gelb | `fehlermeldungen` |
 | Eingangsordner: Dateien älter als die Grenze (Vorgabe 180 Tage) | gelb | `eingangsordner.alt` |
 | Eingangsordner: alle Dateien zusammen über der Grenze (Vorgabe 2 GB) | gelb | `eingangsordner.groesse` |
@@ -173,7 +179,7 @@ Zwei Hinweise schließt du stattdessen mit einem eigenen Knopf ab – sie kommen
 | Eingangsordner: mehr Dateien als die Grenze (Vorgabe 100) | gelb | `eingangsordner.anzahl` |
 | Eingangsordner: Ordner gehört zu keinem Benutzer (Post ohne „An“) | gelb | `eingangsordner.ohne-person` |
 | Eingangsordner: Personenordner ließ sich nach geänderter E-Mail-Adresse nicht umbenennen | gelb | `eingangsordner.umbenennen` |
-| Texterkennung ist jetzt ein Paket | Hinweis (gelb, sobald Scans warten) | `texterkennung.paket` |
+| Texterkennung ist jetzt ein Paket (nur nach einem Update von einer älteren Version) | Hinweis (gelb, sobald Scans warten) | `texterkennung.paket` |
 | Dokumente mit Fehler in der Texterkennung | gelb | `texterkennung.fehler` |
 | Ein Werkzeug zum Lesen von PDFs fehlt: kein Text aus PDFs, keine Seitenbilder ([Eingebaute Werkzeuge](fehlersuche.md#werkzeuge); Knopf **Ansehen und erneut prüfen**) | rot | `werkzeug.fehlt:poppler` |
 | Ein Werkzeug zum Bearbeiten von PDFs fehlt: geschützte PDFs lassen sich nicht entsperren, Verkleinern wirkt schwächer ([Eingebaute Werkzeuge](fehlersuche.md#werkzeuge)) | gelb | `werkzeug.fehlt:qpdf` |
@@ -248,7 +254,7 @@ Die Stufe wählst du im Einrichtungsassistenten im Schritt „Nutzung“ und sp�
 | **Anzahl** | **10** | **30** | **35** | **37** | **39** |
 <!-- /bereiche:stufen -->
 
-Die Datenschutz-Bereiche stehen außerdem nur bei beruflicher Nutzung in der Leiste.
+Auch die Datenschutz-Bereiche folgen nur der Stufe (ab Selbständig) und deinen Ein- und Ausblendungen – ob Ablago beruflich genutzt wird, spielt für die Leiste keine Rolle. Es entscheidet weiter, ob die eigene Organisation in Auskünften erscheint.
 
 Danach kannst du je Bereich abweichen:
 

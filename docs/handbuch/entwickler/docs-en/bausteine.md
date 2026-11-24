@@ -43,6 +43,16 @@ For users, the user manual explains the same rules on one page: [What buttons lo
 
 ![Pattern page, area “Button”: kinds, danger at rest, on hover and focus, the confirmation, disabled in two forms and the opened explanation](bilder/muster-knopf.png){ loading=lazy }
 
+## Pattern: note in the overview { #hinweis-uebersicht }
+
+All notes under "Notes" in the workbench overview follow one pattern (#1511, entry in the pattern catalogue). New notes are created in `web/src/werkbank/uebersicht/hinweise.tsx` or `hinweise-betrieb.tsx` as a `Hinweis` and keep to it:
+
+- **Structure:** title in bold, then one or two sentences. Below, **one** main button with the action (verb and object, e.g. "Set up email", "Install package") and next to it, as a secondary button, **"Acknowledge"** (`Akzeptieren.tsx`). Acknowledged notes are collapsed at the bottom under "Consciously accepted (n)".
+- **"No, thanks"** only where the note asks a real yes/no question (e.g. "second person with administration rights?"); plus the variant **"Read"** for red messages you can only acknowledge. Both via `erledigen`. A note that only comes once (e.g. after an update) closes with `erledigen: "Acknowledge"`.
+- **List in a note:** several identical actions are rows in **one** note, not several notes – per row a name, one sentence and the same secondary button with equal width below each other, then a link to all (`eigeneKnoepfe`, example "Recommended packages"). No tiles, no pictures. If the list is empty, the note disappears completely.
+- **Migration notes** ("… is now a package") only for installations that come from an older version (`umstieg` in the overview response), never after a fresh setup.
+- After an action, the overview reloads its notes by itself when you come back (#1513); completed notes disappear without "Reload".
+
 ## On a phone { #handy }
 
 On a phone the finger hits, not the mouse pointer. So every control of a building block gets a **touch target of at least 44 × 44 px** with **`(pointer: coarse)`** (touch as the primary pointer) (pattern catalogue D6, #1027; WCAG 2.5.8 asks for 24 px). With a mouse (`pointer: fine`) everything stays as it is.

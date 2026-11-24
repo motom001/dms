@@ -5,7 +5,7 @@ import type { ReactNode } from 'react';
 import { useKonto } from '../konto';
 import { Dreiteilung } from '../bereiche';
 import { useDaten } from '../daten';
-import { darfSeite, hatMitte, inLeiste, wartungsPlakette, werkbankEbene } from '../../../shared/src/werkbankansicht';
+import { darfSeite, hatMitte, wartungsPlakette, werkbankEbene } from '../../../shared/src/werkbankansicht';
 import { t, tn } from '../sprache';
 import { useHandbuch } from '../Hilfe';
 import { AnsichtPanel, type BereichZustand } from './Ansicht';
@@ -129,7 +129,8 @@ export function Werkbank({ teile }: { teile: string[] }) {
       </div>
     );
   }
-  const eigene = eintraege.filter((e) => darf(e.pfad) && inLeiste(e.gruppe, d.zaehler.merkmale));
+  // Die Leiste entsteht nach einer Regel (#1319): Stufe und eigene Einblendungen – Datenschutz hängt nicht mehr am Merkmal „beruflich“.
+  const eigene = eintraege.filter((e) => darf(e.pfad));
 
   return (
     <Dreiteilung

@@ -21,6 +21,11 @@ export interface Hinweis {
   ziel: string;
   knopf: string;
   datum?: string | null;
-  /** Statt „Zur Kenntnis nehmen“: ein Knopf, der den Hinweis endgültig abschließt (#821 „Nein, danke“, #815 „Gelesen“). */
+  /**
+   * Statt „Zur Kenntnis nehmen“ mit Begründung: ein Knopf, der den Hinweis endgültig abschließt – „Nein, danke“ bei einer
+   * echten Ja/Nein-Frage (#821), „Gelesen“ (#815), sonst „Zur Kenntnis nehmen“ (#1511: ein Hinweis, der nur einmal kommt).
+   */
   erledigen?: string;
+  /** Die Handlungen stehen im Text selbst (#1511: „Empfohlene Pakete“, je Zeile „Installieren“) – kein eigener Hauptknopf. */
+  eigeneKnoepfe?: boolean;
 }

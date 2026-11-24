@@ -110,5 +110,8 @@
   "einrichtungsdatei.beruflich": "Die Ablage wird auch beruflich genutzt (Merkmal „beruflich genutzt“, Vorgabe nein): Mappentypen zeigen dann ihre beruflichen Felder und Abschnitte, die Werkbank startet mit der Stufe „Selbständig“.",
   "einrichtungsdatei.nutzung": "Wofür Ablago genutzt wird: privat, beruflich oder beides. Beruflich und beides setzen das Merkmal „beruflich genutzt“ und wählen im Assistenten passende Pakete vor; fehlt die Angabe, fragt der Assistent.",
   "einrichtungsdatei.organisation": "Deine Organisation (nur bei beruflich und beides): Name Pflicht, Anschrift, E-Mail und Telefon freiwillig. „Jetzt einrichten“ legt sie mit dem Paket Basis als eigene Organisation an.",
+  "einrichtungsdatei.werkbank": "Stufe der Werkbank für die ganze Installation (Einsteiger, Haushalt, Selbständig, Betrieb, Alles). Fehlt sie, gilt die Vorgabe zur Nutzung: beruflich Selbständig, sonst Einsteiger.",
+  "einrichtungsdatei.darf": "Was Ablago darf: welche Pakete (pakete: keine, vorlagen, lokal, netz) und wie viel von sich aus (selbst: nichts, vorschlag, alles). Fehlt etwas, gilt die Vorgabe (lokal, vorschlag).",
+  "einrichtungsdatei.darf.hoechstens": "Höchstwerte vom Anbieter: Höhere Antworten lassen sich danach in Ablago nicht wählen.",
   "extern.pausiert": "KI-Funktionen pausiert bis {datum}: Das Monatsbudget für KI-Dienste ist erreicht. Die Verwaltung kann das Budget unter Werkbank → Systemzustand → KI-Kosten anpassen."
 }

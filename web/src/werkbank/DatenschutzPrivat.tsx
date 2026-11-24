@@ -1,14 +1,18 @@
-import { bereichName } from '../../../shared/src/werkbankansicht';
+import { bereichName, VORLAGEN } from '../../../shared/src/werkbankansicht';
 import { useDaten } from '../daten';
 import { Link } from '../ort';
 import { t } from '../sprache';
 
-/** Der Satz (#1311): warum die Gruppe „Datenschutz“ bei rein privater Nutzung nicht in der Leiste steht. */
+/**
+ * Der Satz (#1311): was rein private Nutzung für den Datenschutz heißt. Seit #1319 hängt die Gruppe „Datenschutz“ in der
+ * Leiste nur an der Stufe (ab Selbständig); der Haken „beruflich“ bestimmt die beruflichen Angaben (eigene Organisation).
+ */
 function satz() {
   return t('werkbank.datenschutz.privat', {
     gruppe: t('werkbank.gruppe.datenschutz'),
     eintraege: ['auskuenfte', 'loeschkonzept', 'loeschprotokoll'].map(bereichName).join(', '),
     haken: t('werkbank.nutzung.beruflich'),
+    stufe: VORLAGEN.selbstaendig.name,
   });
 }
 

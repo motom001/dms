@@ -71,7 +71,7 @@ const ABLAGE: Zusaetze = {
   tipps: ({ z }) => ({ zahl: z.tipps.stand?.tipps.length }),
 };
 
-/** Benutzer und Sicherheit, Datenschutz (#1184: nur bei beruflicher Nutzung in der Leiste, `inLeiste` in Werkbank.tsx). */
+/** Benutzer und Sicherheit, Datenschutz (#1184; seit #1319 nur an der Stufe, wie jede andere Gruppe). */
 const BENUTZER: Zusaetze = {
   benutzer: ({ z: { benutzer }, uz }) => ({
     zahl: zahl(benutzer.geladen ? benutzer.liste.filter((b) => b.aktiv).length : undefined, uz?.benutzer),
@@ -83,8 +83,10 @@ const BENUTZER: Zusaetze = {
   aufbewahrung: ({ d, z, uz }) => (d.typen.some((x) => x.archiv) ? { zahl: zahl(z.darfWeg.liste?.length, uz?.darfWeg) } : null),
   stempel: ({ z }) => ({ zahl: z.stempel.liste?.length }),
   auskuenfte: ({ z }) => ({ zahl: z.datenschutz.stand?.verzeichnis.filter((e) => istOffen(e.zustand)).length }),
-  loeschkonzept: ({ z }) => ({
-    warn: z.datenschutz.stand?.loeschkonzept?.luecken.length ? '!' : undefined,
+  // Lücken im Löschkonzept warnen nur bei beruflicher Nutzung (#1319): Sonst holte die Warnung die Gruppe Datenschutz
+  // in die Leiste, obwohl die Stufe sie nicht enthält – ein Löschkonzept braucht die private Ablage nicht.
+  loeschkonzept: ({ d, z }) => ({
+    warn: z.datenschutz.stand?.loeschkonzept?.luecken.length && d.zaehler.merkmale?.beruflich ? '!' : undefined,
     warnTitel: t('werkbank.loeschkonzept.personendaten'),
   }),
 };

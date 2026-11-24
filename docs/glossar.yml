@@ -22,7 +22,7 @@
 # Neue Begriffe kommen mit dem Release hierher (Qualitätskontrolle).
 # Die Personas: docs/handbuch/entwickler/docs/personas.md
 
-stand: '2026-11-15'
+stand: '2026-11-24'
 
 begriffe:
 
@@ -903,6 +903,14 @@ begriffe:
     nicht_verwenden: [Systembenutzer, Bot, technischer Benutzer]
     verwandt: [Paket-Läufer, Benutzer]
     code: "benutzer.art = 'dienst'"
+  - begriff: Was Ablago darf
+    bereich: werkbank
+    beschreibung: Zwei Antworten für die ganze Installation – welche Pakete Ablago nutzen darf (keine, nur Vorlagen, auch Helfer, die nur hier arbeiten, auch Helfer mit Internet) und wie viel es von sich aus tut (nichts, erkennen und vorlegen, alles erledigen). Ablago hält sich im Server daran und fragt innerhalb dieser Grenze nicht mehr einzeln nach. Eingebaute Helfer wie die Texterkennung arbeiten auf jeder Antwort. Steht als Karte oben in der Übersicht der Werkbank; erhöhen geht nur mit frischer Anmeldung.
+    einsteiger: erklaeren
+    begegnet: admin
+    nicht_verwenden: [Vertrauensstufe, Stufe 1/2/3, Sicherheitsstufe]
+    verwandt: [Paket, Übersicht]
+    code: darf, DarfStand, PAKETE_GRENZEN, SELBST_STUFEN (intern Vertrauensstufen)
   - begriff: Werkbank anpassen
     bereich: werkbank
     beschreibung: Legt fest, welche Bereiche links in der Werkbank stehen – nach einer Stufe („Einsteiger“, „Haushalt“, „Selbständig“, „Betrieb“ oder „Alles“) und mit Abweichungen. Unter „Meine Leiste“ wählt jede Person, die verwaltet, für sich eine andere Stufe. Ausblenden schaltet nichts ab. Neue Installationen starten mit der Stufe aus dem Einrichtungsassistenten; Installationen von vor dieser Einstellung zeigen alles.

@@ -6,6 +6,7 @@ import { gebietsschema } from '../../../../shared/src/sprache';
 import { sicherungsHinweise } from '../Sicherung';
 import { exportHinweise } from '../Vollexport';
 import { bytes, datum, zahl } from './hilfen';
+import { empfohlenePakete, umstiegTexterkennung } from './empfohlen';
 import type { Hinweis } from './hilfen';
 
 /* Meldungen der Übersicht (#68, #816), zweiter Teil: Post, Sicherung, Anbindung, Pakete, Einrichtung, Texterkennung, Aufgaben. */
@@ -169,7 +170,8 @@ export function paketeUndEinrichtung(u: WerkbankUebersicht, h: Hinweis[]) {
       ),
       ziel: `/werkbank/pakete/${u.kiTypen.pakete[0].id}`,
       knopf: t('pakete.ki.hinweis.knopf'),
-      erledigen: t('pakete.ki.hinweis.verstanden'),
+      // Einheitlich (#1511): kommt nur einmal – „Zur Kenntnis nehmen“ schließt ihn ab.
+      erledigen: t('werkbank.uebersicht.akzeptieren'),
     });
   // Im Einrichtungsassistenten übersprungen (#119): hier nachholen.
   const nachholen: Record<string, { text: string; ziel: string; knopf: string }> = {
@@ -178,11 +180,16 @@ export function paketeUndEinrichtung(u: WerkbankUebersicht, h: Hinweis[]) {
       ziel: '/werkbank/betrieb',
       knopf: t('werkbank.uebersicht.zu-e-mail-und'),
     },
-    pakete: {
-      text: t('werkbank.uebersicht.pakete-dazuholen-z-b'),
-      ziel: '/werkbank/pakete',
-      knopf: t('werkbank.uebersicht.zu-den-paketen'),
-    },
+    // Pakete übersprungen: seit #1511 im Hinweis „Empfohlene Pakete“ (ältere Server ohne `empfohlenFehlt`: wie bisher).
+    ...(u.empfohlenFehlt
+      ? {}
+      : {
+          pakete: {
+            text: t('werkbank.uebersicht.pakete-dazuholen-z-b'),
+            ziel: '/werkbank/pakete',
+            knopf: t('werkbank.uebersicht.zu-den-paketen'),
+          },
+        }),
   };
   for (const x of u.einrichtung?.uebersprungen ?? [])
     if (nachholen[x] && !(x === 'optional' && u.mail))
@@ -211,6 +218,20 @@ export function paketeUndEinrichtung(u: WerkbankUebersicht, h: Hinweis[]) {
       ziel: '/werkbank/benutzer/neu',
       knopf: t('werkbank.uebersicht.zweite.knopf'),
       erledigen: t('werkbank.uebersicht.zweite.nein'),
+    });
+  // Was Ablago darf (#1562): einmal nach dem Update, bis jemand mit „Gesamte Verwaltung“ es zur Kenntnis nimmt.
+  if (u.darfNeu)
+    h.push({
+      schluessel: 'darf.neu',
+      art: 'info',
+      text: (
+        <>
+          <strong>{t('werkbank.darf.hinweis.neu')}</strong> {t('werkbank.darf.hinweis.neu.text')}
+        </>
+      ),
+      ziel: '/werkbank#was-ablago-darf',
+      knopf: t('werkbank.darf.hinweis.neu.knopf'),
+      erledigen: t('werkbank.uebersicht.akzeptieren'),
     });
   // Überflüssige Umgebungsvariablen (#115, #119), je mit Grund (#478).
   const vh = variablenHinweis(u.variablen ?? []);
@@ -251,6 +272,8 @@ export function mailUndTexterkennung(u: WerkbankUebersicht, h: Hinweis[]) {
       ziel: '/werkbank/betrieb',
       knopf: t('werkbank.uebersicht.e-mail-einrichten'),
     });
+  // Empfohlene Pakete (#1511): nach dem E-Mail-Versand, ein Hinweis für alle fehlenden.
+  empfohlenePakete(u, h);
   if (u.fehlermeldungen)
     h.push({
       schluessel: 'fehlermeldungen',
@@ -265,8 +288,9 @@ export function mailUndTexterkennung(u: WerkbankUebersicht, h: Hinweis[]) {
       ziel: '/werkbank/fehlermeldungen',
       knopf: t('werkbank.uebersicht.ansehen'),
     });
-  // Texterkennung ist seit #459 ein Paket: ohne Paket deutlich, sobald Scans darauf warten, sonst als Hinweis.
-  if (u.texterkennungPaket === false)
+  // Texterkennung ist seit #459 ein Paket: ohne Paket deutlich, sobald Scans darauf warten, sonst als Hinweis. Ein
+  // Umstiegs-Hinweis – nur für Installationen, die von einer älteren Version kommen (#1511); sonst „Empfohlene Pakete“.
+  if (umstiegTexterkennung(u))
     h.push({
       schluessel: 'texterkennung.paket',
       art: u.texterkennung?.paket ? 'warn' : 'info',

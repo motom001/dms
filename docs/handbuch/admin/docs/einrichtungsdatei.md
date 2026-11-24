@@ -4,7 +4,7 @@ Was du im [Einrichtungsassistenten](installation.md#der-einrichtungsassistent) z
 
 ## Speichern
 
-In der [Zusammenfassung](installation.md#zusammenfassung) des Assistenten speichert **Als Datei speichern** die Datei `ablago-einrichtung.yaml` in deinen Download-Ordner. Darin stehen Datenbank (Rechner, Port, Name, Benutzer), Name der Ablage, dein Konto (Name, E-Mail-Adresse), die Nutzung samt deiner Organisation, die Pakete samt ein- und ausgeschalteter Automatisierungen und das Optionale (Adresse, Bundesland, Beispiele, E-Mail-Versand). Kurze Kommentare erklären jeden Abschnitt.
+In der [Zusammenfassung](installation.md#zusammenfassung) des Assistenten speichert **Als Datei speichern** die Datei `ablago-einrichtung.yaml` in deinen Download-Ordner. Darin stehen Datenbank (Rechner, Port, Name, Benutzer), Name der Ablage, dein Konto (Name, E-Mail-Adresse), die Nutzung samt deiner Organisation, die Stufe der Werkbank, was Ablago darf, die Pakete samt ein- und ausgeschalteter Automatisierungen und das Optionale (Adresse, Bundesland, Beispiele, E-Mail-Versand). Kurze Kommentare erklären jeden Abschnitt.
 
 !!! info "Nicht in der Datei: Passwörter und Schlüssel"
     Die Datei enthält **keine Passwörter** und **keinen Schlüssel**. Passwörter fragt der Assistent beim Laden ab. Den Schlüssel erzeugt Ablago bei jeder Einrichtung neu, und das [Notfallblatt](verschluesselung.md#notfallblatt) bleibt Pflicht. Steht in einer Datei trotzdem ein Passwort im Klartext, lehnt Ablago sie ab.
@@ -48,6 +48,12 @@ konto:
   passwort: ${DMS_KONTO_PASSWORT}
 # Wofür Ablago genutzt wird: privat, beruflich oder beides.
 nutzung: privat
+# Stufe der Werkbank: einsteiger, haushalt, selbstaendig, organisation oder alles. Fehlt sie, gilt die Vorgabe zur Nutzung.
+werkbank: einsteiger
+# Was Ablago darf: pakete (keine, vorlagen, lokal, netz) und selbst (nichts, vorschlag, alles). hoechstens legt ein Anbieter fest.
+darf:
+  pakete: lokal
+  selbst: vorschlag
 # Aus dem offiziellen Katalog, je die neueste passende Version; Automatisierungen: true = eingeschaltet.
 pakete:
   - id: texterkennung
@@ -76,6 +82,8 @@ optionales:
 - `nutzung` ist die Antwort auf „Wofür nutzt du Ablago?“: `privat`, `beruflich` oder `beides` ([Nutzung](installation.md#nutzung)). `beruflich` und `beides` setzen das Merkmal [beruflich genutzt](organisation.md#nutzung). Fehlt die Angabe, fragt der Assistent.
 - `organisation` gibt es nur bei `beruflich` und `beides`: `name` ist Pflicht, dazu freiwillig `strasse`, `hausnummer`, `plz`, `ort`, `email` und `telefon`. „Jetzt einrichten“ legt daraus die [eigene Organisation](organisation.md) an; das Paket `basis` muss dann in der Liste stehen.
 - **Dateien bis Version 0.237** kennen `nutzung` noch nicht und setzen das Merkmal mit `optionales: beruflich: true`. Ablago liest das weiter; der Assistent schlägt dann im Schritt „Nutzung“ „Beides“ vor. Steht beides in der Datei, muss es zusammenpassen.
+- `werkbank` ist die [Stufe der Werkbank](uebersicht.md#werkbank-anpassen) für die ganze Installation: `einsteiger`, `haushalt`, `selbstaendig`, `organisation` (Betrieb) oder `alles`. Fehlt sie, gilt wie bisher die Vorgabe zur Nutzung (beruflich Selbständig, sonst Einsteiger).
+- `darf` legt fest, [was Ablago darf](was-ablago-darf.md): `pakete` (`keine`, `vorlagen`, `lokal`, `netz`) und `selbst` (`nichts`, `vorschlag`, `alles`). Fehlt etwas, gilt die Vorgabe `lokal` und `vorschlag`. Mit `hoechstens` legt ein Anbieter Höchstwerte fest: Höhere Antworten lassen sich danach in Ablago nicht wählen, und der Server lehnt sie ab. Höchstwerte gibt es nur aus der Datei, nicht in der Werkbank.
 - Automatisierungen eines Pakets stehen als Schlüssel mit `true` (eingeschaltet) oder `false` (aus); fehlt eine, ist sie wie im Assistenten eingeschaltet.
 
 ## Verweise statt Passwörter

@@ -8,8 +8,10 @@ import { hinweiseAus, type Hinweis } from './hinweise';
  * Werkbank → Übersicht (#68): was zu tun ist, auf einen Blick; Gruppen der Leiste.
  * Seit #816: oben die Kacheln, darunter die Meldungen nach Schwere (rot → gelb → Hinweis); gelbe Warnungen und
  * Hinweise lassen sich bewusst akzeptieren und stehen dann eingeklappt ganz unten.
+ * Seit #1513 lädt die Übersicht ihre Hinweise selbst neu, sobald man zu ihr zurückkommt (`offen` wird wahr, z. B. nach
+ * „E-Mail einrichten“) oder den Tab bzw. das Fenster wieder nach vorn holt – erledigte Hinweise verschwinden ohne „Neu laden“.
  */
-export function useUebersicht() {
+export function useUebersicht(offen = true) {
   const [stand, setStand] = useState<WerkbankUebersicht | null>(null);
   const [fehler, setFehler] = useState<string>();
   const [akzeptiert, setAkzeptiert] = useState<Akzeptiert>({});
@@ -26,6 +28,7 @@ export function useUebersicht() {
   useEffect(() => {
     void laden();
   }, [laden]);
+  useNeuBeiRueckkehr(offen, laden);
   const mitNotfallblatt = useVerwaltetVerschluesselung();
   const geordnet = useMemo(
     () => (stand ? ordneMeldungen(hinweiseAus(stand, mitNotfallblatt), akzeptiert) : null),
@@ -66,3 +69,28 @@ export function useUebersicht() {
   return { stand, fehler, laden, hinweise, geordnet, akzeptieren, einblenden, erledigen };
 }
 export type UebersichtZustand = ReturnType<typeof useUebersicht>;
+
+/**
+ * #1513: neu laden, wenn die Übersicht wieder offen ist oder Tab bzw. Fenster wieder vorn sind. Fokus und Sichtbarkeit
+ * kommen beim Wechsel des Tabs oft zusammen – dafür höchstens einmal je Sekunde.
+ */
+function useNeuBeiRueckkehr(offen: boolean, laden: () => Promise<void>) {
+  const vorher = useRef(offen);
+  const zuletzt = useRef(0);
+  useEffect(() => {
+    if (offen && !vorher.current) void laden();
+    vorher.current = offen;
+    if (!offen) return;
+    const sichtbar = () => {
+      if (document.visibilityState !== 'visible' || Date.now() - zuletzt.current < 1000) return;
+      zuletzt.current = Date.now();
+      void laden();
+    };
+    addEventListener('focus', sichtbar);
+    document.addEventListener('visibilitychange', sichtbar);
+    return () => {
+      removeEventListener('focus', sichtbar);
+      document.removeEventListener('visibilitychange', sichtbar);
+    };
+  }, [offen, laden]);
+}
