@@ -98,8 +98,8 @@ try {
   pruefe(!(await rueckfrage(b).count()), 'Verschiedene Felder: Es sollte keine Rückfrage geben');
   let w = await werte();
   pruefe(w.beitrag?.betrag === 412 && w.notiz === 'Laptop', `Beide Änderungen sollten bleiben: ${JSON.stringify(w)}`);
-  // Fenster B hat jetzt beide Werte im Formular.
-  for (let i = 0; (await b.getByLabel('Beitrag').first().inputValue()) !== '412'; i++) {
+  // Fenster B hat jetzt beide Werte im Formular – den Betrag mit zwei Nachkommastellen (#1608).
+  for (let i = 0; (await b.getByLabel('Beitrag').first().inputValue()) !== '412,00'; i++) {
     pruefe(i < 40, 'Fenster B sollte den Beitrag von A zeigen');
     await b.waitForTimeout(150);
   }
