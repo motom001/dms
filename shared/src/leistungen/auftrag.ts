@@ -4,6 +4,7 @@
  * Oberfläche: Zustände, Antworten, Fehlercodes, Aufbewahrung.
  */
 import { KATALOG_SEITE } from '../pakete';
+import type { Datei } from './schema';
 import type { Leistungsname } from './katalog';
 
 /** Zustand eines Auftrags. `unterbrochen`: Auftrag mit Wirkung nach außen lief beim Neustart – nicht wiederholt. */
@@ -29,8 +30,11 @@ export type Fehlercode =
   | 'anbieter-fehler'
   | 'abgebrochen';
 
-/** Warum es keinen Anbieter gibt: keiner kann es, oder er ist ausgeschaltet, oder er kann diesen Dateityp nicht. */
-export type KeinAnbieterGrund = 'keiner' | 'aus' | 'dateityp';
+/**
+ * Warum es keinen Anbieter gibt: keiner kann es, er ist ausgeschaltet, er kann diesen Dateityp nicht, oder die Eingabe
+ * liegt außerhalb dessen, was er meldet (Einschränkung, #1570).
+ */
+export type KeinAnbieterGrund = 'keiner' | 'aus' | 'dateityp' | 'eingabe';
 
 /** Adresse der Leistung im Katalog (dms-registry): dort steht, welche Pakete sie anbieten. */
 export const katalogAdresse = (n: Leistungsname) => `${KATALOG_SEITE}leistungen/${encodeURIComponent(n)}`;
@@ -63,3 +67,25 @@ export interface Leistungsergebnis {
   kontext?: unknown;
   fehler?: { code: Fehlercode; text: string };
 }
+
+/** Was Ablago selbst von einer Leistung zurückbekommt (#1570): wie jeder Auftraggeber, dazu die Datei im Prozess. */
+export interface InternesErgebnis {
+  anbieter: string;
+  daten: Record<string, unknown>;
+  datei?: Datei;
+  /**
+   * Nur von eingebauten Anbietern: was Ablago über die Leistung hinaus für dasselbe Ergebnis wie bisher braucht (z. B.
+   * Seitentexte der Textebene). Ein Paket liefert das nie; Aufrufer kommen ohne aus.
+   */
+  intern?: Record<string, unknown>;
+}
+
+/**
+ * Der Weg, auf dem Ablago selbst Leistungen abruft (#1570, `kern.leistung`). `intern` geht nur an eingebaute Anbieter
+ * (z. B. eine schon gebaute Vorlage, damit das Ergebnis gleich bleibt); `signal` bricht ab.
+ */
+export type Leistungsweg = (
+  name: Leistungsname,
+  eingabe: Record<string, unknown>,
+  o?: { intern?: Record<string, unknown>; signal?: AbortSignal },
+) => Promise<InternesErgebnis>;

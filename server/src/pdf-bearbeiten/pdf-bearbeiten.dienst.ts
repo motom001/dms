@@ -10,16 +10,8 @@ import { graubild } from '../dateien/graubild';
 import type { Kern, Zugriff } from '../kern';
 import type { MappenArchiv, MappenHistorie, MappenTitel } from '../mappen';
 import { bildSeitePdf } from '../pdf';
-import {
-  fuegeZusammen,
-  pruefeAuswahl,
-  pruefeTeile,
-  Seitenbilder,
-  SEITENBILDER_MAX,
-  seitenInfo,
-  teile,
-  teilName,
-} from '../dateien/pdfseiten';
+import { pruefeAuswahl, pruefeTeile, Seitenbilder, SEITENBILDER_MAX, seitenInfo, teilName, type SeitenWahl } from '../dateien/pdfseiten';
+import { teileUeber, zusammenUeber } from '../leistungen';
 import { protokoll } from '../protokoll/protokoll';
 import { istUuid, type Repo } from '../repo';
 import { t } from '../sprache/sprache';
@@ -105,13 +97,13 @@ function pruefeEmailTeilen(post: Mappe, z: Zugriff | undefined): void {
 
 /** Je Abschnitt ein Puffer: je Teil (neue Post) das Hauptdokument und die Anlagen, die in diesem Teil beginnen. */
 async function teilplan(
-  inhalt: Buffer,
-  seiten: Parameters<typeof teile>[1],
+  teile: (seiten: SeitenWahl[], starts: number[]) => Promise<Buffer[]>,
+  seiten: SeitenWahl[],
   starts: number[],
   anlagen: number[],
 ): Promise<Array<{ haupt: Buffer; anlagen: Buffer[] }>> {
   const grenzen = [...new Set([...starts, ...anlagen])].sort((a, b) => a - b);
-  const stuecke = await teile(inhalt, seiten, grenzen);
+  const stuecke = await teile(seiten, grenzen);
   return starts.map((s, i) => ({
     haupt: stuecke[grenzen.indexOf(s)],
     anlagen: grenzen.flatMap((g, j) => (anlagen.includes(g) && g > s && g < (starts[i + 1] ?? seiten.length) ? [stuecke[j]] : [])),
@@ -294,10 +286,11 @@ export class PdfBearbeiten {
     const was = pdfWas(d.name, seiten, info.anzahl, starts, anlagen);
 
     if (typ.system === 'post' && (starts.length > 1 || anlagen.length)) {
-      const plan = await teilplan(inhalt, seiten, starts, anlagen);
+      const plan = await teilplan((s, g) => teileUeber(this.kern.leistung, inhalt, s, g, d.name), seiten, starts, anlagen);
       return this.teilePost(m, typ, reg, d, plan, von, z, was, await this.bisherigeAnlagen(d, plan, anlagen.length));
     }
-    const teileBuf = await teile(inhalt, seiten, starts);
+    // Über die Leistung „Seiten drehen und ordnen“ (#1570), je Teil einmal – wie bisher.
+    const teileBuf = await teileUeber(this.kern.leistung, inhalt, seiten, starts, d.name);
 
     const korb = (await this.papierkorbTage()) > 0;
     let erstes: Dokument;
@@ -500,7 +493,10 @@ export class PdfBearbeiten {
         throw new Fachfehler(409, t('meldungen.dienst.der-papierkorb-ist-ausgeschaltet'), { rueckfrage: true, papierkorb: false });
       }
     }
-    const buf = await fuegeZusammen(quellen.map((q) => q.inhalt));
+    const buf = await zusammenUeber(
+      this.kern.leistung,
+      quellen.map((q) => q.inhalt),
+    );
     if (buf.length > MAX_DATEIGROESSE) throw new Fachfehler(413, t('meldungen.dienst.zusammengefuegt-waere-das-pdf'));
     let name = dateiname(text(e.name) || quellen[0].d.name);
     if (!/\.pdf$/i.test(name)) name += '.pdf';

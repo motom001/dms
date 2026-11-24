@@ -324,6 +324,11 @@ export interface ArchivAnbindung {
   /** Seitengrößen eines PDFs ohne Wörter (#1445; null ohne poppler / unlesbar). Ohne Angabe: aus der Textebene. */
   seitengroessen?(pdf: Buffer): Promise<Array<{ breite: number; hoehe: number }> | null>;
   liesPdfA(pdf: Buffer): Promise<PdfaBefund>;
+  /**
+   * Ist das Original schon PDF/A? (#1570, Leistung „In PDF/A umwandeln“: Ablago übernimmt nur, was schon PDF/A ist.)
+   * Kennung und Seiten, sonst null. Ohne Angabe (Tests): aus dem Befund.
+   */
+  bereitsPdfa?(pdf: Buffer, name: string): Promise<{ seiten: number; pdfa: PdfaKennung } | null>;
   /** Eintrag in der Historie der Mappe (als Dienstkonto des Pakets). */
   notiere(d: Dokument, paket: string, daten: { dokument: string; text: string } & Record<string, unknown>): Promise<void>;
 }
@@ -484,11 +489,13 @@ export class Archivfassung {
       // Schon gültiges PDF/A (nur das Original selbst): Es gilt als Archivfassung – keine zweite Datei, kein Ereignis.
       if (q.art === 'original' && befund && !o.neu) {
         let k: { seiten: number; pdfa: PdfaKennung } | null = null;
-        try {
-          k = bewertePdfA(befund);
-        } catch {
-          k = null;
-        }
+        if (this.o.bereitsPdfa) k = await this.o.bereitsPdfa(pdf, d.name).catch(() => null);
+        else
+          try {
+            k = bewertePdfA(befund);
+          } catch {
+            k = null;
+          }
         if (k) {
           const info: ArchivfassungInfo = {
             mime: 'application/pdf',

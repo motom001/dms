@@ -42,7 +42,7 @@ import { ohneErkennung } from '../../../shared/src/anlagen';
  * bekommt ihn herein.
  */
 export interface ErkennungDienst {
-  readonly kern: Pick<Kern, 'liesGanz' | 'ereignis'>;
+  readonly kern: Pick<Kern, 'liesGanz' | 'ereignis' | 'leistung'>;
   readonly rechtepruefung: Pick<ZugriffDienst, 'pruefeRecht' | 'rechteAn' | 'lesbare'>;
   readonly mappentypen: Pick<MappentypenDienst, 'ausDokumentVon' | 'ausPostZiele'>;
   readonly mappenEingaben: Pick<MappenEingaben, 'vorbelegenVorschlaege' | 'folgeVorschlaege'>;

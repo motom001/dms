@@ -35,10 +35,10 @@ import {
 } from '../../../shared/src/textsatz';
 import { VORLAGE_MIME } from '../../../shared/src/vorgaben';
 import { Fachfehler } from '../grundlagen/fehler';
-import { TEXTSATZ_PDF_MAX, TEXTSATZ_SEITEN, TEXTSATZ_TEXT_MAX, VORLAGE_MAX } from '../grundlagen/grenzen';
+import { TEXTSATZ_SEITEN, TEXTSATZ_TEXT_MAX, VORLAGE_MAX } from '../grundlagen/grenzen';
 import type { Kern, Zugriff } from '../kern';
 import { passwortFelder, pruefeVorlage, vorlagenFehlerText } from '../pakete/index';
-import { briefPdf, groesseText } from '../pdf';
+import { groesseText } from '../pdf';
 import { protokoll } from '../protokoll/protokoll';
 import { istUuid } from '../repo';
 import { t } from '../sprache/sprache';
@@ -225,10 +225,21 @@ export class TextsatzDienst {
     const vorlage = await this.gepruefterText(fund.dok);
     const register = ziel === 'ablegen' ? zielRegister(typ, x.register) : undefined;
     const k = await this.kontext(s, mappe, typ, fund.dok, ziel === 'herunterladen' && !s.paket);
-    const gesetzt = setzeVorlage(vorlage, k.wert);
+    const werte = new Map<string, Platzhalterwert>();
+    const gesetzt = setzeVorlage(vorlage, (name) => {
+      const w = k.wert(name);
+      werte.set(name, w);
+      return w;
+    });
     if (Buffer.byteLength(gesetzt.text) > TEXTSATZ_TEXT_MAX)
       throw new Fachfehler(413, t('meldungen.textsatz.zu-gross', { max: groesseText(TEXTSATZ_TEXT_MAX) }));
-    const { pdf, seiten } = await zeichne(inSprache(k.sprache, () => briefAus(fund, k, gesetzt)));
+    const { pdf, seiten } = await this.zeichne(
+      fund,
+      k,
+      vorlage,
+      werte,
+      inSprache(k.sprache, () => briefAus(fund, k, gesetzt)),
+    );
     const name = ergebnisName(vorlagenName(fund.dok), heuteIso());
     const luecken = [...new Set(k.luecken)];
     log.info('Brief aus Vorlage gesetzt', {
@@ -248,6 +259,27 @@ export class TextsatzDienst {
       s.ich.id,
     );
     return { art: 'abgelegt', ergebnis: { pdf: pdfDok.dokument, text: textDok.dokument, luecken } };
+  }
+
+  /**
+   * PDF zeichnen über die Leistung „Brief aus Vorlage erstellen“ (#1570): Ablago bekommt den schon gebauten Brief
+   * (`intern`, damit das Ergebnis gleich bleibt); ein Paket bekommt Vorlage, Werte (Lücken als „[Feld]“) und Kopfzeilen.
+   */
+  private async zeichne(fund: Fund, k: Kontext, vorlage: string, werte: Map<string, Platzhalterwert>, brief: Brief) {
+    const zeile = (l: Lauf[]) => laufText(l).slice(0, 500);
+    const eingabe = {
+      vorlage: { inhalt: Buffer.from(vorlage), mime: VORLAGE_MIME, name: fund.dok.name },
+      werte: [...werte]
+        .slice(0, 500)
+        .map(([n, w]) => ({ platzhalter: n.slice(0, 200), wert: ('text' in w ? w.text : lueckenText(w.luecke)).slice(0, 10_000) })),
+      absender: k.absender.slice(0, 12).map((z) => z.slice(0, 500)),
+      anschrift: k.anschrift.slice(0, 12).map(zeile),
+      datum: k.datum.slice(0, 100),
+      ...(/^[a-z]{2,3}$/.test(k.sprache) ? { sprache: k.sprache } : {}),
+    };
+    const r = await this.kern.leistung('dokument.erstellen.aus-vorlage@1', eingabe, { intern: { brief } });
+    if (!r.datei) throw new Fachfehler(502, r.anbieter);
+    return { pdf: Buffer.from(r.datei.inhalt), seiten: Number(r.daten.seiten) };
   }
 
   /** Vorlage lesen und vor jedem Satz noch einmal prüfen – sie kann seit dem Installieren eine neue Version haben. */
@@ -418,15 +450,6 @@ function briefAus(fund: Fund, k: Kontext, g: ReturnType<typeof setzeVorlage>): B
     seitenText: t('meldungen.textsatz.seite'),
     seitenMax: TEXTSATZ_SEITEN,
   };
-}
-
-/** PDF im Arbeiter zeichnen; Seiten und Größe aus grenzen.ts. */
-async function zeichne(brief: Brief): Promise<{ pdf: Buffer; seiten: number }> {
-  const r = await briefPdf(brief);
-  if ('zuLang' in r) throw new Fachfehler(413, t('meldungen.textsatz.zu-lang', { seiten: r.zuLang }));
-  const pdf = Buffer.from(r.pdf);
-  if (pdf.length > TEXTSATZ_PDF_MAX) throw new Fachfehler(413, t('meldungen.textsatz.zu-gross', { max: groesseText(TEXTSATZ_PDF_MAX) }));
-  return { pdf, seiten: r.seiten };
 }
 
 /** Ein Platzhalter: fest (heute, titel, mappentyp) oder Feld, auch über Verweise ({von.name}); sonst Lücke. */

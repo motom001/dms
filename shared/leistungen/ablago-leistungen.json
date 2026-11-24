@@ -299,7 +299,8 @@
             }
           }
         }
-      ]
+      ],
+      "einschraenkungen": ["bereits-pdfa"]
     },
     {
       "name": "dokument.bearbeiten.seiten",
@@ -523,7 +524,7 @@
       },
       "ergebnis": "exakt",
       "dateitypen": ["application/pdf", "image/jpeg", "image/png"],
-      "formate": ["application/pdf"],
+      "formate": ["application/pdf", "image/jpeg", "image/png"],
       "zeitgrenzeS": 300,
       "eingabe": {
         "type": "object",
@@ -1507,7 +1508,88 @@
       ]
     }
   ],
-  "eingebaut": [],
+  "einschraenkungen": {
+    "bereits-pdfa": {
+      "dateitypen": ["application/pdf"],
+      "beschreibung": {
+        "de": "nur Dateien, die schon PDF/A sind",
+        "en": "only files that are already PDF/A"
+      }
+    }
+  },
+  "eingebaut": [
+    {
+      "id": "ablago.text",
+      "anzeigename": {
+        "de": "Text aus PDF und Texterkennung",
+        "en": "Text from PDF and text recognition"
+      },
+      "bietet": {
+        "dokument.lesen.text@1": {
+          "dateitypen": ["application/pdf"]
+        }
+      }
+    },
+    {
+      "id": "ablago.archiv",
+      "anzeigename": {
+        "de": "Archivfassung (PDF/A)",
+        "en": "Archive version (PDF/A)"
+      },
+      "bietet": {
+        "dokument.umwandeln.pdfa@1": {
+          "dateitypen": ["application/pdf"],
+          "einschraenkungen": ["bereits-pdfa"]
+        }
+      }
+    },
+    {
+      "id": "ablago.umwandeln",
+      "anzeigename": {
+        "de": "Umwandeln",
+        "en": "Convert"
+      },
+      "bietet": {
+        "dokument.umwandeln.pdf@1": {
+          "dateitypen": ["image/jpeg", "image/png"]
+        }
+      }
+    },
+    {
+      "id": "ablago.pdf",
+      "anzeigename": {
+        "de": "PDF bearbeiten",
+        "en": "Edit PDF"
+      },
+      "bietet": {
+        "dokument.bearbeiten.seiten@1": {},
+        "dokument.bearbeiten.zusammenfuegen@1": {},
+        "dokument.bearbeiten.verkleinern@1": {},
+        "dokument.bearbeiten.schwaerzen@1": {}
+      }
+    },
+    {
+      "id": "ablago.briefsatz",
+      "anzeigename": {
+        "de": "Briefsatz",
+        "en": "Letter layout"
+      },
+      "bietet": {
+        "dokument.erstellen.aus-text@1": {},
+        "dokument.erstellen.aus-vorlage@1": {}
+      }
+    },
+    {
+      "id": "ablago.erechnung",
+      "anzeigename": {
+        "de": "E-Rechnung lesen",
+        "en": "Read e-invoice"
+      },
+      "bietet": {
+        "dokument.lesen.erechnung@1": {}
+      }
+    }
+  ],
   "mappentypen": ["benutzer", "rolle", "post"],
   "testdateien": {
     "brief.pdf": {

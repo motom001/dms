@@ -1,14 +1,17 @@
 /**
  * Testfälle der Leistungen (#1569) an einem Anbieter ausführen – Pflicht für jeden Anbieter, auch für Ablago selbst
  * (#1570). Dieselben Testfälle gehen mit der Ausgabe je Release an dms-registry, die Pakete damit prüft.
+ *
+ * Pflicht sind die Testfälle, die zu seiner Meldung passen (Dateitypen, Einschränkungen der Eingabe). Die übrigen stehen
+ * sichtbar als „nicht gemeldet“ im Ergebnis – Ablago gäbe ihm solche Eingaben nie, sondern antwortete `kein-anbieter`.
  */
 import { leistung, type Datei, type Leistungsname, type Testdatei, TESTDATEIEN } from '../../../shared/src/leistungen';
-import type { Anbieter } from './anbieter';
+import { erfuellt, mimePasst, type Anbieter, type Einschraenkungspruefung } from './anbieter';
 import { pruefeAusgabe } from './pruefen';
 
 export interface Testergebnis {
   name: string;
-  ok: boolean;
+  stand: 'bestanden' | 'gescheitert' | 'nicht-gemeldet';
   grund?: string;
 }
 
@@ -34,17 +37,35 @@ function unter(o: unknown, pfad: string): unknown {
     .reduce<unknown>((x, k) => (x && typeof x === 'object' ? (x as Record<string, unknown>)[k] : undefined), o);
 }
 
-/** Alle Testfälle einer Leistung an einem Anbieter; ein Ergebnis je Testfall. */
+/** Dateien in einer Eingabe (für die Meldung). */
+const dateienIn = (w: unknown): Datei[] =>
+  Array.isArray(w)
+    ? w.flatMap(dateienIn)
+    : w && typeof w === 'object'
+      ? 'inhalt' in w && 'mime' in w
+        ? [w as Datei]
+        : Object.values(w).flatMap(dateienIn)
+      : [];
+
+/** Alle Testfälle einer Leistung an einem Anbieter; ein Ergebnis je Testfall. `pruefe`: Einschränkungen der Eingabe. */
 export async function pruefeTestfaelle(
   a: Anbieter,
   n: Leistungsname,
   lies: (n: Testdatei) => Promise<Uint8Array>,
+  pruefe?: Einschraenkungspruefung,
 ): Promise<Testergebnis[]> {
   const l = leistung(n);
+  const meldung = a.bietet[n] ?? {};
   const r: Testergebnis[] = [];
   for (const f of l.testfaelle) {
     try {
       const eingabe = (await mitDateien(f.eingabe, lies)) as Record<string, unknown>;
+      const dateien = dateienIn(eingabe);
+      const typen = meldung.dateitypen ?? l.dateitypen;
+      if (!dateien.every((d) => mimePasst(d.mime, typen)) || !(await erfuellt(meldung.einschraenkungen ?? [], dateien, pruefe))) {
+        r.push({ name: f.name, stand: 'nicht-gemeldet' });
+        continue;
+      }
       const aus = await a.fuehreAus({ leistung: n, eingabe, signal: AbortSignal.timeout(l.zeitgrenzeS * 1000) });
       pruefeAusgabe(l, a.id, aus);
       const e = f.erwartet;
@@ -56,9 +77,9 @@ export async function pruefeTestfaelle(
         const x = unter(aus.daten, k);
         if (typeof x !== 'string' || !x.toLowerCase().includes(v.toLowerCase())) throw new Error(`${k} enthält „${v}“ nicht`);
       }
-      r.push({ name: f.name, ok: true });
+      r.push({ name: f.name, stand: 'bestanden' });
     } catch (x) {
-      r.push({ name: f.name, ok: false, grund: (x as Error).message });
+      r.push({ name: f.name, stand: 'gescheitert', grund: (x as Error).message });
     }
   }
   return r;

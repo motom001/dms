@@ -6,7 +6,8 @@
   Hintergrund, siehe Kommentar), `inTransaktion`, `inEinemZug`, `danach`,
   `nachDerAntwort`, `ereignis` (Ausgangskorb), `system()` (Systemtypen nur nachschlagen, #963), `typen()`,
   `zugriff(ich)`, `name`, `papierkorbTage`, `paketVerwehrt`, `ablageortId`, `liesGanz`; `einstellungen`, `dateien`,
-  `stand`.
+  `stand`; `leistung` (#1570: der Weg, auf dem Ablago selbst Leistungen abruft – alle Schichten brauchen ihn, die
+  Vermittlung reicht der Dienst herein).
 - `anlaesse.ts` – Anschlusspunkte (#962) `mappeGeaendert`, `typGeaendert`, `typAngelegt`, `benutzerGespiegelt`: was
   sofort, in derselben Transaktion, zu einer Änderung gehört. Empfänger meldet nur der Dienst beim Zusammenbau an;
   `melde()` nur in einer Transaktion, kein `emit()`. Regeln im Kopf der Datei.

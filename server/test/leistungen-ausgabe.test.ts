@@ -10,7 +10,15 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { LEISTUNGEN, TESTDATEIEN, leistung, teileDesNamens, type Testdatei } from '../../shared/src/leistungen';
+import {
+  EINGEBAUTE_ANBIETER,
+  EINSCHRAENKUNGEN,
+  LEISTUNGEN,
+  TESTDATEIEN,
+  leistung,
+  teileDesNamens,
+  type Testdatei,
+} from '../../shared/src/leistungen';
 import { SYSTEMTYPEN } from '../../shared/src/model';
 import deP from '../../shared/src/sprachen/de/pakete.json';
 import enP from '../../shared/src/sprachen/en/pakete.json';
@@ -21,12 +29,13 @@ const ORDNER = new URL('../../shared/leistungen/', import.meta.url);
 const DATEI = fileURLToPath(new URL('ablago-leistungen.json', ORDNER));
 const lies = async (n: Testdatei) => new Uint8Array(await readFile(new URL(`testdateien/${n}`, ORDNER)));
 
-/** Die Ausgabe je Release (Format 1). Eingebaute Anbieter kommen mit #1570. */
+/** Die Ausgabe je Release (Format 1): Katalog, Einschränkungen, eingebaute Anbieter (#1570), Mappentypen, Testfälle. */
 async function ausgabe() {
   const name = (n: (typeof LEISTUNGEN)[number]) => {
     const k = `leistung.name.${teileDesNamens(n).ohneVersion}`;
     return { de: (deP as Record<string, string>)[k], en: (enP as Record<string, string>)[k] };
   };
+  const text = (k: string) => ({ de: (deP as Record<string, string>)[k], en: (enP as Record<string, string>)[k] });
   const testdateien: Record<string, { mime: string; base64: string }> = {};
   for (const [n, mime] of Object.entries(TESTDATEIEN))
     testdateien[n] = { mime, base64: Buffer.from(await lies(n as Testdatei)).toString('base64') };
@@ -48,9 +57,13 @@ async function ausgabe() {
         eingabe: l.eingabe,
         ausgabe: l.ausgabe,
         testfaelle: l.testfaelle,
+        ...(l.einschraenkungen ? { einschraenkungen: l.einschraenkungen } : {}),
       };
     }),
-    eingebaut: [] as Array<{ id: string; leistungen: string[] }>,
+    einschraenkungen: Object.fromEntries(
+      Object.entries(EINSCHRAENKUNGEN).map(([id, e]) => [id, { ...e, beschreibung: text(`leistung.einschraenkung.${id}`) }]),
+    ),
+    eingebaut: Object.entries(EINGEBAUTE_ANBIETER).map(([id, bietet]) => ({ id, anzeigename: text(`anbieter.name.${id}`), bietet })),
     mappentypen: Object.keys(SYSTEMTYPEN),
     testdateien,
   };
@@ -67,14 +80,14 @@ describe('Leistungen: Testfälle und Ausgabe je Release (#1569)', () => {
         return { daten: { seiten: 1 }, datei: { inhalt: pdfMitText([String(a.eingabe.text)]), mime: 'application/pdf', name: 'a.pdf' } };
       },
     };
-    assert.deepEqual(await pruefeTestfaelle(gut, 'dokument.erstellen.aus-text@1', lies), [{ name: 'kurzer-brief', ok: true }]);
-    assert.deepEqual(await pruefeTestfaelle(gut, 'text.uebersetzen@1', lies), [{ name: 'de-en', ok: true }]);
+    assert.deepEqual(await pruefeTestfaelle(gut, 'dokument.erstellen.aus-text@1', lies), [{ name: 'kurzer-brief', stand: 'bestanden' }]);
+    assert.deepEqual(await pruefeTestfaelle(gut, 'text.uebersetzen@1', lies), [{ name: 'de-en', stand: 'bestanden' }]);
     const falsch: Anbieter = {
       ...gut,
       fuehreAus: async () => ({ daten: { seiten: 2 }, datei: { inhalt: new Uint8Array(1), mime: 'image/png', name: 'a.png' } }),
     };
     const r = await pruefeTestfaelle(falsch, 'dokument.erstellen.aus-text@1', lies);
-    assert.equal(r[0].ok, false);
+    assert.equal(r[0].stand, 'gescheitert');
     assert.match(r[0].grund!, /image\/png/);
     // Die Testdatei kommt als Datei beim Anbieter an.
     let bekam: unknown;

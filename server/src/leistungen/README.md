@@ -12,7 +12,9 @@ prüft das Ergebnis und legt es mit den Rechten der Person ab. Den Katalog (Sche
   mit passendem Dateityp) oder den Grund nennen, warum es keinen gibt (`keiner`, `aus`, `dateityp`).
 - `pruefen.ts` – `Leistungsfehler` mit Code je Fall, Prüfung der Ausgabe, Dokumente der Eingabe zu Dateien auflösen.
 - `speicher.ts`, `pg.ts` – Aufträge im Arbeitsspeicher (Tests) bzw. in `leistungsauftraege` (Migration 125).
-- `testfaelle.ts` – Testfälle des Katalogs an einem Anbieter ausführen.
+- `testfaelle.ts` – Testfälle des Katalogs an einem Anbieter ausführen (Pflicht: die zur Meldung passenden).
+- `eingebaut.ts` – die eingebauten Anbieter (#1570) und die Prüfung der Einschränkungen; `aufrufe.ts` – Hilfen für
+  die Stellen, an denen Ablago selbst PDFs bearbeitet (über `kern.leistung`).
 - `leistungen.routen.ts` – `/api/leistungen…` für Personen, `/api/werkbank/leistungen/einstellungen` (Bereich `daten`).
 - `index.ts` – die einzige Tür.
 
@@ -29,6 +31,7 @@ prüft das Ergebnis und legt es mit den Rechten der Person ab. Den Katalog (Sche
   Anbieter – in dieser Reihenfolge. Danach steht jeder Auftrag mit Zustand in `leistungsauftraege`.
 - Abgeschlossene Aufträge behalten keine Eingabe; nur offene gehen in die Sicherung, keine in den Vollexport.
 - Neustart wiederholt Laufendes, außer `wirkung` („unterbrochen“). Der Wartungsmodus hält den Hintergrund an.
+- Ablago selbst ruft über `kern.leistung` (#1570); `intern` geht nur an eingebaute Anbieter und kommt nur von ihnen.
 - Neuer Code ohne Einträge in `eslint-suppressions.json`.
 
 Mehr im Entwicklerhandbuch unter *Kern → Leistungen*.

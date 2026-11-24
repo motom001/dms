@@ -333,6 +333,7 @@ export class AusgangEmail {
       mappe: m.titel || t('meldungen.dienst.ohne-titel'),
       archivnummer: d?.archivnummer ?? null,
       entsperrt: this.entsperrtZu,
+      leistung: this.kern.leistung,
     });
     const bearbeiten = !!plan || (!!klein && docs.length > 0);
     const dokumente: Versandanhang[] = await Promise.all(

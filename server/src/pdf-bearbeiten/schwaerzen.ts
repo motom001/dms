@@ -12,9 +12,10 @@ import type { Repo } from '../repo';
 import {
   type Analyse as SchwaerzAnalyse,
   analysiere as schwaerzAnalyse,
-  schwaerze,
+  type schwaerze,
   seitenbild as schwaerzSeitenbild,
 } from '../dateien/schwaerzen';
+import type { InternesErgebnis } from '../../../shared/src/leistungen';
 import { t } from '../sprache/sprache';
 import type { VolltextMeldung } from '../volltext';
 import type { Dokument } from '../../../shared/src/model';
@@ -229,7 +230,13 @@ export class Schwaerzen {
           : t('meldungen.dienst.nichts-zu-schwaerzen-bitte'),
       );
     }
-    const r = await schwaerze(inhalt, d.mime, a, bereiche);
+    // Über die Leistung „Schwärzen“ (#1570): Analyse und Bereiche von hier, damit Ablago dieselben Stellen schwärzt.
+    const l = await this.kern.leistung(
+      'dokument.bearbeiten.schwaerzen@1',
+      { datei: { inhalt, mime: d.mime, name: d.name }, bereiche: bereiche.slice(0, 5000).map(imSchema) },
+      { intern: { analyse: a, bereiche } },
+    );
+    const r = (l.intern?.ergebnis as Awaited<ReturnType<typeof schwaerze>> | undefined) ?? ausPaket(l, bereiche);
     // Volltext der geschwärzten Fassung (#459): Hat jede Seite eine Textebene, gilt der Text ohne die geschwärzten
     // Wörter gleich. Sonst (Scan, Foto, gemischt) läuft sie wie ein neues Dokument durch Textebene und Paket – das
     // Paket sieht nur die geschwärzte Fassung, nie das Original.
@@ -316,4 +323,24 @@ export class Schwaerzen {
           : t('meldungen.dienst.angelegt-das-original-bleibt', { name: neu.name, stellen }),
     };
   }
+}
+
+/** Ein Bereich in den Grenzen des Schemas (0…1); das Original geht über `intern` an Ablago selbst. */
+const imSchema = (b: Bereich): Bereich => {
+  const z = (x: number) => Math.min(1, Math.max(0, x));
+  return { seite: b.seite, x: z(b.x), y: z(b.y), b: z(b.b), h: z(b.h) };
+};
+
+/** Ergebnis eines Pakets (#1570): ohne Textebene – das Dokument läuft danach wie ein neues durch die Texterkennung. */
+function ausPaket(l: InternesErgebnis, bereiche: Bereich[]): Awaited<ReturnType<typeof schwaerze>> {
+  if (!l.datei) throw new Fachfehler(502, l.anbieter);
+  const inhalt = Buffer.from(l.datei.inhalt.buffer, l.datei.inhalt.byteOffset, l.datei.inhalt.byteLength);
+  return {
+    inhalt,
+    mime: l.datei.mime,
+    text: null,
+    seiten: Number(l.daten.seiten ?? 0),
+    bereiche: bereiche.length,
+    betroffen: new Set(bereiche.map((b) => b.seite)).size,
+  };
 }
