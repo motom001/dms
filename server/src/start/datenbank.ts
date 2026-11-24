@@ -4,6 +4,7 @@
  */
 import { verbinde, poolGroesse, VERBINDUNG_WARTEN_S, migriere, Verbindungswarten, Datenbankpruefung } from '../datenbank/db';
 import { Sperrverbindung, eigeneSperrquelle } from '../datenbank/sperrverbindung';
+import { pruefePgVersion } from '../datenbank/pg-version';
 import { protokoll } from '../protokoll/protokoll';
 import { Poolmessung } from '../datenbank/poolmessung';
 import { maxAnfragenAus, Ueberlastschutz } from '../http/ueberlast';
@@ -48,6 +49,8 @@ export async function verbindeDatenbank(bisher: Bisher) {
   // Wartet eine Anfrage länger als VERBINDUNG_WARTEN_S auf eine freie Verbindung, bricht sie ab (503) statt ewig zu hängen.
   const sql = verbinde(datenbankUrl, poolGroesse(eigeneVerbindungen, leiter), { wartenS: VERBINDUNG_WARTEN_S });
   const sperren = new Sperrverbindung(eigeneSperrquelle(datenbankUrl));
+  // Hauptversion von PostgreSQL (#1464): zu alt → Abbruch vor den Migrationen, Grund auf der Startseite.
+  if (leiter) await pruefePgVersion(sql, (h) => log.warn(h));
   // Datenbank von einer neueren Version (#714) oder fehlgeschlagene Migration: Grund auf der Startseite (beimStartfehler).
   // Mehrere Prozesse (#745): nur der Leiter – die anderen starten erst, wenn er fertig ist.
   if (leiter)

@@ -296,7 +296,7 @@
   "technik.aktuell": "Current",
   "technik.status": "Status",
   "technik.und-postgresql": " – and PostgreSQL",
-  "technik.postgresql-ist-ein-eigenes": " PostgreSQL is a separate image (postgres:17) that you pull again separately.",
+  "technik.postgresql-ist-ein-eigenes": " PostgreSQL is a separate image (e.g. postgres:18) that you pull again separately.",
   "technik.aktualisieren-das-image-enthaelt": "Updating: the image {span} contains Node.js, Alpine and the libraries{wert}. Pulling it again and restarting the container is enough.{wert2} The project updates the libraries; they come with the next Ablago update.",
   "verkleinern.die-bisherigen-dateien-werden": "The previous files aren’t kept as an older version – the space is freed at once, but the original is gone (except during a retention period).",
   "verkleinern.mit-versionierung-bleibt-das": "With versioning the original stays as an older version (space is only freed when it goes). Without versioning the shrunk PDF replaces the previous one, and the previous one goes to the Bin.",

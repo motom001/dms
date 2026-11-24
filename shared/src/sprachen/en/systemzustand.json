@@ -103,7 +103,7 @@
   "erweiterung.trgm.fehlt": "The extension pg_trgm is missing in the database. The search therefore shows no similar spellings and no “Did you mean …?” for typos, and searching for parts of words is slower.",
   "erweiterung.trgm.abhilfe": "Ablago creates it on every start in the schema erweiterungen_dms. If that fails, the database user lacks the CREATE permission on the database, or the database server lacks the postgresql-contrib package. Then restart Ablago.",
   "erweiterung.unaccent.fehlt": "The extension unaccent is missing in the database. Ablago therefore folds umlauts, accents and ß itself – only the common letters.",
-  "erweiterung.unaccent.abhilfe": "The search works anyway. The images postgres:17 and dms-komplett include unaccent; for your own database it is part of the postgresql-contrib package.",
+  "erweiterung.unaccent.abhilfe": "The search works anyway. The images postgres (e.g. postgres:18) and dms-komplett include unaccent; for your own database it is part of the postgresql-contrib package.",
   "erweiterung.gefaehrdet": "The extension {name} is in the schema {schema}. A restore would delete it too, and the search would then be worse.",
   "erweiterung.gefaehrdet.abhilfe": "Ablago moves it into the schema erweiterungen_dms on every start. If that fails, it belongs to another database user – then whoever manages the database moves it (see manual).",
   "erweiterung.uebersicht": "A database extension is missing or at risk – the search works worse than it could.",
