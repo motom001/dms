@@ -129,6 +129,12 @@
       "wozu": "Pakete, Rundgänge und Einrichtungsdateien im YAML-Format lesen und schreiben.",
       "en": "Reading and writing packages, tours and setup files in YAML."
     },
+    "libphonenumber-js": {
+      "einsatz": "Betrieb",
+      "teil": "Server und Oberfläche",
+      "wozu": "Telefonnummern lesen und einheitlich zeigen: Länge der Ortsvorwahlen je Land (nur die kleinen Daten „min“, #1609).",
+      "en": "Reading phone numbers and showing them uniformly: length of area codes per country (only the small “min” data, #1609)."
+    },
     "react": {
       "einsatz": "Betrieb",
       "teil": "Oberfläche",

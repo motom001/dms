@@ -6,6 +6,7 @@ import type { Abwesenheit, Benutzer, Rolle, Sitzung, Vertretung } from '../../..
 import type { Recht } from '../../../shared/src/rechte';
 import type { EntdeckenStand } from '../../../shared/src/entdecken';
 import type { Verwaltungsstand } from '../../../shared/src/verwaltungsrecht';
+import type { Formate } from '../../../shared/src/region';
 import { anfrage, stilleAnfrage } from './anfrage';
 
 /** Anmeldung über einen Anbieter, OpenID Connect (#241). */
@@ -110,6 +111,8 @@ export interface KontoStatus {
   passwoerterMoeglich?: boolean;
   /** Zeitzone der Region (#726), z. B. Europe/Berlin. */
   zeitzone?: string;
+  /** Formate der Region (#1610): Datum, Zahlen, Telefon, Wochenbeginn. */
+  formate?: Formate;
   /** Sprachen (#729): wirksame Sprache, Sprache der Installation, erlaubte und maschinell übersetzte Sprachen. */
   sprachen?: SprachStatus;
   /** Laufwerk eingeschaltet (#720)? */

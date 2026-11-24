@@ -1,0 +1,7 @@
+art: minor
+
+## Neu
+
+- **Feld in verknüpfter Mappe setzen** (#1557): Eine neue Dann-Karte setzt Felder der Mappe, auf die ein Verweisfeld zeigt – zum Beispiel „Nächste HU“ aus dem Prüfbericht als „HU fällig“ am Fahrzeug. Überschreiben immer, nur wenn leer oder nur, wenn der neue Wert später bzw. früher ist (Datum, Zahl). Geschrieben wird mit den Rechten der Automatisierung; fehlen sie, bleibt die Mappe unverändert und der Verlauf nennt es. Pakete können die Karte als `feld_verknuepft` in `automatisierungen.yaml` mitliefern – **ab dieser Version** (`dms: ">=<diese Version>"`); `pakete-pruefen` prüft Verweisfeld und Zielfelder.
+- **Werkbank → Region: Formate** (#1610): Datum, Uhrzeit, Zahlen und Beträge (Tausender- und Dezimalzeichen, Währung vorne oder hinten), Standardwährung, Telefonformat und Standard-Ländervorwahl, Arbeitstage und Wochenbeginn – jeweils „wie die Sprache“ oder eine eigene Wahl, mit Vorschau. Der Wochenbeginn gilt in der Kalenderauswahl und in „Zu erledigen“, die Kalenderwoche zählt weiter nach ISO.
+- **Telefon- und Faxnummern einheitlich** (#1609): Felder mit Format Telefon zeigen Nummern im Format der Region (kanonisch oder nach DIN 5008), eine Durchwahl bleibt erhalten, der Link zum Anrufen wählt mit Ländervorwahl. Die Suche findet eine Nummer in jeder Schreibweise. Gespeichert bleibt, was eingegeben wurde; eine nicht erkannte Nummer steht da wie eingegeben, mit Hinweis.

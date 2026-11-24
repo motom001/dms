@@ -304,7 +304,7 @@ If a hidden area is set up, for instance a mailbox or sign-in via a provider, it
 | [Bin](papierkorb.md) | Bring back deleted folders | from Beginner |
 | [Back up data → Settings](daten-einstellungen.md) | How long deleted items stay in the bin and whether users may export their own data | from Household |
 | [Email and address](installation.md#e-mail-und-adresse) | Email sending and Ablago’s address | from Beginner |
-| [Region](region.md) | Country, federal state and time zone – for public holidays, “today” and the times of reminders and summaries | from Beginner |
+| [Region](region.md) | Country, federal state, time zone and formats – for public holidays, “today”, times, dates, numbers, phone numbers and the first day of the week | from Beginner |
 | [Languages](sprachen.md) | If English or another language is also spoken in your library. | from Household |
 | [Own organisation](organisation.md) | Whether the Library is also used for work, plus name, address and controllers of your own business – kept at the organisation in the Library | from Household |
 | [Tasks](aufgaben.md#werkbank-aufgaben) | Keep an eye on all open tasks of all users | from Household |

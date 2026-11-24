@@ -15,6 +15,7 @@ Ablago includes only a few packages **directly** (**level 1**). What they need c
 | `@simplewebauthn/server` | Verifying passkeys (WebAuthn: CBOR, COSE keys, signatures, counters). | MIT | 23 |
 | `fastify` | HTTP server: routes, request validation, responses. | MIT | 46 |
 | `imapflow` | Fetching mail from mailboxes via IMAP. | MIT | 23 |
+| `libphonenumber-js` | Reading phone numbers and showing them uniformly: length of area codes per country (only the small “min” data, #1609). | MIT | 0 |
 | `mailparser` | Splitting fetched e-mails into text and attachments. | MIT | 25 |
 | `nodemailer` | Sending e-mails via SMTP (invitations, notices, sending folders). | MIT-0 | 0 |
 | `pdf-lib` | Assembling, shrinking, redacting and stamping PDFs (only via the PDF module). | MIT | 4 |
@@ -49,6 +50,7 @@ Vite bundles the web interface libraries into one file at build time; they are n
 
 | Package | Purpose | Licence | Brings along |
 | --- | --- | --- | ---: |
+| `libphonenumber-js` | Reading phone numbers and showing them uniformly: length of area codes per country (only the small “min” data, #1609). | MIT | 0 |
 | `qrcode` | QR codes, e.g. for two-factor sign-in and the emergency sheet. | MIT | 28 |
 | `react` | Foundation of the web interface. | MIT | 0 |
 | `react-dom` | Renders the React interface in the browser. | MIT | 1 |

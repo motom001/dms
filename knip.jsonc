@@ -54,6 +54,9 @@
     // Wird als Datei gelesen, nicht importiert: createRequire(…).resolve('axe-core/axe.min.js') in
     // web/rauchtest/muster.mjs und docs/handbuch/screenshots/start-pruefen.mjs (axe in der Seite ausführen).
     "axe-core",
+    // Telefonnummern (#1609): nur shared/src/telefon.ts bindet es ein; Server und Oberfläche führen es in ihrer
+    // package.json, damit es im Image (npm ci --workspace server) und im Bündel der Oberfläche ist.
+    "libphonenumber-js",
   ],
   "ignoreBinaries": [
     // Systemprogramme aus apt bzw. dem Image (poppler-utils, qpdf, coreutils), keine npm-Pakete.

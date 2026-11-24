@@ -4,6 +4,7 @@
  * Oberfläche baut daraus die Raster. Alle Daten als Text JJJJ-MM-TT, gerechnet in UTC.
  */
 import { verschiebe } from './sichten';
+import { wochenbeginn } from './region';
 import { t } from './texte';
 
 /** Ansichten von „Zu erledigen“ (#725); die Wahl merkt sich Ablago je Benutzer. */
@@ -36,6 +37,12 @@ export const wochentag = (iso: string) => ((new Date(utc(iso)).getUTCDay() + 6) 
 export const montag = (iso: string) => verschiebe(iso, 1 - wochentag(iso));
 
 /**
+ * Erster Tag der Woche, in der der Tag liegt – nach dem Wochenbeginn der Region (#1610: Montag, Sonntag oder Samstag;
+ * ohne eigene Wahl der der Sprache). Die Kalenderwoche bleibt die nach ISO (Montag).
+ */
+export const wochenanfang = (iso: string, beginn: number = wochenbeginn()) => verschiebe(iso, -((wochentag(iso) - beginn + 7) % 7));
+
+/**
  * Kalenderwoche nach ISO 8601 (#1496): Wochen beginnen am Montag, Woche 1 enthält den ersten Donnerstag des Jahres. Der
  * Donnerstag der Woche bestimmt das Jahr – der 29.12.2025 liegt in KW 1 (2026), der 01.01.2027 in KW 53 (2026).
  */
@@ -51,12 +58,17 @@ export function kalenderwoche(iso: string): number {
 export function tagNachTaste(taste: string, tag: string, umschalt = false): string | null {
   const schritt: Record<string, number> = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 };
   if (taste in schritt) return verschiebe(tag, schritt[taste]);
-  if (taste === 'Home') return montag(tag);
-  if (taste === 'End') return verschiebe(montag(tag), 6);
+  if (taste === 'Home') return wochenanfang(tag);
+  if (taste === 'End') return verschiebe(wochenanfang(tag), 6);
   if (taste === 'PageUp') return verschiebe(tag, umschalt ? -12 : -1, 'monate');
   if (taste === 'PageDown') return verschiebe(tag, umschalt ? 12 : 1, 'monate');
   return null;
 }
+
+/** Kalenderwoche einer Zeile im Raster: die ISO-Woche ihres Montags – auch, wenn die Woche am Sonntag beginnt (#1610). */
+export const kwDerZeile = (woche: string[]) => kalenderwoche(woche.find((x) => wochentag(x) === 1) ?? woche[0]);
+/** Ist der Tag ein Arbeitstag der Region (#1610: Arbeitstage 1 = Mo … 7 = So)? */
+export const istArbeitstag = (iso: string, arbeitstage: readonly number[]) => arbeitstage.includes(wochentag(iso));
 
 /** Monat als JJJJ-MM. */
 export const monatVon = (iso: string) => iso.slice(0, 7);
@@ -66,13 +78,14 @@ export const blaettere = (monat: string, n: number) => verschiebe(`${monat}-01`,
 export const monatsende = (monat: string) => verschiebe(verschiebe(`${monat}-01`, 1, 'monate'), -1);
 
 /**
- * Raster eines Monats wie im Kalender: Wochen von Montag bis Sonntag, vom Montag vor dem Ersten bis zum
- * Sonntag nach dem Letzten (4–6 Wochen). Tage außerhalb des Monats gehören zum Raster, damit jede Woche voll ist.
+ * Raster eines Monats wie im Kalender: Wochen ab dem Wochenbeginn (#1610, sonst Montag bis Sonntag), vom ersten
+ * Wochentag vor dem Ersten bis zum letzten nach dem Letzten (4–6 Wochen). Tage außerhalb des Monats gehören zum Raster,
+ * damit jede Woche voll ist.
  */
-export function monatsraster(monat: string): string[][] {
+export function monatsraster(monat: string, beginn: number = wochenbeginn()): string[][] {
   const wochen: string[][] = [];
   const ende = monatsende(monat);
-  for (let tag = montag(`${monat}-01`); tag <= ende; tag = verschiebe(tag, 7)) {
+  for (let tag = wochenanfang(`${monat}-01`, beginn); tag <= ende; tag = verschiebe(tag, 7)) {
     wochen.push(Array.from({ length: 7 }, (_, i) => verschiebe(tag, i)));
   }
   return wochen;

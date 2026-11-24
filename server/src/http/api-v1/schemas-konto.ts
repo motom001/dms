@@ -69,6 +69,21 @@ export const SCHEMAS_KONTO: Record<string, Schema> = {
       land: { type: 'string', description: 'ISO 3166-1, z. B. DE' },
       bundesland: { type: 'string', nullable: true, description: 'Kürzel, z. B. BY; null = ohne Feiertage' },
       zeitzone: { type: 'string', description: 'IANA, z. B. Europe/Berlin' },
+      formate: {
+        type: 'object',
+        description: 'Formate der Region (#1610); null = wie die Sprache',
+        properties: {
+          datum: { type: 'string', nullable: true, enum: ['tt.mm.jjjj', 'jjjj-mm-tt', 'tt/mm/jjjj', 'mm/tt/jjjj'] },
+          uhrzeit: { type: 'string', nullable: true, enum: ['24', '12'] },
+          zahlen: { type: 'string', nullable: true, enum: ['1.234,56', '1,234.56', '1 234,56', '1’234.56'] },
+          waehrungStellung: { type: 'string', nullable: true, enum: ['vorne', 'hinten'] },
+          waehrung: { type: 'string', example: 'EUR' },
+          telefon: { type: 'string', enum: ['kanonisch', 'din-international', 'din-national'] },
+          vorwahl: { type: 'string', example: '49', description: 'Standard-Ländervorwahl ohne +' },
+          arbeitstage: { type: 'array', items: { type: 'integer', minimum: 1, maximum: 7 } },
+          wochenbeginn: { type: 'integer', nullable: true, enum: [1, 6, 7] },
+        },
+      },
     },
   },
   Zusammenfassung: {

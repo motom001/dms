@@ -2,6 +2,7 @@ import { Fragment, useState, type DragEvent as ReactDragEvent } from 'react';
 import { feldLabel } from '../../../../shared/src/beschriftung';
 import { formatiere, type Feld as FeldDef } from '../../../../shared/src/model';
 import { formatFehler, mitSchema, telefonLink } from '../../../../shared/src/feldformate';
+import { telefonAnzeige } from '../../../../shared/src/telefon';
 import { Knopf } from '../../bausteine';
 import { t } from '../../sprache';
 import { Symbol } from '../../Symbol';
@@ -77,14 +78,19 @@ export function FormatLink({ f, wert, nurSymbol }: { f: FeldDef; wert: string; n
     { wert },
   );
   const extern = f.format === 'internetseite' ? { target: '_blank', rel: 'noopener noreferrer' } : {};
+  // Telefon (#1609): im Format der Region; gespeichert bleibt die Eingabe. Nicht erkannt: wie eingegeben, mit Hinweis.
+  const tel = f.format === 'telefon' ? telefonAnzeige(wert) : null;
   return nurSymbol ? (
     <a href={href} className="ff-link" aria-label={text} title={text} {...extern}>
       <Symbol name={f.format === 'email' ? 'email' : f.format === 'telefon' ? 'telefon' : 'extern'} />
     </a>
   ) : (
-    <a href={href} className="verweis" title={text} {...extern}>
-      {wert}
-    </a>
+    <>
+      <a href={href} className="verweis" title={text} {...extern}>
+        {tel ? tel.text : wert}
+      </a>
+      {tel && !tel.erkannt && <span className="leise klein"> ({t('felder.eingabe.telefon.nicht-erkannt')})</span>}
+    </>
   );
 }
 

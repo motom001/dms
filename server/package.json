@@ -19,6 +19,7 @@
     "@simplewebauthn/server": "14.1.0",
     "fastify": "^5.12.8",
     "imapflow": "^2.12.2",
+    "libphonenumber-js": "^1.13.17",
     "mailparser": "^3.15.0",
     "nodemailer": "^10.0.13",
     "pdf-lib": "^1.17.1",

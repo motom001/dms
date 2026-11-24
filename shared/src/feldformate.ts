@@ -17,6 +17,7 @@ export { FELDFORMATE, type Feldformat } from './model/basis';
 import { sprache, uebersetzer } from './sprache';
 import felder from './sprachen/de/felder.json';
 import { datumsformat } from './region';
+import { telefonanzeige } from './telefon-anzeige';
 
 const t = uebersetzer({ felder });
 /** Heute in der Zeitzone des Haushalts (Region, #726). */
@@ -63,8 +64,8 @@ export const istEmail = (s: string) => EMAIL.test(s.trim());
 
 /** Telefon: Ziffern, + nur am Anfang, Leerzeichen, /, -, Klammern; mindestens drei Ziffern. */
 export const istTelefon = (s: string) => /^\+?[\d\s/()-]+$/.test(s.trim()) && (s.match(/\d/g)?.length ?? 0) >= 3;
-/** Wählbare Nummer für einen tel:-Link: nur + und Ziffern. */
-export const telefonLink = (s: string) => `tel:${s.trim().replace(/[^\d+]/g, '')}`;
+/** Wählbare Nummer für einen tel:-Link: E.164 mit Ländervorwahl der Region (#1609), sonst nur + und Ziffern. */
+export const telefonLink = (s: string) => `tel:${telefonanzeige().wahl(s)}`;
 
 /** Internetseite: ohne Schema wird https:// ergänzt. */
 export function mitSchema(s: string): string {

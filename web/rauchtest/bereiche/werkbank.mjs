@@ -659,3 +659,31 @@ rauchtest('Werkbank: Heimnetz nicht bestimmbar – Hinweis auf Übersicht und be
   }
   assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
 });
+
+/* ---------- Werkbank → Region: Formate (#1610, #1609) ---------- */
+
+rauchtest('Werkbank → Region: Formate wählen, Vorschau zeigt den Entwurf (#1610, #1609)', { als: LENA }, async (s) => {
+  const funde = [];
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  await s.goto(BASIS + '/werkbank/region');
+  const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
+  const vorschau = bearbeitung.getByRole('region', { name: 'Vorschau' });
+  await vorschau.getByText('24.11.2026').waitFor();
+  await vorschau.getByText('0351 12345-67').waitFor();
+  await bearbeitung.getByRole('combobox', { name: 'Datum' }).selectOption('jjjj-mm-tt');
+  await bearbeitung.getByRole('combobox', { name: 'Telefonnummern' }).selectOption('kanonisch');
+  await bearbeitung.getByRole('combobox', { name: 'Zahlen' }).selectOption('1’234.56');
+  await vorschau.getByText('2026-11-24').waitFor();
+  await vorschau.getByText('+49 (351) 12345-67').waitFor();
+  await vorschau.getByText('1’234’567.89').waitFor();
+  // Arbeitstage: Vorlage Mo–Sa setzt den Samstag.
+  await bearbeitung.getByRole('button', { name: 'Mo–Sa' }).click();
+  assert.equal(await bearbeitung.getByRole('checkbox', { name: 'Sa' }).isChecked(), true);
+  for (const schema of ['light', 'dark']) {
+    await schemaWechseln(s, schema);
+    for (const v of await axePruefen(s, WERKBANK_BEREICHE)) funde.push(`Region (${schema}): ${v}`);
+  }
+  // Nicht speichern: Die übrigen Rauchtests erwarten die Formate der Sprache.
+  assert.deepEqual(funde, [], `axe meldet Verstöße:\n${funde.join('\n')}`);
+});

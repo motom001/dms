@@ -102,7 +102,7 @@
   "ui.karte.dann.feld.datum": "Date, “today” or “today+7”",
   "ui.karte.dann.feld.ohne-typ": "“Change field” needs a folder type in the When card.",
   "ui.karte.dann.feld.waehlen": "+ Choose field",
-  "ui.karte.dann.feld_verknuepft": "Set field in linked folder",
+  "ui.karte.dann.feld-verknuepft": "Set field in linked folder",
   "ui.karte.dann.verknuepft.ueber": "Linked folder via",
   "ui.karte.dann.verknuepft.ueber.waehlen": "Choose reference field",
   "ui.karte.dann.verknuepft.ohne-verweis": "The folder type of the When card has no reference field with a fixed target type.",

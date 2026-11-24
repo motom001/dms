@@ -102,7 +102,7 @@
   "ui.karte.dann.feld.datum": "Datum, „heute“ oder „heute+7“",
   "ui.karte.dann.feld.ohne-typ": "„Feld ändern“ braucht einen Mappentyp in der Wenn-Karte.",
   "ui.karte.dann.feld.waehlen": "+ Feld wählen",
-  "ui.karte.dann.feld_verknuepft": "Feld in verknüpfter Mappe setzen",
+  "ui.karte.dann.feld-verknuepft": "Feld in verknüpfter Mappe setzen",
   "ui.karte.dann.verknuepft.ueber": "Verknüpfte Mappe über",
   "ui.karte.dann.verknuepft.ueber.waehlen": "Verweisfeld wählen",
   "ui.karte.dann.verknuepft.ohne-verweis": "Der Mappentyp der Wenn-Karte hat kein Verweisfeld mit festem Zieltyp.",

@@ -178,7 +178,8 @@ const passtArt = (v: { art: string }, typ: Mappentyp | null, k: Kontextdaten, w?
                 ? !!w && zeitplanFuerPaket(w) && (k.pakete ?? []).some((p) => p.zeitplan)
                 : true;
 export const vorratName = (v: { bereich: string; art: string; name?: string }) =>
-  v.name ?? (v.bereich === 'wenn' ? ereignisName(v.art) : t.frei(`automatisierung.ui.karte.${v.bereich}.${grundArt(v.art)}`));
+  v.name ??
+  (v.bereich === 'wenn' ? ereignisName(v.art) : t.frei(`automatisierung.ui.karte.${v.bereich}.${grundArt(v.art).replace(/_/g, '-')}`));
 
 /** Bereiche einer Automatisierung (#1000): neu Grunddaten, Wenn und Dann; gespeichert dazu Ausprobieren, Verlauf, Fassungen. */
 export type AutoBereich = 'grunddaten' | 'wenn' | 'dann' | 'ausprobieren' | 'verlauf' | 'zustellungen' | 'fassungen';

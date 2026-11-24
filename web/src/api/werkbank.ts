@@ -5,6 +5,7 @@ import type { Nummernkreis } from '../../../shared/src/nummernkreis';
 import type { StempelVorlage } from '../../../shared/src/stempel';
 import type { UebersetzenEinstellung } from '../../../shared/src/uebersetzung';
 import type { Mappentyp, Wert } from '../../../shared/src/model';
+import type { Formate } from '../../../shared/src/region';
 import type { Feldbedingung, Sicht, SichtDaten } from '../../../shared/src/sichten';
 import type { Ergebnis, Regelwerk } from '../../../shared/src/rechte';
 import type { PlanOrganisation } from '../../../shared/src/einrichtungsplan';
@@ -90,6 +91,8 @@ export interface Region {
   land: string;
   bundesland: string | null;
   zeitzone: string;
+  /** Formate (#1610). */
+  formate: Formate;
 }
 export interface RegionStand {
   region: Region;

@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type RefObject } from 'react';
-import { blaettere, istTag, kalenderwoche, monatVon, monatsraster, tagNachTaste } from '../../../../shared/src/kalender';
+import { blaettere, istTag, kwDerZeile, monatVon, monatsraster, tagNachTaste } from '../../../../shared/src/kalender';
 import { gebietsschema } from '../../../../shared/src/sprache';
 import { Symbol } from '../../Symbol';
 import { t } from '../../sprache';
@@ -249,7 +249,7 @@ interface RasterProps {
   waehle: (iso: string) => void;
 }
 
-/** Monat als Tabelle: erste Spalte die Kalenderwoche, dann Montag bis Sonntag. */
+/** Monat als Tabelle: erste Spalte die Kalenderwoche (ISO), dann die Wochentage ab dem Wochenbeginn der Region (#1610). */
 function Raster({ monat, wert, aktiv, heute, erlaubt, waehle }: RasterProps) {
   const wochen = monatsraster(monat);
   return (
@@ -269,9 +269,9 @@ function Raster({ monat, wert, aktiv, heute, erlaubt, waehle }: RasterProps) {
       <tbody>
         {wochen.map((woche) => (
           <tr key={woche[0]}>
-            <th scope="row" className={s.kw} data-kw={kalenderwoche(woche[0])}>
-              <span aria-hidden="true">{kalenderwoche(woche[0])}</span>
-              <span className={s.sr}>{t('oberflaeche.datum.kw-lang', { kw: kalenderwoche(woche[0]) })}</span>
+            <th scope="row" className={s.kw} data-kw={kwDerZeile(woche)}>
+              <span aria-hidden="true">{kwDerZeile(woche)}</span>
+              <span className={s.sr}>{t('oberflaeche.datum.kw-lang', { kw: kwDerZeile(woche) })}</span>
             </th>
             {woche.map((tag) => (
               <td key={tag} role="gridcell" aria-selected={tag === wert}>

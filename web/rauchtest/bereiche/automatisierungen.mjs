@@ -4,7 +4,19 @@
  */
 import assert from 'node:assert/strict';
 import '../einrichtung.mjs';
-import { BASIS, daten, inTagen, LENA, probeDialog, rauchtest, schemaWechseln, verwalten, WERKBANK_BEREICHE } from '../hilfen.mjs';
+import {
+  api,
+  BASIS,
+  daten,
+  inTagen,
+  LENA,
+  probeDialog,
+  rauchtest,
+  schemaWechseln,
+  sitzung,
+  verwalten,
+  WERKBANK_BEREICHE,
+} from '../hilfen.mjs';
 import { axePruefen, tippflaechenPruefen } from '../muster.mjs';
 
 /* ---------- Werkbank → Automatisierungen und Ablaufvorlagen (#1172–#1177) ---------- */
@@ -208,3 +220,58 @@ rauchtest(
     assert.deepEqual(funde, [], `Zu kleine Tippflächen am Handy:\n${funde.join('\n')}`);
   },
 );
+
+/* ---------- Feld in verknüpfter Mappe setzen (#1557) ---------- */
+
+/** Ausgeschaltete Automatisierung „Position angelegt → Auftrag“ – ändert keine Daten anderer Tests. */
+let verknuepft = null;
+async function verknuepftAnlegen() {
+  if (verknuepft) return verknuepft;
+  const cookie = await sitzung(LENA);
+  await api('POST', '/api/konto/verwaltung', { cookie, body: { passwort: LENA.passwort } });
+  const { position } = daten.tabelle;
+  verknuepft = (
+    await api('POST', '/api/werkbank/automatisierungen', {
+      cookie,
+      body: {
+        name: 'Rauchtest Verknüpft',
+        aktiv: false,
+        wenn: { art: 'mappe.angelegt', typ: position.id },
+        dann: [{ id: 'v', art: 'feld_verknuepft', ueber: 'auftrag', werte: { nr: 'zuletzt {beschreibung}' }, nurWenn: 'leer' }],
+      },
+    })
+  ).daten;
+  return verknuepft;
+}
+
+for (const handy of [false, true])
+  rauchtest(
+    `Automatisierung: Feld in verknüpfter Mappe setzen im Editor${handy ? ' (Handy)' : ''} (#1557)`,
+    { als: LENA, handy },
+    async (s) => {
+      const { id } = await verknuepftAnlegen();
+      const funde = [];
+      await s.goto(BASIS + '/ablage/start');
+      await verwalten(s);
+      await s.goto(BASIS + `/werkbank/automatisierungen/${id}`);
+      const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
+      await bearbeitung.locator('[data-sprungleiste]').getByRole('button', { name: 'Alle aufklappen' }).click();
+      await bearbeitung.locator('button[aria-expanded]', { hasText: 'Feld in verknüpfter Mappe setzen' }).click();
+      const ueber = bearbeitung.getByRole('combobox', { name: 'Verknüpfte Mappe über' });
+      await ueber.waitFor();
+      assert.equal(await ueber.inputValue(), 'auftrag');
+      const wann = bearbeitung.getByRole('combobox', { name: 'Überschreiben' });
+      assert.equal(await wann.inputValue(), 'leer');
+      await bearbeitung.getByRole('textbox', { name: 'Auftragsnummer' }).waitFor();
+      if (handy) {
+        await s.waitForLoadState('networkidle');
+        // Die Ziehgriffe der Karten (30 × 48 px) gehören zum Editor, nicht zu dieser Karte – gemeldet als Fund im PR zu #1557.
+        for (const v of await tippflaechenPruefen(s, WERKBANK_BEREICHE)) if (!/ verschi/.test(v)) funde.push(`Handy: ${v}`);
+      } else
+        for (const schema of ['light', 'dark']) {
+          await schemaWechseln(s, schema);
+          for (const v of await axePruefen(s, WERKBANK_BEREICHE)) funde.push(`Karte (${schema}): ${v}`);
+        }
+      assert.deepEqual(funde, [], `Funde:\n${funde.join('\n')}`);
+    },
+  );

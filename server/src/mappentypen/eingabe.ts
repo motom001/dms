@@ -48,6 +48,7 @@ import { istFeldmerkmal, istSchreibschutz } from '../../../shared/src/organisati
 import { VORLAGE_MAX } from '../../../shared/src/zusammengesetzt';
 import { Fachfehler } from '../grundlagen/fehler';
 import { t } from '../sprache/sprache';
+import { formate } from '../../../shared/src/region';
 
 const text = (v: unknown) => (v == null ? '' : String(v)).trim();
 
@@ -110,7 +111,8 @@ export function bereinigeFeld(e: unknown): Feld {
     min: typ === 'datum' ? datumsgrenze(f.min) : zahlOderNull(f.min),
     max: typ === 'datum' ? datumsgrenze(f.max) : zahlOderNull(f.max),
     nachkomma: zahlOderNull(f.nachkomma),
-    waehrung: typ === 'betrag' ? (text(f.waehrung) || 'EUR').toUpperCase().slice(0, 3) : undefined,
+    // Standardwährung der Region (#1610) für neue Betragsfelder ohne eigene Währung.
+    waehrung: typ === 'betrag' ? (text(f.waehrung) || formate().waehrung).toUpperCase().slice(0, 3) : undefined,
     // Negative Beträge (#1035): nur gespeichert, wenn an; Vorgabe wie bisher ≥ 0.
     ...(typ === 'betrag' && f.negativ === true ? { negativ: true } : {}),
     optionen,

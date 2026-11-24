@@ -3,6 +3,7 @@ import type postgres from 'postgres';
 import { alsText } from '../../../../shared/src/markdown';
 import type { Ausschnitt } from '../../../../shared/src/model';
 import { falte, normal, suchbegriffe, teilwoerter, type Varianten } from '../../../../shared/src/suche';
+import { telefonMuster, telefonSuchformen } from '../../../../shared/src/telefon';
 import { ausschnittAus } from '../ausschnitt';
 import { istUuid, type RepoTeil, type SeitenAnfrage } from '..';
 import type { PgKontext } from './kontext';
@@ -94,12 +95,17 @@ function seitenTeileVon(k: PgKontext) {
     // Vorfilter (#615, #740): Titel und Werte stehen gefaltet in suchtext (Migration 055, nie leer seit 075) – was in
     // einem davon vorkommt, kommt auch dort vor; der Trigramm-Index findet diese Mappen. Danach wird je Titel und Wert
     // genau verglichen (dieselben Treffer wie vorher), aber nur noch für die wenigen Mappen, die den Begriff enthalten.
+    // Telefonnummern (#1609): Sieht der Begriff wie eine Nummer aus, findet er sie in jeder Schreibweise – „0351 1234567“
+    // auch „(0351) 123 45 67“ und „+49 351 1234567“. Ein regulärer Ausdruck, der Trenner zwischen den Ziffern erlaubt;
+    // den Trigramm-Index nutzt er kaum, er gilt aber nur für solche Begriffe.
+    const telefon = (spalte: Teil, t: string) => telefonSuchformen(t).map((f) => sql`${spalte} ~ ${telefonMuster(f)}`);
     const vorfilter = (t: string) =>
-      schreibweisen(t)
-        .map((x) => sql`mappen.suchtext LIKE ${musterAus(normal(x))}`)
-        .reduce((a, b) => sql`${a} OR ${b}`);
+      [...schreibweisen(t).map((x) => sql`mappen.suchtext LIKE ${musterAus(normal(x))}`), ...telefon(sql`mappen.suchtext`, t)].reduce(
+        (a, b) => sql`${a} OR ${b}`,
+      );
+    const imWert = (t: string) => [enthaelt(sql`e.value`, t), ...telefon(sql`e.value`, t)].reduce((a, b) => sql`${a} OR ${b}`);
     const inMappen = (t: string) => sql`SELECT mappen.id FROM mappen WHERE mappen.haushalt_id = ${haushaltId} AND (${vorfilter(t)})
-      AND (${enthaelt(sql`titel`, t)} OR EXISTS (SELECT 1 FROM jsonb_each_text(werte) e WHERE e.value NOT LIKE 'dms1$%' AND (${enthaelt(sql`e.value`, t)})))`;
+      AND (${enthaelt(sql`titel`, t)} OR EXISTS (SELECT 1 FROM jsonb_each_text(werte) e WHERE e.value NOT LIKE 'dms1$%' AND (${imWert(t)})))`;
     const vereint = (teile: Teil[]) => teile.reduce((a, b) => sql`${a} UNION ${b}`);
     const suche = o.suche
       ? vereint([inMappen(o.suche), ...(o.notizen ? [inNotizen(o.suche)] : []), ...(o.volltext ? [inDokumenten(o.suche)] : [])])

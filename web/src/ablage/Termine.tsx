@@ -13,6 +13,7 @@ import { datumDe, type Termin, type TermineAntwort } from '../../../shared/src/f
 import {
   blaettere,
   istAnsicht,
+  istArbeitstag,
   jahresZeitraum,
   monatsraster,
   monatsZeitraum,
@@ -21,6 +22,7 @@ import {
   type ErledigenAnsicht,
 } from '../../../shared/src/kalender';
 import { heuteIn } from '../../../shared/src/sichten';
+import { formate } from '../../../shared/src/region';
 import { aufgabenApi } from '../api/aufgaben';
 import { useDaten } from '../daten';
 import { Listenkopf } from '../Listenkopf';
@@ -160,11 +162,12 @@ const tagText = (iso: string) => `${WOCHENTAG.format(alsDatum(iso))} ${datumDe(i
 const tagLang = (iso: string) => TAG_LANG.format(alsDatum(iso));
 const monatName = (monat: string) => MONAT.format(alsDatum(`${monat}-01`));
 const monatJahr = (monat: string) => MONAT_JAHR.format(alsDatum(`${monat}-01`));
-/** Mo … So für den Tabellenkopf, kurz und ausgeschrieben. */
-const WOCHE = monatsraster('2026-11')[1].map((iso) => ({
-  kurz: WOCHENTAG.format(alsDatum(iso)).replace('.', ''),
-  lang: WOCHENTAG_LANG.format(alsDatum(iso)),
-}));
+/** Wochentage für den Tabellenkopf ab dem Wochenbeginn der Region (#1610), kurz und ausgeschrieben. */
+const woche = () =>
+  monatsraster('2026-11')[1].map((iso) => ({
+    kurz: WOCHENTAG.format(alsDatum(iso)).replace('.', ''),
+    lang: WOCHENTAG_LANG.format(alsDatum(iso)),
+  }));
 
 /** Einträge je Tag. */
 function jeTag(eintraege: Termin[]) {
@@ -424,7 +427,7 @@ function MonatAnsicht({
         <caption className="sr">{t('termine.raster', { monat: monatJahr(monat) })}</caption>
         <thead>
           <tr>
-            {WOCHE.map((w) => (
+            {woche().map((w) => (
               <th key={w.lang} scope="col" abbr={w.lang}>
                 <span aria-hidden="true">{w.kurz}</span>
                 <span className="sr">{w.lang}</span>
@@ -470,10 +473,8 @@ function MonatAnsicht({
   );
 }
 
-const wochenende = (iso: string) => {
-  const w = alsDatum(iso).getUTCDay();
-  return w === 0 || w === 6;
-};
+/** Kein Arbeitstag der Region (#1610; Vorgabe Mo–Fr) – grau wie bisher das Wochenende. */
+const wochenende = (iso: string) => !istArbeitstag(iso, formate().arbeitstage);
 
 /** Kurze Zeile im breiten Monat: Symbol und Mappentitel; Art, Text und Zustand im Titel bzw. für Vorleser. */
 function Zeile({ x, heute, offen }: { x: Termin; heute: string; offen?: string }) {
@@ -527,7 +528,7 @@ function JahrAnsicht({ jahr, zumMonat, favoriten }: { jahr: number; zumMonat(m: 
               <caption className="sr">{t('termine.raster', { monat: monatJahr(m) })}</caption>
               <thead>
                 <tr>
-                  {WOCHE.map((w) => (
+                  {woche().map((w) => (
                     <th key={w.lang} scope="col" abbr={w.lang}>
                       <span aria-hidden="true">{w.kurz.slice(0, 1)}</span>
                       <span className="sr">{w.lang}</span>

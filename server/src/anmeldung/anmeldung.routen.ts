@@ -7,7 +7,7 @@ import { t } from '../sprache/sprache';
 import { hatGesamt } from '../../../shared/src/verwaltungsrecht';
 import { anmeldefehlerCode, type Anmeldefehler } from '../../../shared/src/anmeldefehler';
 import { eigeneVersion } from '../system/system';
-import { tagIn, zeitzone } from '../../../shared/src/region';
+import { formate, tagIn, zeitzone } from '../../../shared/src/region';
 import { istVerfuegbar, SPRACHEN_STANDARD } from '../../../shared/src/sprachwahl';
 import {
   L,
@@ -104,6 +104,8 @@ function kontoStatusRouten(k: RoutenKontext): Route[] {
           marke: x.designs ? await x.designs.marke() : null,
           // Zeitzone der Region (#726): die Oberfläche rechnet „heute“ und Uhrzeiten wie der Server.
           zeitzone: zeitzone(),
+          // Formate der Region (#1610): Datum, Zahlen, Telefon, Wochenbeginn wie auf dem Server.
+          formate: formate(),
           // Wartungsmodus (#102): Hinweis auf der Anmeldeseite.
           wartung: x.wartung?.oeffentlich() ?? null,
           // Version der Installation für Hilfe-Links ins passende Handbuch (#110, #111); nur angemeldet.

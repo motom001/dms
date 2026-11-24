@@ -42,6 +42,7 @@
   "region.unbekanntes-land": "Unbekanntes Land.",
   "region.unbekanntes-bundesland": "Unbekanntes Bundesland.",
   "region.unbekannte-zeitzone-bitte-eine": "Unbekannte Zeitzone – bitte eine aus der Liste wählen, z. B. Europe/Berlin.",
+  "region.formate-ungueltig": "Diese Formate kennt Ablago nicht – bitte aus den Listen wählen (Währung mit drei Buchstaben wie EUR, Ländervorwahl in Ziffern wie 49).",
   "sprachen.unbekannt": "Diese Sprache gibt es in Ablago nicht.",
   "sprachen.standard-erlaubt": "Die Sprache der Installation muss erlaubt sein.",
   "sprachen.nicht-eingerichtet": "Die Sprachen lassen sich hier nicht einstellen.",
