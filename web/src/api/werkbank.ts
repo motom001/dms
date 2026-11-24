@@ -1,5 +1,6 @@
 /** Schnittstelle (#1234): Ablage aufbauen in der Werkbank: Mappentypen, Sichten, Nummernkreise, Merkmale, Berechtigungen, Ansicht, Designs, Stempel, Region, Sprachen, Organisation. */
 import type { Design } from '../design';
+import type { TypenExport, TypenImportErgebnis, TypenImportVorschau } from '../../../shared/src/typendatei';
 import type { Nummernkreis } from '../../../shared/src/nummernkreis';
 import type { StempelVorlage } from '../../../shared/src/stempel';
 import type { UebersetzenEinstellung } from '../../../shared/src/uebersetzung';
@@ -150,6 +151,11 @@ export const werkbankApi = {
   typAnlegen: (eintrag: unknown) => anfrage<Mappentyp>('POST', '/api/typen', eintrag),
   typAendern: (id: string, eintrag: unknown) => anfrage<Mappentyp>('PUT', `/api/typen/${id}`, eintrag),
   typLoeschen: (id: string) => anfrage<null>('DELETE', `/api/typen/${id}`),
+  /** Mappentypen als Datei (#1315): Export (Vorschau und Datei), Import (Vorschau, Einspielen derselben Datei). */
+  typenExport: (typen: string[]) => anfrage<TypenExport>('POST', '/api/typen/datei', { typen }),
+  typenVorschau: (inhalt: string) => anfrage<TypenImportVorschau>('POST', '/api/typen/datei/vorschau', { inhalt }),
+  typenEinspielen: (inhalt: string, sha256: string) =>
+    anfrage<TypenImportErgebnis>('POST', '/api/typen/datei/einspielen', { inhalt, sha256 }),
   designs: () => anfrage<{ designs: Design[]; standard: string | null }>('GET', '/api/designs'),
   designAnlegen: (d: Omit<Design, 'id'>) => anfrage<Design>('POST', '/api/designs', d),
   designAendern: (id: string, d: Omit<Design, 'id'>) => anfrage<Design>('PUT', `/api/designs/${id}`, d),

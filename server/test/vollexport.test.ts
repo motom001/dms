@@ -264,7 +264,10 @@ describe('Vollexport (#254)', () => {
       assert.equal(new Set(pfade.map((x) => x.toLowerCase())).size, pfade.length);
       const ablage = pfade.filter((x) => x.includes('/ablage/Übergr'));
       // Kennung der Mappe bleibt, Endung bleibt, beide Dokumente und die Version sind da.
-      assert.ok(ablage.every((x) => x.includes(`[${m.id.slice(0, 8)}]`)), ablage.join('\n'));
+      assert.ok(
+        ablage.every((x) => x.includes(`[${m.id.slice(0, 8)}]`)),
+        ablage.join('\n'),
+      );
       const originale = ablage.filter((x) => x.endsWith('.pdf') && !x.includes('/Versionen/') && !x.endsWith('mappe.pdf'));
       assert.equal(originale.length, 2, ablage.join('\n'));
       assert.ok(ablage.some((x) => x.includes('/Versionen/') && x.endsWith('.pdf')));

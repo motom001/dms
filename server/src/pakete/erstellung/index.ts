@@ -6,3 +6,6 @@ export { aenderung } from './bau-hilfen';
 export { baue } from './baue';
 export { dmsOptionen, FELDARTEN_AB, mindestversion } from './mindestversion';
 export { Paketerstellung } from './paketerstellung';
+/** Mappentypen als Datei (#1315): Lesen und Planen ohne Datenbank (Tests). */
+export { planeEinspielen } from './typen-einspielen';
+export { liesTypenDatei } from './typen-lesen';

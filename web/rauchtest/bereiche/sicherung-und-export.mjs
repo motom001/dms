@@ -97,6 +97,9 @@ rauchtest('Werkbank: Vollexport mit Prüfsummen, Eintrag bleibt nach dem Herunte
   assert.match(await eintrag.locator('dd.mono').innerText(), /^[0-9a-f]{64}$/);
   await eintrag.getByRole('link', { name: 'Prüfsummen (SHA256SUMS)' }).waitFor();
   await eintrag.getByRole('button', { name: 'Prüfsumme kopieren' }).waitFor();
+  // #1505: ein Satz mit Verweis aufs Handbuch, wenn Windows die ZIP als „ungültig“ meldet.
+  const windows = bearbeitung.getByRole('link', { name: 'So kommst du an sie heran' });
+  assert.match((await windows.getAttribute('href')) ?? '', /export\/#windows-ungueltig$/);
 });
 
 // „Benutzer dürfen ihre eigenen Daten exportieren“ unter Daten sichern → Einstellungen (#1196): im Vollexport nur ein

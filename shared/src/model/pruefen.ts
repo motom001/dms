@@ -21,6 +21,7 @@ import { kreisImStandard, kreisVon } from '../nummernkreis';
 import { erwaehnungen } from '../markdown';
 import { gebietsschema } from '../sprache';
 import { feldLabel as feldLabelVon } from '../beschriftung';
+import { MUSTER_EINGABE_MAX, musterProblem, musterText } from '../muster';
 
 /* ---------------------------------------------------------------- */
 
@@ -216,12 +217,10 @@ export function pruefeMappentyp(mappentypDaten: MappentypDaten, ctx: TypKontext)
       m.push(t('gemeinsam.feldarten.standard-prozent'));
     // Format und Datumsgrenzen (#535).
     m.push(...pruefeFormatDefinition(f, mappentypDaten.felder));
+    // Prüfmuster (#1315): gültig, nicht zu lang, ohne verschachtelte Wiederholungen (ReDoS, muster.ts).
     if (f.typ === 'text' && f.muster) {
-      try {
-        new RegExp(f.muster);
-      } catch {
-        m.push(t('gemeinsam.model.das-muster-ist-kein'));
-      }
+      const problem = musterProblem(f.muster);
+      if (problem) m.push(musterText(problem));
     }
     // Nummernkreis im Standardwert (#171): nur an Textfeldern, den Kreis muss es geben.
     const kreis = kreisImStandard(f.standard);
@@ -277,10 +276,10 @@ export function pruefeMappe(pick: Pick<Mappentyp, 'felder'>, werte: Werte, ctx: 
         if (f.minLen != null && v.length < f.minLen) fehler(f.key, t('gemeinsam.model.mindestens-zeichen', { minLen: f.minLen }));
         else if (f.maxLen != null && v.length > f.maxLen) fehler(f.key, t('gemeinsam.model.hoechstens-zeichen', { maxLen: f.maxLen }));
         else if (f.typ === 'text' && f.muster) {
-          try {
+          // ReDoS (#1315): nur kurze Eingaben gegen das Muster; ein unsicheres Muster prüft Ablago nicht (der Mappentyp meldet es).
+          if (v.length > MUSTER_EINGABE_MAX) fehler(f.key, t('gemeinsam.model.zu-lang-fuer-muster', { max: MUSTER_EINGABE_MAX }));
+          else if (!musterProblem(f.muster)) {
             if (!new RegExp('^(?:' + f.muster + ')$').test(v)) fehler(f.key, t('gemeinsam.model.passt-nicht-zum-vorgegebenen'));
-          } catch {
-            /* Definition prüft das */
           }
         }
         break;

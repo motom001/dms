@@ -32,8 +32,7 @@ const REGISTER_PLATZ = 40;
 /** Hinter dem Ordner der Mappe: `/<Register>/Versionen/<Dokument><Zusatz>`. */
 const hinterMappe = (register: number) => 1 + register + 1 + bytes(`${VERSIONEN}/`) + DOKUMENT_MIN + ZUSATZ_MAX;
 /** Höchstlänge des Ordners eines Mappentyps, damit Mappe, Register und Dokument noch Platz haben. */
-export const typOrdnerMax = (pfadRest: number) =>
-  Math.max(12, pfadRest - bytes('ablage//') - MAPPE_MIN - hinterMappe(REGISTER_PLATZ));
+export const typOrdnerMax = (pfadRest: number) => Math.max(12, pfadRest - bytes('ablage//') - MAPPE_MIN - hinterMappe(REGISTER_PLATZ));
 /** Ordner eines Registers (wie bisher höchstens 60 Zeichen), mit `max` in Bytes gekürzt. */
 const registerOrdner = (mappentyp: Mappentyp, d: Dokument, max = Infinity) =>
   kuerzeAufBytes(sichererName(mappentyp.register.find((r) => r.key === d.registerKey)?.name ?? d.registerKey, 60), max);

@@ -273,9 +273,43 @@ rauchtest(
     assert.equal(await download.failure(), null);
     await bearbeitung.getByText('Zum Wiederherstellen brauchst du dein Notfallblatt (Schlüssel).').waitFor();
     await bearbeitung.getByText('Prüfsumme (SHA-256)').waitFor();
-    await bearbeitung.getByRole('link', { name: '.json herunterladen' }).waitFor();
+    // #1611: Die eine Datei genügt – getrennt aufbewahren nur den Schlüssel; keine Metadaten zum Daneben-Legen mehr.
+    await bearbeitung.getByText(/Die Datei enthält alles, was zum Einspielen nötig ist/).waitFor();
+    assert.equal(await bearbeitung.getByRole('link', { name: '.json herunterladen' }).count(), 0, 'kein zweiter Download');
   },
 );
+
+// Mappentypen als Datei (#1315): eigene Typen wählen, Vorschau mit Inhalten, Datei herunterladen und dieselbe Datei
+// einspielen – die Vorschau sagt „unverändert“ und bietet nichts zum Einspielen an; axe hell und dunkel.
+rauchtest('Werkbank: Mappentypen als Datei exportieren und die Vorschau beim Einspielen (#1315)', { als: LENA }, async (s) => {
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  await s
+    .getByRole('complementary', { name: 'Bereiche' })
+    .getByRole('link', { name: /^Mappentypen/ })
+    .click();
+  await s.getByRole('link', { name: 'Als Datei' }).click();
+  const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
+  await bearbeitung.getByRole('heading', { name: 'Mappentypen als Datei' }).waitFor();
+  const exportieren = bearbeitung.getByRole('region', { name: 'Exportieren' });
+  await exportieren.getByRole('checkbox').first().check();
+  await exportieren.getByRole('button', { name: 'Vorschau' }).click();
+  await exportieren.getByText(/Die Datei enthält/).waitFor();
+  const [download] = await Promise.all([
+    s.waitForEvent('download'),
+    exportieren.getByRole('button', { name: 'Datei herunterladen' }).click(),
+  ]);
+  assert.match(download.suggestedFilename(), /^ablago-mappentypen-.+\.json$/);
+  const einspielen = bearbeitung.getByRole('region', { name: 'Einspielen' });
+  await einspielen.locator('input[type=file]').setInputFiles(await download.path());
+  await einspielen.getByText('gibt es schon – unverändert').first().waitFor();
+  assert.equal(await einspielen.getByRole('button', { name: 'Einspielen' }).count(), 0, 'nichts zu tun');
+  for (const schema of ['light', 'dark']) {
+    await schemaWechseln(s, schema);
+    assert.deepEqual(await axePruefen(s, ['[aria-label="Bearbeitung"]']), [], `axe ${schema}`);
+  }
+  await schemaWechseln(s, 'light');
+});
 
 /* ---------- Stufen der Werkbank (#987) ---------- */
 

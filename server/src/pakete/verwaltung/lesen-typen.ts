@@ -8,6 +8,7 @@ import { FELDMERKMALE, istFeldmerkmal, istSchreibschutz, SCHREIBSCHUTZ } from '.
 import { type Beschriftungen, type TypTeile } from '../../../../shared/src/beschriftung';
 import { paketArchivFehler, type PaketArchiv } from '../../../../shared/src/archiv';
 import { SCHLUESSEL, TYP_KENNUNG } from '../../../../shared/src/kennungen';
+import { musterProblem, musterText } from '../../../../shared/src/muster';
 import { t } from '../../sprache/sprache';
 import { type FremderTyp, istObjekt, type PaketFeld, type PaketRegister, type PaketSicht, type PaketTyp, paketZiele, str } from './format';
 import {
@@ -102,7 +103,15 @@ function pruefeFeld(l: LeseLauf, f: PaketFeld, felder: PaketFeld[], wo: string) 
     fehler.push(`${wo}: Feld „${f.key}“: schreibschutz ist ${SCHREIBSCHUTZ.join(', ')} – nicht an Passwort und Tabelle.`);
   fehler.push(...tabellenFehler(f, `${wo}: Feld „${f.key}“`));
   fehler.push(...zusammengesetztFehler(f, felder, `${wo}: Feld „${f.key}“`));
+  fehler.push(...musterFehler(f, wo));
   pruefeAusText(l, f, felder, wo);
+}
+
+/** Prüfmuster (#1315): wie beim Anlegen des Mappentyps, aber schon beim Lesen – ein unsicheres Muster kommt nicht herein. */
+function musterFehler(f: PaketFeld, wo: string): string[] {
+  if (f.muster === undefined) return [];
+  const p = typeof f.muster === 'string' ? musterProblem(f.muster) : 'ungueltig';
+  return p ? [`${wo}: Feld „${f.key}“: ${musterText(p)}`] : [];
 }
 
 /** Text → Verweis (#534): aus_text nennt das bisherige Textfeld; das DMS speichert es als ausText. */
