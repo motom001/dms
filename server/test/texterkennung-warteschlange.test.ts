@@ -35,6 +35,9 @@ const warte = async (bis: () => Promise<boolean>, ms: number) => {
   return true;
 };
 
+/** Schlägt nach `ms` fehl; der Zeitgeber hält den Prozess nicht auf. */
+const notbremse = (ms: number, text: string) => new Promise<never>((_, nein) => setTimeout(() => nein(new Error(text)), ms).unref());
+
 /** Kern mit Texterkennung; `ocrNaechster` lässt sich beobachten (Zahl der Antworten „nichts zu tun“). */
 async function aufbau(repo: Repo) {
   const einstellungen = speicherEinstellungen();
@@ -59,11 +62,11 @@ async function aufbau(repo: Repo) {
     ],
   });
   const m = await d.mappen.legeMappeAn({ typId: typ.id, werte: { name: 'Beleg Wartung' } });
-  /** Hochladen, während die Texterkennung pausiert – das Dokument steht danach auf „wartet“. */
-  const hochladen = async (name: string) => {
+  /** Hochladen, während die Texterkennung pausiert – das Dokument steht danach auf „wartet“. `pausiert`: Pause bleibt. */
+  const hochladen = async (name: string, o: { pausiert?: boolean } = {}) => {
     t.pause = () => true;
     const { dokument } = await d.dokumente.ladeHoch(m.id, { register: 'dokumente', name, typ: 'application/pdf' }, pdfMitText(['x']), null);
-    t.pause = () => false;
+    if (!o.pausiert) t.pause = () => false;
     assert.equal(dokument.ocr?.stand, 'wartet');
     return dokument;
   };
@@ -109,29 +112,35 @@ describe('Warteschlange der Texterkennung (#1525)', () => {
       offen.push(sql);
       await sql`INSERT INTO haushalte (id, name) VALUES (${HAUSHALT}, 'Test') ON CONFLICT DO NOTHING`;
       const repo = pgRepo(sql, HAUSHALT);
-      // Antworten „nichts zu tun“, während die Zeile gesperrt ist.
+      // #1626: Ereignisse statt fester Zeit. „Übersprungen“ meldet die erste Antwort „nichts zu tun“, während die Zeile
+      // gesperrt ist. Bis die Sperre steht, bleibt die Texterkennung pausiert: Sonst nahm das Nachsehen (alle 200 ms) oder
+      // das Wecksignal des Hochladens das Dokument unter Last schon vor der Sperre, und der Test wartete vergeblich.
       let gesperrt = false;
-      let leer = 0;
+      let uebersprungen!: () => void;
+      const beiUebersprungen = new Promise<void>((ok) => (uebersprungen = ok));
       const naechster = repo.ocrNaechster.bind(repo);
       repo.ocrNaechster = async () => {
         const x = await naechster();
-        if (!x && gesperrt) leer++;
+        if (!x && gesperrt) uebersprungen();
         return x;
       };
       const { t, hochladen, stand } = await aufbau(repo);
       t.nachsehenMs = 200;
+      t.pause = () => true;
       await t.start();
-      const a = await hochladen('Wartungsprotokoll.pdf');
+      const a = await hochladen('Wartungsprotokoll.pdf', { pausiert: true });
       // Wie „Als Anlage anhängen“ direkt nach dem Hochladen: eine Transaktion hält die Zeile, während angestoßen wird.
       await sql.begin(async (tx) => {
         await tx`SELECT id FROM dokumente WHERE id = ${a.id} FOR UPDATE`;
         gesperrt = true;
+        t.pause = () => false;
         t.anstossen();
-        assert.ok(await warte(async () => leer > 0, 5_000), 'ocrNaechster hat die gesperrte Zeile übersprungen');
+        // Die Grenze ist nur die Notbremse für einen echten Fehler; gewartet wird auf das Ereignis.
+        await Promise.race([beiUebersprungen, notbremse(30_000, 'ocrNaechster hat die gesperrte Zeile nicht übersprungen')]);
         assert.equal((await tx`SELECT ocr_stand FROM dokumente WHERE id = ${a.id}`)[0].ocr_stand, 'wartet');
         gesperrt = false;
       });
-      assert.ok(await warte(async () => (await stand(a.id)) === 'fertig', 10_000), `bleibt auf „${await stand(a.id)}“`);
+      assert.ok(await warte(async () => (await stand(a.id)) === 'fertig', 30_000), `bleibt auf „${await stand(a.id)}“`);
     },
   );
 });
