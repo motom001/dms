@@ -59,6 +59,8 @@ export interface EinrichtungDeps {
   datenbank?: () => Omit<PlanDatenbank, 'passwort'> | null;
   /** Notfallblatt zum aktuellen Schlüssel heruntergeladen? Ohne geht „Einrichtung abschließen“ nicht (#804). */
   notfallblattAktuell?: () => Promise<boolean>;
+  /** Nach „Einrichtung abschließen“ (#1509): Sicherung einschalten, erste Sicherung und Probe anstoßen. Scheitert nie nach außen. */
+  nachAbschluss?: (von: string) => Promise<void>;
 }
 
 export const MANDANT_MAX = 30;
@@ -240,6 +242,11 @@ export class Einrichtung {
     log.info(offen ? `Einrichtung: Schritt „${x}“ ${uebersprungen ? 'übersprungen' : 'erledigt'}` : 'Einrichtungsassistent abgeschlossen', {
       von,
     });
+    // #1509: erst nach dem Abschluss (also mit Notfallblatt) – und nur beim ersten Mal.
+    if (!offen && s.offen)
+      await this.d
+        .nachAbschluss?.(von)
+        .catch((e: unknown) => log.warn('Erste Sicherung nicht vorgemerkt', { fehler: (e as Error).message }));
     return { ...s, offen, erledigt, uebersprungen: ueber };
   }
 

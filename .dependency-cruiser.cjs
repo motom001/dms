@@ -65,14 +65,14 @@ const OHNE_TUER = {
   protokoll: 'protokoll|nachweisjournal|alleprozesse',
   prozesse: 'prozesse|aufteilung|auftrag|beenden|hintergrund|werkzeugdienst|werkzeugverbindung|werkzeuggrenzen|werkzeugprotokoll',
   sicherung:
-    'sicherung|sicherung-entfernt|sicherungsformat|datenbankabzug|wiederherstellung|sicherung-hilfen|sicherung-basis|sicherung-anlegen|sicherung-extern|wiederherstellung-hilfen|wiederherstellung-basis|wiederherstellung-ausfuehren|wiederherstellung-einspielen',
+    'sicherung|sicherung-entfernt|sicherungsformat|datenbankabzug|wiederherstellung|sicherung-hilfen|sicherung-basis|sicherung-anlegen|sicherung-extern|wiederherstellung-hilfen|wiederherstellung-basis|wiederherstellung-ausfuehren|wiederherstellung-einspielen|betriebsangaben|erste-sicherung',
   sprache: 'sprache|sprachpakete|sprachwahl|uebersetzung',
   suche: 'fragen|vektoren',
   system: 'system|systemlast|externmessung|fehlermeldungen|konsole',
   volltext: 'paketvolltext|texterkennung',
   wartung: 'wartung',
   webdav: 'webdav|webdav-baum|webdav-hilfen|webdav-basis|webdav-ordner|webdav-methoden',
-  werkbank: 'verwaltung|verwaltungsbereiche|meldungen|werkbankzahlen',
+  werkbank: 'verwaltung|verwaltungsbereiche|meldungen|werkbankzahlen|dateien-pruefplan',
   zeitplan: 'zeitplan|streuung',
   zwischenspeicher: 'zaehlerspeicher|lesespeicher|kurzzustand|zwischenspeicher',
 };

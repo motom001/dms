@@ -20,6 +20,7 @@ import {
   ERWEITERUNGEN_SCHRITT,
   log,
   type Abgleich,
+  type Vorher,
   STAGING,
   ALT,
   BEHALTEN,
@@ -50,7 +51,7 @@ export class Wiederherstellung extends WiederherstellungAusfuehren {
   /* ---------- Starten ---------- */
 
   async starte(
-    e: { name?: unknown; schluessel?: unknown; bestaetigt?: unknown },
+    e: { name?: unknown; schluessel?: unknown; bestaetigt?: unknown; vorherSichern?: unknown },
     admin: { email: string } | null,
     einrichtungscode?: unknown,
   ): Promise<Wiederherstellungslauf> {
@@ -65,7 +66,7 @@ export class Wiederherstellung extends WiederherstellungAusfuehren {
   }
 
   private async starteBelegt(
-    e: { name?: unknown; schluessel?: unknown; bestaetigt?: unknown },
+    e: { name?: unknown; schluessel?: unknown; bestaetigt?: unknown; vorherSichern?: unknown },
     admin: { email: string } | null,
     art: 'frisch' | 'laufend',
   ): Promise<Wiederherstellungslauf> {
@@ -77,6 +78,7 @@ export class Wiederherstellung extends WiederherstellungAusfuehren {
     const k = this.schluessel(a.meta, text);
     await this.pruefePlatz(a.meta);
     const von = admin?.email ?? t('meldungen.wiederherstellung.einrichtung-frisches-system');
+    const vorher = art === 'laufend' ? await this.starteVorher(e.vorherSichern !== false, von) : null;
     const lauf = this.neuerLauf('wiederherstellung', name, von, [
       ...(art === 'laufend' ? [t('meldungen.wiederherstellung.sicherung-des-jetzigen-stands')] : []),
       t('meldungen.wiederherstellung.pruefsumme-der-datei'),
@@ -90,13 +92,39 @@ export class Wiederherstellung extends WiederherstellungAusfuehren {
       'Umschalten',
       'Neustart',
     ]);
-    log.warn('Wiederherstellung begonnen', { sicherung: name, von, art });
-    void this.fuehreAus(lauf, a, k, art)
+    if (vorher === 'ohne') lauf.ohneVorher = true;
+    // Protokoll (#1530): mit oder ohne Sicherung des jetzigen Stands davor.
+    log.warn('Wiederherstellung begonnen', {
+      sicherung: name,
+      von,
+      art,
+      ...(art === 'laufend' ? { vorherSichern: vorher !== 'ohne' && this.q.tresor.alsText() !== null } : {}),
+    });
+    void this.fuehreAus(lauf, a, k, art, vorher)
       .catch(() => {})
       .finally(() => {
         this.belegt = false;
       });
     return this.aktuellerLauf()!;
+  }
+
+  /**
+   * Sicherung des jetzigen Stands davor (#1530): abgewählt → „ohne“. Sonst gleich anstoßen – scheitert schon der Beginn
+   * (zu wenig Platz, kein Schlüssel), sieht die Oberfläche das sofort und fragt „Trotzdem ohne Sicherung?“ (Merkmal
+   * `vorherGescheitert`); Ablago wiederholt nichts von selbst. Ohne Schlüssel bleibt es beim Hinweis im Lauf.
+   */
+  private async starteVorher(sichern: boolean, von: string): Promise<Vorher> {
+    if (!sichern) return 'ohne';
+    if (!this.q.tresor.alsText()) return null;
+    try {
+      return { fertig: (await this.q.sicherung.starte('vor-wiederherstellung', von)).fertig };
+    } catch (x) {
+      const grund = (x as Error).message;
+      log.warn('Sicherung vor der Wiederherstellung nicht begonnen', { von, grund });
+      throw new Fachfehler(x instanceof Fachfehler ? x.status : 409, t('meldungen.wiederherstellung.vorher-gescheitert', { grund }), {
+        vorherGescheitert: true,
+      });
+    }
   }
 
   /** Probe (#109): wie eine Wiederherstellung, aber ohne Umschalten; danach aufräumen. */

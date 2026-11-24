@@ -14,7 +14,10 @@ import {
   type Abschluss,
   BEHALTEN,
   ALT,
+  type Vorher,
 } from './wiederherstellung-hilfen';
+import { uebernimmBetriebsangaben } from './betriebsangaben';
+import { ortszeit, PLAN_STANDARD, PROBE_STANDARD } from './sicherung-hilfen';
 import { t } from '../sprache/sprache';
 import { sha256Von } from './sicherungsformat';
 import { bezeichner } from './datenbankabzug';
@@ -31,10 +34,10 @@ type Ist = { mappen: number; dokumente: number; benutzer: number };
 
 export abstract class WiederherstellungAusfuehren extends WiederherstellungBasis {
   /** Der eigentliche Ablauf. Bei Probe: nie umschalten, immer aufräumen. */
-  protected async fuehreAus(lauf: Wiederherstellungslauf, a: Abgleich, k: Buffer, art: Art): Promise<boolean> {
+  protected async fuehreAus(lauf: Wiederherstellungslauf, a: Abgleich, k: Buffer, art: Art, vorher: Vorher = null): Promise<boolean> {
     const st = this.neuerStand(lauf, a, art);
     try {
-      await this.sichereJetzigenStand(st, art);
+      await this.sichereJetzigenStand(st, art, vorher);
       const pfad = await this.pruefePruefsumme(st);
       st.schritt(t('meldungen.wiederherstellung.entschluesseln-und-einspielen'));
       await legeSchemaAn(st);
@@ -86,10 +89,19 @@ export abstract class WiederherstellungAusfuehren extends WiederherstellungBasis
     return st;
   }
 
-  /** Auf dem laufenden System zuerst den jetzigen Stand sichern – ohne (passenden) Schlüssel nur ein Hinweis. */
-  private async sichereJetzigenStand(st: WhStand, art: Art) {
+  /**
+   * Auf dem laufenden System zuerst den jetzigen Stand sichern – ohne (passenden) Schlüssel nur ein Hinweis, abgewählt
+   * (#1530) „ausgelassen“. Die Sicherung hat `starte` schon angestoßen (`vorher`); hier wartet der Lauf auf ihr Ende.
+   */
+  private async sichereJetzigenStand(st: WhStand, art: Art, vorher: Vorher) {
     const { lauf } = st;
-    if (art === 'laufend' && !this.q.tresor.alsText()) {
+    if (art === 'laufend' && vorher === 'ohne') {
+      st.melde(
+        t('meldungen.wiederherstellung.sicherung-des-jetzigen-stands'),
+        'ausgelassen',
+        t('meldungen.wiederherstellung.vorher-abgewaehlt'),
+      );
+    } else if (art === 'laufend' && !this.q.tresor.alsText()) {
       // Ohne (passenden) Schlüssel lässt sich der jetzige Stand nicht sichern – z. B. wenn er verloren ist.
       // Dann bleibt das alte Schema nach dem Umschalten noch eine Weile in der Datenbank.
       st.behalten = true;
@@ -100,13 +112,16 @@ export abstract class WiederherstellungAusfuehren extends WiederherstellungBasis
       );
     } else if (art === 'laufend') {
       st.schritt(t('meldungen.wiederherstellung.sicherung-des-jetzigen-stands'));
-      const { fertig } = await this.q.sicherung.starte('vor-wiederherstellung', lauf.von);
-      const vorher = await fertig;
-      if (!vorher)
+      const { fertig } = vorher && vorher !== 'ohne' ? vorher : await this.q.sicherung.starte('vor-wiederherstellung', lauf.von);
+      const gesichert = await fertig;
+      if (!gesichert) {
+        // #1530: nicht still abbrechen und nichts wiederholen – die Oberfläche zeigt den Fehler und fragt.
+        lauf.vorherGescheitert = true;
         throw new Error(
           `Die Sicherung des jetzigen Stands ist fehlgeschlagen: ${this.q.sicherung.aktuellerLauf()?.fehler ?? 'unbekannt'}. Ohne sie wird nichts ersetzt.`,
         );
-      st.ok(vorher.datei);
+      }
+      st.ok(gesichert.datei);
     }
   }
 
@@ -233,6 +248,15 @@ export abstract class WiederherstellungAusfuehren extends WiederherstellungBasis
     const hinweise = [...st.a.hinweise.filter((h) => !/Notfallblatt ein/.test(h))];
     const abschluss: Abschluss = { am: this.jetzt().toISOString(), sicherung: lauf.sicherung, von: lauf.von, schritte: [], hinweise };
     await neu`DELETE FROM einstellungen WHERE schluessel = 'wartung'`;
+    // #1531: Angaben zu den Sicherungsdateien und Läufen bleiben; nichts wird gleich nach dem Neustart nachgeholt.
+    const uhr = async (k: string, std: string) => {
+      const [r] = await neu<{ wert: { uhrzeit?: unknown } | null }[]>`SELECT wert FROM einstellungen WHERE schluessel = ${k} LIMIT 1`;
+      return typeof r?.wert?.uhrzeit === 'string' ? r.wert.uhrzeit : std;
+    };
+    await uebernimmBetriebsangaben(this.q.sicherung.einstellungen, neu, st.m.haushaltId, ortszeit(this.jetzt()), {
+      sicherung: await uhr('sicherung_plan', PLAN_STANDARD.uhrzeit),
+      probe: await uhr('sicherung_probe_plan', PROBE_STANDARD.uhrzeit),
+    });
     // Ereignisse (#670) aus der Zeit vor der Sicherung nicht noch einmal verteilen.
     const [{ da }] = await neu<{ da: string | null }[]>`SELECT to_regclass('ereignisse')::text AS da`;
     if (da) await neu`UPDATE ereignisse SET verteilt = now() WHERE verteilt IS NULL`;
@@ -325,6 +349,9 @@ export abstract class WiederherstellungAusfuehren extends WiederherstellungBasis
     log.warn('Wiederherstellung abgeschlossen, Ablago startet neu', {
       sicherung: lauf.sicherung,
       von: lauf.von,
+      vorher: lauf.ohneVorher
+        ? 'ohne'
+        : (lauf.schritte.find((s) => s.name === t('meldungen.wiederherstellung.sicherung-des-jetzigen-stands'))?.info ?? null),
       mappen: ist.mappen,
       dateien,
     });

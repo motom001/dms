@@ -16,11 +16,20 @@ import {
   TAG_MS,
   fehlgrundVon,
   vermerkeFehlschlag,
+  bereinigeWozu,
 } from './sicherung-hilfen';
 import { ZWECK, type Eintrag, schreibeSicherung } from './sicherungsformat';
 import { Fachfehler } from '../grundlagen/fehler';
 import { t } from '../sprache/sprache';
 import { GB, MB } from '../grundlagen/grenzen';
+
+/** Zusätze einer Sicherung: „Wozu?“ (#1529, nur von Hand) und „nachgeholt“ (#1531, nur automatisch). */
+export interface Zusaetze {
+  wozu?: unknown;
+  nachgeholt?: boolean;
+}
+/** Zahl in GB mit Komma (für Meldungen). */
+const gb = (b: number) => (b / GB).toFixed(1).replace('.', ',');
 import { OHNE_INHALT } from './datenbankabzug';
 import { FASSUNG_PFAD } from '../dateien/dateiumwandlung';
 import { ARCHIV_PFAD } from '../dateien/archivfassung';
@@ -36,7 +45,8 @@ export abstract class SicherungAnlegen extends SicherungBasis {
    * Startet eine Sicherung im Hintergrund. `warten` liefert eine Promise, die mit dem Ende des
    * Laufs erfüllt wird (für die automatische Sicherung und Tests).
    */
-  async starte(art: Sicherungsart, von: string): Promise<{ lauf: Lauf; fertig: Promise<Metadaten | null> }> {
+  async starte(art: Sicherungsart, von: string, zusaetze: Zusaetze = {}): Promise<{ lauf: Lauf; fertig: Promise<Metadaten | null> }> {
+    const wozu = art === 'manuell' ? bereinigeWozu(zusaetze.wozu) : null;
     let schluessel = this.q.tresor.abgeleitet(ZWECK);
     // Mehrere Prozesse (#1419): Hat ein anderer Prozess den Schlüssel eben erst erzeugt, kennt dieser ihn erst nach dem
     // nächsten Abgleich (bis zu 2 s). Vor dem Ablehnen darum einmal nachlesen – sonst scheitert „Sicherung jetzt“ direkt
@@ -57,11 +67,17 @@ export abstract class SicherungAnlegen extends SicherungBasis {
     try {
       const f = await statfs(this.ordner);
       const frei = f.bavail * f.bsize;
-      if (frei < plan.mindestFreiGB * GB) {
-        const grund = t('meldungen.sicherung.zu-wenig-freier-speicherplatz', {
-          replace: (frei / GB).toFixed(1).replace('.', ','),
-          mindestFreiGB: plan.mindestFreiGB,
-        });
+      // #1509 (Sicherheit): Reicht der Platz voraussichtlich nicht, lieber auslassen und melden als die Platte füllen.
+      const geschaetzt = frei < plan.mindestFreiGB * GB ? 0 : await this.geschaetzteGroesse();
+      if (frei < plan.mindestFreiGB * GB || frei - geschaetzt < plan.mindestFreiGB * GB) {
+        const grund =
+          frei < plan.mindestFreiGB * GB
+            ? t('meldungen.sicherung.zu-wenig-freier-speicherplatz', { replace: gb(frei), mindestFreiGB: plan.mindestFreiGB })
+            : t('meldungen.sicherung.platz-reicht-voraussichtlich-nicht', {
+                frei: gb(frei),
+                geschaetzt: gb(geschaetzt),
+                mindestFreiGB: plan.mindestFreiGB,
+              });
         await this.merkeFehler(art, grund);
         await vermerkeFehlschlag({ art, ort: 'lokal', grund: 'platz' });
         throw new Fachfehler(507, grund);
@@ -77,7 +93,7 @@ export abstract class SicherungAnlegen extends SicherungBasis {
           ? t('meldungen.sicherung.sicherung-vor-der-wiederherstellung')
           : 'Sicherung',
     );
-    const fertig = this.fuehreAus(lauf, art, von, schluessel);
+    const fertig = this.fuehreAus(lauf, art, von, schluessel, { ...(wozu ? { wozu } : {}), nachgeholt: zusaetze.nachgeholt === true });
     return { lauf, fertig };
   }
 
@@ -102,7 +118,13 @@ export abstract class SicherungAnlegen extends SicherungBasis {
    * Nacharbeiten, endet er wie bisher mit „fehler“ (Mail, Hinweis), obwohl die neue Sicherung selbst vollständig ist.
    * Ab `belege()` steht er auf „läuft“ – darum liegt alles danach im `try`, auch die Suche nach dem freien Namen.
    */
-  private async fuehreAus(lauf: Lauf, art: Sicherungsart, von: string, schluessel: Buffer): Promise<Metadaten | null> {
+  private async fuehreAus(
+    lauf: Lauf,
+    art: Sicherungsart,
+    von: string,
+    schluessel: Buffer,
+    zusatz: { wozu?: string; nachgeholt: boolean },
+  ): Promise<Metadaten | null> {
     const beginn = this.jetzt();
     const vorlaeufig: string[] = [];
     let fertig: Metadaten | null = null;
@@ -113,7 +135,13 @@ export abstract class SicherungAnlegen extends SicherungBasis {
       const teil = join(this.ordner, `.${name}${ENDUNG}.teil`);
       vorlaeufig.push(teil, join(this.ordner, `.${name}.json.teil`));
       const fingerabdruck = this.q.tresor.fingerabdruck!;
-      log.info('Sicherung begonnen', { name, art, von });
+      log.info('Sicherung begonnen', {
+        name,
+        art,
+        von,
+        ...(zusatz.wozu ? { wozu: zusatz.wozu } : {}),
+        ...(zusatz.nachgeholt ? { nachgeholt: true } : {}),
+      });
       const umgebung = await this.q.umgebung();
       let dateienBytes = 0;
       let dateien = 0;
@@ -126,6 +154,7 @@ export abstract class SicherungAnlegen extends SicherungBasis {
         const tabellen = s.tabellen.filter((t) => !OHNE_INHALT.has(t.name));
         const ordner = this.dateiOrdner;
         const haushaltId = this.haushaltId;
+        const wozu = zusatz.wozu;
         async function* eintraege(): AsyncGenerator<Eintrag> {
           yield {
             art: 'M',
@@ -137,6 +166,8 @@ export abstract class SicherungAnlegen extends SicherungBasis {
               tabellen: s.tabellen,
               ohneInhalt: [...OHNE_INHALT],
               zaehler: s.zaehler,
+              // „Wozu?“ (#1529) auch verschlüsselt in der Sicherung: Mit nur der schlanken Angabe vom Ziel bleibt er lesbar.
+              ...(wozu ? { wozu } : {}),
             },
           };
           for (const t of tabellen) {
@@ -185,6 +216,8 @@ export abstract class SicherungAnlegen extends SicherungBasis {
         verschluesselung: { verfahren: t('meldungen.sicherung.aes-256-gcm-schluessel'), fingerabdruck },
         sha256: ergebnis.g.sha256,
         migrationen: ergebnis.s.migrationen,
+        ...(zusatz.wozu ? { wozu: zusatz.wozu } : {}),
+        ...(zusatz.nachgeholt ? { nachgeholt: true } : {}),
       };
       await writeFile(join(this.ordner, `.${name}.json.teil`), `${JSON.stringify(meta, null, 2)}\n`, { mode: 0o600 });
       await rename(teil, join(this.ordner, `${name}${ENDUNG}`));

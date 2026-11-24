@@ -12,6 +12,7 @@ import {
 import { Fachfehler } from '../grundlagen/fehler';
 import { t } from '../sprache/sprache';
 import type { Eintragsliste, SchlankeMetadaten, Metadaten } from './sicherung';
+import { WOZU_MAX } from './sicherung-hilfen';
 import { schluesselAusText, fingerabdruck, leiteAb } from '../geheimnisse/tresor';
 import { liesKopf, liesSicherung, ZWECK } from './sicherungsformat';
 import { PLATZ_RESERVE, GB } from '../grundlagen/grenzen';
@@ -244,6 +245,7 @@ export abstract class WiederherstellungBasis {
         tabellen?: unknown;
         ohneInhalt?: unknown;
         zaehler?: Record<string, unknown>;
+        wozu?: unknown;
       } | null;
       if (!kopf) throw new Error('Die Sicherung beginnt nicht mit der Inhaltsangabe – die Datei ist beschädigt.');
       const migrationen = Array.isArray(kopf.migrationen) ? kopf.migrationen.map(String) : [];
@@ -257,6 +259,8 @@ export abstract class WiederherstellungBasis {
           ...meta,
           haushaltId: String(kopf.haushaltId ?? ''),
           migrationen,
+          // „Wozu?“ (#1529) steht auch verschlüsselt in der Sicherung.
+          ...(typeof kopf.wozu === 'string' && kopf.wozu ? { wozu: kopf.wozu.slice(0, WOZU_MAX) } : {}),
           umgebung: { ...meta.umgebung, datenbankStand: migrationen.at(-1) ?? null },
           anzahl: {
             ...meta.anzahl,
