@@ -63,6 +63,7 @@
   "index.das-skript-des-lasttests": "The load test script (dms-lasttest) is missing in this image.",
   "prozess.ungueltige-anfrage-json": "Invalid request (JSON).",
   "prozess.netz-gesperrt-steht-weder": "Network blocked: {url} is neither in the manifest nor the confirmed service address.",
+  "prozess.netz-privat": "Network blocked: {url} is only in the package manifest and points to an address in the home network or to this computer. For that, an admin must confirm it as a service address.",
   "prozess.antwort-zu-gross": "Response too large.",
   "prozess.keine-antwort-geoeffnet-erst": "No response opened (netz_strom first).",
   "prozess.das-paket-ist-nicht": "The package isn’t loaded.",

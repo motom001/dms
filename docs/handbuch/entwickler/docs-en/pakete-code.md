@@ -75,7 +75,7 @@ code:
       lesen: [vertrag]
   ```
 
-- **Network/internet (`netz`):** only `https://`, without credentials. The runner doesn't follow redirects. The preview shows "no access to network and internet" or "Access to network/internet only to: …" (#449).
+- **Network/internet (`netz`):** only `https://`, without credentials. The runner doesn't follow redirects. The preview shows "no access to network and internet" or "Access to network/internet only to: …" (#449). Addresses from `netz` are for services on the internet: if the name points to an address in the home network, to the computer itself or to a metadata address, the runner refuses the request (#1628, checked when connecting, as with "Call URL"). Services in the home network only work through the service address.
 - **Service address as a setting** (since 0.124.0): instead of a fixed address in `netz`, a package can require a setting of type `adresse` – for instance for an AI service that every household runs somewhere else. The administrator enters it and confirms a notice when saving; only then does the runner allow network access there (and to paths below), also with `http://` (services in the home network). At most one per package, only in a section, **without** `standard` – at most with `beispiel`, which appears in the empty field:
 
   ```yaml
@@ -217,7 +217,7 @@ All functions are synchronous; pointers and lengths refer to the imported memory
 |---|---|
 | `api(json, len)` | HTTP status. `json`: `{"methode":"GET","pfad":"/mappen/…","body":{…}}` – paths of the [API v1](https://help.ablago.app/admin/aktuell/en/api/) without `/api/v1`. Fetch the answer with `antwort_*`. |
 | `api_binaer(json, len, body, blen)` | like `api`, with raw data as the body; `"typ"` in the JSON names the content type (default `application/octet-stream`). |
-| `netz(json, len, body, blen)` | HTTP status or negative on error. `json`: `{"methode":"POST","url":"https://…","kopf":{…}}`. Only addresses from `code.netz` and the confirmed service address; 30 s (since 0.142.0 with more than 1 MB body as long as the call – for uploading in parts), at most 10 MB answer. The runner doesn't follow redirects. |
+| `netz(json, len, body, blen)` | HTTP status or negative on error. `json`: `{"methode":"POST","url":"https://…","kopf":{…}}`. Only addresses from `code.netz` (public destinations only, otherwise `-2`) and the confirmed service address; 30 s (since 0.142.0 with more than 1 MB body as long as the call – for uploading in parts), at most 10 MB answer. The runner doesn't follow redirects. |
 | `netz_strom(json, len, body, blen)` | since 0.124.0. Like `netz`, but only returns the HTTP status; `netz_weiter` reads the body piece by piece (e.g. an answer with `"stream": true`). The whole answer may take as long as the call, every piece at most 30 s; together at most 10 MB. |
 | `netz_weiter()` | since 0.124.0. Length of the next piece (fetch with `antwort_lesen`), `0` at the end, negative on error. |
 | `teil(text, len)` | since 0.124.0. A piece of an answer to Ablago, which passes it on straight away (e.g. to the chat "Ask your library"). `0` or `-1` (too much: 8,000 characters per piece, 64,000 together). `ergebnis` remains authoritative. |

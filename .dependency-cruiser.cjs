@@ -51,7 +51,7 @@ const OHNE_TUER = {
     'export|vollexport|vollexport-pruefsummen|exportordner|vollexport-quelle|vollexport-formate|vollexport-schreiben|vollexport-verwaltung|vollexport-lauf|vollexport-tabellen|vollexport-ablage',
   formate: 'xlsx|zip|xml|schriftstueck',
   geheimnisse: 'geheimnisse|geheimnis-sperre|tresor',
-  grundlagen: 'fehler|grenzen|uebergaenge',
+  grundlagen: 'fehler|grenzen|uebergaenge|netzadressen',
   http: 'http|routen|koepfe|proxy|ueberlast',
   konten: 'konto-repo',
   lasttest: 'lasttestmodus|speicherart|protokollsammlung|abfragestatistik|prozessgruppen',
@@ -85,12 +85,12 @@ const LOSE_DATEI = `^server/src/(?:${LOSE})\\.ts$`;
 
 /**
  * Basis, auf der der Kern aufsetzt (#961): Repo, Datenbank, Protokoll, Texte, Einstellungen, Dateien, Zähler,
- * Fehler, Grenzen, Sperre für Geheimnisse (#1055), Nachweis-Journal (#1053, wie das Protokoll: viele Fachordner schreiben
+ * Fehler, Grenzen, Netzadressen (#1628), Sperre für Geheimnisse (#1055), Nachweis-Journal (#1053, wie das Protokoll: viele Fachordner schreiben
  * hinein). Diese Module binden selbst keinen Dienst und keinen Fachbereich ein. Wie alle Dateilisten unten als Pfad ab
  * server/src/ ohne .ts (#1278: früher direkt in server/src/).
  */
 const BASIS =
-  'datenbank/db|protokoll/protokoll|sprache/sprache|einstellungen/einstellungen|dateien/dateispeicher|zwischenspeicher/zaehlerspeicher|zwischenspeicher/lesespeicher|zwischenspeicher/kurzzustand|grundlagen/fehler|grundlagen/grenzen|geheimnisse/geheimnis-sperre|protokoll/nachweisjournal';
+  'datenbank/db|protokoll/protokoll|sprache/sprache|einstellungen/einstellungen|dateien/dateispeicher|zwischenspeicher/zaehlerspeicher|zwischenspeicher/lesespeicher|zwischenspeicher/kurzzustand|grundlagen/fehler|grundlagen/grenzen|grundlagen/netzadressen|geheimnisse/geheimnis-sperre|protokoll/nachweisjournal';
 /**
  * Basis als Ordner (#1278): das Repo – Schnittstelle in repo/index.ts, PostgreSQL in repo/pg/, Arbeitsspeicher in
  * repo/speicher/. Von außen nur über diese drei index.ts (`repo-nur-ueber-index`); wie die Basis bindet es selbst
