@@ -41,7 +41,7 @@ Then open `http://<TrueNAS>:30607` in your browser. The wizard does not ask for 
 
 --8<-- "assistent-weiter.md"
 
-### Updates and backup (app catalogue) { #katalog-updates-und-sicherung }
+### Updates (app catalogue) { #katalog-updates-und-sicherung }
 
 - **Updates:** **Apps → Ablago → Update**, as soon as TrueNAS has the new version in its catalogue. That is usually a few days after Ablago's stable release, because TrueNAS updates the versions in its catalogue itself. The data stays in the datasets.
 - **Off-site backup:** copy the dataset or folder `backups` to another place with a **Cloud Sync Task** or **Replication**. Keep the content of `keys` separately (e.g. with the [emergency sheet](https://help.ablago.app/admin/aktuell/en/notfall/)). More under [Off-site backup](#sicherung-ausser-haus).
@@ -78,7 +78,7 @@ Then open `http://<TrueNAS>:30607` in your browser. The wizard does not ask for 
 
 --8<-- "assistent-weiter.md"
 
-### Updates and backup (Custom App) {#updates-und-sicherung}
+### Updates (Custom App) {#updates-und-sicherung}
 
 - **Updates:** **Apps → `dms` → Update** (or *Pull Images* and restart). The data stays in the dataset.
 - **Off-site backup:** copy the `sicherung` folder to another place, as described below.

@@ -41,7 +41,7 @@ Dann im Browser `http://<TrueNAS>:30607` öffnen. Die Datenbank fragt der Assist
 
 --8<-- "assistent-weiter.md"
 
-### Updates und Sicherung (App-Katalog) { #katalog-updates-und-sicherung }
+### Updates (App-Katalog) { #katalog-updates-und-sicherung }
 
 - **Updates:** **Apps → Ablago → Update**, sobald TrueNAS die neue Version im Katalog hat. Das ist meist einige Tage nach dem stabilen Release von Ablago so weit, weil TrueNAS die Versionen im Katalog selbst nachzieht. Die Daten bleiben in den Datensätzen.
 - **Sicherung außer Haus:** Den Datensatz bzw. Ordner `backups` per **Cloud Sync Task** oder **Replication** an einen anderen Ort kopieren. Den Inhalt von `keys` hebst du getrennt davon auf (z. B. mit dem [Notfallblatt](https://help.ablago.app/admin/aktuell/notfall/)). Mehr dazu unter [Sicherung außer Haus](#sicherung-ausser-haus).
@@ -78,7 +78,7 @@ Dann im Browser `http://<TrueNAS>:30607` öffnen. Die Datenbank fragt der Assist
 
 --8<-- "assistent-weiter.md"
 
-### Updates und Sicherung (Custom App) { #updates-und-sicherung }
+### Updates (Custom App) { #updates-und-sicherung }
 
 - **Updates:** **Apps → `dms` → Update** (bzw. *Pull Images* und neu starten). Die Daten bleiben im Datensatz.
 - **Sicherung außer Haus:** Den Ordner `sicherung` an einen anderen Ort kopieren, wie unten beschrieben.
