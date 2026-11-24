@@ -5,6 +5,6 @@
 export { RegelwerkAbschnitt } from './rechte/RegelwerkAbschnitt';
 export { PaketeAmTyp } from './rechte/PaketeAmTyp';
 export { KiAmTyp } from './rechte/KiAmTyp';
-export { useTypNeben, type TypNeben } from './rechte/useTypNeben';
+export { useTypNeben } from './rechte/useTypNeben';
 export { TestlaufBlatt } from './rechte/TestlaufBlatt';
 export { WasSiehtBlatt } from './rechte/WasSiehtBlatt';

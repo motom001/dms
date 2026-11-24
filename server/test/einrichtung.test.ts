@@ -148,10 +148,11 @@ describe('Einrichtungscode (#119)', () => {
     }
     const konten = new Konten(speicherKontoRepo(), null, 'http://dms');
     let name: string | null = 'Mandant';
+    const einst = speicherEinstellungen();
     const e = new Einrichtung({
       konten,
       code: c,
-      einstellungen: speicherEinstellungen(),
+      einstellungen: einst,
       mandant: {
         name: async () => name,
         umbenennen: async (n) => {
@@ -174,6 +175,7 @@ describe('Einrichtungscode (#119)', () => {
       { ip: '1', geraet: '' },
     );
     assert.deepEqual(r.benutzer.verwaltung, ['*']);
+    assert.deepEqual(await einst.lies('ki_typen'), { ausgenommen: [] }, 'Dienste im Netz (#1635): neue Installation – alle Bereiche');
     await assert.rejects(
       e.einrichten({ mandant: 'X', name: 'B', email: 'b@example.org', passwort: 'ein-langes-passwort' }, heim, { ip: '1', geraet: '' }),
       /bereits abgeschlossen/,

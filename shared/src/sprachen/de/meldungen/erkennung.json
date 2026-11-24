@@ -23,7 +23,7 @@
   "erkennung.hat-nicht-geantwortet-die": "„{name}“ hat nicht geantwortet ({message}) – die eingebaute Erkennung hat übernommen.",
   "klassifizierung.keine-dokumente": "Bitte mindestens ein Dokument angeben.",
   "klassifizierung.keine-zugelassenen": "An „{name}“ ging nichts: Kein Mappentyp, der hier in Frage kommt, darf an Dienste im Netz gehen.",
-  "klassifizierung.quelle-gesperrt": "An „{name}“ ging nichts: Das Dokument liegt in einem Mappentyp, der nicht an Dienste im Netz gehen darf.",
+  "klassifizierung.quelle-gesperrt": "An „{name}“ ging nichts: Das Dokument liegt im Mappentyp „{typ}“, der nicht an Dienste im Netz gehen darf.",
   "klassifizierung.nichts-brauchbares": "„{name}“ hat nichts Brauchbares geliefert – der Vorschlag kommt aus den übrigen Wegen.",
   "klassifizierung.nicht-geantwortet": "„{name}“ hat nicht geantwortet – der Vorschlag kommt aus den übrigen Wegen.",
   "erkennung.name": "Name",

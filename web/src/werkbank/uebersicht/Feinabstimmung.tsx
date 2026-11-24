@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { KiUebersicht } from '../../../../shared/src/pakete';
 import { sucheApi } from '../../api/suche';
-import { Aufklapper, HakenFeld, Knopf } from '../../bausteine';
+import { Aufklapper, Knopf } from '../../bausteine';
 import { Hilfe } from '../../Hilfe';
 import { t } from '../../sprache';
 
@@ -55,7 +55,9 @@ export function Feinabstimmung() {
         <span>{t('werkbank.darf.fein.titel')}</span>
         {k && (
           <span className="leise klein">
-            {k.alle && an === k.typen.length ? t('werkbank.darf.fein.kurz.alle') : t('werkbank.darf.fein.kurz', { an, alle: k.typen.length })}
+            {k.alle && an === k.typen.length
+              ? t('werkbank.darf.fein.kurz.alle')
+              : t('werkbank.darf.fein.kurz', { an, alle: k.typen.length })}
           </span>
         )}
       </Aufklapper>
@@ -83,10 +85,10 @@ export function Feinabstimmung() {
             </div>
           )}
           {k && (
-            <ul className="liste-ohne">
+            <ul className="auswahlliste">
               {k.typen.map((x) => (
                 <li key={x.id}>
-                  <HakenFeld beschriftung={x.name}>
+                  <label className="haken">
                     <input
                       type="checkbox"
                       checked={x.zugelassen}
@@ -100,7 +102,8 @@ export function Feinabstimmung() {
                         );
                       }}
                     />
-                  </HakenFeld>
+                    <span>{x.name}</span>
+                  </label>
                 </li>
               ))}
             </ul>

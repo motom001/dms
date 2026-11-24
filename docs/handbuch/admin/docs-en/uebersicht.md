@@ -170,7 +170,7 @@ Two notices you close with a button of their own instead – they don't come bac
 | Package still needs settings | yellow | `paket-einstellungen` |
 | Packages paused – each with the reason in words ([Pausing](pakete.md#anhalten)) | yellow | `pakete.angehalten` |
 | Packages not complete – solutions on the package ([Damaged package](pakete.md#beschaedigt)) | yellow | `pakete.beschaedigt` |
-| New: keep folder types away from services on the network (once after the update, with packages with network access; “Hide”) | notice | `ki.typen` |
+| So far only these areas go to services on the network – allow all? (once, for existing installations with “Also helpers with internet” and their previous list, #1635; “Hide”) | notice | `ki.typen` |
 | New: What Ablago may do – please take a look once (once after the update; “Hide”) | notice | `darf.neu` |
 | Skipped during setup (address and email sending; packages are under "Recommended packages") | notice | `einrichtung` |
 | Good if someone else can manage – only one person may manage | notice | `verwaltung.zweite-person` |

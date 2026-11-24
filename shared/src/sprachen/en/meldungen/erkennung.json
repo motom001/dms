@@ -23,7 +23,7 @@
   "erkennung.hat-nicht-geantwortet-die": "“{name}” didn’t answer ({message}) – the built-in recognition has taken over.",
   "klassifizierung.keine-dokumente": "Please give at least one document.",
   "klassifizierung.keine-zugelassenen": "Nothing went to “{name}”: none of the folder types that come into question may go to services on the network.",
-  "klassifizierung.quelle-gesperrt": "Nothing went to “{name}”: the document is in a folder type that may not go to services on the network.",
+  "klassifizierung.quelle-gesperrt": "Nothing went to “{name}”: the document is in the folder type “{typ}”, which may not go to services on the network.",
   "klassifizierung.nichts-brauchbares": "“{name}” didn’t deliver anything usable – the suggestion comes from the other sources.",
   "klassifizierung.nicht-geantwortet": "“{name}” didn’t answer – the suggestion comes from the other sources.",
   "erkennung.name": "Name",

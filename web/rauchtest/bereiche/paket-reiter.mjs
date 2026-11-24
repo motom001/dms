@@ -229,7 +229,7 @@ export async function zumPaket(s) {
 }
 
 rauchtest(
-  'Paketseite: Übersicht liest, Einstellungen ändern – KI-Zulassung mit einem Speichern (#996)',
+  'Paketseite: Übersicht liest, Einstellungen ändern – KI-Zulassung verweist auf die Feinabstimmung (#996, #1635)',
   { als: LENA, timeout: 90_000 },
   async (s) => {
     const z = await attrappe(s);
@@ -246,10 +246,12 @@ rauchtest(
     await s.getByLabel('Modell').fill('Groß');
     await s.getByText('Nur Kleinbuchstaben und Bindestrich.').waitFor();
     await s.getByLabel('Modell').fill('mittel');
-    await s.getByRole('checkbox', { name: 'Gesundheit' }).check();
+    // #1635: Zugelassen wird nur an einer Stelle – hier steht, was das Paket bekommt, und der Weg zur Feinabstimmung.
+    assert.equal(await s.getByRole('checkbox', { name: 'Gesundheit' }).count(), 0, 'keine zweite Liste');
+    await s.getByRole('link', { name: 'Zur Feinabstimmung' }).waitFor();
     await s.getByRole('button', { name: 'Einstellungen speichern' }).click();
     await s.getByText('Gespeichert.').waitFor();
-    assert.deepEqual(z.ki, ['t2:true']);
+    assert.deepEqual(z.ki, []);
     assert.equal(z.werte.modell, 'mittel');
   },
 );
