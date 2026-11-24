@@ -168,18 +168,21 @@ export function paketeUndEinrichtung(u: WerkbankUebersicht, h: Hinweis[]) {
       ziel: `/werkbank/pakete/${p.id}?reiter=einstellungen`,
       knopf: t('pakete.ablauf.aufgabe.knopf'),
     });
-  // KI-Dienste (#796): Nach dem Update einmal – bestehende Mappentypen gehen weiter an KI-Pakete, lassen sich aber ausschließen.
-  if (u.kiTypen?.pakete.length)
+  // Dienste im Netz (#1635, ersetzt den Hinweis von #796): Bestehende Installationen behalten ihre bisherige Liste; wer
+  // „Auch Helfer, die Dienste im Netz nutzen“ gewählt hat, wird einmal gefragt, ob alle Bereiche hinausdürfen.
+  const bisher = u.kiTypen?.bisher;
+  if (bisher && u.darf?.pakete === 'netz')
     h.push({
       schluessel: 'ki.typen',
       art: 'info',
       text: (
         <>
-          <strong>{t('pakete.ki.hinweis')}</strong> {t('pakete.ki.hinweis.text', { namen: u.kiTypen.pakete.map((p) => p.name).join(', ') })}
+          <strong>{t('werkbank.darf.fein.hinweis')}</strong>{' '}
+          {bisher.length ? t('werkbank.darf.fein.hinweis.text', { namen: bisher.join(', ') }) : t('werkbank.darf.fein.hinweis.keine')}
         </>
       ),
-      ziel: `/werkbank/pakete/${u.kiTypen.pakete[0].id}`,
-      knopf: t('pakete.ki.hinweis.knopf'),
+      ziel: '/werkbank#dienste-im-netz',
+      knopf: t('werkbank.darf.fein.hinweis.knopf'),
       // Einheitlich (#1511): kommt nur einmal – „Ausblenden“ schließt ihn ab (#1587: reiner Hinweis).
       erledigen: t('werkbank.uebersicht.ausblenden'),
     });

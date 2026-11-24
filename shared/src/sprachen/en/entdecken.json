@@ -169,5 +169,15 @@
   "ziel-zeigen.leiste": "Show target: click a highlighted place – its anchor goes into the file. Esc cancels.",
   "ziel-zeigen.abbrechen": "Cancel",
   "hinweis.rundgang": "New here? A short tour shows you what you can set up here.",
-  "hinweis.ausblenden": "Hide this note"
+  "hinweis.ausblenden": "Hide this note",
+  "rundgang.dienste-im-netz.titel": "Keep areas away from services on the network",
+  "rundgang.dienste-im-netz.beschreibung": "How to exclude individual areas such as health or post – they then stay in Ablago.",
+  "rundgang.dienste-im-netz.ende": "Done. The folder type has the same tick under Permissions: “May go to services on the network”.",
+  "rundgang.dienste-im-netz.darf.titel": "One decision",
+  "rundgang.dienste-im-netz.darf.text": "With “Also helpers that use services on the network”, packages such as the AI assistant may get content from all areas. Below, you fine-tune it.",
+  "rundgang.dienste-im-netz.darf.text-handy": "“Also helpers that use services on the network” means all areas. Below, you fine-tune it.",
+  "rundgang.dienste-im-netz.darf.ort": "The card “What Ablago may do” is at the top of the workbench overview.",
+  "rundgang.dienste-im-netz.fein.titel": "Exclude health and post",
+  "rundgang.dienste-im-netz.fein.text": "Open the fine-tuning and remove the tick for health and post. This takes effect immediately: no package with network access gets anything from them.",
+  "rundgang.dienste-im-netz.fein.ort": "The fine-tuning is in the card “What Ablago may do” below the two sentences."
 }

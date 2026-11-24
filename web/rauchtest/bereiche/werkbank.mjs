@@ -54,40 +54,64 @@ rauchtest('Werkbank: Mappentyp bearbeiten (Felder)', { als: LENA }, async (s) =>
   await s.getByRole('region', { name: 'Mappe' }).getByRole('textbox', { name: 'Kundenportal' }).waitFor();
 });
 
-rauchtest('Werkbank: Mappentyp – „Darf an Dienste im Netz gehen“ unter Berechtigungen, axe (#1559)', { als: LENA }, async (s) => {
-  await s.goto(BASIS + '/ablage/start');
-  await verwalten(s);
-  await s
-    .getByRole('complementary', { name: 'Bereiche' })
-    .getByRole('link', { name: /^Mappentypen/ })
-    .click();
-  await s.getByRole('link', { name: /^Vertrag \d+ Felder/ }).click();
-  const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
-  await bearbeitung.getByRole('heading', { name: 'Vertrag', level: 1 }).waitFor();
-  // Kein eigener Abschnitt mehr, sondern eine feste Zeile direkt unter „Standard“.
-  assert.equal(await bearbeitung.getByRole('region', { name: /KI-Dienste|Dienste im Netz/ }).count(), 0, 'kein eigener Abschnitt');
-  const rechte = bearbeitung.getByRole('region', { name: 'Berechtigungen' });
-  await rechte.getByRole('button', { name: 'Berechtigungen' }).click();
-  const ueberschriften = await rechte.getByRole('heading', { level: 3 }).allTextContents();
-  assert.deepEqual(
-    ueberschriften.map((x) => x.replace(/\s*\?\s*$/, '').trim()).slice(0, 3),
-    ['Standard', 'Dienste im Netz', 'Regeln'],
-    'direkt unter „Standard“',
-  );
-  const haken = rechte.getByRole('checkbox', { name: 'Darf an Dienste im Netz gehen' });
-  const vorher = await haken.isChecked();
-  await haken.click();
-  await rechte.getByText(vorher ? 'Der Mappentyp bleibt jetzt in Ablago.' : 'Der Mappentyp darf jetzt an Dienste im Netz gehen.').waitFor();
-  assert.equal(await haken.isChecked(), !vorher);
-  for (const schema of ['light', 'dark']) {
-    await schemaWechseln(s, schema);
-    assert.deepEqual(await axePruefen(s, ['#ki']), [], `axe ${schema}`);
-  }
-  await schemaWechseln(s, 'light');
-  await haken.click();
-  await rechte.getByText(vorher ? 'Der Mappentyp darf jetzt an Dienste im Netz gehen.' : 'Der Mappentyp bleibt jetzt in Ablago.').waitFor();
-  assert.equal(await haken.isChecked(), vorher, 'zurück wie vorher');
-});
+rauchtest(
+  'Werkbank: Mappentyp – „Darf an Dienste im Netz gehen“ unter Berechtigungen, Teil des Entwurfs, axe (#1559, #1640)',
+  { als: LENA },
+  async (s) => {
+    await s.goto(BASIS + '/ablage/start');
+    await verwalten(s);
+    await s
+      .getByRole('complementary', { name: 'Bereiche' })
+      .getByRole('link', { name: /^Mappentypen/ })
+      .click();
+    await s.getByRole('link', { name: /^Vertrag \d+ Felder/ }).click();
+    const bearbeitung = s.getByRole('region', { name: 'Bearbeitung' });
+    await bearbeitung.getByRole('heading', { name: 'Vertrag', level: 1 }).waitFor();
+    // Kein eigener Abschnitt mehr, sondern eine feste Zeile direkt unter „Standard“.
+    assert.equal(await bearbeitung.getByRole('region', { name: /KI-Dienste|Dienste im Netz/ }).count(), 0, 'kein eigener Abschnitt');
+    const rechte = bearbeitung.getByRole('region', { name: 'Berechtigungen' });
+    await rechte.getByRole('button', { name: 'Berechtigungen' }).click();
+    const ueberschriften = await rechte.getByRole('heading', { level: 3 }).allTextContents();
+    assert.deepEqual(
+      ueberschriften.map((x) => x.replace(/\s*\?\s*$/, '').trim()).slice(0, 3),
+      ['Standard', 'Dienste im Netz', 'Regeln'],
+      'direkt unter „Standard“',
+    );
+    const haken = rechte.getByRole('checkbox', { name: 'Darf an Dienste im Netz gehen' });
+    const vorher = await haken.isChecked();
+    // #1640: Der Haken speichert nicht sofort – er zählt als Änderung wie jedes Feld des Editors.
+    const speichern = bearbeitung.getByRole('button', { name: 'Mappentyp speichern' });
+    await bearbeitung.getByRole('button', { name: 'Mappentyp speichern', disabled: true }).waitFor();
+    let puts = 0;
+    s.on('request', (r) => {
+      if (r.method() === 'PUT' && r.url().includes('/api/werkbank/ki-typen/')) puts++;
+    });
+    await haken.click();
+    assert.equal(await haken.isChecked(), !vorher);
+    await bearbeitung.getByRole('button', { name: 'Mappentyp speichern', disabled: false }).waitFor();
+    assert.equal(puts, 0, 'nichts sofort gespeichert');
+    for (const schema of ['light', 'dark']) {
+      await schemaWechseln(s, schema);
+      assert.deepEqual(await axePruefen(s, ['#ki']), [], `axe ${schema}`);
+    }
+    await schemaWechseln(s, 'light');
+    // „Änderungen verwerfen“ nimmt ihn zurück.
+    await bearbeitung.getByRole('button', { name: 'Änderungen verwerfen' }).click();
+    await bearbeitung.getByRole('button', { name: 'Mappentyp speichern', disabled: true }).waitFor();
+    assert.equal(await haken.isChecked(), vorher, 'zurück wie vorher');
+    assert.equal(puts, 0);
+    // „Mappentyp speichern“ übernimmt ihn – und dann zurück wie vorher.
+    for (const wert of [!vorher, vorher]) {
+      await haken.setChecked(wert);
+      const gespeichert = s.waitForResponse((r) => r.request().method() === 'PUT' && r.url().includes('/api/werkbank/ki-typen/'));
+      await speichern.click();
+      await gespeichert;
+      await bearbeitung.getByText('Mappentyp gespeichert.').waitFor();
+      await bearbeitung.getByRole('button', { name: 'Mappentyp speichern', disabled: true }).waitFor();
+      assert.equal(await haken.isChecked(), wert);
+    }
+  },
+);
 
 rauchtest('Werkbank: Stempel-Vorlage aus der Mitte öffnen (#990)', { als: LENA }, async (s) => {
   await s.goto(BASIS + '/ablage/start');

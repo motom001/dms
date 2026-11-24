@@ -231,6 +231,16 @@
   beschreibung: „Werkbank anpassen“ unten in der Leiste der Werkbank – weitere Bereiche einblenden
   handy: true
   clients: false
+- anker: werkbank.darf
+  seite: /werkbank
+  beschreibung: Karte „Was Ablago darf“ oben in der Übersicht – welche Pakete Ablago nutzen darf und wie viel es von sich aus tut
+  handy: true
+  clients: false
+- anker: werkbank.darf.feinabstimmung
+  seite: /werkbank
+  beschreibung: Feinabstimmung „Dienste im Netz“ in der Karte „Was Ablago darf“ (nur bei „Auch Helfer, die Dienste im Netz nutzen“) – Bereiche ausnehmen (#1635)
+  handy: true
+  clients: false
 - anker: werkbank.typen.suche
   seite: /werkbank/typen
   beschreibung: Suchfeld mit Filter „Paket“ über der Liste der Mappentypen

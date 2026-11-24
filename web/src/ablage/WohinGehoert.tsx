@@ -5,6 +5,10 @@ import { formatiere, istLeer, type Feld, type Mappentyp } from '../../../shared/
 import { mappenApi, type Bezuege, type MappeDetails } from '../api/mappen';
 import { Knopf, Mehrfachauswahl, Umschalter } from '../bausteine';
 import { useDaten } from '../daten';
+import { useKonto } from '../konto';
+import { Link } from '../ort';
+import { hatGesamt } from '../../../shared/src/verwaltungsrecht';
+import { FEIN_ZIEL } from '../werkbank/uebersicht/Feinabstimmung';
 import { titelOder } from '../seiten';
 import { t } from '../sprache';
 import { MappenWahl } from './MappeFormular';
@@ -109,6 +113,7 @@ export function NeueMappeWahl({
   klass: (Klassifizierung & { bezuege: Bezuege }) | null | undefined;
   waehle(id: string | null): void;
 }) {
+  const { ich } = useKonto();
   const [eingabe, setEingabe] = useState('');
   const [offen, setOffen] = useState(false);
   const such = eingabe.trim().toLocaleLowerCase();
@@ -168,6 +173,15 @@ export function NeueMappeWahl({
         .map((w, i) => (
           <p key={`h${i}`} className="leise klein ue-weg-hinweis">
             {w.hinweis}
+            {/* Gesperrt für Dienste im Netz (#1635): ein Klick zur Feinabstimmung – für alle, die sie ändern dürfen. */}
+            {w.stand === 'gesperrt' && hatGesamt(ich) && (
+              <>
+                {' '}
+                <Link to={FEIN_ZIEL} className="verweis">
+                  {t('pakete.ki.zur-feinabstimmung')}
+                </Link>
+              </>
+            )}
           </p>
         ))}
     </div>

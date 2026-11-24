@@ -62,6 +62,7 @@ describe('Format und Inhalt (Build-Test, #831, #832)', () => {
         werkbank: ['logo', 'bereiche', 'menue', 'navigation', 'benutzer', 'uebersicht', 'anpassen', 'assistent'],
         mappe: ['kopf', 'stern', 'menue', 'register', 'speichern'],
         konto: ['zurueck', 'konto', 'sicherheit', 'darstellung', 'benachrichtigungen', 'abwesenheit', 'fehler'],
+        dienste_im_netz: ['darf', 'fein'],
       });
       assert.deepEqual(
         x.rundgaenge.map((r) => [r.schluessel, r.start, r.seite, !!r.leise]),
@@ -70,6 +71,7 @@ describe('Format und Inhalt (Build-Test, #831, #832)', () => {
           ['werkbank', 'erster_besuch', 'werkbank', false],
           ['mappe', 'erster_besuch', 'mappe', false],
           ['konto', 'erster_besuch', 'konto', true],
+          ['dienste_im_netz', 'manuell', undefined, false],
         ],
       );
       assert.ok(x.tipps.length >= 15, `${spr}: rund 15 Tipps, sind ${x.tipps.length}`);

@@ -25,6 +25,7 @@ import { regelwerkVon, type Regelwerk } from '../../../shared/src/rechte';
 import { regelnMitnehmen, UMBAU_FELD, UMBAU_SCHREIBER } from '../../../shared/src/umbau';
 import { istVorgabeWert } from '../../../shared/src/vorgaben';
 import { Fachfehler } from '../grundlagen/fehler';
+import { kiErlaubt, kiWert, liesKiStand, setzeKi } from '../mappentypen';
 import { protokoll } from '../protokoll/protokoll';
 import { t } from '../sprache/sprache';
 import { merkeSichtAenderung, sichtPruefwert, standNachUmbau, type SichtAenderungen } from './sichtstand';
@@ -325,8 +326,8 @@ async function schraenkeEin(d: UmbauDienst, g: GeplanterSchritt, zielId: string)
   const e = d.kern.einstellungen;
   if (!e) return;
   if (g.plan.rechte.ki) {
-    const v = (await e.lies('ki_typen')) as { zugelassen?: string[]; hinweis?: boolean } | null;
-    if (v?.zugelassen?.includes(zielId)) await e.schreibe('ki_typen', { ...v, zugelassen: v.zugelassen.filter((x) => x !== zielId) });
+    const k = liesKiStand(await e.lies('ki_typen'));
+    if (kiErlaubt(k, zielId)) await e.schreibe('ki_typen', kiWert(setzeKi(k, zielId, false)));
   }
   const verwehrt = await paketVerwehrt(d);
   const dazu = (verwehrt[g.alt.id] ?? []).filter((x) => !(verwehrt[zielId] ?? []).includes(x));

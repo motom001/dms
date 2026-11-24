@@ -140,6 +140,8 @@ export interface Vorschau {
   namenskonflikte: string[];
   /** Hinweise, die nicht verhindern (z. B. Code läuft noch nicht). */
   hinweise: string[];
+  /** Dienste im Netz (#1635): wer was bekommt (Paket mit Netz) und der eine Hinweis beim Paket Gesundheit. */
+  dienste?: { satz?: string; gesundheit?: string } | null;
   /**
    * Mitgelieferte Automatisierungen (#712); neu = kommt mit dieser Installation bzw. diesem Update dazu (nur die stehen zur
    * Wahl). eingeschaltet (#1082): wie im Paket angegeben – true = mit gesetztem Haken anbieten; fehlt = nicht angegeben.

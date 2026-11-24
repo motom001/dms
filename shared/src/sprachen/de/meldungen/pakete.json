@@ -350,5 +350,11 @@
   "leistungen.wahl-nicht-gespeichert": "Die Wahl lässt sich gerade nicht speichern: Die Datenbank ist nicht verbunden.",
   "leistungen.anbieter-unbekannt": "Das bringt Ablago nicht mit.",
   "leistungen.an-ungueltig": "Ein- oder ausschalten: an muss true oder false sein.",
-  "leistungen.wahl-ungueltig": "„{name}“ kann das gewählte Paket nicht."
+  "leistungen.wahl-ungueltig": "„{name}“ kann das gewählte Paket nicht.",
+  "pakete.netz.alle": "„{name}“ schickt Inhalte aus allen Bereichen an {ziele} – auch aus Mappentypen, die später dazukommen.",
+  "pakete.netz.alle-ausser": "„{name}“ schickt Inhalte aus allen Bereichen an {ziele}, ausgenommen: {aus}.",
+  "pakete.netz.liste": "„{name}“ schickt Inhalte aus diesen Bereichen an {ziele}: {bereiche}. Neue Mappentypen erst, wenn ihr sie zulasst.",
+  "pakete.netz.keine": "„{name}“ bekommt zurzeit aus keinem Bereich etwas für {ziele} – zulassen lässt es sich in der Feinabstimmung.",
+  "pakete.netz.gesundheit": "Gesundheit kommt dann zu den Bereichen, die an Dienste im Netz gehen ({pakete}). Wer Gesundheit in Ablago lassen will, nimmt es in der Feinabstimmung aus.",
+  "pakete.netz.adresse": "die Adresse aus der Einstellung „{a}“"
 }

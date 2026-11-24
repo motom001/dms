@@ -171,8 +171,13 @@ export const istKiPaket = (c: PaketCode | undefined): boolean =>
 export interface KiUebersicht {
   typen: Array<{ id: string; name: string; zugelassen: boolean; system?: string }>;
   pakete: Array<{ id: string; name: string; bekommt: string[] }>;
-  /** Nach dem Update einmal: Mappentypen lassen sich jetzt ausschließen (nur, wenn es KI-Pakete gibt). */
+  /** #1635: bisherige Liste, noch nicht gefragt „alle erlauben?“ (einmal in der Übersicht, bei „Dienste im Netz“). */
   hinweis: boolean;
+  /**
+   * #1635: true = alle Bereiche gehen hinaus, außer den ausgenommenen (neue Mappentypen gehören dazu). false = die
+   * bisherige Liste einer bestehenden Installation (nur die zugelassenen; neue Mappentypen erst nach Zulassung).
+   */
+  alle?: boolean;
 }
 
 /**

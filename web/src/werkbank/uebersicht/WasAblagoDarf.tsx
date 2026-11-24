@@ -8,6 +8,7 @@ import { hatGesamt } from '../../../../shared/src/verwaltungsrecht';
 import { DARF_VORGABE, PAKETE_GRENZEN, SELBST_STUFEN, ueberHoechstwert, type Darf, type DarfStand } from '../../../../shared/src/darf';
 import type { UebersichtZustand } from './zustand';
 import { DarfFrage } from './DarfFrage';
+import { Feinabstimmung } from './Feinabstimmung';
 
 /** Paket über der neuen Grenze, wie der Server es beim Senken nennt (#1562, #1563). */
 interface Betroffen {
@@ -20,7 +21,8 @@ interface Betroffen {
  * Karte „Was Ablago darf“ (#1562) ganz oben in der Übersicht: die beiden gewählten Antworten als zwei Sätze, dazu
  * „Ändern …“ mit denselben zwei Fragen. Je Frage eine Optionsgruppe, eine Zeile je Antwort; der erklärende Satz steht
  * nur unter der gewählten, darunter „Das heißt für euch“. Antworten über dem Höchstwert des Anbieters sind gesperrt.
- * Keine Stufennummern – nur Antworten in Worten.
+ * Keine Stufennummern – nur Antworten in Worten. Bei „Auch Helfer, die Dienste im Netz nutzen“ darunter aufklappbar die
+ * Feinabstimmung (#1635): welche Bereiche nicht an Dienste im Netz gehen.
  */
 export function WasAblagoDarf({ u }: { u: UebersichtZustand }) {
   const d = u.stand?.darf;
@@ -32,7 +34,7 @@ function DarfKarte({ d, u }: { d: DarfStand; u: UebersichtZustand }) {
   const { ich } = useKonto();
   const [offen, setOffen] = useState(false);
   return (
-    <section id="was-ablago-darf" className="blatt darf-karte" aria-labelledby="was-ablago-darf-titel">
+    <section id="was-ablago-darf" className="blatt darf-karte" aria-labelledby="was-ablago-darf-titel" data-anker="werkbank.darf">
       <h2 id="was-ablago-darf-titel" className="h3">
         {t('werkbank.darf.titel')}
       </h2>
@@ -50,6 +52,7 @@ function DarfKarte({ d, u }: { d: DarfStand; u: UebersichtZustand }) {
               </Knopf>
             </div>
           )}
+          {d.pakete === 'netz' && hatGesamt(ich) && <Feinabstimmung />}
         </>
       )}
     </section>

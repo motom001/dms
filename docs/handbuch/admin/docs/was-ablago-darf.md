@@ -11,13 +11,27 @@ Die Karte **Was Ablago darf** steht ganz oben in der [Übersicht der Werkbank](u
 | **Keine – nur Ablago selbst** | Ihr richtet Mappentypen und Abläufe selbst ein. Was Ablago mitbringt, etwa die Texterkennung, arbeitet trotzdem. |
 | **Nur Vorlagen** | Dazu fertige Mappentypen und Ansichten wie Haushalt oder Verträge – ohne eigenen Code. |
 | **Auch Helfer, die nur hier arbeiten** (empfohlen, Vorgabe) | Dazu Pakete mit eigenem Code, etwa ein Trennblatt oder eine KI auf diesem Gerät. Nichts verlässt Ablago. |
-| **Auch Helfer, die Dienste im Netz nutzen** | Dazu Pakete, die Dienste im Netz nutzen – im Internet oder bei euch zu Hause: Sicherung an ein entferntes Ziel, Mails über einen Versanddienst, ein KI-Assistent. Inhalte nur aus Bereichen, die ihr freigebt; Gesundheit bleibt immer drin. |
+| **Auch Helfer, die Dienste im Netz nutzen** | Dazu Pakete, die Dienste im Netz nutzen – im Internet oder bei euch zu Hause: Sicherung an ein entferntes Ziel, Mails über einen Versanddienst, ein KI-Assistent. Sie bekommen Inhalte aus allen Bereichen. Ihr könnt einzelne Bereiche ausnehmen – siehe [Feinabstimmung](#feinabstimmung). |
 
 Woran Ablago erkennt, wozu ein Paket gehört, steht im Paket selbst: ohne eigenen Code ist es eine Vorlage, mit Code und ohne Adressen im Netz ein Helfer, der nur hier arbeitet, mit Adressen im Netz (auch einer Dienst-Adresse aus den Einstellungen) ein Helfer, der Dienste im Netz nutzt – ob der Dienst im Internet oder bei euch zu Hause läuft, etwa eine KI auf dem NAS.
 
 - **Installieren und Aktualisieren:** Ein Paket über der Grenze lässt sich nicht installieren. Die Vorschau sagt in Worten, warum, etwa „„Übersetzung“ nutzt Dienste im Netz – das habt ihr nicht erlaubt.“, und bietet **Erlauben …** an.
 - **Updates:** Hebt ein Update ein Paket über die Grenze (zum Beispiel nutzt es neu Dienste im Netz), installiert Ablago es nicht: „Das Update für „Übersetzung“ nutzt neu Dienste im Netz – das habt ihr nicht erlaubt.“ Die installierte Fassung läuft weiter.
 - **Was Ablago mitbringt** (eingebaute Helfer) läuft auf jeder Antwort: Texterkennung, PDF/A, Volltext und Umwandeln aus dem offiziellen Katalog, ohne Internet – samt ihren Zusätzen wie weiteren Sprachen der Texterkennung. Ein Paket eines anderen Herausgebers, das so einen Helfer ersetzt, folgt Frage 1.
+
+## Feinabstimmung: Bereiche für Dienste im Netz { #feinabstimmung }
+
+„Auch Helfer, die Dienste im Netz nutzen“ ist **eine Entscheidung**: Pakete mit Netz wie der KI-Assistent bekommen Inhalte aus **allen Bereichen** – auch Post und Gesundheit, auch Mappentypen, die später dazukommen. Wer einzelne Bereiche in Ablago lassen will, nimmt sie hier aus:
+
+1. Werkbank → Übersicht → Karte **Was Ablago darf** → **Feinabstimmung: Bereiche für Dienste im Netz** aufklappen.
+2. Bei den Bereichen, die in Ablago bleiben sollen – zum Beispiel *Gesundheit* und *Post* –, den Haken wegnehmen. Das wirkt sofort für alle Pakete mit Netz.
+
+Den Weg zeigt auch der Rundgang **Bereiche nicht an Dienste im Netz geben** (Assistent → Tipps). Am Mappentyp steht derselbe Haken unter *Berechtigungen* („Darf an Dienste im Netz gehen“); dort wird er mit **Mappentyp speichern** übernommen. Die Seite eines Pakets mit Netz und die Meldung „An … ging nichts: Das Dokument liegt im Mappentyp …“ führen mit **Zur Feinabstimmung** hierher.
+
+- **Pakete ohne Netz** – etwa *KI lokal – Ähnlichkeit* oder die Texterkennung – betrifft die Feinabstimmung nie: Sie bekommen alle Bereiche, nach ihren Rechten.
+- **Beim Installieren** eines Pakets mit Netz sagt die Vorschau, wer was bekommt, etwa „„KI-Assistent“ schickt Inhalte aus allen Bereichen an die Adresse aus der Einstellung „Dienst-Adresse“, ausgenommen: Gesundheit.“ Beim Paket *Gesundheit* steht ein Hinweis, wenn schon ein Paket mit Netz aktiv ist.
+- **Bestehende Installationen** behalten ihre bisherige Liste; neue Mappentypen gehen dort erst nach Zulassung hinaus. Die Übersicht fragt einmal „Bisher gehen nur diese Bereiche an Dienste im Netz – alle erlauben?“. **Alle Bereiche erlauben** in der Feinabstimmung stellt auf „alle Bereiche“ um; einzelne nimmst du danach wieder aus.
+- Wer eine Mappe *sieht*, regeln weiter die [Berechtigungen](berechtigungen.md) – eine zweite, versteckte Sperre für Dienste im Netz gibt es dort nicht.
 
 ## Frage 2: Wie viel soll Ablago von sich aus tun? { #selbst }
 
@@ -33,7 +47,7 @@ Auf jeder Antwort fragt Ablago weiter einzeln nach bei:
 
 - einem fremden oder unsignierten Katalog und einem Herausgeber, den es noch nicht gab,
 - Rechten an der Verwaltung oder an Sicherungen,
-- Gesundheit und ähnlich schutzbedürftigen Mappentypen,
+- dem Paket Gesundheit, wenn schon ein Paket mit Netz aktiv ist – ein Hinweis in der Vorschau, mit dem Weg zur [Feinabstimmung](#feinabstimmung),
 - allem, was schon heute eine frische Anmeldung braucht.
 
 ## Ändern { #aendern }

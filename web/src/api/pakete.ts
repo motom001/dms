@@ -154,6 +154,8 @@ export interface PaketVorschau {
   /** Namenskonflikte (#1123): Einträge aus `probleme`, die sich durch Umbenennen in der Vorschau lösen lassen. */
   namenskonflikte?: string[];
   hinweise: string[];
+  /** Dienste im Netz (#1635): wer was bekommt (Paket mit Netz) und der eine Hinweis beim Paket Gesundheit. */
+  dienste?: { satz?: string; gesundheit?: string } | null;
   einstellungen: { neu: string[]; weg: string[] } | null;
   /** Beispiel-Dokumente zu den Beispielen (#878). */
   beispielDokumente?: { anzahl: number; bytes: number };

@@ -323,6 +323,16 @@ export function berechtigungenRouten(k: RoutenKontext): Route[] {
       zugang: 'admin',
       handler: async (a) => ok(await dienst.ki.setzeKiTyp(a.params.typId, b(a).zugelassen === true, ich(a).email)),
     },
+    // #1635: bestehende Installation – von der bisherigen Liste zu „alle Bereiche“ (außer `ausgenommen`).
+    {
+      methode: 'POST',
+      pfad: '/api/werkbank/ki-typen-alle',
+      zugang: 'admin',
+      handler: async (a) => {
+        const aus = b(a).ausgenommen;
+        return ok(await dienst.ki.kiAlleErlauben(Array.isArray(aus) ? aus.map(String) : [], ich(a).email));
+      },
+    },
     {
       methode: 'POST',
       pfad: '/api/werkbank/berechtigungen/:typId/kopieren',

@@ -27,6 +27,9 @@ import { speicherKontoRepo } from '../src/konten/konto-repo';
 import type { Repo } from '../src/repo';
 import { speicherRepo } from '../src/repo/speicher';
 import { routen } from '../src/http/routen';
+import { KI_ALLE, liesKiStand } from '../src/mappentypen';
+import { diensteImNetz } from '../src/pakete/verwaltung';
+import type { Mappentyp } from '../../shared/src/model';
 import { eigeneDatenbank, MIGRATIONEN } from './hilfe-db';
 
 /** Uhr vorstellen (Bündelung der Ereignisse), danach zurück. */
@@ -200,7 +203,8 @@ describe('KI-Dienste (#796): Sperre im Kern', () => {
       'nur das KI-Paket',
     );
     assert.ok(!k.typen.some((t) => t.system === 'benutzer'), 'Benutzer nie');
-    assert.equal(k.hinweis, false, 'frische Installation: kein Hinweis');
+    assert.equal(k.alle, false, 'ohne Einstellung: die bisherige (leere) Liste einer bestehenden Installation');
+    assert.equal(k.hinweis, true, '#1635: einmal fragen „alle erlauben?“');
     const benutzer = (await x.d.mappentypen.listeTypen()).find((t) => t.system === 'benutzer')!;
     await assert.rejects(x.d.ki.setzeKiTyp(benutzer.id, true, null), (e: Fachfehler) => e.status === 422);
     await x.d.ki.setzeKiTyp(x.vertrag.id, false, null);
@@ -373,7 +377,89 @@ describe('KI-Dienste (#796): Sperre im Kern', () => {
     await r('POST', '/api/werkbank/uebersicht/erledigt').handler(a({}, { schluessel: 'ki.typen' }));
     const u2 = (await r('GET', '/api/werkbank/uebersicht').handler(a({}))).body as { kiTypen?: unknown };
     assert.equal(u2.kiTypen ?? null, null);
-    assert.deepEqual([...(await x.d.ki.kiTypen()).zugelassen], [x.gesundheit.id], 'Zulassung bleibt');
+    assert.deepEqual([...(await x.d.ki.kiTypen()).liste], [x.gesundheit.id], 'Zulassung bleibt');
+  });
+});
+
+describe('Dienste im Netz (#1635): eine Entscheidung reicht', () => {
+  it('neue Installation: alle Bereiche, auch neue Mappentypen; Feinabstimmung nimmt einzelne aus', async () => {
+    const x = await aufbau();
+    await x.d.kern.einstellungen!.schreibe('ki_typen', KI_ALLE);
+    const post = (await x.d.mappentypen.listeTypen()).find((t) => t.system === 'post')!;
+    let wolke = await x.alsPaket('wolke');
+    assert.ok(
+      wolke.typen.has(x.gesundheit.id) && wolke.typen.has(post.id) && wolke.typen.has(x.vertrag.id),
+      'alles, auch Post und Gesundheit',
+    );
+    const neu = await x.d.mappentypen.legeTypAn({ name: 'Notizen', felder: [{ key: 'titel', label: 'Titel', typ: 'text' }] });
+    assert.equal((await x.d.ki.kiSperreFuer('wolke'))(neu.id), false, 'neuer Mappentyp geht mit');
+    let k = await x.d.ki.setzeKiTyp(x.gesundheit.id, false, null);
+    assert.equal(k.alle, true);
+    assert.equal(k.hinweis, false, 'kein Hinweis');
+    assert.deepEqual(await x.d.kern.einstellungen!.lies('ki_typen'), { ausgenommen: [x.gesundheit.id] });
+    wolke = await x.alsPaket('wolke');
+    assert.ok(!wolke.typen.has(x.gesundheit.id) && wolke.typen.has(x.vertrag.id));
+    await assert.rejects(x.d.rechtepruefung.pruefeRecht(wolke, x.befund.id, 'R'), (e: Fachfehler) => e.status === 404);
+    k = await x.d.ki.setzeKiTyp(x.gesundheit.id, true, null);
+    assert.ok(k.typen.every((t) => t.zugelassen));
+  });
+
+  it('bestehende Installation: Liste bleibt, nichts wird still erweitert; „Alle erlauben“ nur auf Wunsch; Hinweis einmal', async () => {
+    const x = await aufbau();
+    await x.d.kern.einstellungen!.schreibe('ki_typen', { zugelassen: [x.vertrag.id] });
+    const neu = await x.d.mappentypen.legeTypAn({ name: 'Notizen', felder: [{ key: 'titel', label: 'Titel', typ: 'text' }] });
+    const sperre = await x.d.ki.kiSperreFuer('wolke');
+    assert.ok(!sperre(x.vertrag.id) && sperre(x.gesundheit.id) && sperre(neu.id), 'bisherige Liste gilt');
+    const tabelle = routen(x.d, x.konten, {});
+    const r = (m: string, p: string) => tabelle.find((y) => y.methode === m && y.pfad === p)!;
+    const ich = (await x.konten.listeBenutzer()).find((y) => y.id === x.lena.id)!;
+    const a = (params: Record<string, string>, body: unknown = {}) => ({ body, params, query: {}, ip: '1', benutzer: ich });
+    const u = (await r('GET', '/api/werkbank/uebersicht').handler(a({}))).body as { kiTypen?: { bisher?: string[] } | null };
+    assert.deepEqual(u.kiTypen?.bisher, ['Vertrag'], 'Übersicht fragt einmal, mit der bisherigen Liste');
+    const k = (await r('POST', '/api/werkbank/ki-typen-alle').handler(a({}, { ausgenommen: [x.gesundheit.id, 'gibt-es-nicht'] }))).body as {
+      alle: boolean;
+      typen: Array<{ id: string; zugelassen: boolean }>;
+    };
+    assert.equal(k.alle, true);
+    assert.deepEqual(
+      k.typen.filter((t) => !t.zugelassen).map((t) => t.id),
+      [x.gesundheit.id],
+    );
+    assert.deepEqual(await x.d.kern.einstellungen!.lies('ki_typen'), { ausgenommen: [x.gesundheit.id] });
+    const u2 = (await r('GET', '/api/werkbank/uebersicht').handler(a({}))).body as { kiTypen?: unknown };
+    assert.equal(u2.kiTypen ?? null, null, 'danach kein Hinweis mehr');
+  });
+
+  it('Vorschau: wer was bekommt (Adressen, Bereiche, ausgenommen); Gesundheit nur mit aktivem Paket mit Netz', () => {
+    const typen = [
+      { id: 'g', name: 'Gesundheit' },
+      { id: 'p', name: 'Post', system: 'post' },
+      { id: 'v', name: 'Vertrag' },
+    ] as never as Mappentyp[];
+    const c = { ...code(WOLKE), adressen: [{ schluessel: 'dienst', name: 'Dienst-Adresse' }] };
+    const alle = liesKiStand({ ausgenommen: ['g'] });
+    const s = diensteImNetz({ id: 'wolke', name: 'KI Wolke', code: c, ki: alle, typen, installierte: [] })!;
+    assert.match(
+      s.satz!,
+      /„KI Wolke“ schickt Inhalte aus allen Bereichen an ki\.example\.org, die Adresse aus der Einstellung „Dienst-Adresse“, ausgenommen: Gesundheit\./,
+    );
+    assert.equal(s.gesundheit, undefined);
+    assert.match(
+      diensteImNetz({ id: 'wolke', name: 'KI Wolke', code: c, ki: liesKiStand({ zugelassen: ['v'] }), typen, installierte: [] })!.satz!,
+      /nur|diesen Bereichen.*Vertrag/,
+    );
+    assert.equal(
+      diensteImNetz({ id: 'imhaus', name: 'Im Haus', code: code(IM_HAUS), ki: alle, typen, installierte: [] }),
+      null,
+      'ohne Netz nichts',
+    );
+    const wolke = paket('wolke', code(WOLKE));
+    const ges = (installierte: InstalliertesPaket[], ki = liesKiStand(KI_ALLE)) =>
+      diensteImNetz({ id: 'gesundheit', name: 'Gesundheit', code: undefined, ki, typen, installierte })?.gesundheit;
+    assert.match(String(ges([wolke])), /Gesundheit kommt dann zu den Bereichen.*KI Wolke/);
+    assert.equal(ges([]), undefined, 'kein Paket mit Netz: kein Hinweis');
+    assert.equal(ges([{ ...wolke, angehalten: { am: '', von: null, grund: 'hand' } } as never]), undefined, 'angehalten zählt nicht');
+    assert.equal(ges([wolke], liesKiStand({ zugelassen: ['v'] })), undefined, 'bisherige Liste: neue Mappentypen bleiben drin');
   });
 });
 

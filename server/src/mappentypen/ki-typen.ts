@@ -7,6 +7,11 @@
  * Ablago“) – die Sperre gilt für jedes Paket mit Netz, das Inhalte bekommt, nicht nur für KI. Die internen Namen
  * (`ki_typen`, `istKiPaket`, Routen) bleiben, damit kein Umbau nötig ist. Technisch bleibt es eine eigene Sperre neben
  * den Berechtigungen: Diese regeln, wer eine Mappe sieht; die Sperre, wohin Inhalte fließen dürfen.
+ *
+ * Eine Entscheidung (#1635): Wer „Auch Helfer, die Dienste im Netz nutzen“ erlaubt, gibt alle Bereiche frei; die
+ * Feinabstimmung nimmt einzelne aus. Gespeichert als `{ ausgenommen: [...] }` – neue Mappentypen gehen mit. Bestehende
+ * Installationen behalten ihre Liste `{ zugelassen: [...] }` (nichts wird still erweitert), bis jemand „Alle erlauben“
+ * wählt. Neue Installationen bekommen bei der Einrichtung `{ ausgenommen: [] }` ({@link KI_ALLE}).
  */
 import { Fachfehler } from '../grundlagen/fehler';
 import type { Kern } from '../kern';
@@ -15,6 +20,43 @@ import type { Repo } from '../repo';
 import { t } from '../sprache/sprache';
 import type { ZugriffDienst } from '../zugriff';
 import { INHALT_EREIGNISSE, type InstalliertesPaket, istKiPaket, type KiUebersicht, MAPPEN_EREIGNISSE } from '../../../shared/src/pakete';
+
+/**
+ * Stand der Einstellung `ki_typen`: `alle` = alle außer `liste` (ausgenommen); sonst nur `liste` (zugelassen).
+ * `hinweis`: Bei der bisherigen Liste einmal fragen „Bisher gehen nur diese Bereiche hinaus – alle erlauben?“ (#1635;
+ * ersetzt den Hinweis nach dem Update von #796), bis jemand ihn ausblendet (`gefragt`).
+ */
+export interface KiStand {
+  alle: boolean;
+  liste: Set<string>;
+  hinweis: boolean;
+}
+
+/** Wert für neue Installationen (#1635): alle Bereiche, nichts ausgenommen. */
+export const KI_ALLE = { ausgenommen: [] as string[] };
+
+/** Die Einstellung lesen. Fehlt sie, gilt die alte Liste ohne Einträge (bestehende Installation ohne Zulassung). */
+export function liesKiStand(v: unknown): KiStand {
+  const o = (v && typeof v === 'object' ? v : {}) as { zugelassen?: unknown; ausgenommen?: unknown; gefragt?: unknown };
+  const alle = Array.isArray(o.ausgenommen);
+  const roh = alle ? o.ausgenommen : o.zugelassen;
+  return { alle, liste: new Set(Array.isArray(roh) ? roh.map(String) : []), hinweis: !alle && o.gefragt !== true };
+}
+
+/** Darf dieser Mappentyp an Dienste im Netz gehen? */
+export const kiErlaubt = (k: KiStand, typId: string) => (k.alle ? !k.liste.has(typId) : k.liste.has(typId));
+
+/** Den Stand als Einstellung schreiben. */
+export const kiWert = (k: KiStand) =>
+  k.alle ? { ausgenommen: [...k.liste].sort() } : { zugelassen: [...k.liste].sort(), ...(k.hinweis ? {} : { gefragt: true }) };
+
+/** Einen Mappentyp zulassen bzw. ausnehmen – in beiden Formen. */
+export function setzeKi(k: KiStand, typId: string, erlaubt: boolean): KiStand {
+  const liste = new Set(k.liste);
+  if (erlaubt === k.alle) liste.delete(typId);
+  else liste.add(typId);
+  return { ...k, liste };
+}
 
 export class KiTypen {
   constructor(
@@ -36,19 +78,16 @@ export class KiTypen {
   }
 
   /**
-   * Mappentypen, die für KI-Dienste zugelassen sind (Einstellung `ki_typen`, Teil der Sicherung). Was nicht darin steht –
-   * auch jeder neue Mappentyp –, geht an kein KI-Paket. Fehlt die Einstellung (frische Installation), ist nichts
-   * zugelassen. `hinweis`: nach dem Update einmal in der Werkbank sagen, dass man jetzt ausschließen kann.
+   * Stand der Einstellung `ki_typen` (Teil der Sicherung, #1635): alle außer den ausgenommenen oder – bei bestehenden
+   * Installationen – die bisherige Liste. `hinweis`: nach dem Update von #796 einmal sagen, dass man ausschließen kann.
    */
-  async kiTypen(): Promise<{ zugelassen: Set<string>; hinweis: boolean }> {
-    const v = (await this.einstellungen?.lies('ki_typen')) as { zugelassen?: unknown; hinweis?: unknown } | null | undefined;
-    const liste = v && typeof v === 'object' && Array.isArray(v.zugelassen) ? v.zugelassen.map(String) : [];
-    return { zugelassen: new Set(liste), hinweis: !!v && v.hinweis === true };
+  async kiTypen(): Promise<KiStand> {
+    return liesKiStand(await this.einstellungen?.lies('ki_typen'));
   }
 
-  private async schreibeKiTypen(k: { zugelassen: Set<string>; hinweis: boolean }) {
+  private async schreibeKiTypen(k: KiStand) {
     if (!this.einstellungen) throw new Fachfehler(404, t('meldungen.dienst.einstellungen-sind-nicht'));
-    await this.einstellungen.schreibe('ki_typen', { zugelassen: [...k.zugelassen].sort(), ...(k.hinweis ? { hinweis: true } : {}) });
+    await this.einstellungen.schreibe('ki_typen', kiWert(k));
   }
 
   /**
@@ -58,8 +97,8 @@ export class KiTypen {
    */
   async kiSperre(p: Pick<InstalliertesPaket, 'laeufer'> | null | undefined): Promise<(typId: string) => boolean> {
     if (!p || !istKiPaket(p.laeufer)) return () => false;
-    const { zugelassen } = await this.kiTypen();
-    return (typId) => !zugelassen.has(typId);
+    const k = await this.kiTypen();
+    return (typId) => !kiErlaubt(k, typId);
   }
 
   /** Wie `kiSperre`, für ein Paket nach Id (Erkennen, Antworten, Übersetzen). Unbekanntes Paket: nichts gesperrt. */
@@ -92,14 +131,15 @@ export class KiTypen {
         ) || l.ereignisse.some((e) => INHALT_EREIGNISSE.includes(e) && !MAPPEN_EREIGNISSE.includes(e));
       const darf = lesbar(l.rechte.lesen);
       const bekommt = liste
-        .filter((x) => k.zugelassen.has(x.id) && (ueberKern || (darf.has(x.id) && !verwehrt[x.id]?.includes(p.id))))
+        .filter((x) => kiErlaubt(k, x.id) && (ueberKern || (darf.has(x.id) && !verwehrt[x.id]?.includes(p.id))))
         .map((x) => x.id);
       ki.push({ id: p.id, name: p.name, bekommt });
     }
     return {
-      typen: liste.map((x) => ({ id: x.id, name: x.name, zugelassen: k.zugelassen.has(x.id), ...(x.system ? { system: x.system } : {}) })),
+      typen: liste.map((x) => ({ id: x.id, name: x.name, zugelassen: kiErlaubt(k, x.id), ...(x.system ? { system: x.system } : {}) })),
       pakete: ki.sort((a, b) => a.name.localeCompare(b.name, 'de')),
-      hinweis: k.hinweis && ki.length > 0,
+      hinweis: k.hinweis,
+      alle: k.alle,
     };
   }
 
@@ -108,17 +148,25 @@ export class KiTypen {
     const typ = await this.repo.holeTyp(typId);
     if (!typ) throw new Fachfehler(404, t('meldungen.dienst.diesen-mappentyp-gibt-es'));
     if (typ.system === 'benutzer') throw new Fachfehler(422, t('meldungen.dienst.ki-benutzer'));
-    const k = await this.kiTypen();
-    if (zugelassen) k.zugelassen.add(typId);
-    else k.zugelassen.delete(typId);
-    await this.schreibeKiTypen(k);
+    await this.schreibeKiTypen(setzeKi(await this.kiTypen(), typId, zugelassen));
     protokoll
       .modul('werkbank')
       .info(zugelassen ? 'Mappentyp für KI-Dienste zugelassen' : 'Mappentyp für KI-Dienste gesperrt', { typ: typ.name, von });
     return this.kiUebersicht();
   }
 
-  /** Den Hinweis nach dem Update („Mappentypen lassen sich jetzt ausschließen“) nicht mehr zeigen. */
+  /**
+   * „Alle erlauben“ (#1635): Eine bestehende Installation wechselt von ihrer bisherigen Liste zu „alle Bereiche“ – nur
+   * auf ausdrücklichen Wunsch. `ausgenommen`: Mappentypen, die trotzdem in Ablago bleiben sollen.
+   */
+  async kiAlleErlauben(ausgenommen: string[], von: string | null): Promise<KiUebersicht> {
+    const typen = new Set((await this.repo.listeTypen()).filter((x) => x.system !== 'benutzer').map((x) => x.id));
+    await this.schreibeKiTypen({ alle: true, liste: new Set(ausgenommen.filter((x) => typen.has(x))), hinweis: false });
+    protokoll.modul('werkbank').info('Alle Mappentypen dürfen an Dienste im Netz gehen', { ausgenommen: ausgenommen.length, von });
+    return this.kiUebersicht();
+  }
+
+  /** Den Hinweis „Bisher gehen nur diese Bereiche hinaus – alle erlauben?“ (#1635) nicht mehr zeigen; die Liste bleibt. */
   async kiHinweisGelesen(): Promise<KiUebersicht> {
     const k = await this.kiTypen();
     if (k.hinweis) await this.schreibeKiTypen({ ...k, hinweis: false });

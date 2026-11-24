@@ -32,6 +32,7 @@ import {
 import { istVorgabeWert } from '../../../shared/src/vorgaben';
 import type { Kern } from '../kern';
 import { Fachfehler } from '../grundlagen/fehler';
+import { kiErlaubt, liesKiStand } from '../mappentypen';
 import { t } from '../sprache/sprache';
 import { ohneZiel, umziehbar, wandle, type Aktion, type FeldAktion, type TitelSuche } from './umbau-werte';
 
@@ -260,7 +261,8 @@ interface Umgebung {
   k: UmbauKontext;
   lage: UmbauLage;
   problem: Problem;
-  ki: Set<string>;
+  /** Darf der Mappentyp an Dienste im Netz gehen (#796, #1635)? */
+  ki: (typId: string) => boolean;
   verwehrt: Record<string, string[]>;
   sichten: Sicht[];
 }
@@ -468,7 +470,7 @@ function rechteVon(
   const verwehrt = (u.verwehrt[alt.id] ?? []).filter((x) => !(u.verwehrt[ziel.id] ?? []).includes(x));
   return {
     regeln,
-    ki: !u.ki.has(alt.id) && u.ki.has(ziel.id),
+    ki: !u.ki(alt.id) && u.ki(ziel.id),
     verwehrt: verwehrt.map((x) => u.k.installierte.find((y) => y.id === x)?.name ?? x),
   };
 }
@@ -646,9 +648,9 @@ export function wendeEntscheidungenAn(lage: UmbauLage, e: UmbauEntscheidungen | 
     throw new Fachfehler(409, t('meldungen.pakete.umbau.rueckfrage', { felder: offen.join(', ') }), { umbau: 'rueckfrage', felder: offen });
 }
 
-export async function kiTypen(d: Pick<UmbauDienst, 'kern'>): Promise<Set<string>> {
-  const v = (await d.kern.einstellungen?.lies('ki_typen')) as { zugelassen?: unknown } | null | undefined;
-  return new Set(v && Array.isArray(v.zugelassen) ? v.zugelassen.map(String) : []);
+export async function kiTypen(d: Pick<UmbauDienst, 'kern'>): Promise<(typId: string) => boolean> {
+  const k = liesKiStand(await d.kern.einstellungen?.lies('ki_typen'));
+  return (typId) => kiErlaubt(k, typId);
 }
 export async function paketVerwehrt(d: Pick<UmbauDienst, 'kern'>): Promise<Record<string, string[]>> {
   const v = await d.kern.einstellungen?.lies('paket_verwehrt');

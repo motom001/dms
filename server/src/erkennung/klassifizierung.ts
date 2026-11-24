@@ -168,10 +168,13 @@ export class Klassifizierung {
           wege.push({ weg, paket, stand: 'gesperrt', hinweis: t('meldungen.klassifizierung.keine-zugelassenen', { name: p.name }) });
           return;
         }
-        // Quelle aus einem für dieses Paket gesperrten Mappentyp: nichts an das Paket (wie die Kandidaten).
-        if ([...quellTypen].some(gesperrt)) {
+        // Quelle aus einem für dieses Paket gesperrten Mappentyp: nichts an das Paket (wie die Kandidaten). Die Meldung
+        // nennt den Mappentyp (#1635); die Oberfläche führt von dort zur Feinabstimmung.
+        const quelle = [...quellTypen].find(gesperrt);
+        if (quelle) {
           log.info('Klassifizieren nicht an Paket gegeben (Quelle nicht für KI-Dienste zugelassen)', { paket: p.id });
-          wege.push({ weg, paket, stand: 'gesperrt', hinweis: t('meldungen.klassifizierung.quelle-gesperrt', { name: p.name }) });
+          const typ = (await this.repo().holeTyp(quelle))?.name ?? '';
+          wege.push({ weg, paket, stand: 'gesperrt', hinweis: t('meldungen.klassifizierung.quelle-gesperrt', { name: p.name, typ }) });
           return;
         }
         const eingang: Record<string, unknown> = {

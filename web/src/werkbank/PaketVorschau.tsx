@@ -1,4 +1,5 @@
 import { HerkunftZeile } from './Herkunft';
+import { FEIN_ZIEL } from './uebersicht/Feinabstimmung';
 import type { PaketVorschau } from '../api/pakete';
 import { ApiFehler } from '../api/anfrage';
 import { hatGesamt } from '../../../shared/src/verwaltungsrecht';
@@ -121,6 +122,8 @@ export function VorschauBlock({
         </div>
       )}
       <HinweisListe art="info" liste={v.hinweise ?? []} />
+      {/* Dienste im Netz (#1635): wer was bekommt – der Moment der Entscheidung –, mit dem Weg zur Feinabstimmung. */}
+      <DiensteImNetz d={v.dienste} />
       {v.sprache && <SprachVorschau s={v.sprache} />}
       <EinstellungenHinweis v={v} />
       <Einleitung v={v} umbau={z.umbau.length > 0} />
@@ -152,5 +155,21 @@ export function VorschauBlock({
       {z.konflikt && !!v.namenskonflikte?.length && <NamenskonfliktHinweis liste={v.namenskonflikte} />}
       {los && <VorschauKnoepfe v={v} z={z} los={los} abbrechen={abbrechen} abbrechenText={abbrechenText} />}
     </section>
+  );
+}
+
+/** Dienste im Netz (#1635): wer was bekommt (Paket mit Netz) und der eine Hinweis beim Paket Gesundheit. */
+function DiensteImNetz({ d }: { d: PaketVorschau['dienste'] }) {
+  if (!d) return null;
+  return (
+    <div className="hinweis info">
+      {d.satz && <p>{d.satz}</p>}
+      {d.gesundheit && <p>{d.gesundheit}</p>}
+      <div className="knoepfe">
+        <KnopfLink to={FEIN_ZIEL} groesse="klein">
+          {t('pakete.ki.zur-feinabstimmung')}
+        </KnopfLink>
+      </div>
+    </div>
   );
 }

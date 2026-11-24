@@ -29,6 +29,7 @@ import { darfStand, planeUmbau, type UmbauLage } from '../index';
 import { erlaubt } from '../../../../shared/src/darf';
 import { paketZeitplaene, paketZeitplan } from './automatisierungen';
 import { beispielDokumenteVon } from './beispiele';
+import { diensteImNetz } from './dienste-im-netz';
 import {
   BASIS_ABLAGEORT_AB,
   DMS_PRAEFIX,
@@ -419,6 +420,15 @@ export abstract class PaketPlanSchritte extends PaketVorschauTeile {
     const { paket, ich, typen } = l;
     const aktionen = this.aktionenPlan(l);
     const geaenderteAutos = await this.geaenderteAutomatisierungen(l);
+    // Dienste im Netz (#1635): wer was bekommt – nur, wenn es etwas zu sagen gibt.
+    const dienste = diensteImNetz({
+      id: l.m.id,
+      name: l.m.name,
+      code: paket.code?.info,
+      ki: await this.d.ki.kiTypen(),
+      typen,
+      installierte: l.installierte,
+    });
     return {
       ...vorschauKopf(l, x.herkunft),
       abhaengigkeiten: x.abhaengigkeiten,
@@ -440,6 +450,7 @@ export abstract class PaketPlanSchritte extends PaketVorschauTeile {
       // Berechnete Felder (#1034) stehen in der Rechte-Vorschau: „berechnet Felder …“ und wer die Werte sieht.
       // Mitgelieferte Zeitpläne (#1082): „Läuft nach Zeitplan: Verträge täglich prüfen (täglich um 05:00)“.
       laeufer: this.laeuferPlan(l, aktionen),
+      ...(dienste ? { dienste } : {}),
       ...(aktionen.length ? { aktionen } : {}),
       sprache: sprachePlan(l),
     };

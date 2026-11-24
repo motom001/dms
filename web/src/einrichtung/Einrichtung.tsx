@@ -97,10 +97,10 @@ export function TypEditor({ typ, vorlage }: { typ?: Mappentyp; vorlage?: Mappent
         gespeichert={gespeichert ? regelwerkVon(gespeichert) : null}
         typ={z.entwurfTyp}
         klappe={klappe('berechtigungen')}
-        nachStandard={typ?.system !== 'benutzer' && <KiAmTyp typId={gespeichert?.id ?? ''} />}
+        nachStandard={typ?.system !== 'benutzer' && <KiAmTyp neben={z.neben} />}
       />
       <TestlaufBlatt typId={gespeichert?.id ?? ''} entwurf={e.berechtigungen} klappe={klappe('testlauf')} />
-      {typ?.system !== 'benutzer' && <PaketeAmTyp typId={gespeichert?.id ?? ''} klappe={klappe('pakete')} />}
+      {typ?.system !== 'benutzer' && <PaketeAmTyp typId={gespeichert?.id ?? ''} neben={z.neben} klappe={klappe('pakete')} />}
       {gespeichert && (
         <Fassungen
           art="typ"

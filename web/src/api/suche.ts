@@ -147,6 +147,8 @@ export const sucheApi = {
   // KI-Dienste (#796): Mappentypen für KI-Pakete zulassen bzw. sperren.
   kiTypen: () => anfrage<KiUebersicht>('GET', '/api/werkbank/ki-typen'),
   setzeKiTyp: (typId: string, zugelassen: boolean) => anfrage<KiUebersicht>('PUT', `/api/werkbank/ki-typen/${typId}`, { zugelassen }),
+  // #1635: bestehende Installation – von der bisherigen Liste zu „alle Bereiche“.
+  kiAlleErlauben: (ausgenommen: string[] = []) => anfrage<KiUebersicht>('POST', '/api/werkbank/ki-typen-alle', { ausgenommen }),
   texterkennung: (werkzeugeNeu = false) => anfrage<OcrStatus>('GET', `/api/werkbank/texterkennung${werkzeugeNeu ? '?neu' : ''}`),
   texterkennungSpeichern: (e: Partial<OcrEinstellungen>) => anfrage<OcrStatus>('PUT', '/api/werkbank/texterkennung', e),
   /* Vektoren (#442) */

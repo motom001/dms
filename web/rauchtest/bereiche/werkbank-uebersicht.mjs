@@ -5,7 +5,18 @@
  */
 import assert from 'node:assert/strict';
 import '../einrichtung.mjs';
-import { BASIS, keineWaagerechteRolle, LENA, rauchtest, schemaWechseln, TABLET_HOCH, verwalten, WERKBANK_BEREICHE } from '../hilfen.mjs';
+import {
+  api,
+  BASIS,
+  keineWaagerechteRolle,
+  LENA,
+  rauchtest,
+  schemaWechseln,
+  sitzung,
+  TABLET_HOCH,
+  verwalten,
+  WERKBANK_BEREICHE,
+} from '../hilfen.mjs';
 import { axePruefen } from '../muster.mjs';
 
 /** Texte der offenen Hinweise in der Übersicht. */
@@ -174,4 +185,46 @@ rauchtest('Werkbank-Übersicht: Was Ablago darf senken und wieder erhöhen (#156
   // Wieder auf die Vorgabe: Erhöhen geht mit frischer Anmeldung (gerade angemeldet).
   await aendern(/Auch Helfer, die nur hier arbeiten/, /Erkennen und vorlegen/);
   await karte.getByText('Ablago nutzt auch Helfer mit eigenem Code, die nur hier arbeiten.', { exact: false }).waitFor();
+});
+
+/* ---------- Dienste im Netz (#1635): eine Entscheidung, Feinabstimmung unter „Was Ablago darf“ ---------- */
+
+rauchtest('Werkbank-Übersicht: Feinabstimmung „Dienste im Netz“ – alle Bereiche, Post ausnehmen, axe (#1635)', { als: LENA }, async (s) => {
+  const cookie = await sitzung(LENA);
+  await api('POST', '/api/konto/verwaltung', { cookie, body: { passwort: LENA.passwort } });
+  const vorher = (await api('GET', '/api/werkbank/darf', { cookie })).daten;
+  try {
+    await zurUebersicht(s);
+    const karte = s.getByRole('region', { name: 'Was Ablago darf' });
+    await karte.waitFor();
+    const aufklapper = karte.getByRole('button', { name: /^Feinabstimmung: Bereiche für Dienste im Netz/ });
+    assert.equal(await aufklapper.count(), 0, 'nur bei „Auch Helfer, die Dienste im Netz nutzen“');
+    await api('PUT', '/api/werkbank/darf', { cookie, body: { pakete: 'netz' } });
+    await s.reload();
+    await s.locator('.uebersicht-hinweise').waitFor();
+    // Neue Installation: alle Bereiche dürfen hinaus – auch Post.
+    await aufklapper.getByText('Alle Bereiche dürfen hinaus').waitFor();
+    await aufklapper.click();
+    const post = karte.getByRole('checkbox', { name: 'Post' });
+    assert.ok(await post.isChecked());
+    await karte.getByText('Neue Mappentypen dürfen ebenfalls hinaus', { exact: false }).waitFor();
+    for (const schema of ['light', 'dark']) {
+      await schemaWechseln(s, schema);
+      assert.deepEqual(await axePruefen(s, ['#dienste-im-netz']), [], `axe ${schema}`);
+    }
+    await schemaWechseln(s, 'light');
+    // Ausnehmen wirkt sofort (steht so am Abschnitt).
+    // Der Haken zeigt den Stand des Servers – erst nach der Antwort ist er weg.
+    await post.click();
+    await karte.getByText('„Post“ bleibt in Ablago.').waitFor();
+    assert.equal(await post.isChecked(), false);
+    const k = (await api('GET', '/api/werkbank/ki-typen', { cookie })).daten;
+    assert.equal(k.typen.find((t) => t.name === 'Post').zugelassen, false);
+    // Der Weg von außen (Paketseite, Meldung bei Sperre): /werkbank#dienste-im-netz öffnet die Feinabstimmung.
+    await s.goto(BASIS + '/werkbank#dienste-im-netz');
+    await karte.getByRole('checkbox', { name: 'Post', checked: false }).click();
+    await karte.getByText('„Post“ darf an Dienste im Netz gehen.').waitFor();
+  } finally {
+    await api('PUT', '/api/werkbank/darf', { cookie, body: { pakete: vorher.pakete, bestaetigt: true } });
+  }
 });
