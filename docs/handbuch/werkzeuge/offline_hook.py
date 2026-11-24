@@ -64,6 +64,8 @@ def on_page_markdown(markdown, page, **_):
         alt = m.group(1).strip() or TEXTE[_sprache]['ohne']
         return '*' + TEXTE[_sprache]['bild'].format(alt=alt, ziel=ziel) + '*'
 
+    # Bilder in zwei Fassungen (#only-light / #only-dark, #1524): offline nur ein Hinweis je Bild.
+    markdown = re.sub(r'\n?!\[[^\]]*\]\((?:\.\./)*bilder/[^)]*#only-dark\)(\{[^}]*\})?', '', markdown)
     markdown = BILD.sub(bild, markdown)
     markdown = re.sub(r'\]\(vorlagen/([^)]+)\)', lambda m: f']({online("vorlagen/" + m.group(1))})', markdown)
     markdown = markdown.replace('](api/openapi.json)', '](/api/openapi.json)')

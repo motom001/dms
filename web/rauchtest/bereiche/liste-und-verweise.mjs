@@ -15,6 +15,7 @@ import {
   keineWaagerechteRolle,
   LENA,
   rauchtest,
+  rundgaengeGesehen,
   schemaWechseln,
   sitzung,
   verwalten,
@@ -205,8 +206,8 @@ rauchtest('Listenansicht: „Alle exportieren“ als CSV, jede Mappe genau einma
 
 rauchtest('Listenansicht: „Ansicht bearbeiten“ nur mit Recht in der Werkbank (#1285)', { als: JONAS }, async (s) => {
   const cookie = await sitzung(JONAS);
-  // Ohne den ersten Rundgang – er läge beim Alleinstart über der Liste (werkbank.mjs prüft ihn).
-  await api('POST', '/api/entdecken/rundgaenge/ablago', { cookie, body: { stand: 'gesehen' } });
+  // Ohne die ersten Rundgänge – sie lägen beim Alleinstart über der Liste (werkbank.mjs prüft sie).
+  await rundgaengeGesehen(cookie);
   const typen = (await api('GET', '/api/typen', { cookie })).daten;
   const vertrag = typen.find((x) => x.name === 'Vertrag');
   await s.goto(BASIS + `/ablage/${vertrag.id}`);

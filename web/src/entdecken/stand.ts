@@ -1,5 +1,6 @@
 import { useEffect, useSyncExternalStore } from 'react';
-import type { EntdeckenStand, Rundgang, TippAnzeige } from '../../../shared/src/entdecken';
+import { HANDBUCH_VERWEIS, type EntdeckenStand, type Rundgang, type TippAnzeige } from '../../../shared/src/entdecken';
+import { handbuchUrl, type Handbuch } from '../../../shared/src/hilfe';
 import { kontoApi } from '../api/konto';
 import { geheZu } from '../ort';
 import { t } from '../sprache';
@@ -158,7 +159,20 @@ export const istSchmal = () => typeof innerWidth === 'number' && innerWidth <= 8
  * Ziel eines Tipps: Seite öffnen, Stelle in den Blick holen und kurz hervorheben (ruhig: ein Rahmen, keine Bewegung).
  * Fehlt die Stelle (z. B. am Handy ausgeblendet), bleibt es bei der Seite – ohne Fehlermeldung.
  */
+/** Seite im mitgelieferten Handbuch zu einem Verweis wie benutzer/knoepfe/ (#1524), sonst null. */
+export function handbuchSeite(verweis: string | undefined): string | null {
+  if (!verweis || !HANDBUCH_VERWEIS.test(verweis)) return null;
+  const [h, ...rest] = verweis.split('/');
+  return handbuchUrl(h as Handbuch, null, rest.join('/'));
+}
+
 export async function zeigeZiel(x: TippAnzeige) {
+  const handbuch = handbuchSeite(x.handbuch);
+  if (handbuch) {
+    // Handbuchseite (#1524): in einem neuen Fenster, wie jeder Verweis ins Handbuch.
+    window.open(handbuch, '_blank', 'noopener');
+    return;
+  }
   if (x.rundgang) {
     starteRundgang(x.rundgang);
     return;

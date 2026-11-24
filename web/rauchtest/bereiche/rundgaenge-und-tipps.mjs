@@ -288,3 +288,16 @@ rauchtest(
     assert.equal(await hinweis.count(), 0);
   },
 );
+
+for (const handy of [false, true])
+  rauchtest(
+    `${handy ? 'Handy' : 'Rechner'}: Tipp „So sehen Knöpfe aus“ öffnet die Seite im Handbuch (#1524)`,
+    { als: LENA, handy },
+    async (s) => {
+      await s.goto(BASIS + '/entdecken');
+      const tipp = s.getByRole('region', { name: 'Tipps' }).getByRole('link', { name: /^Blau, grün, mit Rand oder gestrichelt\?/ });
+      await tipp.waitFor();
+      assert.equal(await tipp.getAttribute('href'), '/hilfe/benutzer/knoepfe/');
+      assert.equal(await tipp.getAttribute('target'), '_blank');
+    },
+  );

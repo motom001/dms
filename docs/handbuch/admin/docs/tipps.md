@@ -16,7 +16,7 @@ Ein Klick auf einen Tipp öffnet rechts das Formular – kein Code, keine Datei:
 
 - **Text:** höchstens 160 Zeichen und zwei Sätze, in der Du-Form; der Zähler zeigt, wie viel noch geht.
 - **Bereich:** nach ihm steht der Tipp auf „Ablago entdecken“ (Suche, Post, Zu erledigen und Fristen, Mappen, Mein Konto, Verwalten).
-- **Der Satz führt …** an eine **Stelle** in Ablago oder in einen **Rundgang**. Die Stellen wählst du aus einer Liste mit Beschreibung; mit einem Mappentyp (unten) kommen dessen echte Felder und Register dazu – dann öffnet der Tipp die erste Mappe dieses Typs, die die Person lesen darf. **Ziel zeigen** öffnet Ablago in einem neuen Fenster, ein Klick auf eine hervorgehobene Stelle übernimmt sie (wie bei den [Rundgängen](rundgaenge.md#ziele)).
+- **Der Satz führt …** an eine **Stelle** in Ablago, in einen **Rundgang** oder **auf eine Seite im Handbuch** (z. B. `benutzer/knoepfe/`; sie öffnet sich in einem neuen Fenster). Die Stellen wählst du aus einer Liste mit Beschreibung; mit einem Mappentyp (unten) kommen dessen echte Felder und Register dazu – dann öffnet der Tipp die erste Mappe dieses Typs, die die Person lesen darf. **Ziel zeigen** öffnet Ablago in einem neuen Fenster, ein Klick auf eine hervorgehobene Stelle übernimmt sie (wie bei den [Rundgängen](rundgaenge.md#ziele)).
 - **Für wen:** alle oder nur Verwaltende; optional nur, wer einen bestimmten **Mappentyp** lesen darf.
 - **Vorschau** zeigt den Tipp so, wie er im Assistenten steht; **Ausprobieren** öffnet das Ziel in einem neuen Fenster wie „Zeig es mir“.
 

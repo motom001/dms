@@ -20,6 +20,7 @@ import {
   tippDesTages,
   tippHandlung,
   tippPasst,
+  type Herkunft,
   type Texte,
   type Tipp,
 } from '../../shared/src/entdecken';
@@ -188,10 +189,45 @@ describe('Format und Inhalt (Build-Test, #831, #832)', () => {
   });
 });
 
+describe('Tipp mit Handbuchseite (#1524)', () => {
+  const texte: Texte = () => 'Ein Tipp.';
+  const pruefe = (x: Record<string, unknown>) =>
+    pruefeTipps([{ schluessel: 't', bereich: 'mappen', ...x }], { herkunft: 'ablago', anker: ANKER, rundgaenge: ['ablago'], texte });
+
+  it('genau eines von ziel, rundgang und handbuch; nur Seiten im Benutzer- oder Administratorhandbuch', () => {
+    assert.deepEqual(pruefe({ handbuch: 'benutzer/knoepfe/' }).tipps[0]?.handbuch, 'benutzer/knoepfe/');
+    assert.deepEqual(pruefe({ handbuch: 'admin/pakete/#so-nutzt-du-es' }).fehler, []);
+    assert.match(
+      pruefe({ handbuch: 'benutzer/knoepfe/', ziel: 'neu' }).fehler.join('\n'),
+      /genau eines von „ziel“ \(Anker\), „rundgang“ oder „handbuch“/,
+    );
+    assert.match(pruefe({}).fehler.join('\n'), /genau eines von/);
+    for (const falsch of ['https://example.org/', 'entwickler/stil/', 'benutzer/../x', 7])
+      assert.match(pruefe({ handbuch: falsch }).fehler.join('\n'), /„handbuch“ muss eine Seite im Handbuch sein/, String(falsch));
+  });
+
+  it('Ablagos Tipps zeigen nur auf Seiten, die es im Handbuch gibt – auf Deutsch und Englisch', () => {
+    const tipps = ladeAblago(ORDNER, texteIn('de')).tipps.filter((x) => x.handbuch);
+    assert.ok(
+      tipps.some((x) => x.schluessel === 'knoepfe'),
+      'Tipp „So sehen Knöpfe aus“',
+    );
+    for (const x of tipps) {
+      const [h, ...rest] = x.handbuch!.split('#')[0].split('/');
+      const seite = rest.filter(Boolean).join('/') || 'index';
+      for (const ordner of ['docs', 'docs-en'])
+        assert.ok(
+          statSync(join(WURZEL, 'docs/handbuch', h, ordner, `${seite}.md`)).isFile(),
+          `${x.schluessel}: ${h}/${ordner}/${seite}.md`,
+        );
+    }
+  });
+});
+
 describe('Erster Besuch einer Seite (#1512, #1522, #1523)', () => {
   const texte: Texte = (k) => (k.endsWith('.ort') ? 'Oben' : 'Text');
   const roh = (x: Record<string, unknown>) => ({ schluessel: 'r', schritte: [{ schluessel: 'a', ziel: 'neu' }], ...x });
-  const pruefe = (x: Record<string, unknown>, herkunft = 'ablago') =>
+  const pruefe = (x: Record<string, unknown>, herkunft: Herkunft = 'ablago') =>
     pruefeRundgaenge([roh(x)], herkunft === 'ablago' ? { herkunft, anker: ANKER, texte } : { herkunft, anker: ANKER });
 
   it('„seite“ ist Pflicht, „leise“ nur mit erster_besuch; Pakete haben es nicht', () => {

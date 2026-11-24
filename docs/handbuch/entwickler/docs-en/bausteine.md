@@ -39,6 +39,8 @@ Buttons mean the same everywhere, and nothing startles without need (#1210). Who
 
 **Checked** in three places: type checking requires symbol and confirmation for `art="gefahr"` and allows no kind `link` on `Knopf` (`web/src/bausteine/knopf/typpruefung.ts`). ESLint forbids colour classes via `className` on the button (`ablago/knopf-farben`) and elements that look like a button through the class `knopf` or `textknopf` (`ablago/bausteine`, #1269; [Style and dependencies](stil.md#regeln)). The smoke tests report, on every page they visit, create buttons without “+”, danger buttons without a confirmation, solid red outside a confirmation, anything that looks like a link but has no target, and every small element with a border that is neither button nor link nor field (principle 8) ([Smoke test and screenshots](#rauchtest)).
 
+For users, the user manual explains the same rules on one page: [What buttons look like](https://help.ablago.app/benutzer/aktuell/en/knoepfe/) (#1524). Its pictures (`knoepfe-*`, light and dark) are taken by `musterAufnehmen` (`web/rauchtest/muster.mjs`) from single cards of the pattern page – when a building block changes, they stay right by themselves.
+
 ![Pattern page, area “Button”: kinds, danger at rest, on hover and focus, the confirmation, disabled in two forms and the opened explanation](bilder/muster-knopf.png){ loading=lazy }
 
 ## On a phone { #handy }

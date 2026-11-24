@@ -71,7 +71,7 @@ export async function sitzung(person) {
  * Ablagos Rundgänge beim ersten Besuch (#1512, #1522, #1523) als gesehen merken – sonst lägen sie über den Tests, die
  * eine Seite zum ersten Mal öffnen. Geprüft werden sie in rundgaenge-und-tipps.mjs, werkbank.mjs und einrichtung.mjs.
  */
-export const ERSTE_RUNDGAENGE = ['ablago', 'werkbank', 'mappe', 'konto'];
+const ERSTE_RUNDGAENGE = ['ablago', 'werkbank', 'mappe', 'konto'];
 export async function rundgaengeGesehen(cookie, schluessel = ERSTE_RUNDGAENGE) {
   for (const r of schluessel) await api('POST', `/api/entdecken/rundgaenge/${r}`, { cookie, body: { stand: 'gesehen' } });
 }

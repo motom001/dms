@@ -402,9 +402,10 @@ export class Entdecken {
                 ? { ziel: { anker: x.ziel } }
                 : {}),
           ...(x.rundgang ? { rundgang: x.rundgang } : {}),
+          ...(x.handbuch ? { handbuch: x.handbuch } : {}),
           neu: q.neu.get(x.schluessel) ?? istNeu(x, vorher, jetzt),
           ausgeblendet: aus.has(x.schluessel),
-          clients: x.rundgang ? false : !!a?.clients,
+          clients: x.rundgang || x.handbuch ? false : !!a?.clients,
         };
       });
     const tippsAn = e[EINSTELLUNG.tippsAn] !== false;

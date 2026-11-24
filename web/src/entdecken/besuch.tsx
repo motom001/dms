@@ -27,7 +27,7 @@ export function besuchSeiten(pfad: string): BesuchSeite[] {
 const MAPPE_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Der Rundgang, der jetzt starten soll: erst der von der ersten Anmeldung, dann der erste ausstehende je Seite. */
-export function naechsterRundgang(stand: EntdeckenStand, seiten: readonly BesuchSeite[], versucht: ReadonlySet<string>): string | null {
+function naechsterRundgang(stand: EntdeckenStand, seiten: readonly BesuchSeite[], versucht: ReadonlySet<string>): string | null {
   if (stand.starten && seiten.includes('ablage') && !versucht.has(stand.starten)) return stand.starten;
   for (const seite of seiten) {
     const b = (stand.beimBesuch ?? []).find((x) => x.seite === seite && !x.leise && !versucht.has(x.schluessel));

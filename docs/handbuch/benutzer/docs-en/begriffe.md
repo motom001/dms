@@ -177,14 +177,14 @@ A folder type whose folders a link may point to; a link has one or several. With
 See also: [Link (field)](#verweis), [Folder type](#mappentyp).
 
 <a id="tipp"></a>**Tip** (*Tipp*) · ✓ everyday word · everyone  
-One sentence showing what else you can do in Ablago – at most one new one a day as the “tip of the day” in the assistant (a dot on its button shows it); “Show me” leads to the place or starts a tour. Switch it off in My account.  
+One sentence showing what else you can do in Ablago – at most one new one a day as the “tip of the day” in the assistant (a dot on its button shows it); “Show me” leads to the place, starts a tour or opens a page in the manual. Switch it off in My account.  
 See also: [Tour](#rundgang), [Discover Ablago](#ablago-entdecken), [Assistant](#assistent).
 
 <a id="titel"></a>**Title** (*Titel*) · ✓ everyday word · everyone  
 The display name of a folder. It is formed from a template with field values.
 
 <a id="rundgang"></a>**Tour** (*Rundgang*) · ✓ everyday word · everyone  
-A short guided walk on the real interface in a few steps; each step highlights one place. Ablago's own tour starts the first time a new account signs in; everyone finds it under "Discover Ablago".  
+A short guided walk on the real interface in a few steps; each step highlights one place. Ablago's own tours start on the first visit to a page (Library, folder, Workbench; My account only with a quiet note); everyone finds them under "Discover Ablago".  
 See also: [Tip](#tipp), [Discover Ablago](#ablago-entdecken).
 
 <a id="eindeutig"></a>**Unique** (*Eindeutig*) · ~ with explanation · administrators  

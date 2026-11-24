@@ -1342,8 +1342,7 @@
       "passtFuer"
     ],
     "types": [
-      "Bild",
-      "OeffneSeite"
+      "Bild"
     ]
   },
   "shared/src/erechnung.ts": {

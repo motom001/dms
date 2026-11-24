@@ -327,10 +327,10 @@ begriffe:
     beschreibung: Page in the user menu (next to Help) with everything else Ablago can do – what is new since the last visit, tours and all tips by area. Hidden tips stay visible there.
   Rundgang:
     begriff: Tour
-    beschreibung: A short guided walk on the real interface in a few steps; each step highlights one place. Ablago's own tour starts the first time a new account signs in; everyone finds it under "Discover Ablago".
+    beschreibung: A short guided walk on the real interface in a few steps; each step highlights one place. Ablago's own tours start on the first visit to a page (Library, folder, Workbench; My account only with a quiet note); everyone finds them under "Discover Ablago".
   Tipp:
     begriff: Tip
-    beschreibung: One sentence showing what else you can do in Ablago – at most one new one a day as the “tip of the day” in the assistant (a dot on its button shows it); “Show me” leads to the place or starts a tour. Switch it off in My account.
+    beschreibung: One sentence showing what else you can do in Ablago – at most one new one a day as the “tip of the day” in the assistant (a dot on its button shows it); “Show me” leads to the place, starts a tour or opens a page in the manual. Switch it off in My account.
   Assistent:
     begriff: Assistant
     beschreibung: The round button at the bottom right of every page (a folder with a face) with the window “Ask · Tips · Manual” (#1219). It never opens by itself.

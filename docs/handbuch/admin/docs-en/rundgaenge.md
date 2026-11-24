@@ -1,6 +1,6 @@
 # Tours
 
-A **tour** shows places on the real interface step by step – Ablago's own one the first time someone signs in, tours from packages (such as “Contracts at a glance”) and your own, which you write here. Everyone finds the tours they may use under [Discover Ablago](https://help.ablago.app/benutzer/aktuell/en/entdecken/).
+A **tour** shows places on the real interface step by step – Ablago's own ones on the first visit to a page (Library, folder, Workbench; My account only with a quiet note), tours from packages (such as “Contracts at a glance”) and your own, which you write here. Everyone finds the tours they may use under [Discover Ablago](https://help.ablago.app/benutzer/aktuell/en/entdecken/).
 
 You find them under **Workbench → Build the Library → Tours**. The area is in the bar from the level **Business** (see [Customising the workbench](uebersicht.md#werkbank-anpassen)); at smaller levels you show it via “Customise workbench”. If you have already written your own tours or switched off an included one, it stays shown after the update. The tours themselves work at every level – this is only about the area in the workbench. Whoever administers the area may edit.
 
@@ -8,15 +8,15 @@ You find them under **Workbench → Build the Library → Tours**. The area is i
 
 ## The list
 
-The middle shows **all** tours: from Ablago, from packages and your own – with their origin, when they start (*the first time you sign in*, *offered after installing*, *by hand* …), whom they are for and how many steps they have. At the top you search in title, description and package and filter by origin. Switched-off tours are shown paler with the note *switched off*.
+The middle shows **all** tours: from Ablago, from packages and your own – with their origin, when they start (*on the first visit to the page*, *offered after installing*, *by hand* …), whom they are for and how many steps they have. At the top you search in title, description and package and filter by origin. Switched-off tours are shown paler with the note *switched off*.
 
 ## Switching on and off
 
-The switch is at the top right of the selected tour. It applies **to everyone** and takes effect at once: a switched-off tour is no longer under “Discover Ablago” for anyone, is not offered as a tip and does not start by itself – Ablago's own first-sign-in tour included. This is how you switch off the tours of a package, for example.
+The switch is at the top right of the selected tour. It applies **to everyone** and takes effect at once: a switched-off tour is no longer under “Discover Ablago” for anyone, is not offered as a tip and does not start by itself – Ablago's own first-visit tours included. This is how you switch off the tours of a package, for example.
 
 ## Viewing tours from Ablago and from packages
 
-A click shows the tour's file (with the texts in your language). You cannot change it; **Copy as own** creates a copy right away – switched off and with `start: manuell` – and opens it for editing. **Try it** starts the tour in a new window, only for you; **Done – back to the draft** closes it again at the end.
+A click shows the tour's file (with the texts in your language). You cannot change it; **Copy as own** creates a copy right away – switched off, with `start: manuell` and without `seite` – and opens it for editing. **Try it** starts the tour in a new window, only for you; **Done – back to the draft** closes it again at the end.
 
 Tours and tips from packages appear in each person's language if the package brings it, otherwise in German. If they exist in one language only or a translation is missing texts, the preview says so as a hint when installing.
 

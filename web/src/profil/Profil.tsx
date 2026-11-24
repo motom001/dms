@@ -59,7 +59,10 @@ export function Profil({ teile = [] }: { teile?: string[] }) {
               </Link>
             )}
             {/* #1331: eigener Bereich, hervorgehoben wie die übrigen; dorthin führen Benutzermenü und Fehlerseite. */}
-            <Link to="/profil/fehler-melden" className={`typeintrag ${b === 'fehler-melden' ? 'an' : ''}`} anker="konto.bereich:fehler-melden">
+            <Link
+              to="/profil/fehler-melden"
+              className={`typeintrag ${b === 'fehler-melden' ? 'an' : ''}`}
+              anker="konto.bereich:fehler-melden">
               <span className="nm">{t('oberflaeche.app.fehler-melden')}</span>
             </Link>
           </nav>

@@ -3,7 +3,7 @@ import { TIPP_BEREICHE, type TippAnzeige } from '../../../shared/src/entdecken';
 import { useDaten } from '../daten';
 import { t } from '../sprache';
 import { Etikett, Knopf, Suchfeld } from '../bausteine';
-import { starteRundgang, tippHandlung, useEntdecken, zeigeZiel } from './stand';
+import { handbuchSeite, starteRundgang, tippHandlung, useEntdecken, zeigeZiel } from './stand';
 
 /**
  * Seite „Ablago entdecken“ (#832), erreichbar über das Benutzermenü: Neu seit dem letzten Besuch (nur, wenn es etwas
@@ -113,17 +113,25 @@ export function Entdecken() {
 
 /** Ein Tipp: der Satz ist der Link (wie auf der Startseite); ausgeblendete tragen den Hinweis und „Wieder zeigen“. */
 function TippEintrag({ x }: { x: TippAnzeige }) {
+  const handbuch = handbuchSeite(x.handbuch);
   return (
     <li className={x.ausgeblendet ? 'ent-aus' : undefined}>
-      <a
-        href={x.ziel?.seite ?? '/entdecken'}
-        className="tipp-satz"
-        onClick={(e) => {
-          e.preventDefault();
-          void zeigeZiel(x);
-        }}>
-        {x.text}
-      </a>
+      {handbuch ? (
+        // Handbuchseite (#1524): ein echter Verweis in ein neues Fenster.
+        <a href={handbuch} className="tipp-satz" target="_blank" rel="noreferrer">
+          {x.text}
+        </a>
+      ) : (
+        <a
+          href={x.ziel?.seite ?? '/entdecken'}
+          className="tipp-satz"
+          onClick={(e) => {
+            e.preventDefault();
+            void zeigeZiel(x);
+          }}>
+          {x.text}
+        </a>
+      )}
       {x.ausgeblendet && (
         <>
           {' '}

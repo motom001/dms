@@ -161,8 +161,10 @@ export interface Tipp {
   fuer: Fuer;
   /** Ziel: ein Anker (die Oberfläche öffnet seine Seite und hebt ihn hervor) … */
   ziel?: string;
-  /** … oder ein Rundgang, den der Satz startet. */
+  /** … oder ein Rundgang, den der Satz startet … */
   rundgang?: string;
+  /** … oder eine Seite im mitgelieferten Handbuch ({@link HANDBUCH_VERWEIS}, #1524), z. B. benutzer/knoepfe/. */
+  handbuch?: string;
   funktion?: Funktion;
   /** „Neu seit deinem letzten Besuch“ für alle, die von einer älteren Version auf diese aktualisiert haben. */
   abVersion?: string;
@@ -184,6 +186,8 @@ export interface TippAnzeige {
    */
   ziel?: { anker: string; seite?: string; typ?: string };
   rundgang?: string;
+  /** Seite im mitgelieferten Handbuch (#1524): Der Satz öffnet sie in einem neuen Fenster. */
+  handbuch?: string;
   /** „Neu seit deinem letzten Besuch“. */
   neu: boolean;
   /** Mit × ausgeblendet – auf „Ablago entdecken“ trotzdem sichtbar. */
@@ -256,7 +260,7 @@ const FELDER_SCHRITT = new Set([
   'handbuch',
   'sonst_verwalten',
 ]);
-const FELDER_TIPP = new Set(['schluessel', 'bereich', 'text', 'fuer', 'ziel', 'rundgang', 'funktion', 'ab_version', 'typ']);
+const FELDER_TIPP = new Set(['schluessel', 'bereich', 'text', 'fuer', 'ziel', 'rundgang', 'handbuch', 'funktion', 'ab_version', 'typ']);
 const VERSION = /^\d+\.\d+\.\d+$/;
 
 const istObjekt = (x: unknown): x is Record<string, unknown> => !!x && typeof x === 'object' && !Array.isArray(x);
@@ -633,25 +637,35 @@ function pruefeTipp(
   if (text && (text.match(/[.!?](\s|$)/g)?.length ?? 0) > 2) m(`${o2}: höchstens zwei Sätze.`, 'text');
   const fuer = fuerVon(x.fuer, o2, m);
   const typ = tippTyp(x.typ, o, o2, m);
-  const ziel = x.ziel,
-    rundgang = x.rundgang;
-  if ((ziel === undefined) === (rundgang === undefined)) m(`${o2}: genau eines von „ziel“ (Anker) oder „rundgang“.`);
-  if (ziel !== undefined) pruefeTippZiel(ziel, typ, o, o2, m);
-  if (rundgang !== undefined && (typeof rundgang !== 'string' || !o.rundgaenge.includes(rundgang)))
-    m(`${o2}: unbekannter Rundgang „${String(rundgang)}“.`, 'rundgang');
+  const { ziel, rundgang, handbuch } = tippVerweis(x, typ, o, o2, m);
   if (x.funktion !== undefined && !FUNKTIONEN.includes(x.funktion as Funktion))
     m(`${o2}: unbekannte Funktion „${String(x.funktion)}“.`, 'funktion');
   const ab = x.ab_version === undefined ? undefined : String(x.ab_version);
   if (ab !== undefined && !VERSION.test(ab)) m(`${o2}: „ab_version“ muss eine Version wie 1.2.0 sein.`, 'ab_version');
   if (k.jetzt() > k.vorher()) return null;
   const frei = {
-    ziel: typeof ziel === 'string' ? ziel : undefined,
-    rundgang: typeof rundgang === 'string' ? rundgang : undefined,
+    ziel,
+    rundgang,
+    handbuch,
     funktion: x.funktion as Funktion | undefined,
     abVersion: ab,
     typ: typ?.kennung,
   };
   return { schluessel, herkunft: o.herkunft, bereich, text: text!, fuer, ...ohneLeere(frei) };
+}
+
+/** Wohin der Satz eines Tipps führt: genau eines von Anker (`ziel`), Rundgang oder Handbuchseite (#1524). */
+function tippVerweis(x: Record<string, unknown>, typ: TypInfo | null, o: TippPruefung, o2: string, m: Melde) {
+  const { ziel, rundgang, handbuch } = x;
+  if ([ziel, rundgang, handbuch].filter((v) => v !== undefined).length !== 1)
+    m(`${o2}: genau eines von „ziel“ (Anker), „rundgang“ oder „handbuch“ (Seite im Handbuch).`);
+  if (ziel !== undefined) pruefeTippZiel(ziel, typ, o, o2, m);
+  if (rundgang !== undefined && (typeof rundgang !== 'string' || !o.rundgaenge.includes(rundgang)))
+    m(`${o2}: unbekannter Rundgang „${String(rundgang)}“.`, 'rundgang');
+  if (handbuch !== undefined && (typeof handbuch !== 'string' || !HANDBUCH_VERWEIS.test(handbuch)))
+    m(`${o2}: „handbuch“ muss eine Seite im Handbuch sein, z. B. benutzer/knoepfe/ (benutzer/ oder admin/).`, 'handbuch');
+  const text = (v: unknown) => (typeof v === 'string' ? v : undefined);
+  return { ziel: text(ziel), rundgang: text(rundgang), handbuch: text(handbuch) };
 }
 
 /** Prüft die Tipps einer Quelle; fehlerhafte fallen weg. */

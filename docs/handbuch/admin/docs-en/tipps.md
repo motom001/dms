@@ -16,7 +16,7 @@ A click on a tip opens the form on the right – no code, no file:
 
 - **Text:** at most 160 characters and two sentences; the counter shows how much is left.
 - **Area:** the tip is listed under it on “Discover Ablago” (search, post, to-dos and deadlines, folders, my account, administration).
-- **The sentence leads …** to a **place** in Ablago or into a **tour**. You choose places from a list with descriptions; with a folder type (below) its real fields and registers are added – the tip then opens the first folder of that type that the person may read. **Show target** opens Ablago in a new window, and a click on a highlighted place takes it over (as with [tours](rundgaenge.md#ziele)).
+- **The sentence leads …** to a **place** in Ablago, into a **tour** or **to a page in the manual** (e.g. `benutzer/knoepfe/`; it opens in a new window). You choose places from a list with descriptions; with a folder type (below) its real fields and registers are added – the tip then opens the first folder of that type that the person may read. **Show target** opens Ablago in a new window, and a click on a highlighted place takes it over (as with [tours](rundgaenge.md#ziele)).
 - **For whom:** everyone or administrators only; optionally only whoever may read a particular **folder type**.
 - **Preview** shows the tip as it appears in the assistant; **Try it** opens the target in a new window like “Show me”.
 

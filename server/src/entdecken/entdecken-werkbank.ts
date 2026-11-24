@@ -128,6 +128,7 @@ export const tippDaten = (x: Tipp): TippDaten => ({
   fuer: x.fuer,
   ...(x.ziel ? { ziel: x.ziel } : {}),
   ...(x.rundgang ? { rundgang: x.rundgang } : {}),
+  ...(x.handbuch ? { handbuch: x.handbuch } : {}),
   ...(x.typ ? { typ: x.typ } : {}),
 });
 const gleich = (a: TippDaten, b: TippDaten) => JSON.stringify(tippDatenAus(a)) === JSON.stringify(tippDatenAus(b));
@@ -139,6 +140,7 @@ export function tippDatenAus(x: unknown): TippDaten {
   const bereich = TIPP_BEREICHE.includes(o.bereich as never) ? (o.bereich as TippDaten['bereich']) : 'mappen';
   const ziel = s(o.ziel),
     rundgang = s(o.rundgang),
+    handbuch = s(o.handbuch),
     typ = s(o.typ);
   return {
     text: typeof o.text === 'string' ? o.text.trim() : '',
@@ -146,6 +148,7 @@ export function tippDatenAus(x: unknown): TippDaten {
     fuer: o.fuer === 'verwalten' ? 'verwalten' : 'lesen',
     ...(ziel ? { ziel } : {}),
     ...(rundgang ? { rundgang } : {}),
+    ...(handbuch ? { handbuch } : {}),
     ...(typ ? { typ } : {}),
   };
 }
@@ -196,6 +199,7 @@ export function tippsMitWerkbank(
     const basis: Tipp = { ...x };
     delete basis.ziel;
     delete basis.rundgang;
+    delete basis.handbuch;
     delete basis.typ;
     return { ...basis, ...tippDaten(p.tipp), schluessel: x.schluessel };
   });

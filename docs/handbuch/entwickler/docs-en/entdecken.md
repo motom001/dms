@@ -7,7 +7,7 @@ Tours and tips are **data, not code**. Ablago's own live in `shared/entdecken/` 
 | File | Content |
 | --- | --- |
 | `shared/entdecken/anker.yaml` | fixed anchor points of the interface (machine-readable, also for the registry) |
-| `shared/entdecken/rundgaenge.yaml` | Ablago's tour |
+| `shared/entdecken/rundgaenge.yaml` | Ablago's tours (Library, Workbench, folder, My account) |
 | `shared/entdecken/tipps.yaml` | Ablago's tips (order = order of the tip of the day) |
 | `shared/src/sprachen/<language>/entdecken.json` | their texts |
 
@@ -17,16 +17,23 @@ The server reads the YAML files at runtime (in the image under `/app/shared/entd
 
 ```yaml
 - schluessel: ablago            # lower case, digits, _
-  start: erste_anmeldung        # manuell | erste_anmeldung (Ablago itself only)
+  start: erster_besuch          # manuell | erste_anmeldung | erster_besuch (the last two for Ablago itself only)
+  seite: ablage                 # with erster_besuch: ablage | mappe | werkbank | konto
+  # leise: true                 # with erster_besuch: do not start, only a quiet sentence on the page (My account)
   fuer: lesen                   # lesen (everyone) | verwalten (only with the right to administer)
-  oeffne: { seite: start }      # open this page before the first step
-  schritte:                     # at most 8
-    - schluessel: dreiteilung
-      bild: dreiteilung         # built-in picture
-    - schluessel: erledigen
-      ziel: [navigation.zu-erledigen, startseite.zu-erledigen]   # the first visible anchor wins
+  oeffne: { seite: start }      # open this page before the first step: start | werkbank | konto | mappe
+  schritte:                     # at most 8, in reading order: top left → top right, then downwards
+    - schluessel: logo
+      ziel: kopf.logo
+    - schluessel: ansichten
+      ziel: [navigation.ansichten, startseite.zu-erledigen]   # the first visible anchor wins
       fuer: lesen               # verwalten: step only for administrators (e.g. Workbench)
+    # bild: dreiteilung         # built-in picture instead of a target (unused today, #1522)
 ```
+
+**On the first visit** (#1512, #1522, #1523): `GET /api/entdecken` returns in `beimBesuch` the tours with `start: erster_besuch` that are still pending (never seen, or “Later” and signed in again since; none while standing in for someone). The interface (`web/src/entdecken/besuch.tsx`) maps a page's path – `/ablage/…` is `ablage`, with a folder id behind it also `mappe` (the Library comes first), `/werkbank…` and `/profil…` – and starts at most one: each tour once per page load, never while another one runs, and after a tour ends only on a different path (usability principle 2.11). `leise: true` starts nothing; the page shows `StillerRundgangHinweis` (a sentence like a tip, × remembers “seen”). `oeffne: { seite: mappe }` opens the open or last opened folder when started by hand, otherwise `ersatz` is shown. `erste_anmeldung` still exists (field `starten`); Ablago itself no longer uses it.
+
+**The card stays put** (#1301, #1522): at the bottom centre on a computer, at the bottom above the assistant on a phone. If a target is taller than the space above the card (a whole column), it stays; if it covers a smaller target, it moves right above it (`lageDerKarte` in `web/src/entdecken/Rundgang.tsx`).
 
 Texts: title, description and closing sentence under `rundgang.<tour>.titel | .beschreibung | .ende`, per step `rundgang.<tour>.<step>.titel | .text | .text-handy | .text-verwalten | .ort` (underscores in the key become hyphens in the language file). `text-handy` applies on a phone, `text-verwalten` for people who may administer, `ort` tells screen readers where the highlighted element is – it is required for every `ziel`. Packages bring the same keys in their own language files ([Languages](#paket-rundgaenge-sprachen)); older ones write the texts directly into the file (`titel`, `text`, `text_handy`, `text_verwalten`, `ort`). Limits: title 60, texts 200 characters.
 
@@ -56,7 +63,7 @@ A package names `inhalt.rundgaenge: inhalt/rundgaenge.yaml` in its manifest. The
       sonst_verwalten: Frag die Person, die Ablago bei euch verwaltet.   # only for people without the right to administer
 ```
 
-- **Check on installation** (like the package check, dms-registry #132): unknown fields and anchors, fields and registers the package's own folder type does not have (`mappe.feld:<key>`, `mappe.register:<key>` against `oeffne`), folder types that belong neither to the package nor to a dependency, more than 8 steps, texts over 200 (titles 60) characters, `nach_installation` more than once per package, `erste_anmeldung`. An error makes the package invalid.
+- **Check on installation** (like the package check, dms-registry #132): unknown fields and anchors, fields and registers the package's own folder type does not have (`mappe.feld:<key>`, `mappe.register:<key>` against `oeffne`), folder types that belong neither to the package nor to a dependency, more than 8 steps, texts over 200 (titles 60) characters, `nach_installation` more than once per package, `erste_anmeldung`, `erster_besuch`. An error makes the package invalid.
 - **At runtime** Ablago checks again against its own anchors and the installed folder types (a package for a newer version may name anchors that do not exist here yet): faulty tours are dropped and logged once; if a target is missing, the step is dropped silently.
 - **`oeffne`:** `mappe` opens the most recently changed folder of the type that the person may read; `neu` an empty form, only if they may create the type – nothing is saved, and at the end Ablago goes back. Otherwise `ersatz` (or a general sentence) is shown instead of the steps. `GET /api/entdecken/rundgaenge/:schluessel/oeffnen` returns the path.
 - **Quiet:** tours from packages never start by themselves. With `nach_installation` or `nach_update` Ablago offers them as a tip for 30 days after installing or updating (`ANGEBOT_TAGE` in `shared/src/entdecken.ts`; “Contracts at a glance – a short tour”, `angebot:<tour>`, “new”); the tip-of-the-day rule applies (at most one a day). All of them are on “Discover Ablago”.
@@ -95,7 +102,8 @@ texte/en/entdecken.json      further languages, e.g. English, pt-BR …
 - schluessel: suche_in_dokumenten
   bereich: suche                # suche | post | fristen | mappen | konto | verwalten
   ziel: startseite.suche        # anchor with a fixed page …
-  # rundgang: ablago            # … or a tour (exactly one of the two)
+  # rundgang: ablago            # … or a tour …
+  # handbuch: benutzer/knoepfe/ # … or a page in the bundled manual (benutzer/ or admin/, #1524) – exactly one of the three
   fuer: lesen                   # lesen | verwalten
   funktion: fragen              # optional: fragen | laufwerk | mail – only if switched on
   ab_version: 0.216.0           # optional: "New since your last visit"
@@ -118,7 +126,10 @@ A package names `inhalt.tipps: inhalt/tipps.yaml`; the text is under `tipp.<key>
 - schluessel: kuendigen
   text: Wusstest du schon? Ablago erinnert dich an jede Kündigungsfrist.
   typ: vertrag
-  ziel: mappe.feld:kuendigen_bis      # … or leads to this place (in the first readable folder of the type)
+  ziel: mappe.feld:kuendigen_bis      # … or leads to this place (in the first readable folder of the type) …
+- schluessel: knoepfe
+  text: Blue, green, outlined or dashed? Here is how to tell what a button does.
+  handbuch: benutzer/knoepfe/         # … or opens this page in the bundled manual (new window, #1524)
 ```
 
 **Workbench → Tips** (#942): own tips (`eigen:tipp_<n>`) and adaptations of tips from Ablago and from packages are stored in the setting `entdecken_werkbank` – adaptations per full key with the new values and the original as it was then (this is how the Workbench sees that the original has changed since the adaptation). An adaptation that no longer passes the check (e.g. tour deleted) does not apply; the original applies again. “Create package” writes own tips to `inhalt/tipps.yaml`; adaptations of other packages' tips only come along with #654 as an addendum.
@@ -129,7 +140,7 @@ A package names `inhalt.tipps: inhalt/tipps.yaml`; the text is under `tipp.<key>
 
 Targets are fixed anchor points, not HTML ids: the element carries `data-anker="<anchor>"` (on `Link` the property `anker`). The list is in `shared/entdecken/anker.yaml` with page, description, `handy` (also visible on a phone) and `clients` (also exists in clients). Patterns such as `mappe.register:<key>`, `mappe.feld:<key>` and `werkbank.bereich:<route>` match any key. Today they include:
 
-`neu`, `benutzermenue`, `navigation.ansichten`, `navigation.ansicht-waehlen`, `navigation.erweiterte-suche`, `navigation.zu-erledigen`, `navigation.neue-post`, `navigation.favoriten`, `liste`, `mappe`, `startseite.suche`, `startseite.fragen`, `startseite.feld-art`, `startseite.tipp`, `assistent`, `startseite.zu-erledigen`, `startseite.neue-post`, `startseite.termin`, `startseite.zuletzt`, `zu-erledigen.ansicht`, `mappe.aktionen`, `mappe.stern`, `mappe.register:<key>`, `mappe.feld:<key>`, `konto.abwesenheit`, `konto.schrift`, `konto.startseite`, `konto.tipps`, `konto.zusammenfassung`, `entdecken.rundgaenge`, `werkbank.bereich:<route>`, `werkbank.typen.suche`, `werkbank.sichten.suche`, `werkbank.nummernkreise.suche`, `werkbank.auskuenfte.suche`, `werkbank.auskuenfte.nur-offene`, `werkbank.fehlermeldungen.suche`.
+`neu`, `benutzermenue`, `navigation.ansichten`, `navigation.ansicht-waehlen`, `navigation.erweiterte-suche`, `navigation.zu-erledigen`, `navigation.neue-post`, `navigation.favoriten`, `kopf.logo`, `kopf.bereiche`, `liste`, `mappe`, `startseite.suche`, `startseite.fragen`, `startseite.feld-art`, `startseite.tipp`, `assistent`, `startseite.zu-erledigen`, `startseite.neue-post`, `startseite.termin`, `startseite.zuletzt`, `zu-erledigen.ansicht`, `mappe.kopf`, `mappe.aktionen`, `mappe.stern`, `mappe.reiter`, `mappe.register:<key>`, `mappe.feld:<key>`, `mappe.speicherleiste`, `konto.zurueck`, `konto.bereich:<seite>`, `konto.abwesenheit`, `konto.schrift`, `konto.startseite`, `konto.tipps`, `konto.zusammenfassung`, `entdecken.rundgaenge`, `werkbank.navigation`, `werkbank.bereich:<route>`, `werkbank.mitte`, `werkbank.anpassen`, `werkbank.typen.suche`, `werkbank.sichten.suche`, `werkbank.nummernkreise.suche`, `werkbank.auskuenfte.suche`, `werkbank.auskuenfte.nur-offene`, `werkbank.fehlermeldungen.suche`.
 
 `server/test/entdecken.test.ts` checks during the build: every anchor appears in the interface's source, format, targets and tours exist, lengths are right, and every text is there in German and English. Whoever rebuilds an element keeps the attribute; new anchors are added, existing ones are **never renamed or removed** (#1307) – tours from packages and custom ones rely on them, and the registry compares its copy of the list. `server/test/entdecken-anker.test.ts` checks against the stored list `server/test/charakter/anker.json`: a new anchor goes to the end of that list in the same PR.
 
