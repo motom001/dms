@@ -1,6 +1,6 @@
 # Suche
 
-Die Suche der Ablage verzeiht Tippfehler und andere Schreibweisen. Was sie dabei tut, stellst du unter **Werkbank → Pakete → Von Ablago mitgeliefert → Text aus PDF und Texterkennung → Suche** ein (bis Version 0.314 *Suche und Volltext*), die gleichbedeutenden Wörter unter **Werkbank → Gleichbedeutende Wörter** (in der Gruppe *Post und Eingänge*; ab der Stufe [*Haushalt*](uebersicht.md#werkbank-anpassen), in *Betrieb* und *Alles* immer). Wie Benutzer suchen, steht im [Benutzerhandbuch](https://help.ablago.app/benutzer/aktuell/ablage/#suchen).
+Die Suche der Ablage verzeiht Tippfehler und andere Schreibweisen. Was sie dabei tut, stellst du unter **Werkbank → Pakete → Von Ablago mitgeliefert → Text aus PDF und Texterkennung → Suche** ein (bis Version 0.315 *Suche und Volltext*), die gleichbedeutenden Wörter unter **Werkbank → Gleichbedeutende Wörter** (in der Gruppe *Post und Eingänge*; ab der Stufe [*Haushalt*](uebersicht.md#werkbank-anpassen), in *Betrieb* und *Alles* immer). Wie Benutzer suchen, steht im [Benutzerhandbuch](https://help.ablago.app/benutzer/aktuell/ablage/#suchen).
 
 ## Was immer gilt
 

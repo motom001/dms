@@ -501,7 +501,7 @@ A folder with invented data that a package creates on request when installing (t
 See also: [Package](#paket), [Preset](#vorgabe), [Example Library](#beispiel-ablage), [Load test data](#lasttest-daten).
 
 <a id="suche-und-volltext"></a>**Search and full text** (*Suche und Volltext*) · ~ with explanation · administrators  
-Former workbench area under Post and incoming for text recognition, archive version, typos and the way to the synonyms. Since version 0.315 the page is called "Text from PDF and text recognition" and is under Packages → Included with Ablago; archive version and other file types have their own pages there. Combined the former areas "Text recognition" and "Search".  
+Former workbench area under Post and incoming for text recognition, archive version, typos and the way to the synonyms. Since version 0.316 the page is called "Text from PDF and text recognition" and is under Packages → Included with Ablago; archive version and other file types have their own pages there. Combined the former areas "Text recognition" and "Search".  
 See also: [Included with Ablago](#von-ablago-mitgeliefert).
 
 <a id="dienstkonto"></a>**Service account** (*Dienstkonto*) · ~ with explanation · administrators  
