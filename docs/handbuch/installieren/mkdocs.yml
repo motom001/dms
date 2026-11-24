@@ -90,6 +90,7 @@ nav:
   - "Ein Container: dms-komplett": komplett.md
   - Eigener Rechner:
       - PC oder Mini-PC mit Linux: linux.md
+      - Gebrauchte Hardware: gebrauchte-hardware.md
       - "Raspberry Pi – Schritt für Schritt": raspberry-pi.md
       - Windows: windows.md
       - Proxmox und Co.: proxmox.md

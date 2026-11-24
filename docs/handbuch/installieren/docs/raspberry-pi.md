@@ -38,6 +38,9 @@ Danach kannst du freiwillig messen, [wie schnell dein Pi ist](#wie-schnell-ist-m
 | **Netzwerkkabel** | ein normales LAN-Kabel zum Router | Stabiler und schneller als WLAN; der Pi ist dann im Router leicht zu finden. |
 | **PC oder Mac** | den hast du schon | Damit schreibst du das System auf die SSD und richtest später alles im Browser ein. |
 
+!!! tip "Günstiger: gebrauchte Hardware"
+    Mit Netzteil, Gehäuse und SSD kostet ein Raspberry Pi 5 schnell mehr als ein gebrauchter Mini-PC oder ein altes Notebook, das ohnehin im Schrank liegt. Solche Geräte laufen mit dem normalen Image und der Anleitung [PC mit Linux](linux.md). Worauf du achten solltest: [Gebrauchte Hardware](gebrauchte-hardware.md).
+
 !!! tip "Warum eine SSD statt einer SD-Karte?"
     Ablago hat eine **Datenbank**. Sie schreibt ständig viele kleine Änderungen. **SD-Karten nutzen sich** dabei ab. Eine SSD ist für so etwas gebaut, hält viele Jahre und ist **um ein Vielfaches schneller**: Suche, Vorschaubilder, Texterkennung und Sicherungen gehen spürbar flotter. Am einfachsten ist eine SSD mit USB-Anschluss: Du schreibst das System direkt darauf und brauchst dann gar keine SD-Karte.
 
