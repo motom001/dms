@@ -73,7 +73,7 @@ Each automation takes at most two lines in the list:
 
 Whether an automation works you see and change in **one** place: at the switch at the top next to the name; the list shows the same state as a sign (**on**, **off**, **paused**) and switches several at once.
 
-- For a saved automation the switch takes effect immediately. There is no further message – the switch shows the state itself; only if something goes wrong is the reason shown at the switch.
+- For a saved automation the switch takes effect immediately. There is no further message – the switch shows the state itself; only if something goes wrong is the reason shown at the switch. **Save automation** doesn't change on/off: what you switched off at the switch stays off after saving.
 - If it is **paused** (see [below](#wenn-etwas-nicht-mehr-passt)), the switch is off and the reason is shown once directly below it, e.g. "Paused after a restore – check it and switch it on again." Switching it on again means flipping the switch. It stays in its place.
 - Next to it is the button **Copy**: it creates a copy of your own and opens it.
 
@@ -355,9 +355,9 @@ Ablago also pauses an automation if it runs **more than 30 times in one minute**
 Packages bring **ready-made automations**, for example "MOT due soon" (package Vehicles) or "Cancellation due soon" (package Household). They **always all** come with it. When installing – in the setup assistant as in the workbench – each automation has a **switch** (on/off) under **"These automations come with it – which should run straight away?"**, plus **All on** and **All off**. Initially on are the ones the package marks as *switched on straight away* (e.g. *Check contracts daily*, with the time below); if a package marks none, all are on as before. What stays on runs after installation; the rest is created but off.
 
 - In the list you recognise them by the chip with the package icon and the **package's name** after the name. You can switch them on, adjust and copy them.
-- They can't be **deleted** – the package would create them again with the next update. The **Delete** button at the bottom is therefore dashed; a click explains: "Comes from the package … and can't be deleted. Switch it off – it stays off after updates too.", with the way to the package.
+- They can't be **deleted** – the package would create them again with the next update. The **Delete** button at the bottom is therefore dashed; a click explains: "Comes from the package … and can't be deleted. Switch it off – it stays off after updates too.", with the way to the package. Exception: if the package is no longer installed or the automation no longer fits (for example because its document type is missing), it is **orphaned** and can be deleted like one of your own.
 - On an **update** of the package, the new version replaces the old as long as you haven't changed it; on/off always stays as you set it. A changed one stays as it is: the update preview lists it under **"You have changed these automations – they stay as they are."**, and **View the new version from the package** shows what the new version does differently – readable as with [versions](fassungen.md). If you want it, adjust your automation afterwards. New automations from the update are offered again when updating.
-- If you remove the package, its automations go with it if they are off and unchanged.
+- If you remove the package, its automations go with it if they are unchanged and off – or no longer fit without the package, for example because their document type went with it; then also when switched on. What you changed (switching on or off by hand counts too) stays. If you install the package again later, such an automation points to the package's new document type and runs again – no second one is created.
 - Packages do not bring [Workbench cards](#werkbank-karten), [Call from outside](#aufruf-von-aussen) or the cards [to the outside](#nach-aussen) (*Call URL*, *Send e-mail*) – they only exist in automations you create yourself. Where data goes cannot be shown by a package's permission preview; you decide that yourself.
 
 ### Stand-in {#vertretung}

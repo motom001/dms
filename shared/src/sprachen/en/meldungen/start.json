@@ -111,5 +111,9 @@
   "verwaltung.netz-aufruf": "Network: {anzahl} × {methode} {host} – {status}, {hin} sent, {zurueck} received",
   "verwaltung.netz-abgelehnt": "Network blocked: {anzahl} × {methode} {host} – the address is not allowed",
   "verwaltung.netz-ohne-antwort": "no response",
-  "prozess.ungueltige-methode": "Invalid method – only capital letters are allowed, e.g. GET or POST."
+  "prozess.ungueltige-methode": "Invalid method – only capital letters are allowed, e.g. GET or POST.",
+  "netz.ursache.ipv6": "No connection to {adresse} – network without IPv6?",
+  "netz.ursache.verweigert": "Node.js denies network access ({code}).",
+  "netz.ursache.name": "The name can’t be resolved ({code}).",
+  "netz.ursache.adresse": "{code} at {adresse}"
 }

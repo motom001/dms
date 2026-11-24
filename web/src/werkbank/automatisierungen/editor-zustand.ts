@@ -49,7 +49,8 @@ export function useEditor(z: AutomatisierungenZustand, id: string) {
   const [vorratOffen, setVorratOffen] = useState(false);
   const [ansage, setAnsage] = useState('');
   const [fehlerOrte, setFehlerOrte] = useState<Set<AutoBereich>>(new Set());
-  const ent = useEntwurf(gespeichert, e, {
+  // An/aus (#706, #1601): Bei einer gespeicherten Automatisierung wirkt der Schalter sofort – er gehört nicht zum Entwurf.
+  const ent = useEntwurf(gespeichert, a ? { ...e, aktiv: gespeichert.aktiv } : e, {
     neu,
     zuruecksetzen: () => {
       setE(kopie(gespeichert));
@@ -125,6 +126,15 @@ export function kurzWennVon(x: EditorZustand, k: Kontextdaten) {
   return kurzform({ ...x.e, dann: [] }, k, ereignisName).replace(/ → .*$/, '');
 }
 
+/**
+ * Entwurf ohne an/aus (#1601): Der Schalter einer gespeicherten Automatisierung wirkt sofort; schickte das Speichern den
+ * Stand von beim Öffnen mit, schaltete es eine im Editor ausgeschaltete Automatisierung wieder ein.
+ */
+function ohneAktiv(e: Entwurf): Omit<Entwurf, 'aktiv'> {
+  const { aktiv: _aktiv, ...rest } = e;
+  return rest;
+}
+
 /** Speichern (neu: anlegen und zur neuen Adresse) und Aktionen mit Meldung – für den Editor. */
 function aktionen(c: {
   z: AutomatisierungenZustand;
@@ -144,7 +154,7 @@ function aktionen(c: {
     try {
       const x = neu
         ? await automatisierungApi.automatisierungAnlegen(e)
-        : await automatisierungApi.automatisierungAendern(a!.id, { ...e, version: a!.version });
+        : await automatisierungApi.automatisierungAendern(a!.id, { ...ohneAktiv(e), version: a!.version });
       await z.laden();
       loeseWache();
       if (neu) {

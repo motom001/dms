@@ -15,6 +15,7 @@ import type { ArbeiterDaten, ArbeiterMeldung, Hostanfrage, Hostantwort } from '.
 import { ladeArgumente, pruefeModul, SEITE, type Modulpruefung } from './modul';
 import { t } from '../sprache/sprache';
 import { MB, NETZ_LANG_AB, NETZ_MAX, NETZ_TOKEN_LESEN } from '../grundlagen/grenzen';
+import { mitNetzUrsache } from '../grundlagen/fehler';
 import { liesToken } from '../../../shared/src/extern';
 
 export interface Grenzen {
@@ -438,7 +439,7 @@ async function netz(
     clearTimeout(uhr);
     mu.ende(fehlerArt(e));
     log({ methode, url, status: null, hin, zurueck: 0 });
-    return fehlerAntwort(-4, `Netzfehler: ${(e as Error).message}`);
+    return fehlerAntwort(-4, `Netzfehler: ${mitNetzUrsache(e)}`);
   }
   mu.kopf(r);
   // Ins Protokoll (#807): Bytes hin und zurück; bei einer Antwort Stück für Stück zählt netzWeiter nach.
@@ -467,7 +468,7 @@ async function netz(
   } catch (e) {
     clearTimeout(uhr);
     mu.ende(fehlerArt(e));
-    return fehlerAntwort(-4, `Netzfehler: ${(e as Error).message}`);
+    return fehlerAntwort(-4, `Netzfehler: ${mitNetzUrsache(e)}`);
   }
 }
 
@@ -498,7 +499,7 @@ async function netzWeiter(s: Strom | null): Promise<Hostantwort> {
   } catch (e) {
     s.ende.abort();
     s.messung?.ende(istZeit(e) ? 'zeit' : 'fehler');
-    return fehlerAntwort(-4, `Netzfehler: ${(e as Error).message}`);
+    return fehlerAntwort(-4, `Netzfehler: ${mitNetzUrsache(e)}`);
   } finally {
     clearTimeout(uhr);
   }

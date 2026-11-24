@@ -22,6 +22,8 @@ import {
   istAufruf,
   type Lauf,
   laufFuer,
+  istVerwaist,
+  automatisierungsProbleme,
 } from '../../../../shared/src/automatisierung';
 import { Fachfehler } from '../../grundlagen/fehler';
 import { t, log } from './gemeinsam';
@@ -216,7 +218,11 @@ export abstract class AutomatisierungBearbeiten extends AutomatisierungBasis {
 
   async loesche(id: string): Promise<void> {
     const a = await this.gibt(id);
-    if (a.herkunft !== 'eigen') throw new Fachfehler(409, t('automatisierung.loeschen.herkunft'));
+    // Mitgelieferte bleiben (#1174) – außer verwaisten (#1586): Paket weg oder Stand ungültig, sonst eine Sackgasse.
+    if (a.herkunft !== 'eigen') {
+      const k = await this.kontext();
+      if (!istVerwaist(a, automatisierungsProbleme(a, k), k.pakete)) throw new Fachfehler(409, t('automatisierung.loeschen.herkunft'));
+    }
     await this.d.repo.loesche(id);
     await this.aufrufe.entferne(id, 'Automatisierung gelöscht');
     // Karten nach außen (#671): in der Datenbank gehen Geheimnisse und Ausgangskorb mit (ON DELETE CASCADE).

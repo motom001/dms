@@ -7,7 +7,7 @@ import { schluesselRecht, log, abbruch, type AktionsZugang } from './verwaltung-
 import type { AnLaeufer, VomLaeufer } from './prozess';
 import type { InstalliertesPaket } from '../../../shared/src/pakete';
 import { adressfelder, pruefeAdresse } from '../../../shared/src/paketeinstellungen';
-import { ladeArgumente } from './modul';
+import { ladeArgumente, laeuferRechte } from './modul';
 import { senkePrioritaet, senkeProzess } from '../prozesse/hintergrund';
 import { t, t as tx } from '../sprache/sprache';
 import type { Hostantwort } from './arbeiter';
@@ -132,10 +132,7 @@ export abstract class PaketlaeuferPakete extends PaketlaeuferZustellen {
     // Im Betrieb mit dem Berechtigungsmodell von Node: nur Lesen im Programmordner, Worker erlaubt, sonst nichts
     // (kein Schreiben, keine Kindprozesse, kein Zugriff auf Schlüssel und Daten des DMS).
     // Gebaut liegen prozess.mjs und arbeiter.mjs neben index.js in dist/ (siehe „build“ in package.json); nur diesen Ordner lesen.
-    const rechte =
-      ts || process.env.DMS_LAEUFER_OHNE_BERECHTIGUNGEN === '1'
-        ? []
-        : ['--permission', '--allow-worker', `--allow-fs-read=${dirname(hier)}`, '--disable-warning=SecurityWarning'];
+    const rechte = ts || process.env.DMS_LAEUFER_OHNE_BERECHTIGUNGEN === '1' ? [] : laeuferRechte(dirname(hier));
     const kind = fork(pfad, [], {
       serialization: 'advanced',
       execArgv: [...ladeArgumente(process.execArgv), ...rechte],

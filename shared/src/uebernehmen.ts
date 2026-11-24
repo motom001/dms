@@ -178,19 +178,96 @@ const WAEHRUNG: Array<[RegExp, string]> = [
   [/\bchf\b|\bfr\./i, 'CHF'],
 ];
 
+/** Klammern und Anführungszeichen mit ihrem Gegenstück (#1606): am Rand weg, wenn das Gegenstück fehlt. */
+const PAARE: ReadonlyArray<readonly [string, string]> = [
+  ['(', ')'],
+  ['[', ']'],
+  ['{', '}'],
+  ['„', '“'],
+  ['“', '”'],
+  ['‚', '‘'],
+  ['‘', '’'],
+  ['»', '«'],
+  ['«', '»'],
+  ['›', '‹'],
+  ['‹', '›'],
+  ['"', '"'],
+  ["'", "'"],
+];
+
+/** Felder, bei denen ein Punkt am Ende nur Satzzeichen ist (#1606): Zahl, Datum, Betrag, Prozent, PLZ und IBAN. */
+type SaeuberFeld = Pick<Feld, 'typ'> & Partial<Pick<Feld, 'key' | 'label' | 'format' | 'erkennung'>>;
+function punktWeg(f: SaeuberFeld): boolean {
+  if (['zahl', 'datum', 'betrag', 'prozent'].includes(f.typ)) return true;
+  if (f.typ !== 'text') return false;
+  const art = f.key !== undefined && f.label !== undefined ? artVon(f as Feld) : (f.erkennung?.art ?? null);
+  return f.format === 'plz' || f.format === 'iban' || art === 'plz' || art === 'iban';
+}
+
+/**
+ * Markierter Text ohne Satzzeichen am Rand (#1606): Leerraum, Zeilenumbrüche, Komma, Semikolon, Doppelpunkt und
+ * Klammern bzw. Anführungszeichen ohne Gegenstück. Ein Punkt am Ende bleibt bei Text („Hauptstr.“, „e. V.“) und fällt
+ * nur bei Zahl, Datum, Betrag, Prozent, PLZ und IBAN weg.
+ */
+export function saeubereMarkierung(text: string, f: SaeuberFeld): string {
+  const punkt = punktWeg(f);
+  let s = text;
+  let vorher: string;
+  do {
+    vorher = s;
+    s = s.replace(/^[\s,;:]+|[\s,;:]+$/gu, '');
+    if (punkt) s = s.replace(/\.+$/, '');
+    const a = s[0];
+    if (a && PAARE.some(([x]) => x === a) && !PAARE.some(([x, y]) => x === a && s.indexOf(y, 1) > 0)) s = s.slice(1);
+    const z = s.at(-1);
+    if (z && PAARE.some(([, y]) => y === z) && !PAARE.some(([x, y]) => y === z && s.lastIndexOf(x, s.length - 2) >= 0)) s = s.slice(0, -1);
+  } while (s !== vorher);
+  return s;
+}
+
+/**
+ * Feldmuster (#1607): der erste Teil des Textes, der zum Muster passt – „Nr. 12a,“ → „12a“. Passt der ganze Text,
+ * bleibt er; Teile, die an Buchstaben oder Ziffern grenzen, kommen erst nach freistehenden. null: nichts passt (oder
+ * das Muster ist ungültig).
+ */
+export function musterTeil(muster: string, text: string): string | null {
+  let suche: RegExp, ganz: RegExp;
+  try {
+    suche = new RegExp(muster, 'g');
+    ganz = new RegExp('^(?:' + muster + ')$');
+  } catch {
+    return null;
+  }
+  if (ganz.test(text)) return text;
+  const treffer = [...text.matchAll(suche)].filter((m) => m[0] && ganz.test(m[0]));
+  const frei = (m: RegExpExecArray) =>
+    !/[\p{L}\p{N}]/u.test(text[m.index - 1] ?? '') && !/[\p{L}\p{N}]/u.test(text[m.index + m[0].length] ?? '');
+  return (treffer.find(frei) ?? treffer[0])?.[0] ?? null;
+}
+
+/** Einzeiliger Text: ohne Zeilenumbrüche; mit Muster (#1607) nur der passende Teil – passt nichts, der Text wie bisher. */
+function einzeilig(f: Partial<Pick<Feld, 'maxLen' | 'muster'>>, roh: string): string {
+  const s = roh.replace(/\s+/g, ' ');
+  const w = (f.muster ? musterTeil(f.muster, s) : null) ?? s;
+  return f.maxLen ? w.slice(0, f.maxLen) : w;
+}
+
 /**
  * Text vom Dokument als Wert für ein Feld (#934). Text, Langtext und formatierter Text nehmen ihn, wie er ist (ohne
  * Zeilenumbrüche in einzeiligen Feldern, gekürzt auf die Höchstlänge); Datum, Zahl und Betrag werden gelesen;
  * Auswahl nur, wenn der Text einer Option entspricht. Verweise, Ja/Nein und Passwörter nie – null.
  */
-export function wertAusText(f: Pick<Feld, 'typ' | 'optionen' | 'beschriftungen' | 'maxLen' | 'waehrung'>, text: string): Wert | null {
-  const roh = text.replace(/ /g, ' ').trim();
+export function wertAusText(
+  f: Pick<Feld, 'typ' | 'optionen' | 'beschriftungen' | 'maxLen' | 'waehrung'> &
+    Partial<Pick<Feld, 'key' | 'label' | 'format' | 'erkennung' | 'muster'>>,
+  text: string,
+): Wert | null {
+  // Satzzeichen und Leerraum am Rand weg (#1606) – „12,“ wird „12“.
+  const roh = saeubereMarkierung(text.replace(/ /g, ' '), f);
   if (!roh) return null;
   switch (f.typ) {
-    case 'text': {
-      const s = roh.replace(/\s+/g, ' ');
-      return f.maxLen ? s.slice(0, f.maxLen) : s;
-    }
+    case 'text':
+      return einzeilig(f, roh);
     case 'langtext':
     case 'formatiert':
       return f.maxLen ? roh.slice(0, f.maxLen) : roh;

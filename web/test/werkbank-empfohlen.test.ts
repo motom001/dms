@@ -4,7 +4,7 @@
  * Umstiegs-Hinweis („wieder“), kein „Aus der Einrichtung übersprungen: Pakete“, kein Hinweis zu Benachrichtigungen.
  * Installierte verschwinden, sind alle da, verschwindet der Hinweis. Bei einem Update von früher bleibt der
  * Umstiegs-Hinweis zur Texterkennung, und sie steht nicht noch einmal in der Liste. Einheitliche Knöpfe: Handlung,
- * „Zur Kenntnis nehmen“, „Nein, danke“ (bzw. „Gelesen“) – kein „Verstanden“.
+ * „Zur Kenntnis nehmen“ (bei reinen Hinweisen „Ausblenden“, #1587), „Nein, danke“ (bzw. „Gelesen“) – kein „Verstanden“.
  */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
@@ -129,7 +129,7 @@ describe('Werkbank-Übersicht: Empfohlene Pakete (#1511)', () => {
     assert.ok(text(l[1]).includes('wieder'));
   });
 
-  it('Knöpfe einheitlich: nur Handlung, „Zur Kenntnis nehmen“, „Nein, danke“ bzw. „Gelesen“', () => {
+  it('Knöpfe einheitlich: nur Handlung, „Ausblenden“ (reine Hinweise, #1587), „Nein, danke“ bzw. „Gelesen“', () => {
     const l = hinweise({
       ...NEU,
       kiTypen: { pakete: [{ id: 'ki', name: 'KI' }] },
@@ -138,7 +138,7 @@ describe('Werkbank-Übersicht: Empfohlene Pakete (#1511)', () => {
       notfallcodeBenutzt: [{ id: 'n', benutzerId: 'b', name: 'Lena', am: '2026-11-20T08:00:00Z' }],
     });
     const erledigen = new Set(l.flatMap((x) => (x.erledigen ? [x.erledigen] : [])));
-    assert.deepEqual([...erledigen].sort(), ['Gelesen', 'Nein, danke', 'Zur Kenntnis nehmen']);
+    assert.deepEqual([...erledigen].sort(), ['Ausblenden', 'Gelesen', 'Nein, danke']);
     assert.ok(!l.some((x) => x.knopf === 'Verstanden' || x.erledigen === 'Verstanden'));
     const darf = l.find((x) => x.schluessel === 'darf.neu')!;
     assert.ok(text(darf).includes('Neu: Was Ablago darf – bitte einmal ansehen.'));

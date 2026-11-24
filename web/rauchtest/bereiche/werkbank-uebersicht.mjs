@@ -33,7 +33,8 @@ rauchtest(
     // Je Paket eine Zeile mit demselben Knopf, darunter der Weg zu allen Paketen; kein zweiter Hauptknopf.
     assert.equal(await hinweis.getByRole('link', { name: /^Installieren: / }).count(), 2);
     await hinweis.getByRole('link', { name: 'Alle Pakete ansehen' }).waitFor();
-    await hinweis.getByRole('button', { name: 'Zur Kenntnis nehmen' }).waitFor();
+    // Reiner Hinweis (#1587): „Ausblenden“ statt „Zur Kenntnis nehmen“.
+    await hinweis.getByRole('button', { name: 'Ausblenden' }).waitFor();
     const reihe = await hinweis.locator('.empfohlen-zeile').allTextContents();
     assert.match(reihe[0], /^Texterkennung – damit Scans durchsuchbar werden\./);
     assert.match(reihe[1], /^Benachrichtigungen – tägliche Zusammenfassung, Post für dich\./);
@@ -77,6 +78,43 @@ rauchtest('Werkbank-Übersicht: Hinweis erledigt, zurück – weg ohne „Neu la
   fehlt = false;
   await s.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
   await hinweis.waitFor({ state: 'detached' });
+});
+
+rauchtest('Werkbank-Übersicht: Ausblenden wirkt sofort, „Rückgängig“ und Begründung danach (#1587)', { als: LENA }, async (s) => {
+  await zurUebersicht(s);
+  const liste = s.locator('.uebersicht-hinweise');
+  const hinweis = s.locator('.hinweiszeile', { hasText: 'Empfohlene Pakete.' });
+  await hinweis.getByRole('button', { name: 'Ausblenden' }).click();
+  // Sofort weg, ohne Formular; oben steht „Rückgängig“.
+  await hinweis.waitFor({ state: 'detached' });
+  const eben = liste.getByRole('status').filter({ hasText: 'Ausgeblendet.' });
+  await eben.waitFor();
+  assert.equal(await s.getByRole('textbox', { name: /Begründung/ }).count(), 0, 'kein Formular vorher');
+  await eben.getByRole('button', { name: 'Rückgängig' }).click();
+  await hinweis.waitFor();
+  await eben.waitFor({ state: 'detached' });
+  // Noch einmal – diesmal mit Begründung danach.
+  await hinweis.getByRole('button', { name: 'Ausblenden' }).click();
+  await eben.getByRole('button', { name: 'Begründung ergänzen' }).click();
+  await eben.getByRole('textbox', { name: /Begründung/ }).fill('Testinstallation');
+  // Mit offener Begründung bleibt der Hinweis stehen – Zeit für axe, hell und dunkel.
+  const funde = [];
+  for (const schema of ['light', 'dark']) {
+    await schemaWechseln(s, schema);
+    for (const v of await axePruefen(s, WERKBANK_BEREICHE)) funde.push(`${schema}: ${v}`);
+  }
+  await schemaWechseln(s, 'light');
+  assert.deepEqual(funde, [], `axe an „Ausgeblendet“ mit Begründung:\n${funde.join('\n')}`);
+  await eben.getByRole('button', { name: 'Begründung speichern' }).click();
+  await eben.waitFor({ state: 'detached' });
+  const akzeptiert = s.locator('.aufklappbereich.akzeptiert');
+  await akzeptiert.getByRole('button', { name: /Bewusst akzeptiert \(1\)/ }).click();
+  const zeile = akzeptiert.locator('li', { hasText: 'Empfohlene Pakete.' });
+  await zeile.getByText('Begründung: Testinstallation', { exact: false }).waitFor();
+  assert.equal(await zeile.getByRole('button', { name: 'Begründung ergänzen' }).count(), 0, 'mit Begründung kein „ergänzen“');
+  // Aufräumen für die anderen Fälle: wieder einblenden.
+  await zeile.getByRole('button', { name: 'Wieder einblenden' }).click();
+  await hinweis.waitFor();
 });
 
 /* ---------- Was Ablago darf (#1562): Karte oben in der Übersicht ---------- */
