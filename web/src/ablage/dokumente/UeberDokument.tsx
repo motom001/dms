@@ -1,4 +1,4 @@
-/** „Über dieses Dokument“ (#1211, #1279): Text, Archivfassung, Archivnummer, Eingang, Versionen. */
+/** „Über dieses Dokument“ (#1211, #1279): Text, Archivfassung, Archivnummer, ursprünglicher Name (#1594), Eingang, Versionen. */
 import { OCR_STAENDE, type Dokument, type OcrStand } from '../../../../shared/src/model';
 import { spracheAusInfo } from '../../../../shared/src/textsprache';
 import { volltextHerkunft } from '../../../../shared/src/volltext';
@@ -45,6 +45,8 @@ function TextWert({ x, s, textOffen, text, neu }: { x: Dokument; s?: OcrStand; t
           </a>
         </>
       )}
+      {/* Scan über 300 dpi (#1600): intern verkleinert, das Original bleibt. */}
+      {x.verkleinertDpi && <> · {t('ablage.dokumente.ueber.verkleinert', { von: x.verkleinertDpi, auf: 300 })}</>}
       {s?.stand === 'fertig' && (
         <Knopf groesse="klein" onClick={text}>
           {textOffen ? t('ablage.dokumente.text-ausblenden') : t('ablage.dokumente.ueber.zeigen')}
@@ -124,6 +126,12 @@ export function UeberDokument({
           )}
         </dd>
       </div>
+      {x.nameOriginal && (
+        <div>
+          <dt>{t('ablage.dokumente.ueber.ursprungsname')}</dt>
+          <dd>{x.nameOriginal}</dd>
+        </div>
+      )}
       <div>
         <dt>{t('ablage.dokumente.ueber.eingang')}</dt>
         <dd>

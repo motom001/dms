@@ -228,6 +228,8 @@ Next to it, it says **where the text comes from**: "Text from the PDF" (the text
 
 Recognised text from scans isn't always error-free – the better the original, the better the result.
 
+An image scan (JPEG, PNG) with more than 300 dpi – say 600 dpi – is scaled down internally to 300 dpi for text recognition and image analysis: that is where text recognition works best, and packages stay within their limits. The stored original remains unchanged. **About this document** then says at *Text* “scaled down from 600 to 300 dpi for text recognition, the original stays”.
+
 ### Documents in several languages { #mehrere-sprachen }
 
 Not every document is in one language – for instance a German letter from the municipality, followed by a French letter from an embassy, or a package leaflet in German and English. Ablago therefore reads **every page in its language**; text recognition reads a page that has both with both languages at the same time.
@@ -266,6 +268,16 @@ If **versioning** is switched on for a document tab (an administrator does this)
 
 - with versioning: save **as a new version** (preselected) or **as a separate document with a counter**, e.g. `Invoice (2).pdf`
 - without versioning: **as a separate document with a counter** (preselected) or **delete the old document and upload the new one** – the deletion is permanent
+
+## Rename { #umbenennen }
+
+**⋯ → Rename …** on a document gives it a new name, e.g. `scan_0042.pdf` becomes `Electricity bill March.pdf`. It applies immediately, without "Save folder", and needs the right to edit the folder.
+
+- **The extension stays.** The field only holds the name; the extension (e.g. `.pdf`) is shown fixed next to it. If you type it too, nothing changes; a different extension goes in front of the old one (`Power.txt` becomes `Power.txt.pdf`) – so the file still matches its content.
+- **The original name stays.** After the first rename, **About this document** shows *Original name* – even after further renames, the name from before, usually the file name at upload.
+- The folder's [history](zusammenarbeit.md#historie) records every rename with old and new name.
+- **Archive mode:** while the folder's retention period runs, a document can't be renamed – just as it can't be deleted.
+- Enclosures are renamed as before on their row via **⋯ → Rename** ([Enclosures](#anlagen)); there is no original name there.
 
 ## Archive number { #archivnummer }
 

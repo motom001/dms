@@ -212,6 +212,8 @@ export const dokumenteApi = {
     bestaetigt?: boolean;
   }) => anfrage<{ dokument: Dokument; erledigtePost: string[] }>('POST', '/api/dokumente/zusammenfuegen', e),
   setzeArchivnummer: (id: string, archivnummer: string) => anfrage<Dokument>('PUT', `/api/dokumente/${id}/archivnummer`, { archivnummer }),
+  /** Umbenennen (#1594): die Endung bleibt; der Server merkt sich den ursprünglichen Namen. */
+  umbenennen: (id: string, name: string) => anfrage<Dokument>('PUT', `/api/dokumente/${id}/name`, { name }),
   /** Hinweis „Post teilen?“ wegklicken (#579). */
   // Anlagen (#998): lesen, „Als Anlage an … hängen“, umsortieren, umbenennen, „Zum eigenen Dokument machen“.
   anlagen: (id: string) => anfrage<AnlagenStand>('GET', `/api/dokumente/${id}/anlagen`),

@@ -114,6 +114,7 @@
   "anlagen.sortiert": "Enclosures of “{haupt}” reordered",
   "anlagen.name-leer": "Please enter a name.",
   "anlagen.umbenannt": "Enclosure “{vorher}” renamed to “{name}”",
+  "dokumente.umbenannt": "Document “{vorher}” renamed to “{name}”",
   "anlagen.positionen": "anlagen: a list of positions in seiten where an enclosure begins – never at the start of a part.",
   "anlagen.ohne-recht": "A package may only create enclosures when splitting with the right dms:anlagen.",
   "anlagen.nur-post-teilen": "Enclosures are only created when splitting post.",

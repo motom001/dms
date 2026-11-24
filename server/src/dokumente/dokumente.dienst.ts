@@ -4,6 +4,7 @@
  * nicht den ganzen Dienst.
  */
 import { randomUUID } from 'node:crypto';
+import { mitEndungVon } from '../../../shared/src/anlagen';
 import { erkenneBildtyp, kernTyp } from '../../../shared/src/dateiumwandlung';
 import { type Dokument, type Herkunft, MAX_DATEIGROESSE, type Mappentyp } from '../../../shared/src/model';
 import { VOLLTEXT_ZEICHEN_MAX as VOLLTEXT_MAX } from '../../../shared/src/paketvolltext';
@@ -382,6 +383,33 @@ export class DokumenteDienst {
     const dokument = await this.repo.holeDokument(id);
     if (!dokument) throw new Fachfehler(404, t('meldungen.dienst.dieses-dokument-gibt-es'));
     return { dokument, inhalt: await this.dateien.lies(dokument.sha256) };
+  }
+
+  /**
+   * Dokument umbenennen (#1594): Die Endung bleibt – wer sie mittippt, ändert sie nicht, eine andere kommt vor die
+   * alte. Der Name vor der ersten Umbenennung bleibt als ursprünglicher Name. Historie der Mappe. Im Archivmodus
+   * während der Frist gesperrt (409), wie Löschen und Ersetzen.
+   */
+  async benenneDokument(id: string, eingabe: unknown, von: string | null): Promise<Dokument> {
+    const d = await this.repo.holeDokument(id);
+    if (!d) throw new Fachfehler(404, t('meldungen.dienst.dieses-dokument-gibt-es'));
+    const roh = (eingabe as Record<string, unknown> | null)?.name;
+    if (typeof roh !== 'string' || !roh.trim()) throw new Fachfehler(422, t('meldungen.anlagen.name-leer'));
+    const name = mitEndungVon(dateiname(roh), d.name);
+    if (!name) throw new Fachfehler(422, t('meldungen.anlagen.name-leer'));
+    if (name === d.name) return d;
+    await this.pruefeArchivDokument(d.mappeId, 'umbenennen');
+    await this.inTransaktion(async () => {
+      await this.repo.benenneDokument(d.id, name);
+      await this.notiere(d.mappeId, von, 'dokument_umbenannt', {
+        text: t('meldungen.dokumente.umbenannt', { vorher: d.name, name }),
+        dokument: name,
+        vorher: d.name,
+      });
+      const m = await this.repo.holeMappe(d.mappeId);
+      if (m) await this.beruehre(m.id, await this.repo.holeTyp(m.typId), von);
+    });
+    return (await this.repo.holeDokument(id)) ?? d;
   }
 
   /**

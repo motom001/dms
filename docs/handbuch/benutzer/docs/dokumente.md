@@ -228,6 +228,8 @@ Daneben steht, **woher der Text kommt**: „Text aus dem PDF“ (die Textebene, 
 
 Erkannter Text aus Scans ist nicht immer fehlerfrei – je besser die Vorlage, desto besser das Ergebnis.
 
+Ein Bild-Scan (JPEG, PNG) mit mehr als 300 dpi – etwa 600 dpi – wird für Texterkennung und Bildanalyse intern auf 300 dpi verkleinert: Dort arbeitet die Texterkennung am besten, und die Pakete bleiben in ihren Grenzen. Das abgelegte Original bleibt unverändert. Unter **Über dieses Dokument** steht dann bei *Text* „für die Texterkennung von 600 auf 300 dpi verkleinert, das Original bleibt“.
+
 ### Dokumente in mehreren Sprachen { #mehrere-sprachen }
 
 Nicht jedes Dokument ist einsprachig – etwa ein deutscher Brief der Gemeinde, dahinter das französische Schreiben einer Botschaft, oder ein Beipackzettel auf Deutsch und Englisch. Ablago liest deshalb **jede Seite in ihrer Sprache**; eine Seite, auf der beides steht, liest die Texterkennung mit beiden Sprachen zugleich.
@@ -266,6 +268,16 @@ Ist an einem Dokumentenregister die **Versionierung** eingeschaltet (das macht e
 
 - mit Versionierung: **als neue Version** speichern (vorausgewählt) oder **als eigenes Dokument mit Zähler**, z. B. `Rechnung (2).pdf`
 - ohne Versionierung: **als eigenes Dokument mit Zähler** (vorausgewählt) oder **altes Dokument löschen und neues hochladen** – das Löschen ist endgültig
+
+## Umbenennen { #umbenennen }
+
+**⋯ → Umbenennen …** an einem Dokument gibt ihm einen neuen Namen, z. B. aus `scan_0042.pdf` wird `Stromrechnung März.pdf`. Das gilt sofort, ohne „Mappe speichern“, und braucht das Recht, die Mappe zu bearbeiten.
+
+- **Die Endung bleibt.** Im Feld steht nur der Name, die Endung (z. B. `.pdf`) steht fest daneben. Tippst du sie mit, ändert sich nichts; eine andere Endung kommt vor die alte (`Strom.txt` wird `Strom.txt.pdf`) – so passt die Datei weiter zu ihrem Inhalt.
+- **Der ursprüngliche Name bleibt.** Unter **Über dieses Dokument** steht nach der ersten Umbenennung *Ursprünglicher Name* – auch nach weiteren Umbenennungen der Name von vorher, meist der Dateiname beim Hochladen.
+- In der [Historie](zusammenarbeit.md#historie) der Mappe steht jede Umbenennung mit altem und neuem Namen.
+- **Archivmodus:** Solange die Aufbewahrungsfrist der Mappe läuft, lässt sich ein Dokument nicht umbenennen – wie es sich auch nicht löschen lässt.
+- Anlagen benennst du wie bisher an ihrer Zeile unter **⋯ → Umbenennen** um ([Anlagen](#anlagen)); dort gibt es keinen ursprünglichen Namen.
 
 ## Archivnummer
 

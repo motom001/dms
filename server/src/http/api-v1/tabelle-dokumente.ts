@@ -284,7 +284,7 @@ export const V1_DOKUMENTE: V1[] = [
     gruppe: 'Dokumente',
     zusammenfassung: 'Seite als Graustufenbild (PGM) oder Farbbild (PPM)',
     beschreibung:
-      'Für eine Texterkennung im Paket (#338): die Seite eines PDFs als PGM (8 Bit, „P5 Breite Höhe 255“, danach die Bildpunkte). Mit `farbe=1` (#716) als Farbbild PPM („P6 Breite Höhe 255“, je Bildpunkt 3 Bytes R, G, B), z. B. für die Archivfassung (PDF/A); gleiche Grenzen. Seit 0.133.0 (#458) auch JPEG und PNG: Seite 1 in Originalgröße (dpi zählt dort nicht). Seit 0.137.0 (#577) für andere Dateitypen die Seiten ihrer umgewandelten Fassung. 404, wenn es die Seite nicht gibt; 422 für andere Dateitypen ohne Fassung oder zu große Seiten. Mit API-Schlüssel eines Menschen gilt der Abruf als Herausgeben (#799): Exportrecht E nötig; gilt ein Stempel (Pflicht des Mappentyps oder Stempel-Parameter), entsteht das Bild aus der gestempelten Kopie (Bilder und umgewandelte Dateien dabei als PDF-Seite). Pakete bekommen die Seiten, wie sie abgelegt sind.',
+      'Für eine Texterkennung im Paket (#338): die Seite eines PDFs als PGM (8 Bit, „P5 Breite Höhe 255“, danach die Bildpunkte). Mit `farbe=1` (#716) als Farbbild PPM („P6 Breite Höhe 255“, je Bildpunkt 3 Bytes R, G, B), z. B. für die Archivfassung (PDF/A); gleiche Grenzen. Seit 0.133.0 (#458) auch JPEG und PNG: Seite 1 in Originalgröße (dpi zählt dort nicht); nennt die Bilddatei mehr als 300 dpi (Scan), kommt sie auf 300 dpi verkleinert (#1600), das Dokument trägt dann verkleinertDpi. Seit 0.137.0 (#577) für andere Dateitypen die Seiten ihrer umgewandelten Fassung. 404, wenn es die Seite nicht gibt; 422 für andere Dateitypen ohne Fassung oder zu große Seiten. Mit API-Schlüssel eines Menschen gilt der Abruf als Herausgeben (#799): Exportrecht E nötig; gilt ein Stempel (Pflicht des Mappentyps oder Stempel-Parameter), entsteht das Bild aus der gestempelten Kopie (Bilder und umgewandelte Dateien dabei als PDF-Seite). Pakete bekommen die Seiten, wie sie abgelegt sind.',
     intern: { methode: 'GET', pfad: '/api/dokumente/:id/seiten/:nr/scan' },
     parameter: [
       id('des Dokuments'),
@@ -529,6 +529,18 @@ export const V1_DOKUMENTE: V1[] = [
     intern: { methode: 'PUT', pfad: '/api/dokumente/:id/archivnummer' },
     parameter: [id('des Dokuments')],
     body: 'Archivnummer',
+    antwort: 'Dokument',
+  },
+  {
+    methode: 'PUT',
+    pfad: '/dokumente/{id}/name',
+    gruppe: 'Dokumente',
+    zusammenfassung: 'Dokument umbenennen',
+    beschreibung:
+      'Umbenennen (#1594): Die Endung des bisherigen Namens bleibt – fehlt sie im neuen Namen, wird sie angehängt, eine andere kommt davor („Strom.txt“ zu einer PDF wird „Strom.txt.pdf“). Der Name vor der ersten Umbenennung bleibt als nameOriginal. Historie der Mappe. 422 bei leerem Namen; 409 im Archivmodus während der Aufbewahrungsfrist. Braucht Bearbeiten an der Mappe.',
+    intern: { methode: 'PUT', pfad: '/api/dokumente/:id/name' },
+    parameter: [id('des Dokuments')],
+    body: 'DokumentName',
     antwort: 'Dokument',
   },
   {

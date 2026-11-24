@@ -43,6 +43,8 @@ export const HISTORIENARTEN = {
   paketaktion: t('gemeinsam.model.paketaktion'),
   /** #998: Anlage angehängt, gelöst (zum eigenen Dokument gemacht), umbenannt oder umsortiert. */
   anlage: t('gemeinsam.model.anlage'),
+  /** #1594: Dokument umbenannt (vorher, nachher). */
+  dokument_umbenannt: t('gemeinsam.model.dokument-umbenannt'),
 } as const;
 /** Was im Verwaltungsmodus mit einer fremden Mappe geschah (#820). */
 export type Modusspur = 'angesehen' | 'heruntergeladen' | 'geaendert' | 'exportiert' | 'versendet';
@@ -69,6 +71,7 @@ export const HISTORIENGRUPPEN = {
     'archivfassung',
     'entsperrt',
     'anlage',
+    'dokument_umbenannt',
   ],
   notizen: ['notiz'],
   aufgaben: ['aufgabe', 'abwesenheit'],

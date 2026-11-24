@@ -9,7 +9,7 @@ import { speicherAblaeufe, speicherAblaufvorlagen } from './ablaeufe';
 import { speicherAufgaben, speicherFaelle } from './aufgaben';
 import { speicherAuskunft } from './auskunft';
 import { speicherDemo } from './demo';
-import { speicherDateien, speicherDokumente, speicherVersionen } from './dokumente';
+import { speicherDateien, speicherDokumentAngaben, speicherDokumente, speicherVersionen } from './dokumente';
 import { speicherEreignisse, speicherKatalog } from './ereignisse';
 import { speicherErkennung } from './erkennung';
 import { speicherFassungen } from './fassungen';
@@ -59,6 +59,7 @@ export function speicherRepo(): Repo {
     ...speicherKatalog(sp),
     ...speicherNummern(sp),
     ...speicherDokumente(sp),
+    ...speicherDokumentAngaben(sp),
     ...speicherVersionen(sp),
     ...speicherDateien(sp),
     ...speicherFavoriten(sp),

@@ -1490,6 +1490,7 @@
   "fassungen.karten-reihenfolge": "{bereich}: order of cards changed",
   "fassungen.register-geaendert": "Tab “{name}”: {was} changed",
   "model.anlage": "Enclosure",
+  "model.dokument-umbenannt": "Document renamed",
   "anlagen.anlage": "Enclosure {nr}",
   "anlagen.in-anlage": "in enclosure {nr}",
   "pakete.anlagen-anlegen": "Creates enclosures when splitting a post – only in the posts created by the split, on their document (e.g. for a separator sheet with a second barcode)",

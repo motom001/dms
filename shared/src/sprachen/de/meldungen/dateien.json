@@ -114,6 +114,7 @@
   "anlagen.sortiert": "Anlagen von „{haupt}“ umsortiert",
   "anlagen.name-leer": "Bitte einen Namen angeben.",
   "anlagen.umbenannt": "Anlage „{vorher}“ umbenannt in „{name}“",
+  "dokumente.umbenannt": "Dokument „{vorher}“ umbenannt in „{name}“",
   "anlagen.positionen": "anlagen: eine Liste von Positionen in seiten, an denen eine Anlage beginnt – nie am Anfang eines Teils.",
   "anlagen.ohne-recht": "Anlagen beim Teilen anlegen darf ein Paket nur mit dem Recht dms:anlagen.",
   "anlagen.nur-post-teilen": "Anlagen entstehen beim Teilen nur in Post.",

@@ -107,6 +107,17 @@ export function stammUndEndung(name: string): [string, string] {
   return p > 0 && name.length - p <= 6 ? [name.slice(0, p), name.slice(p)] : [name, ''];
 }
 
+/**
+ * Umbenennen (#1594): neuer Name mit der Endung des bisherigen – „Strom 2026“ wie „Strom 2026.pdf“ wird zu
+ * „Strom 2026.pdf“, „Strom.txt“ zu „Strom.txt.pdf“. Leer, wenn vor der Endung nichts bleibt.
+ */
+export function mitEndungVon(neu: string, alt: string): string {
+  const [, endung] = stammUndEndung(alt);
+  const n = neu.trim();
+  const stamm = (endung && n.toLowerCase().endsWith(endung.toLowerCase()) ? n.slice(0, -endung.length) : n).trim();
+  return stamm ? `${stamm.slice(0, 200 - endung.length)}${endung}` : '';
+}
+
 /** „Anlage 2“ in der Sprache der Oberfläche. */
 export const anlageText = (nr: number): string => t('gemeinsam.anlagen.anlage', { nr });
 

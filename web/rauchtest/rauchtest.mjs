@@ -59,6 +59,7 @@ import './bereiche/werkbank-laden.mjs';
 import './bereiche/anmeldeschutz.mjs';
 import './bereiche/navigation.mjs';
 import './bereiche/mappe-menues.mjs';
+import './bereiche/umbenennen-und-tab.mjs';
 import './bereiche/ruhige-werkbank.mjs';
 import './bereiche/liste-und-verweise.mjs';
 import './bereiche/lasttest-seite.mjs';
