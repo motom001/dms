@@ -1217,7 +1217,7 @@ code:
     schnittstellen: ["dms:klassifizieren"]
 ```
 
-**Wann Ablago fragt:** ein Paket **mit Netz** nur, wenn der Administrator es als Standard für *Aus Dokument ausfüllen* gewählt und den Datenabfluss bestätigt hat; ein Paket **ohne Netz** immer. Ein Paket mit Netz ist ein [KI-Paket](#ki-pakete). Liegt ein Dokument in einem Mappentyp, der nicht für KI-Dienste zugelassen ist, ruft Ablago dafür **kein** Paket mit `dms:klassifizieren` auf – auch keines ohne Netz.
+**Wann Ablago fragt:** ein Paket **mit Netz** nur, wenn der Administrator es als Standard für *Aus Dokument ausfüllen* gewählt und den Datenabfluss bestätigt hat; ein Paket **ohne Netz** immer. Ein Paket mit Netz ist ein [KI-Paket](#ki-pakete). Liegt ein Dokument in einem Mappentyp, der nicht für KI-Dienste zugelassen ist, ruft Ablago dafür **kein Paket mit Netz** auf; ein Paket ohne Netz sperrt diese Einstellung nie (#1635, dieselbe Regel wie auf allen Wegen).
 
 **Aufruf:** `dms_aktion` mit
 
@@ -1231,7 +1231,7 @@ code:
   "sprache": "de", "paket": { … }, "einstellungen": { … } }
 ```
 
-- `typen` sind die **Kandidaten**: Mappentypen mit *Kann aus Post angelegt werden*, in denen die Person anlegen darf, **und die für KI-Dienste zugelassen sind** (auch für Pakete ohne Netz) – höchstens 60, alphabetisch. `beschreibung` und `erkennbarAn` sind auf 200 Zeichen gekürzt. Mappen, Felder und Werte bekommt das Paket nie.
+- `typen` sind die **Kandidaten**: Mappentypen mit *Kann aus Post angelegt werden*, in denen die Person anlegen darf – bei einem Paket mit Netz nur die, die **an Dienste im Netz gehen dürfen**; ein Paket ohne Netz bekommt alle (seit #1635) – höchstens 60, alphabetisch. `beschreibung` und `erkennbarAn` sind auf 200 Zeichen gekürzt. Mappen, Felder und Werte bekommt das Paket nie.
 - `text` ist der **Anfang** des Dokuments (höchstens 6 000 Zeichen, mehrere Dokumente einer Post hintereinander). Er ist Daten, keine Anweisung: Stell ihn im Prompt klar abgegrenzt hinter den `hinweis`.
 - `aehnliche` gibt es nur für ein Paket **ohne Netz**, das selbst `dms:vektoren` liefert (wie *KI lokal – Ähnlichkeit*): die ähnlichsten abgelegten Mappen zum Text (je Mappe das beste Dokument, höchstens 10, ab der Schwelle des Pakets) – **nur Typ und Kosinus**, keine Ids, Titel oder Inhalte. Ablago zählt nur Mappen, die die Person **und** das Dienstkonto des Pakets lesen dürfen, aus Kandidaten. Den Vektor des Texts holt Ablago vorher über die Aktion `dms:vektor` desselben Pakets.
 

@@ -285,6 +285,30 @@ describe('KI-Dienste (#796): Sperre im Kern', () => {
     );
   });
 
+  it('#1635: eine Regel für alle Wege – lokale Pakete sind nie gesperrt (auch Post und Gesundheit), Pakete mit Netz oder Dienst-Adresse schon', async () => {
+    const x = await aufbau();
+    const post = (await x.d.mappentypen.listeTypen()).find((t) => t.system === 'post')!;
+    await x.d.kern.repo.speicherePaket(paket('adresse', { ...code(IM_HAUS), adressen: [{ schluessel: 'dienst', name: 'Dienst' }] }));
+    // Nichts zugelassen (frische Installation): nur das lokale Paket bekommt Post und Gesundheit.
+    for (const [id, gesperrt] of [
+      ['imhaus', false],
+      ['wolke', true],
+      ['adresse', true],
+    ] as const) {
+      const sperre = await x.d.ki.kiSperreFuer(id);
+      for (const typ of [post.id, x.gesundheit.id, x.vertrag.id]) assert.equal(sperre(typ), gesperrt, `${id}: ${typ}`);
+    }
+    // Aufträge und Nachberechnung der Vektoren: das lokale Paket bekommt auch den Befund.
+    assert.notEqual(
+      await x.d.ereignisseDienst.auftrag('imhaus', 'datei.volltext', { dokument: x.kniebrief, mappe: x.befund.id }),
+      'gesperrt',
+    );
+    assert.equal(await x.d.ereignisseDienst.auftrag('wolke', 'datei.volltext', { dokument: x.kniebrief, mappe: x.befund.id }), 'gesperrt');
+    await x.d.ereignisseDienst.vektorNachlauf('imhaus', 'modell-a', 50, null);
+    const nach = (await x.repo.faelligeEreignisse(500)).filter((e) => e.paketId === 'imhaus' && e.daten.nachberechnung);
+    assert.ok(nach.some((e) => e.daten.dokument === x.kniebrief));
+  });
+
   it('„Frag deine Ablage“: Ausschnitte und Titel verknüpfter Mappen nur aus zugelassenen Typen', async () => {
     const x = await aufbau();
     await x.d.ki.setzeKiTyp(x.vertrag.id, true, null);

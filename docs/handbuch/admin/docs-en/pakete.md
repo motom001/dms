@@ -472,7 +472,7 @@ If an update wants other addresses, Ablago asks again.
 
 #### Suggest a folder type { #recht-klassifizieren }
 
-**"Suggest a folder type ("Where does this belong?") – only from the start of the document and the list of folder types that Ablago provides (dms:klassifizieren)"** – on the page *Take over document*, the package suggests which folder type new post belongs to (see [Where does this belong? by packages](#wohin-gehoert-das)). It only gets the start of the document and the name, short description and "How to recognise it" of the folder types that come into question and are allowed for AI services – no folders. Ablago checks what it supplies and only shows it as a suggestion.
+**"Suggest a folder type ("Where does this belong?") – only from the start of the document and the list of folder types that Ablago provides (dms:klassifizieren)"** – on the page *Take over document*, the package suggests which folder type new post belongs to (see [Where does this belong? by packages](#wohin-gehoert-das)). It only gets the start of the document and the name, short description and "How to recognise it" of the folder types that come into question (for a package with network access only those that may go to services on the network) – no folders. Ablago checks what it supplies and only shows it as a suggestion.
 
 #### Set notes on folders { #recht-hinweise }
 
@@ -613,7 +613,7 @@ On the page *Take over document*, Ablago suggests a folder type under **Where do
 | **Heading** | built in: the name of a folder type is a heading in the text ("Invoice") | nothing |
 | **Matching** | built in: an existing folder is found in the text via [Use to find existing folders](mappentypen.md#zum-wiederfinden-nutzen), and a link field of the folder type points to its type (an *Invoice* for *Contract* WV-1043) | nothing |
 
-**The list of folder types** for packages only contains folder types with [Can be created from post](mappentypen.md#dokument-ubernehmen) in which the person may create folders, **and that may go to [services on the network](#ki-dienste)** – per folder type the key, name and the first 200 characters of the description and of "How to recognise it". Folders, fields or values never go along.
+**The list of folder types** for packages only contains folder types with [Can be created from post](mappentypen.md#dokument-ubernehmen) in which the person may create folders; for a package **with network access** only those that may go to [services on the network](#ki-dienste). A package **without network access** (like *Local AI – similarity*) gets all of them – this setting never blocks packages without network access, on any path. Per folder type the key, name and the first 200 characters of the description and of "How to recognise it". Folders, fields or values never go along.
 
 **What Ablago does with the answer:** the answer has a fixed format (JSON schema): at most three folder types with a confidence (0–1), a short reason and a quote. Ablago checks it strictly – a folder type that wasn't in the list is refused; a quote that isn't in the document is dropped. If the answer is invalid or nothing is left, below the suggestion it says "*Package* didn’t deliver anything usable"; if a package doesn't answer (45 seconds), "*Package* didn’t answer". In both cases the other sources apply. What was refused is in the [log](fehlersuche.md#protokoll) with the reason, without values; the package's network calls are in the [package's log](#netzaufrufe).
 
