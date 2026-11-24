@@ -6,6 +6,7 @@
 import assert from 'node:assert/strict';
 import '../einrichtung.mjs';
 import { api, BASIS, daten, JONAS, LENA, rauchtest, sitzung, verwalten } from '../hilfen.mjs';
+import { axePruefen } from '../muster.mjs';
 
 /* ---------- Dreiteilung fest im Fenster (#1063) ---------- */
 
@@ -373,3 +374,66 @@ rauchtest('Ansichten: Baum ohne Neuladen nach Verwaltungsmodus und Änderungen (
     await api('DELETE', `/api/sichten/definitionen/${sicht.id}`, { cookie: verwaltung });
   }
 });
+
+// #1627: Die Kosten-Tabellen rollen am Handy waagerecht und sind wie „Kennzahlen“ (#1619) mit der Tastatur erreichbar.
+// Kosten fallen im Rauchtest nicht an (kein KI-Paket); die Antwort bekommt deshalb Zeilen wie aus einem Monat mit KI.
+rauchtest(
+  'Handy: Kosten-Tabellen unter Externe Dienste per Tastatur erreichbar, axe ohne Befund (#1627)',
+  { als: LENA, handy: true, erwartet: [{ status: 409, pfad: /^\/api\/wiederherstellung\/sicherungen$/ }] },
+  async (s) => {
+    const zeile = (schluessel, kosten) => ({ schluessel, anzahl: 12, fehler: 1, ms: 5400, tokenEin: 18_000, tokenAus: 2_400, kosten });
+    await s.route('**/api/werkbank/system/extern/kosten*', async (r) => {
+      if (r.request().method() !== 'GET') return r.continue();
+      const echt = await (await r.fetch()).json();
+      const teuer = {
+        id: 1,
+        zeit: new Date().toISOString(),
+        dienst: 'ki',
+        paket: 'ki-assistent',
+        funktion: 'fragen',
+        benutzerId: null,
+        ersteMs: 900,
+        ms: 5400,
+        hin: 2_000,
+        zurueck: 8_000,
+        ergebnis: 'ok',
+        tokenEin: 18_000,
+        tokenAus: 2_400,
+        kosten: 0.42,
+      };
+      await r.fulfill({
+        json: {
+          ...echt,
+          gesamt: zeile('gesamt', 0.42),
+          jePaket: [zeile('ki-assistent', 0.42)],
+          jePerson: [zeile(null, 0.42)],
+          jeFunktion: [zeile('fragen', 0.42)],
+          teuerste: [teuer],
+        },
+      });
+    });
+    await s.goto(BASIS + '/ablage/start');
+    await verwalten(s);
+    await s.goto(BASIS + '/werkbank/systemzustand');
+    const kosten = s.locator('#ki-kosten');
+    await kosten.getByRole('heading', { name: 'KI-Kosten und Budget' }).waitFor();
+    const rahmen = kosten.locator('.tabellenrahmen');
+    await rahmen.nth(3).waitFor();
+    const namen = await rahmen.evaluateAll((l) =>
+      l.map((e) => [e.getAttribute('tabindex'), e.getAttribute('role'), e.getAttribute('aria-label')]),
+    );
+    assert.deepEqual(namen, [
+      ['0', 'region', 'Je Paket'],
+      ['0', 'region', 'Je Person'],
+      ['0', 'region', 'Je Funktion'],
+      ['0', 'region', 'Teuerste Abfragen'],
+    ]);
+    // Mit der Tastatur: Der Fokus erreicht jede Tabelle; die breiteste („Teuerste Abfragen“) rollt am Handy waagerecht.
+    const teuerste = s.getByRole('region', { name: 'Teuerste Abfragen' });
+    await teuerste.focus();
+    assert.ok(await teuerste.evaluate((e) => e.scrollWidth > e.clientWidth), 'rollt am Handy waagerecht');
+    await s.keyboard.press('ArrowRight');
+    await s.waitForFunction(() => document.activeElement?.scrollLeft > 0);
+    assert.deepEqual(await axePruefen(s, ['#ki-kosten']), []);
+  },
+);
