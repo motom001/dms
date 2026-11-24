@@ -558,7 +558,7 @@ export class Lasttestmodus {
     );
 
     if (this.o.webDir && existsSync(this.o.webDir)) {
-      richteOberflaecheEin(app, this.o.webDir, { routen: true });
+      richteOberflaecheEin(app, this.o.webDir);
       app.setNotFoundHandler((req, reply) => oberflaecheSenden(req.url, reply, this.o.webDir));
     }
     await app.listen({ port: this.o.port, host: this.o.host });

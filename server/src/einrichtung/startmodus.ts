@@ -222,7 +222,7 @@ export class Startmodus {
 
     // Handbücher (#219) ohne Anmeldung, wie im Einrichtungsmodus – nur Dateien unter web/dist/hilfe.
     const webDir = this.o.webDir && existsSync(this.o.webDir) ? this.o.webDir : null;
-    const dateien = webDir ? richteOberflaecheEin(app, webDir, { routen: false }) : null;
+    const dateien = webDir ? richteOberflaecheEin(app, webDir) : null;
     const hilfe = async (req: { url: string }, reply: Parameters<typeof hilfeSenden>[0] & { sendFile(p: string): unknown }) => {
       // Nur Einträge der beim Start gelesenen Liste (#1468) – kein Pfad aus der URL geht an das Dateisystem.
       let rel = '';

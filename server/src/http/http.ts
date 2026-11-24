@@ -240,7 +240,7 @@ export async function baueApp(dienst: Dienst, konten: Konten, opt: Optionen = {}
   if (opt.webdav) await registriereWebdav(app, opt.webdav, opt);
 
   if (opt.webDir && existsSync(opt.webDir)) {
-    richteOberflaecheEin(app, opt.webDir, { routen: true });
+    richteOberflaecheEin(app, opt.webDir);
     // Alle Nicht-API-Pfade liefern die Oberfläche aus (Routing im Browser) – fehlende Dateien nicht (#932).
     app.setNotFoundHandler((req, reply) => {
       if (req.url.startsWith('/api/')) return reply.code(404).send({ fehler: t('meldungen.http.diese-schnittstelle-gibt-es') });

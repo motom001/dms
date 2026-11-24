@@ -84,7 +84,7 @@ export async function einrichtungsmodus(o: EinrichtungsmodusOptionen): Promise<A
   richteRoutenEin(app, o, z, pruefe, uebernehmen);
 
   if (o.webDir && existsSync(o.webDir)) {
-    richteOberflaecheEin(app, o.webDir, { routen: true });
+    richteOberflaecheEin(app, o.webDir);
     app.setNotFoundHandler((req, reply) => oberflaecheSenden(req.url, reply, o.webDir));
   }
 

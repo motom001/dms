@@ -69,9 +69,8 @@ const BEISPIELE = [
   // Unter /webdav/* (printRoutes zeigt den Platzhalter ohne Schrägstrich).
   'PROPFIND /webdav*',
   'OPTIONS /webdav',
-  'GET /',
+  // Dateien der Oberfläche haben seit #1468 keine eigenen Routen (Ausweichregel, siehe „Oberfläche“ in den Antworten).
   'OPTIONS /',
-  'GET /assets/a.js',
 ];
 
 describe('baueApp: Hooks, Parser und Antworten (#1278, Schritt 6b-1)', () => {

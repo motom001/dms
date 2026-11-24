@@ -1,24 +1,21 @@
 import { closeSync, constants, createReadStream, lstatSync, openSync, readdirSync, type Stats } from 'node:fs';
-import { extname, join, posix, sep } from 'node:path';
+import { extname, join, sep } from 'node:path';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { ASSETS_CACHE, SEITE_CACHE } from './oberflaeche';
 import { t } from '../sprache/sprache';
-import { protokoll } from '../protokoll/protokoll';
 
 /**
  * Eigener Auslieferer für die gebaute Oberfläche (#1468) – statt @fastify/static mit seinen 25 mitgebrachten Paketen.
  *
  * Die Eingabe ist unsere eigene, beim Bau erzeugte Dateiliste: Beim Start wird `web/dist` einmal gelesen (nur reguläre
  * Dateien, keine Symlinks, keine Punktdateien), danach ist die Liste fest. Eine Anfrage trifft eine Datei nur über
- * einen exakten Eintrag dieser Liste – kein Pfad aus der URL wird je an das Dateisystem gereicht, `..`, kodierte
+ * einen exakten Eintrag dieser Liste (nachgeschlagen in einer Map, nicht als eigene Route je Datei) – kein Pfad aus der URL wird je an das Dateisystem gereicht, `..`, kodierte
  * Schrägstriche oder Backslashes können also nichts außerhalb erreichen.
  *
  * Kann, was die Oberfläche braucht, und nicht mehr: Content-Type aus einer festen Tabelle, `Cache-Control` wie bisher
  * (#1198), schwaches ETag und `Last-Modified` mit 304, `HEAD`, vorkomprimierte `.br`/`.gz`-Fassungen passend zu
  * `Accept-Encoding` mit `Vary` (#1236). Keine Teilbereiche (`Range`), keine Verzeichnislisten.
  */
-
-const log = protokoll.modul('system');
 
 /** Content-Type je Endung – die Endungen, die der Bau von Oberfläche und Handbuch erzeugt. Text bekommt `charset=utf-8`. */
 const TYPEN: Readonly<Record<string, string>> = {
@@ -188,46 +185,44 @@ function sendeDatei(req: FastifyRequest, reply: FastifyReply, d: Datei) {
   return reply.send(createReadStream('', { fd }));
 }
 
-/** Nur Zeichen, die Fastify als festen Pfad versteht – `:` und `*` wären sonst Platzhalter einer Route. */
-const SICHERER_PFAD = /^[\w.~@+-]+(?:\/[\w.~@+-]+)*$/;
+/**
+ * Adresse → Eintrag der Liste: `/x/y.js` → `x/y.js`, `/ordner/` → `ordner/index.html`. Nur exakte Einträge; was die
+ * Liste nicht kennt (auch `..`, doppelte Schrägstriche, Backslashes), ergibt null.
+ */
+export function eintragZurAdresse(dateien: ReadonlyMap<string, Datei>, url: string): string | null {
+  let pfad: string;
+  try {
+    pfad = decodeURIComponent(url.split('?', 1)[0].split('#', 1)[0]);
+  } catch {
+    return null;
+  }
+  if (!pfad.startsWith('/')) return null;
+  const rel = pfad.endsWith('/') ? `${pfad.slice(1)}index.html` : pfad.slice(1);
+  return dateien.has(rel) ? rel : null;
+}
 
 declare module 'fastify' {
   interface FastifyReply {
     /** Datei der Oberfläche senden (relativ zu `web/dist`, nur Einträge der beim Start gelesenen Liste). */
     sendFile(rel: string): FastifyReply;
+    /** Eintrag der Liste zu einer Adresse, sonst null (`eintragZurAdresse`). */
+    dateiZurAdresse(url: string): string | null;
   }
 }
 
 /**
- * Oberfläche einrichten – gleich in allen Betriebsarten. `routen: true` legt je Datei eine Route an (GET und HEAD) und für jeden Ordner mit `index.html` die Route `/ordner/`. `reply.sendFile(rel)` liefert eine Datei der
- * Liste (für die Ausweichregel #932 und das Handbuch); was nicht in der Liste steht, bekommt 404.
+ * Oberfläche einrichten – gleich in allen Betriebsarten. Legt keine eigenen Routen an: Die Ausweichregel der Oberfläche
+ * (`oberflaecheSenden`, #932) fragt für GET und HEAD zuerst `reply.dateiZurAdresse(url)` und liefert mit
+ * `reply.sendFile(rel)`. So bleibt die Routentabelle klein, und jede Datei geht durch dieselbe Stelle. Was nicht in der
+ * Liste steht, bekommt über `sendFile` 404.
  */
-export function richteOberflaecheEin(app: FastifyInstance, root: string, o: { routen: boolean }): Map<string, Datei> {
+export function richteOberflaecheEin(app: FastifyInstance, root: string): Map<string, Datei> {
   const dateien = leseDateien(root);
   app.decorateReply('sendFile', function (this: FastifyReply, rel: string) {
     const d = dateien.get(rel.split(sep).join('/').replace(/^\/+/, ''));
     if (!d) return this.code(404).type('text/plain; charset=utf-8').send(t('meldungen.http.diese-datei-gibt-es'));
     return sendeDatei(this.request, this, d);
   });
-  if (!o.routen) return dateien;
-  const ausgelassen: string[] = [];
-  // GET und HEAD als eine Route: Fastifys eigene HEAD-Route läse die Datei ganz und verwürfe sie.
-  const route = (url: string, d: Datei) => app.route({ method: ['GET', 'HEAD'], url, handler: (req, reply) => sendeDatei(req, reply, d) });
-  for (const d of dateien.values()) {
-    if (!SICHERER_PFAD.test(d.rel)) {
-      ausgelassen.push(d.rel);
-      continue;
-    }
-    route(`/${d.rel}`, d);
-    if (posix.basename(d.rel) === 'index.html') {
-      const ordner = posix.dirname(d.rel);
-      route(ordner === '.' ? '/' : `/${ordner}/`, d);
-    }
-  }
-  if (ausgelassen.length)
-    log.warn('Dateien der Oberfläche mit ungewöhnlichem Namen nicht ausgeliefert', {
-      anzahl: String(ausgelassen.length),
-      beispiel: ausgelassen[0],
-    });
+  app.decorateReply('dateiZurAdresse', (url: string) => eintragZurAdresse(dateien, url));
   return dateien;
 }

@@ -47,10 +47,19 @@ export function istDateipfad(url: string): boolean {
   return punkt >= 0 && ENDUNGEN.has(letztes.slice(punkt + 1).toLowerCase());
 }
 
-type Antwort = Parameters<typeof hilfeSenden>[0];
+type Antwort = Parameters<typeof hilfeSenden>[0] & {
+  request: { method: string };
+  dateiZurAdresse(url: string): string | null;
+};
 
-/** Für `setNotFoundHandler`: Handbuch (eigene Regeln), fehlende Datei (404) oder index.html. */
+/**
+ * Für `setNotFoundHandler`: Datei der Oberfläche aus der festen Liste (#1468, nur GET und HEAD), sonst Handbuch (eigene
+ * Regeln), fehlende Datei (404) oder index.html.
+ */
 export function oberflaecheSenden(url: string, reply: Antwort, webDir: string | undefined) {
+  const m = reply.request.method;
+  const rel = m === 'GET' || m === 'HEAD' ? reply.dateiZurAdresse(url) : null;
+  if (rel) return reply.sendFile(rel);
   const hilfe = hilfeAntwort(url, webDir);
   if (hilfe) return hilfeSenden(reply, hilfe);
   if (istDateipfad(url)) return reply.code(404).type('text/plain; charset=utf-8').send(t('meldungen.http.diese-datei-gibt-es'));

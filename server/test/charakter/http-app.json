@@ -62,17 +62,7 @@
       "onSend": ["anonymous()", "anonymous()"],
       "onResponse": ["anonymous()", "anonymous()"]
     },
-    "GET /": {
-      "onRequest": ["anonymous()", "anonymous()", "anonymous()"],
-      "onSend": ["anonymous()", "anonymous()"],
-      "onResponse": ["anonymous()", "anonymous()"]
-    },
     "OPTIONS /": {
-      "onRequest": ["anonymous()", "anonymous()", "anonymous()"],
-      "onSend": ["anonymous()", "anonymous()"],
-      "onResponse": ["anonymous()", "anonymous()"]
-    },
-    "GET /assets/a.js": {
       "onRequest": ["anonymous()", "anonymous()", "anonymous()"],
       "onSend": ["anonymous()", "anonymous()"],
       "onResponse": ["anonymous()", "anonymous()"]
