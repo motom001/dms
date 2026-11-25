@@ -159,8 +159,9 @@ export function VerweisFenster({
  * Eigene Brücke des Fensters (#935): Felder darin leuchten nicht mit Rahmen der Seite auf (die gehören zur Mappe
  * dahinter), merken sich aber ihr zuletzt gewähltes Feld und nehmen Werte vom Dokument – über die Seite, damit Prüfung
  * und Meldungen dieselben sind. Ohne Seite (überall sonst) gibt es keine Brücke, das Formular verhält sich wie immer.
+ * Auch für die Ebenen der Neuen Post (#1596): Dort meldet sich nur die gerade offene an (`aktiv`).
  */
-function useFensterBruecke(aussen: Bruecke | null, ziel: Mappentyp): Bruecke | null {
+export function useFensterBruecke(aussen: Bruecke | null, ziel: Mappentyp, angemeldet = true): Bruecke | null {
   const [aktiv, setAktiv] = useState<string | null>(null);
   const anschluss = useRef<FormularAnschluss | null>(null);
   const aktivRef = useRef<string | null>(null);
@@ -179,7 +180,7 @@ function useFensterBruecke(aussen: Bruecke | null, ziel: Mappentyp): Bruecke | n
   );
   const fenster = aussen?.fenster;
   useEffect(() => {
-    if (!fenster) return;
+    if (!fenster || !angemeldet) return;
     fenster((n) => {
       const f = aktivRef.current ? ziel.felder.find((x) => x.key === aktivRef.current) : undefined;
       if (!f) return false;
@@ -187,7 +188,7 @@ function useFensterBruecke(aussen: Bruecke | null, ziel: Mappentyp): Bruecke | n
       return true;
     });
     return () => fenster(null);
-  }, [fenster, ziel, nimm]);
+  }, [fenster, ziel, nimm, angemeldet]);
   return useMemo<Bruecke | null>(
     () =>
       aussen

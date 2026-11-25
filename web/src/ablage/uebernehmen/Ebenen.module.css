@@ -1,0 +1,39 @@
+/* Ebenen der Neuen Post (#1596): Brotkrümel über der rechten Spalte, die Ebenen darunter; am Handy „‹ Zurück · Ebene“,
+   Umschalter „Dokument | <Art>“ und 44 px hohe Eingaben. Werte nur aus web/src/tokens.css. */
+.eins { display: contents; }
+.eins[hidden], .ebene[hidden] { display: none; }
+
+.leiste { display: flex; flex-direction: column; gap: 8px; margin: 0 0 12px; min-width: 0; }
+.kruemel { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; list-style: none; margin: 0; padding: 0; color: var(--leise); }
+.kruemel > li { display: inline-flex; align-items: center; gap: 6px; min-width: 0; overflow-wrap: anywhere; }
+.kruemel > li + li::before { content: '\203A'; color: var(--leise); }
+.kruemel [aria-current] { color: var(--tinte); font-weight: 600; }
+
+/* Frühere Ebene (Knopf, keine Seite): sieht aus wie ein Weg, handelt aber mit Rückfrage. */
+[data-knopf="eigen"].weg { color: var(--akzent); font-weight: 400; text-decoration: underline; text-underline-offset: 2px; padding: 2px 0; display: inline-flex; align-items: center; gap: 4px; }
+[data-knopf="eigen"].weg:hover { text-decoration-thickness: 2px; }
+.kurz { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-width: 0; }
+.hier { font-weight: 600; overflow-wrap: anywhere; }
+.hier::before { content: '\00B7'; margin-right: 8px; color: var(--leise); font-weight: 400; }
+.zahl { margin-left: auto; white-space: nowrap; }
+.umschalter { align-self: stretch; }
+
+.fuer { margin: 4px 0 0; }
+.frage { margin: 0; }
+.frage p { margin: 0 0 8px; }
+
+/* Handy (wie die Dreiteilung bis 820 px): oben die Leiste der rechten Spalte, darunter Dokument oder Mappe. */
+@media (max-width: 820px) {
+  .zuerst { order: -1; }
+  .verdeckt { display: none; }
+  .ebene :is(input:not([type="checkbox"]):not([type="radio"]), select, button) { min-height: 44px; }
+  .kurz button { min-height: 44px; }
+  /* Straße/Nr. und PLZ/Ort teilen sich je eine Zeile (Felder mit diesen Kennungen, nebeneinander im Formular). */
+  .ebene :has(> [data-anker="mappe.feld:strasse"] + [data-anker="mappe.feld:hausnummer"]),
+  .ebene :has(> [data-anker="mappe.feld:plz"] + [data-anker="mappe.feld:ort"]) { display: flex; flex-wrap: wrap; column-gap: 10px; }
+  .ebene :has(> [data-anker="mappe.feld:hausnummer"]) > *, .ebene :has(> [data-anker="mappe.feld:ort"]) > * { flex: 1 1 100%; min-width: 0; }
+  .ebene :has(> [data-anker="mappe.feld:hausnummer"]) > :is([data-anker="mappe.feld:strasse"], [data-anker="mappe.feld:ort"]),
+  .ebene :has(> [data-anker="mappe.feld:ort"]) > :is([data-anker="mappe.feld:strasse"], [data-anker="mappe.feld:ort"]) { flex: 1 1 55%; }
+  .ebene :has(> [data-anker="mappe.feld:hausnummer"]) > :is([data-anker="mappe.feld:hausnummer"], [data-anker="mappe.feld:plz"]),
+  .ebene :has(> [data-anker="mappe.feld:ort"]) > :is([data-anker="mappe.feld:hausnummer"], [data-anker="mappe.feld:plz"]) { flex: 0 1 30%; }
+}

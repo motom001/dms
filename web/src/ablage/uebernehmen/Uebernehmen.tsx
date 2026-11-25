@@ -9,6 +9,7 @@ import { BrueckeKontext } from '../bruecke';
 import { useLeerseiten } from '../Leerseiten';
 import { useBrueckeZustand } from './bruecke-zustand';
 import { useErkannt, useKlassifizierung, useMarken, useVorschlagStart, useWoerter } from './erkennung';
+import { EbenenRahmen, ebenenKlassen, useEbenen } from './ebenen';
 import { DOKS_MAX } from './hilfen';
 import { MitteDokumente, MitteKopf } from './Mitte';
 import { usePostWege } from './post-wege';
@@ -91,6 +92,9 @@ export function Uebernehmen({
   const wohin = useWohin(details, post, erkennKey);
   const folge = useFolge(post, doks, dokKey, zielId, ziele);
   const reihe = useReihe(post, m.id);
+  // Verknüpfte Mappe in der rechten Spalte anlegen (#1596): nur bei Post mit „Neue Mappe“ und gewähltem Mappentyp.
+  const ebenen = useEbenen(m.id, zielTyp, post && wohin.ziel === 'neu' && !!zielTyp);
+  const klassen = ebenenKlassen(ebenen);
 
   const kopf = useCallback(
     (werte: Werte, bek: Bezuege) => (zielTyp ? <NeuKopf typ={zielTyp} werte={werte} bekannt={bek} /> : null),
@@ -114,7 +118,10 @@ export function Uebernehmen({
     <BrueckeKontext.Provider value={bruecke}>
       <Dreiteilung ort="uebernehmen" ebene="uebernehmen" offen={m.id}>
         {links}
-        <section className="spalte liste ue-mitte" aria-label={t('ablage.uebernehmen.dokument')} data-anker="uebernehmen.dokument">
+        <section
+          className={`spalte liste ue-mitte ${klassen.mitte}`.trim()}
+          aria-label={t('ablage.uebernehmen.dokument')}
+          data-anker="uebernehmen.dokument">
           <MitteKopf
             post={post}
             m={m}
@@ -150,27 +157,29 @@ export function Uebernehmen({
           />
         </section>
 
-        <section className="spalte mappe ue-rechts" aria-label={t('ablage.ablage.mappe')} data-anker="mappe">
-          <Rechts
-            details={details}
-            typ={typ}
-            sicht={sicht}
-            neuLaden={neuLaden}
-            wohin={wohin}
-            ziele={ziele}
-            zielTyp={zielTyp}
-            klass={klass}
-            typWaehlen={(x) => {
-              setGewaehlt(true);
-              setZielId(x);
-            }}
-            erkannt={erkannt}
-            vorschlagStart={vorschlagStart}
-            zuordnen={zuordnen}
-            kopf={kopf}
-            inVorhandene={wege.inVorhandene}
-            ohneMappe={wege.ohneMappe}
-          />
+        <section className={`spalte mappe ue-rechts ${klassen.rechts}`.trim()} aria-label={t('ablage.ablage.mappe')} data-anker="mappe">
+          <EbenenRahmen eb={ebenen}>
+            <Rechts
+              details={details}
+              typ={typ}
+              sicht={sicht}
+              neuLaden={neuLaden}
+              wohin={wohin}
+              ziele={ziele}
+              zielTyp={zielTyp}
+              klass={klass}
+              typWaehlen={(x) => {
+                setGewaehlt(true);
+                setZielId(x);
+              }}
+              erkannt={erkannt}
+              vorschlagStart={vorschlagStart}
+              zuordnen={zuordnen}
+              kopf={kopf}
+              inVorhandene={wege.inVorhandene}
+              ohneMappe={wege.ohneMappe}
+            />
+          </EbenenRahmen>
         </section>
       </Dreiteilung>
     </BrueckeKontext.Provider>

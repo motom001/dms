@@ -22,6 +22,9 @@ import { axePruefen, tippflaechenPruefen } from '../muster.mjs';
 
 /* ---------- Zum Schluss: Wege, die den gemeinsamen Zustand ändern ---------- */
 
+/** Brotkrümel der Neuen Post (#1596) als Texte (die Zeichen „›“ dazwischen setzt das Stylesheet). */
+const kruemel = async (wo) => (await wo.getByRole('listitem').allInnerTexts()).map((x) => x.trim());
+
 /** Eigene Post für einen Test am Ende: Briefe als PDFs mit einer Zeile Text (die Textebene liest Ablago selbst). */
 async function eigenePost(betreff, zeilen = [betreff]) {
   const cookie = await sitzung(LENA);
@@ -528,62 +531,77 @@ rauchtest(
   },
 );
 
-// #935: Steht am Ende – legt einen Vertragspartner an. Die Mappe dahinter (aus der Post) bleibt ungespeichert offen.
-rauchtest('Verweisfeld: „+ … anlegen“ im Fenster, mit Werten vom Dokument (#935)', { als: LENA }, async (s) => {
-  const brief = await eigenePost('Heizungsbau Rechnung', [
-    'Rechnung R-2027-55\nHeizungsbau Muster KG · Musterweg 1 · 01234 Musterstadt\nKundennummer K-4711',
-  ]);
-  await s.goto(BASIS + `/ablage/eingang/${brief.id}`);
-  await s.waitForURL(new RegExp(`/${brief.id}/uebernehmen$`));
-  const mappe = s.getByRole('region', { name: 'Mappe' });
-  const dokument = s.getByRole('region', { name: 'Dokument' });
-  await mappe.getByText(/^Vorschlag, weil „Rechnung“ im Dokument steht/).waitFor();
-  await dokument.getByRole('img', { name: 'Seite 1' }).waitFor();
-  const aussteller = mappe.locator('[data-anker="mappe.feld:aussteller"]');
-  // Anlegen steht als letzter Eintrag in der Vorschlagsliste (#1288).
-  const anlegen = {
-    click: async () => {
+// #935, #1596: Steht am Ende – legt einen Vertragspartner an. Die Mappe aus der Post bleibt ungespeichert offen.
+rauchtest(
+  'Neue Post: Vertragspartner in der rechten Spalte anlegen, mit Brotkrümeln und Vorschlägen aus dem Dokument (#1596)',
+  { als: LENA },
+  async (s) => {
+    const brief = await eigenePost('Heizungsbau Rechnung', [
+      'Rechnung R-2027-55\nHeizungsbau Muster KG · Musterweg 1 · 01234 Musterstadt\nKundennummer K-4711',
+    ]);
+    await s.goto(BASIS + `/ablage/eingang/${brief.id}`);
+    await s.waitForURL(new RegExp(`/${brief.id}/uebernehmen$`));
+    const mappe = s.getByRole('region', { name: 'Mappe' });
+    const dokument = s.getByRole('region', { name: 'Dokument' });
+    const wo = mappe.getByRole('navigation', { name: 'Wo du gerade bist' });
+    await mappe.getByText(/^Vorschlag, weil „Rechnung“ im Dokument steht/).waitFor();
+    await dokument.getByRole('img', { name: 'Seite 1' }).waitFor();
+    assert.deepEqual(await kruemel(wo), ['Neue Post', 'Rechnung']);
+    const aussteller = mappe.locator('[data-anker="mappe.feld:aussteller"]');
+    // Anlegen steht als letzter Eintrag der Liste (#1288) und öffnet die nächste Ebene rechts – kein Fenster (#1596).
+    const anlegen = async () => {
       await aussteller.getByRole('combobox').click();
       await aussteller.getByRole('option', { name: '+ Vertragspartner anlegen …' }).click();
-    },
-  };
-  // Abbrechen und Esc schließen ohne Änderung; danach steht der Fokus wieder im Suchfeld des Verweisfelds.
-  await anlegen.click();
-  const fenster = s.getByRole('dialog', { name: 'Vertragspartner anlegen' });
-  await fenster.getByRole('button', { name: 'Entwurf verwerfen' }).click();
-  await fenster.waitFor({ state: 'detached' });
-  await anlegen.click();
-  await fenster.getByRole('textbox', { name: 'Name', exact: true }).waitFor();
-  await s.waitForFunction(() => document.activeElement?.closest('[role="dialog"]'));
-  await s.keyboard.press('Escape');
-  await fenster.waitFor({ state: 'detached' });
-  await s.waitForFunction(() => document.activeElement?.matches('[data-anker="mappe.feld:aussteller"] [role="combobox"]'));
-  // Wie die rechte Spalte einer Mappe: Kopf, Register, Felder, Speicherleiste – vorausgefüllt mit dem Briefkopf.
-  await anlegen.click();
-  await fenster
-    .getByText('Neue Mappe')
-    .or(fenster.getByText('Heizungsbau Muster KG', { exact: true }))
-    .first()
-    .waitFor();
-  await fenster.getByRole('tab', { name: 'Stammdaten' }).waitFor();
-  await fenster.getByRole('button', { name: 'Mappe speichern' }).waitFor();
-  const name = fenster.getByRole('textbox', { name: 'Name', exact: true });
-  if (!(await name.inputValue())) await name.fill('Heizungsbau Muster KG');
-  // Anklicken vom Dokument geht auch im Fenster: Feld wählen, Text markieren – er landet im Fenster.
-  await fenster.getByRole('textbox', { name: 'Kundennummer' }).click();
-  const wort = dokument.locator('.ue-wort').last();
-  await wort.hover();
-  await s.mouse.down();
-  await s.mouse.up();
-  await s.waitForFunction(() => document.querySelector('[role="dialog"] #feld-kundennummer')?.value === 'K-4711');
-  await fenster.getByRole('button', { name: 'Mappe speichern' }).click();
-  await fenster.waitFor({ state: 'detached' });
-  // Im Feld steht die neue Mappe, mit kurzer Bestätigung; die Mappe dahinter ist noch nicht gespeichert.
-  await aussteller.getByRole('link', { name: 'Heizungsbau Muster KG' }).waitFor();
-  await aussteller.getByText('„Heizungsbau Muster KG“ angelegt und eingetragen.').waitFor();
-  assert.match(s.url(), new RegExp(`/${brief.id}/uebernehmen$`));
-  await mappe.getByText('Beim Speichern wandern Dokumente und Historie der Post hierher, die Post kommt in den Papierkorb.').waitFor();
-});
+      await mappe.getByText('Neue Mappe für „Aussteller“ in „Rechnung“. Nach dem Speichern geht es dorthin zurück.').waitFor();
+    };
+    // „Entwurf verwerfen“: eine Ebene zurück, ohne Rückfrage; das Verweisfeld bleibt leer.
+    await anlegen();
+    assert.equal(await s.getByRole('dialog', { name: 'Vertragspartner anlegen' }).count(), 0, 'Fenster statt Ebene');
+    await dokument.getByRole('img', { name: 'Seite 1' }).waitFor();
+    await mappe.getByRole('button', { name: 'Entwurf verwerfen' }).click();
+    await aussteller.getByRole('combobox').waitFor();
+    assert.equal(await aussteller.getByRole('link').count(), 0);
+    // Früherer Brotkrümel: gelbe Rückfrage, „Weiter bearbeiten“ bleibt, „Entwürfe verwerfen“ geht zurück.
+    await anlegen();
+    assert.deepEqual(await kruemel(wo), ['Neue Post', 'Rechnung', 'Vertragspartner (neu)']);
+    await wo.getByRole('button', { name: 'Rechnung' }).click();
+    const frage = mappe.getByRole('alert').filter({ hasText: '„Vertragspartner (neu)“ ist noch nicht gespeichert.' });
+    await frage.getByText('Zurück zu „Rechnung“ und die Entwürfe verwerfen?', { exact: false }).waitFor();
+    await frage.getByRole('button', { name: 'Weiter bearbeiten' }).click();
+    await frage.waitFor({ state: 'detached' });
+    await wo.getByRole('button', { name: 'Rechnung' }).click();
+    await frage.getByRole('button', { name: 'Entwürfe verwerfen' }).click();
+    await aussteller.getByRole('combobox').waitFor();
+    // Kopf wie bei jeder Mappe, vorausgefüllt mit dem, was Ablago erkannt hat – als „Vorschlag“, bis man es ändert.
+    await anlegen();
+    assert.deepEqual(await axePruefen(s, ['.spalte.mappe']), []);
+    const name = mappe.getByRole('textbox', { name: 'Name', exact: true });
+    const feldName = mappe.locator('[data-anker="mappe.feld:name"]');
+    if (await name.inputValue()) {
+      await feldName.getByText('Vorschlag', { exact: true }).waitFor();
+      await name.fill('Heizungsbau Muster KG ');
+      await feldName.getByText('Vorschlag', { exact: true }).waitFor({ state: 'detached' });
+    }
+    await name.fill('Heizungsbau Muster KG');
+    await mappe.getByRole('heading', { name: 'Heizungsbau Muster KG', level: 1 }).waitFor();
+    // Anklicken vom Dokument geht in die offene Ebene: Feld wählen, Text markieren – er landet dort.
+    const kundennummer = mappe.getByRole('textbox', { name: 'Kundennummer' });
+    await kundennummer.fill('');
+    await kundennummer.click();
+    const wort = dokument.locator('.ue-wort').last();
+    await wort.hover();
+    await s.mouse.down();
+    await s.mouse.up();
+    await s.waitForFunction(() => document.querySelector('#feld-e2-kundennummer')?.value === 'K-4711');
+    await mappe.getByRole('button', { name: 'Speichern und zurück zu „Rechnung“' }).click();
+    // Zurück auf Ebene 1: Im Feld steht die neue Mappe mit kurzer Bestätigung; die Rechnung ist noch nicht gespeichert.
+    await aussteller.getByRole('link', { name: 'Heizungsbau Muster KG' }).waitFor();
+    await aussteller.getByText('„Heizungsbau Muster KG“ angelegt und eingetragen.').waitFor();
+    assert.deepEqual(await kruemel(wo), ['Neue Post', 'Rechnung']);
+    assert.match(s.url(), new RegExp(`/${brief.id}/uebernehmen$`));
+    await mappe.getByText('Beim Speichern wandern Dokumente und Historie der Post hierher, die Post kommt in den Papierkorb.').waitFor();
+  },
+);
 
 // #886, #887: Steht am Ende – stellt im Mappentyp Rechnung ein, dass der Aussteller aus dem Vertrag folgt, und legt eine Rechnung an.
 rauchtest('Verweisfeld folgt aus einem anderen; passt es nicht, sagt die Mappe womit (#886, #887)', { als: LENA }, async (s) => {

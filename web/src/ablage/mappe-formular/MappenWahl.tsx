@@ -7,8 +7,9 @@ import { Etikett } from '../../bausteine';
 import { Link } from '../../ort';
 import { Ehemalig } from '../../Person';
 import { titelOder } from '../../seiten';
-import { t } from '../../sprache';
+import { t, tn } from '../../sprache';
 import { standardRoh, type Roh, type RohWerte } from '../../werte';
+import { EBENEN_MAX, useEbene, type EbeneLage } from '../ebenen';
 import { Mehrfachauswahl } from '../Mehrfachauswahl';
 import { TypMarke, TypSymbol } from '../TypMarke';
 import { VerweisFenster } from '../VerweisFenster';
@@ -42,6 +43,8 @@ export interface MappenWahlProps {
   /** Auswahlfilter (#172): Sicht „feld:<typ>:<feld>“; Vorbelegung für „+ anlegen“ (Auswahlfilter, erkannte Angaben #935). */
   sicht?: string;
   vorbelegen?: Record<string, unknown>;
+  /** Davon im Dokument erkannt (#935): Auf „Neue Post“ stehen diese Werte in der neuen Ebene als „Vorschlag“ (#1596). */
+  erkannt?: Record<string, unknown>;
   unpassend?: string[];
   eigene?: Werte;
   /** Gewählte Mappen schon vor dem Speichern prüfen (#173, #886): Typ und Feld; mit den Gründen (#887). */
@@ -102,15 +105,24 @@ export function MappenWahlKern(p: MappenWahlProps) {
   });
   const anlegbar = p.ohneAnlegen ? [] : moeglich.filter((x) => darfErstellen(x));
   const neuTyp = fenster?.typ ?? ziel;
-  const start = useMemo(() => {
-    const r = standardRoh(neuTyp);
-    // Das Getippte als Bezeichnung bzw. Titel (#1288), wo der Typ ein solches Feld hat.
-    const feld = fenster?.text ? titelFeld(neuTyp) : undefined;
-    belegeVor(neuTyp, r, { ...(p.vorbelegen ?? {}), ...(feld ? { [feld]: fenster!.text } : {}) });
-    return r;
-  }, [neuTyp, fenster]); // eslint-disable-line react-hooks/exhaustive-deps -- Startwerte neu je Fenster; vorbelegen gilt beim Öffnen
+  const start = useMemo(
+    () => startFuer(neuTyp, fenster?.text ?? '', p.vorbelegen),
+    [neuTyp, fenster], // eslint-disable-line react-hooks/exhaustive-deps -- Startwerte neu je Fenster; vorbelegen gilt beim Öffnen
+  );
   const namen = mehrere ? alle.map((x) => typName(x)).join(', ') : typName(ziel);
   const text = eingabe.trim();
+  // Neue Post (#1596): Anlegen öffnet eine weitere Ebene in der rechten Spalte statt des Fensters; auf der dritten gesperrt.
+  const ebene = useEbene();
+  const gesperrt = gesperrtIn(ebene);
+  const inEbene = (x: Mappentyp) =>
+    ebene &&
+    oeffneEbene(ebene, x, text, p, {
+      gespeichert: (m) => {
+        waehle(m);
+        setAngelegt(titelOder(m.titel));
+      },
+      zurueck: () => window.setTimeout(() => zurueck.ziel.current?.focus(), 0),
+    });
 
   return (
     <Mehrfachauswahl
@@ -124,12 +136,17 @@ export function MappenWahlKern(p: MappenWahlProps) {
       setOffen={setOffen}
       ohneSuche={!zeigeSuche}
       vorschlaege={treffer === null ? null : vorschlaegeVon(auswahl, mehrere ? alle : null, ziel)}
-      leerText={leerVon(text, mehrere ? null : ziel, p.leer ?? t('felder.verweis.leer', { typ: namen }))}
+      leerText={leerVon(text, mehrere ? null : ziel, p.leer ?? leerStandard(!!ebene, namen))}
       fuss={fussVon(gesamt, treffer)}
-      anlegen={anlegbar.map((x) => ({ id: x.id, text: anlegenText(x, text) }))}
+      anlegen={anlegenListe(anlegbar, text, gesperrt)}
       legeAn={(tid) => {
         const x = anlegbar.find((y) => y.id === tid);
-        if (x) setFenster({ typ: x, text });
+        if (!x || gesperrt) return;
+        if (!ebene) setFenster({ typ: x, text });
+        else {
+          setOffen(false);
+          inEbene(x);
+        }
       }}
       waehle={(mid) => {
         const m = auswahl.find((x) => x.id === mid);
@@ -151,6 +168,54 @@ export function MappenWahlKern(p: MappenWahlProps) {
         </AngelegtDarunter>
       }
     />
+  );
+}
+
+/** Startwerte einer neuen Mappe: Vorgaben des Typs, Vorbelegung und das Getippte als Bezeichnung bzw. Titel (#1288). */
+function startFuer(typ: Mappentyp, text: string, vorbelegen: Record<string, unknown> | undefined) {
+  const r = standardRoh(typ);
+  const feld = text ? titelFeld(typ) : undefined;
+  belegeVor(typ, r, { ...(vorbelegen ?? {}), ...(feld ? { [feld]: text } : {}) });
+  return r;
+}
+
+/**
+ * Neue Post (#1596): die neue Mappe als nächste Ebene der rechten Spalte. Was Ablago im Dokument erkannt hat, geht
+ * getrennt mit – die Ebene trägt es als „Vorschlag“ ein; das Getippte hat Vorrang.
+ */
+function oeffneEbene(
+  ebene: EbeneLage,
+  typ: Mappentyp,
+  text: string,
+  p: MappenWahlProps,
+  danach: { gespeichert(m: Mappe): void; zurueck(): void },
+) {
+  const erkannt = Object.keys(p.erkannt ?? {});
+  const start = startFuer(typ, text, Object.fromEntries(Object.entries(p.vorbelegen ?? {}).filter(([k]) => !erkannt.includes(k))));
+  const roh: RohWerte = {};
+  belegeVor(typ, roh, p.erkannt ?? {});
+  const feld = text ? titelFeld(typ) : undefined;
+  if (feld) delete roh[feld];
+  ebene.oeffne({ typ, start, erkannt: roh, feld: p.feldName ?? typName(typ), ...danach });
+}
+
+/** Auf der dritten Ebene (#1596) lässt sich nichts mehr anlegen. */
+const gesperrtIn = (e: EbeneLage | null) => !!e && e.nr >= EBENEN_MAX;
+
+/** Einträge zum Anlegen; auf der dritten Ebene (#1596) stattdessen der Grund, warum es nicht geht. */
+const anlegenListe = (typen: Mappentyp[], text: string, gesperrt: boolean) =>
+  typen.map((x) => ({ id: x.id, text: gesperrt ? <EbeneGesperrt typ={x} /> : anlegenText(x, text) }));
+
+/** Ohne Eingabe und ohne Vorschläge: auf „Neue Post“ (#1596) „Keine passende Mappe gefunden.“, sonst „Noch keine Mappe in …“. */
+const leerStandard = (ebene: boolean, namen: string) =>
+  ebene ? t('ablage.ebenen.keine-passende') : t('felder.verweis.leer', { typ: namen });
+
+/** Auf der dritten Ebene (#1596): statt „+ Person anlegen …“ der Grund, warum es hier nicht mehr geht. */
+function EbeneGesperrt({ typ }: { typ: Mappentyp }) {
+  return (
+    <span className="leise">
+      {tn('ablage.ebenen.gesperrt', { gesperrt: <strong>{t('ablage.ebenen.gesperrt-wort')}</strong>, typ: typName(typ) })}
+    </span>
   );
 }
 

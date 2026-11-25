@@ -4,6 +4,6 @@
  */
 export { MappeAnsicht } from './mappe-formular/MappeAnsicht';
 export { NeueMappe } from './mappe-formular/NeueMappe';
-export { MappenWahl } from './mappe-formular/Formular';
+export { Formular, MappenWahl } from './mappe-formular/Formular';
 export { unpassendText } from './mappe-formular/hilfen';
 export type { ZuordnenNachher } from './mappe-formular/werte';
