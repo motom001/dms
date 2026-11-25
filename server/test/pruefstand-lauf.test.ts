@@ -212,7 +212,8 @@ describe('Prüfstand: Lauf gegen Ablago (#1679)', () => {
   it('Ungleichgewicht: füllt den Typ auf und misst nur seltene Stücke und andere Typen', async () => {
     const aus = join(ordner, 'ungleich.json');
     const vorher = a.mappen.size;
-    await cli.lauf({ ...basis(), auffuellen: '2', 'auffuell-typ': 'vertraege:vertrag', aus });
+    // Nur das erste Dokument (die Rechnung) messen – die Vorlage zum Auffüllen kommt trotzdem aus dem ganzen Satz.
+    await cli.lauf({ ...basis(), auffuellen: '2', 'auffuell-typ': 'vertraege:vertrag', nur: 'b1-01,a1-02', aus });
     const r = lies(aus);
     assert.equal(r.name, 'ungleichgewicht-2');
     assert.deepEqual(

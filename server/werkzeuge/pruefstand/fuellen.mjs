@@ -22,7 +22,7 @@ function zufall(saat) {
 
 /** Vorlagen: Dokumente des Typs, häufige zuerst (sonst alle des Typs). */
 export function vorlagen(satz, typ) {
-  const vom = satz.dokumente.filter((d) => typKennung(satz, satz.mappen.get(d.erwartung.mappe)?.typ ?? '') === typ);
+  const vom = (satz.alleDokumente ?? satz.dokumente).filter((d) => typKennung(satz, satz.mappen.get(d.erwartung.mappe)?.typ ?? '') === typ);
   const haeufig = vom.filter((d) => d.seltenheit !== 'selten');
   return haeufig.length ? haeufig : vom;
 }

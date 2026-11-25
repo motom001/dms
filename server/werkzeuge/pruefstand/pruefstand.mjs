@@ -57,6 +57,8 @@ export async function lauf(o) {
   const ungleich = o.auffuellen !== undefined;
   const fuellTyp = ungleich ? String(o['auffuell-typ'] ?? satz.einstellungen.ungleichgewicht?.typ ?? 'finanzen:kontoauszug') : null;
   const liste = auswahl(satz, o, fuellTyp);
+  // Vorlagen fürs Auffüllen aus dem ganzen Satz, auch wenn nur ein Teil gemessen wird (--hoechstens, --nur).
+  satz.alleDokumente = satz.dokumente;
   satz.dokumente = liste.map((x) => x.d);
   const api = new Ablago(o.url);
   await api.einrichtenOderAnmelden({ email: o.email, passwort: o.passwort, code: einrichtungscode(o) });
