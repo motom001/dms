@@ -42,6 +42,7 @@ async function schreibeStruktur(q: ExportQuelle, w: Schreiber, typen: Mappentyp[
   if (q.merkmale) await w.schreibe('struktur/merkmale.json', json(await q.merkmale()));
   if (q.organisation) await w.schreibe('struktur/organisation.json', json(await q.organisation()));
   if (q.automatisierungen) await w.schreibe('struktur/automatisierungen.json', json(await q.automatisierungen()));
+  if (q.gelerntes) await w.schreibe('struktur/gelerntes.json', json(await q.gelerntes()));
   if (q.ablaufvorlagen) await w.schreibe('struktur/ablaufvorlagen.json', json(await q.ablaufvorlagen()));
   if (q.notfallkontakte) {
     const k = await q.notfallkontakte();

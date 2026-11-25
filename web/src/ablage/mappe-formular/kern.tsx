@@ -148,9 +148,11 @@ function useAusDokument() {
   const [adDazu, setAdDazu] = useState<Array<NonNullable<TypVorschlaege['dazu']>[number] & { an: boolean }>>([]);
   // Hier angelegte Mappen (#1485): Id → Feld, aus dem heraus sie angelegt wurde; spätere Vorschläge nur für dieses Feld.
   const angelegtAus = useRef(new Map<string, string>());
+  /** Felder, deren Wert vom Dokument kam – gezogen, angeklickt oder markiert (#1681: daraus lernt die Erkennung). */
+  const vomDokument = useRef(new Set<string>());
   return {
     ...{ adOffen, setAdOffen, vorschlaege, setVorschlaege, adNeu, setAdNeu, adMeldung, setAdMeldung },
-    ...{ adPositionen, setAdPositionen, adDazu, setAdDazu, angelegtAus },
+    ...{ adPositionen, setAdPositionen, adDazu, setAdDazu, angelegtAus, vomDokument },
   };
 }
 

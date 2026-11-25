@@ -73,7 +73,7 @@ dms-export-2026-10-31-14-05-00/
   manifest.json          format version, counts, size and SHA-256 of every file, where every table is
   SHA256SUMS             SHA-256 of every file in the standard format (sha256sum -c), see Checking the download
   struktur/              Folder types, views, number sequences, packages (pakete.json), designs, automations and templates, users (without passwords), emergency contacts,
-                         versions of the Workbench (fassungen.json, #1006)
+                         versions of the Workbench (fassungen.json, #1006), what was learned from corrections (gelerntes.json, #1681)
   daten/
     <typ>.csv  .jsonl  .xlsx   per folder type (identifier, from packages package.key): one row per folder, one column per field identifier
     verweise.csv           folder → field → folder

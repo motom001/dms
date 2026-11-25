@@ -108,4 +108,6 @@ export interface ZuordnenNachher {
   vorschlag: Record<string, Wert>;
   aufloesen?: boolean;
   /** Original-E-Mail (#999): false = bleibt in der Post. */ originalEmail?: false;
+  /** Was „Wohin gehört das?“ vorgeschlagen hat (#1681) – fehlt, wenn es nichts geliefert hat. */
+  vorgeschlagen?: { typId: string | null; sicherheit: number };
 }

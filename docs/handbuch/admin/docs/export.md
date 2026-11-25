@@ -71,7 +71,7 @@ dms-export-2026-10-31-14-05-00/
   manifest.json          Formatversion, Anzahlen, Größe und SHA-256 jeder Datei, wo jede Tabelle steht
   SHA256SUMS             SHA-256 jeder Datei im Standardformat (sha256sum -c), siehe Download prüfen
   struktur/              Mappentypen, Ansichten, Nummernkreise, Pakete (pakete.json), Designs, Automatisierungen und -vorlagen, Benutzer (ohne Passwörter), Notfallkontakte,
-                         Fassungen der Werkbank (fassungen.json, #1006)
+                         Fassungen der Werkbank (fassungen.json, #1006), aus Korrekturen Gelerntes (gelerntes.json, #1681)
   daten/
     <typ>.csv  .jsonl  .xlsx   je Mappentyp (Kennung, aus Paketen paket.schluessel): eine Zeile je Mappe, eine Spalte je Kennung eines Felds
     verweise.csv           Mappe → Feld → Mappe

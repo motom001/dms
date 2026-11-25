@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { anzeigestand } from '../../../../shared/src/anzeige';
 import { pruefeFormate } from '../../../../shared/src/feldformate';
-import { istOk, type Mappe, type Mappenkonflikt, type Pruefergebnis, type Werte } from '../../../../shared/src/model';
+import { istLeer, istOk, type Mappe, type Mappenkonflikt, type Pruefergebnis, type Wert, type Werte } from '../../../../shared/src/model';
 import type { LoeschAnlass } from '../../../../shared/src/loeschprotokoll';
 import type { ApiFehler } from '../../api/anfrage';
 import { dokumenteApi } from '../../api/dokumente';
@@ -10,7 +10,7 @@ import { geheZu, Link, loeseWache } from '../../ort';
 import { hinweis, rueckfrage } from '../../rueckfrage';
 import { titelOder } from '../../seiten';
 import { t, tn } from '../../sprache';
-import { werteAusRoh, zuRoh, type Roh, type RohWerte } from '../../werte';
+import { ausRoh, werteAusRoh, zuRoh, type Roh, type RohWerte } from '../../werte';
 import { beimAnlegenVerborgen } from '../anzeige';
 import type { NeueDatei } from '../Dokumente';
 import { merkeAufloesung } from '../Post';
@@ -270,6 +270,8 @@ function nachDemSpeichern(z: Kern) {
         kopieren: zu.kopieren,
         aufloesen: zu.aufloesen === true,
         ...(zu.originalEmail === false ? { originalEmail: false } : {}),
+        // Aus Korrekturen lernen (#1681): gewählter statt vorgeschlagener Typ, korrigierte und übernommene Felder.
+        lernen: { vorgeschlagen: zu.vorgeschlagen ?? null, ...lernFelder(z) },
       });
       if (r.hinweis) await hinweis({ titel: t('ablage.mappeformular.post-bleibt-zugeordnet'), text: r.hinweis });
       return { aufgeloest: r.aufgeloest, leerseiten: r.leerseiten };
@@ -369,4 +371,23 @@ export function loeschWege(z: Kern) {
     geheZu(`/ablage/${z.p.sicht}${z.p.anhang ?? ''}`);
   }
   return { loeschFrage, loeschen };
+}
+
+/**
+ * Was die Erkennung lernen kann (#1681): Felder, deren Wert vom Dokument kam oder die vom Vorschlag aus dem Dokument
+ * abweichen (korrigiert), und unverändert übernommene Vorschläge (bestätigt). Verweise, Ja/Nein und Passwörter nicht.
+ */
+function lernFelder(z: Kern): { felder: Array<{ feld: string; wert: Wert }>; bestaetigt: string[] } {
+  const felder: Array<{ feld: string; wert: Wert }> = [];
+  const bestaetigt: string[] = [];
+  for (const f of z.p.typ.felder) {
+    if (['referenz', 'janein', 'passwort'].includes(f.typ)) continue;
+    const wert = ausRoh(f, z.roh[f.key]);
+    if (istLeer(wert)) continue;
+    const v = z.vorschlaege[f.key];
+    const gleich = !!v && JSON.stringify(zuRoh(f, v.wert)) === JSON.stringify(z.roh[f.key]);
+    if (z.vomDokument.current.has(f.key) || (v && !gleich)) felder.push({ feld: f.key, wert });
+    else if (v?.art === 'eingetragen' && gleich) bestaetigt.push(f.key);
+  }
+  return { felder, bestaetigt };
 }

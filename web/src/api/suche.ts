@@ -1,6 +1,7 @@
 /** Schnittstelle (#1234): Suche, Vektoren und Texterkennung, „Frag deine Ablage“, KI-Typen und Erkennung. */
 import { messung } from '../messung';
 import type { Meintest, Wortgruppe } from '../../../shared/src/suche';
+import type { GelerntFuerWerkbank } from '../../../shared/src/gelerntes';
 import type { Dokument, OcrStandArt } from '../../../shared/src/model';
 import type { KiUebersicht } from '../../../shared/src/pakete';
 import type { FrageZeile, FragenGrenzen, VerlaufEintrag } from '../../../shared/src/fragen';
@@ -174,6 +175,11 @@ export const sucheApi = {
     anfrage<ErkennungStand>('PUT', '/api/werkbank/erkennung', { paket, ...(abfluss ? { abfluss: true } : {}) }),
   /** Nur die Schwelle für den Mappentyp (#1645, Expertenmodus); null = Vorgabe. */
   erkennungSchwelle: (schwelle: number | null) => anfrage<ErkennungStand>('PUT', '/api/werkbank/erkennung', { schwelle }),
+  /** Gelerntes (#1681): aus Korrekturen gelernt – Übersicht, je Eintrag löschen, alles für einen Absender vergessen. */
+  gelerntes: () => anfrage<GelerntFuerWerkbank[]>('GET', '/api/werkbank/erkennung/gelerntes'),
+  gelerntLoeschen: (id: string) => anfrage<{ geloescht: number }>('DELETE', `/api/werkbank/erkennung/gelerntes/${encodeURIComponent(id)}`),
+  gelerntVergessen: (absender: string) =>
+    anfrage<{ geloescht: number }>('DELETE', `/api/werkbank/erkennung/gelerntes/absender/${encodeURIComponent(absender)}`),
   /* „Frag deine Ablage“ (#444) */
   fragenVerfuegbar: () => anfrage<{ verfuegbar: boolean; paket: string | null }>('GET', '/api/fragen'),
   fragenStand: () => anfrage<FragenStand>('GET', '/api/werkbank/fragen'),

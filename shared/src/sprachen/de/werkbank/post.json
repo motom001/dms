@@ -158,5 +158,21 @@
   "webdav.nur-im-arbeitsspeicher-nach": "Nur im Arbeitsspeicher; nach einem Neustart ist die Liste leer.",
   "texterkennung.abbrechen.frage": "Texterkennung für {anzahl} Dokumente abbrechen?",
   "texterkennung.abbrechen.text": "Die gewählten Dokumente kommen aus der Warteschlange. Du kannst sie später neu starten.",
-  "texterkennung.reiter": "Aufträge nach Stand"
+  "texterkennung.reiter": "Aufträge nach Stand",
+  "texterkennung.gelerntes.titel": "Gelerntes",
+  "texterkennung.gelerntes.kurz": "Was Ablago aus Korrekturen gelernt hat",
+  "texterkennung.gelerntes.text": "Wählt jemand bei „Wohin gehört das?“ einen anderen Mappentyp als vorgeschlagen oder korrigiert einen Wert aus dem Dokument, merkt sich Ablago das für Post desselben Absenders: den Mappentyp und das Wort vor dem Wert. Wird etwas Gelerntes zweimal in Folge nicht genommen, nimmt Ablago es von selbst zurück. Gelöschtes lernt Ablago erst bei der nächsten Korrektur neu.",
+  "texterkennung.gelerntes.filter": "Filtern nach Absender, Mappentyp oder Wort",
+  "texterkennung.gelerntes.leer": "Noch nichts gelernt.",
+  "texterkennung.gelerntes.absender-verborgen": "Absender, den du nicht sehen darfst",
+  "texterkennung.gelerntes.was-typ": "Mappentyp „{typ}“",
+  "texterkennung.gelerntes.was-feld": "„{feld}“ in „{typ}“ steht hinter „{kennwort}“",
+  "texterkennung.gelerntes.wann": "gelernt am {datum} von {von}",
+  "texterkennung.gelerntes.zurueck": "zurückgenommen am {datum}",
+  "texterkennung.gelerntes.loeschen": "Löschen",
+  "texterkennung.gelerntes.geloescht": "Gelöscht.",
+  "texterkennung.gelerntes.vergessen": "Alles für diesen Absender vergessen",
+  "texterkennung.gelerntes.vergessen-frage": "Alles für „{absender}“ vergessen?",
+  "texterkennung.gelerntes.vergessen-text": "Ablago löscht alles, was es für diesen Absender gelernt hat. Bei der nächsten Korrektur lernt es neu.",
+  "texterkennung.gelerntes.vergessen-fertig": "Vergessen: {anzahl} Einträge."
 }
