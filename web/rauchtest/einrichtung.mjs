@@ -120,8 +120,12 @@ rauchtest(
       const rundgang = s.getByRole('dialog');
       await rundgang.getByText(/Die Werkbank im Überblick/).waitFor();
       await rundgang.getByText('Schritt 1 von 8').waitFor();
+      // „Später“ merkt sich der Server erst nach dem Schließen; kam das nach dem „gesehen“ aus vorbereiten(), stand der
+      // Rundgang in späteren Tests wieder über der Werkbank (#1666, ein Lauf von 20). Daher auf die Antwort warten.
+      const gemerkt = s.waitForResponse((r) => r.request().method() === 'POST' && r.url().endsWith('/api/entdecken/rundgaenge/werkbank'));
       await rundgang.getByRole('button', { name: 'Später' }).click();
       await rundgang.waitFor({ state: 'detached' });
+      assert.ok((await gemerkt).ok(), 'Rundgang „Später“ nicht gespeichert');
       const sitzungscookie = (await k.cookies()).find((c) => c.name === 'dms_sitzung');
       assert.ok(sitzungscookie, 'Nach der Einrichtung keine Sitzung im Browser');
       await vorbereiten(`${sitzungscookie.name}=${sitzungscookie.value}`);
