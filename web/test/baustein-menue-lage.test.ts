@@ -4,7 +4,7 @@
  */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { aufklapplage, legeFest } from '../src/bausteine/menue/lage';
+import { aufklapplage } from '../src/bausteine/menue/lage';
 
 const fenster = { breite: 1366, hoehe: 900 };
 const knopf = (top: number, right = 1300) => ({ top, bottom: top + 28, left: right - 28, right });
@@ -64,57 +64,5 @@ describe('Menü: Lage der Liste (#1488)', () => {
     const l = aufklapplage({ top: 100, bottom: 128, left: 20, right: 48 }, 200, fenster, { breite: 240 });
     assert.equal(l.left, 20);
     assert.equal(l.right, undefined);
-  });
-});
-
-/** Liste und Feld ohne Browser: `legeFest` misst die Liste bei 0/0 und das Feld, dann setzt es top/left/maxHeight. */
-function attrappe(hoehe: number, breite: number, feld: { top: number; bottom: number; left: number; right: number }) {
-  const liste = {
-    style: {} as Record<string, string>,
-    dataset: {} as Record<string, string>,
-    getBoundingClientRect: () => ({ top: 0, left: 0, height: hoehe, width: breite }),
-  };
-  return { liste: liste as unknown as HTMLElement, feld: { getBoundingClientRect: () => feld } as unknown as HTMLElement };
-}
-
-// #1670: Die Vorschläge der Mehrfachauswahl nutzen dieselbe Regel – mit höchstens 280 px Höhe.
-describe('Mehrfachauswahl: Lage der Vorschläge (#1670)', () => {
-  const g = globalThis as { innerWidth?: number; innerHeight?: number };
-  g.innerWidth = 1366;
-  g.innerHeight = 900;
-
-  it('Verweisfeld am unteren Rand: nach oben, höchstens 280 px, ganz im Fenster', () => {
-    const { liste, feld } = attrappe(700, 400, { top: 800, bottom: 836, left: 300, right: 700 });
-    const l = legeFest(liste, feld, true, 280);
-    assert.equal(l.oben, true);
-    assert.equal(liste.style.maxHeight, '280px');
-    assert.equal(liste.style.top, `${800 - 4 - 280}px`, 'Unterkante 4 px über dem Feld');
-    assert.equal(liste.style.left, '300px');
-    assert.equal(liste.dataset.oben, 'ja');
-  });
-
-  it('Feld oben: weiter nach unten; wenig Inhalt bleibt klein', () => {
-    const { liste, feld } = attrappe(120, 400, { top: 100, bottom: 136, left: 300, right: 700 });
-    const l = legeFest(liste, feld, true, 280);
-    assert.equal(l.oben, false);
-    assert.equal(liste.style.top, '140px');
-    assert.equal(liste.style.maxHeight, '280px');
-  });
-
-  it('am Handy (wenig Platz oben wie unten): auf der größeren Seite, so hoch wie der Platz', () => {
-    g.innerWidth = 390;
-    g.innerHeight = 400;
-    const { liste, feld } = attrappe(700, 358, { top: 200, bottom: 244, left: 16, right: 374 });
-    const l = legeFest(liste, feld, true, 280);
-    assert.equal(l.oben, true, 'oben ist mehr Platz');
-    assert.equal(l.maxHoehe, 200 - 4 - 8);
-    assert.equal(liste.style.top, '8px', 'nicht über den oberen Rand');
-    g.innerWidth = 1366;
-    g.innerHeight = 900;
-  });
-
-  it('ohne Höchstwert wie bisher (Menüs): die Liste darf den ganzen Platz nehmen', () => {
-    const { liste, feld } = attrappe(700, 400, { top: 800, bottom: 836, left: 300, right: 700 });
-    assert.equal(legeFest(liste, feld, true).maxHoehe, 800 - 4 - 8);
   });
 });

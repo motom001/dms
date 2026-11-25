@@ -2,7 +2,7 @@ import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent
 import { t } from '../../sprache';
 import { Symbol } from '../../Symbol';
 import { Knopf } from '../knopf/Knopf';
-import { legeFest } from '../menue/lage';
+import { legeVorschlaege } from './lage';
 import s from './Mehrfachauswahl.module.css';
 
 /** Ein gewählter Eintrag: Inhalt (Text oder Link), optional ein Zusatz (z. B. ein Hinweis) und weitere Aktionen vor ✕. */
@@ -65,7 +65,7 @@ export interface MehrfachauswahlProps {
   /** Unter der Auswahl, z. B. die Meldung „… angelegt“. */
   darunter?: ReactNode;
   className?: string;
-  /** Vorschläge im Fluss statt fest im Fenster (nur Musterseite und Bilder, wie `offenZeigen` beim Datum). */
+  /** Vorschläge immer unten, ohne eigene Lage (nur Musterseite und Bilder, wie `offenZeigen` beim Datum). */
   imFluss?: boolean;
 }
 
@@ -173,22 +173,9 @@ function Gewaehlt({ p, entferne }: { p: MehrfachauswahlProps; entferne(id: strin
   );
 }
 
-/** Höchste Höhe der Vorschläge wie `.wahlliste` in gemeinsam-listen.css; was darüber hinausgeht, rollt in der Liste. */
-const LISTE_HOECHSTENS = 280;
-
-/** Die offene Vorschlagsliste unter bzw. über das Suchfeld legen (#1670), so breit wie das Feld. */
-function legeVorschlaege(wahl: HTMLElement | null) {
-  const liste = wahl?.querySelector<HTMLElement>(':scope > .wahlliste');
-  if (!wahl || !liste) return;
-  liste.style.width = `${wahl.getBoundingClientRect().width}px`;
-  legeFest(liste, wahl, true, LISTE_HOECHSTENS);
-}
-
 /**
- * Lage der Vorschläge (#1670) nach der Regel der Menüs (`menue/lage.ts`): unter dem Suchfeld, wenn dort Platz ist,
- * sonst darüber; höchstens 280 px hoch und nie über den Fensterrand – der Rest rollt in der Liste. Neu bei jedem Aufbau
- * (andere Vorschläge, andere Höhe), bei jedem Rollen und jeder neuen Größe. Anders als beim Menü auch am Handy: Die
- * Liste gehört zum Suchfeld, ein Blatt von unten verdeckte es.
+ * Lage der Vorschläge (#1670, lage.ts): nach unten, wenn dort Platz ist, sonst nach oben; neu bei jedem Aufbau (andere
+ * Vorschläge, andere Höhe), bei jedem Rollen und jeder neuen Größe.
  */
 function useVorschlagLage(an: boolean, wahl: RefObject<HTMLDivElement | null>) {
   useLayoutEffect(() => {
@@ -233,8 +220,9 @@ function useFokusNachEntfernen(eingabe: RefObject<HTMLInputElement | null>) {
  * - Die gewählten Einträge stehen **unter** dem Suchfeld, je mit einem kleinen Knopf ✕. So bleibt das Suchfeld direkt
  *   unter der Beschriftung und auf einer Höhe mit Nachbarfeldern. Nach ✕ steht der Fokus im Suchfeld.
  * - Vorschläge mit `gruppe` (#1036, z. B. je Mappentyp) stehen unter einer Überschrift; die Liste nennt keine Anzahl.
- * - Die Vorschläge klappen wie die Menüs auf (#1670, `menue/lage.ts`): nach unten, wenn dort Platz ist, sonst nach oben;
- *   höchstens 280 px hoch und immer im Fenster, der Rest rollt in der Liste. Tastatur und Bildschirmleser wie gehabt.
+ * - Die Vorschläge klappen nach der Regel der Menüs auf (#1670, `aufklapplage`): nach unten, wenn dort Platz ist, sonst
+ *   nach oben; höchstens 280 px hoch und im sichtbaren Teil der Spalte, der Rest rollt in der Liste. Sie bleiben am Feld
+ *   und rollen mit ihm. Tastatur und Bildschirmleser wie gehabt.
  * - Das Suchfeld hat die Lupe wie der Baustein `Suche` (C16). ✕ ist leise, nicht rot: Das Feld ändert sich erst beim
  *   Speichern (Leitsatz 5).
  *

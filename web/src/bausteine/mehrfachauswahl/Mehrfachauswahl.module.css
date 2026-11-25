@@ -1,6 +1,6 @@
 /* Mehrfachauswahl (#602, #1211): Lupe im Suchfeld wie beim Baustein Suche (C16). Grundform in styles.css (.refbox,
-   .wahl, .wahlliste, .gewaehlt); die Vorschlagsliste legt Mehrfachauswahl.tsx fest ins Fenster (#1670, menue/lage.ts),
-   die Höhe von .wahl ist die des Suchfelds. Die aktive Option (Pfeiltasten) trägt „an“ wie in den anderen
+   .wahl, .wahlliste, .gewaehlt); die Vorschlagsliste steht absolut, nach oben oder unten und mit Höchsthöhe aus lage.ts
+   (#1670), die Höhe von .wahl ist die des Suchfelds. Die aktive Option (Pfeiltasten) trägt „an“ wie in den anderen
    Vorschlagslisten. Einträge zum Anlegen (#1288) stehen abgesetzt am Ende, in Textfarbe – grün bleibt dem Anlegen
    der Seite vorbehalten (Leitsatz 2). */
 .lupe { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--leise); pointer-events: none; z-index: var(--ebene-innen); }
