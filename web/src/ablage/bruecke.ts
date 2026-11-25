@@ -44,6 +44,11 @@ export interface FormularAnschluss {
   setze(feldKey: string, wert: Wert, bezug?: { id: string; titel: string; typId: string }): void;
   /** Register und Abschnitt des Felds öffnen und hinrollen. */
   zeige(feldKey: string): void;
+  /**
+   * Bereich markieren (#1597): mehrere Werte auf einmal als „Vorschlag“ eintragen (`fundstelle` steht daneben). Gibt
+   * zurück, womit sich das wieder rückgängig machen lässt; null, wenn nichts eingetragen werden durfte.
+   */
+  vorschlagen?(werte: Array<{ key: string; wert: Wert }>, fundstelle: string): (() => void) | null;
 }
 
 export interface Bruecke {

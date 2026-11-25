@@ -1,5 +1,6 @@
 /**
- * Rauchtests: Neue Post – verknüpfte Mappen in der rechten Spalte anlegen (#1596), bis zur dritten Ebene und am Handy.
+ * Rauchtests: Neue Post – verknüpfte Mappen in der rechten Spalte anlegen (#1596), bis zur dritten Ebene und am Handy;
+ * „Bereich markieren“ füllt die Felder der offenen Ebene (#1597).
  * Eigene Mappentypen „Lieferschein“ → „Niederlassung“ → „Ansprechpartner“, damit die Beispiele unverändert bleiben;
  * steht deshalb am Ende der Reihe.
  * Allein starten (frisch gestartetes Ablago, siehe rauchtest.mjs): node web/rauchtest/bereiche/neue-post-ebenen.mjs [fehlerordner]
@@ -61,11 +62,10 @@ async function ebenenTypen() {
 }
 
 /** Post mit einem Lieferschein öffnen und „Lieferschein“ als neue Mappe wählen; gibt die rechte Spalte zurück. */
-async function lieferschein(s, betreff) {
+async function lieferschein(s, betreff, zeilen = `${betreff}\nNiederlassung Nord · Musterweg 1 · 01234 Musterstadt`) {
   await ebenenTypen();
   const cookie = await sitzung(LENA);
   const brief = (await api('POST', '/api/post', { cookie, body: { betreff } })).daten;
-  const zeilen = `${betreff}\nNiederlassung Nord · Musterweg 1 · 01234 Musterstadt`;
   await api(
     'POST',
     `/api/mappen/${brief.id}/dokumente?register=dokumente&name=${encodeURIComponent(`${betreff}.pdf`)}&typ=application/pdf`,
@@ -168,3 +168,98 @@ rauchtest(
     await dokument.getByRole('img', { name: 'Seite 1' }).waitFor();
   },
 );
+
+/* ---------- Bereich im Dokument markieren (#1597) ---------- */
+
+/** Brief mit Rücksendezeile über der Anschrift: Zeile 0 Betreff, 1 Rücksendezeile, 2–4 die Anschrift. */
+const BRIEF = (betreff) => `${betreff}\nMuster GmbH · Musterweg 9 · 01234 Musterstadt\nNiederlassung Nord\nMusterweg 1\n01234 Musterstadt`;
+
+/** Rechteck mit der Maus über die Textzeilen `von` bis `bis` (ab 0) der ersten Seite ziehen. */
+async function ziehe(s, dokument, von, bis) {
+  await dokument.locator('.ue-wort').first().waitFor();
+  const zeilen = await dokument.evaluate((el) => {
+    const z = [];
+    for (const w of el.querySelectorAll('.ue-wort')) {
+      const r = w.getBoundingClientRect();
+      const k = z.find((x) => Math.abs(x.y - r.top) < r.height / 2);
+      if (k) Object.assign(k, { l: Math.min(k.l, r.left), r: Math.max(k.r, r.right), u: Math.max(k.u, r.bottom) });
+      else z.push({ y: r.top, l: r.left, r: r.right, u: r.bottom });
+    }
+    return z.sort((a, b) => a.y - b.y);
+  });
+  const a = zeilen[von],
+    b = zeilen[bis];
+  await s.mouse.move(Math.min(a.l, b.l) - 6, a.y - 4);
+  await s.mouse.down();
+  await s.mouse.move(Math.max(a.r, b.r) + 6, b.u + 4, { steps: 5 });
+  await s.mouse.up();
+}
+
+rauchtest(
+  'Bereich markieren: Anschrift füllt die Felder der offenen Ebene, Rückgängig, ohne passende Felder (#1597)',
+  { als: LENA },
+  async (s) => {
+    const { mappe, dokument } = await lieferschein(s, 'Lieferschein L-3', BRIEF('Lieferschein L-3'));
+    await anlegen(mappe, 'lieferant', 'Niederlassung');
+    await mappe.getByText('Neue Mappe für „Lieferant“ in „Lieferschein“. Nach dem Speichern geht es dorthin zurück.').waitFor();
+    const nr = mappe.locator('#feld-e2-hausnummer');
+    const vorher = await nr.inputValue();
+    const knopf = dokument.getByRole('button', { name: 'Bereich markieren' });
+    await knopf.click();
+    await dokument.getByRole('button', { name: 'Bereich markieren', pressed: true }).waitFor();
+    await dokument
+      .getByText(
+        'Zieh ein Rechteck um einen Block, z. B. die Anschrift. Ablago füllt die passenden Felder in „Niederlassung (neu)“. Esc beendet.',
+      )
+      .waitFor();
+    assert.deepEqual(await axePruefen(s, ['.spalte.liste']), []);
+    // Nur die Rücksendezeile: nichts erkannt, der Modus bleibt an.
+    await ziehe(s, dokument, 1, 1);
+    await dokument
+      .getByText('Im Bereich hat Ablago nichts erkannt, das zu den Feldern passt. Zieh das Rechteck um den ganzen Block.')
+      .waitFor();
+    // Die Anschrift: Name, Straße, Nr., PLZ, Ort als Vorschlag; der Modus endet.
+    await ziehe(s, dokument, 2, 4);
+    await dokument
+      .getByText(
+        'Anschrift „Musterweg 1, 01234 Musterstadt“ erkannt – Name, Straße, Nr., PLZ, Ort als Vorschlag eingetragen. Bitte prüfen.',
+      )
+      .waitFor();
+    await dokument.getByRole('button', { name: 'Bereich markieren', pressed: false }).waitFor();
+    assert.equal(await nr.inputValue(), '1');
+    assert.equal(await mappe.locator('#feld-e2-strasse').inputValue(), 'Musterweg');
+    assert.equal(await mappe.locator('#feld-e2-name').inputValue(), 'Niederlassung Nord');
+    await mappe.locator('[data-anker="mappe.feld:hausnummer"]').locator('visible=true').getByText('Vorschlag', { exact: true }).waitFor();
+    await dokument.getByRole('button', { name: 'Rückgängig' }).click();
+    await dokument.getByText('Rückgängig gemacht.').waitFor();
+    assert.equal(await nr.inputValue(), vorher);
+    // Esc beendet den Modus.
+    await knopf.click();
+    await dokument.getByRole('button', { name: 'Bereich markieren', pressed: true }).waitFor();
+    await s.keyboard.press('Escape');
+    await dokument.getByRole('button', { name: 'Bereich markieren', pressed: false }).waitFor();
+    // Ebene 1 (Lieferschein) hat keine Felder für eine Anschrift.
+    await mappe.getByRole('button', { name: 'Entwurf verwerfen' }).click();
+    await knopf.click();
+    await ziehe(s, dokument, 2, 4);
+    await dokument
+      .getByText('Anschrift „Musterweg 1, 01234 Musterstadt“ erkannt – aber „Lieferschein“ hat keine Felder für eine Anschrift.')
+      .waitFor();
+  },
+);
+
+rauchtest('Handy: Bereich markieren im Reiter „Dokument“, danach zur Mappe mit Hinweis (#1597)', { handy: true, als: LENA }, async (s) => {
+  const { mappe, dokument } = await lieferschein(s, 'Lieferschein L-4', BRIEF('Lieferschein L-4'));
+  await anlegen(mappe, 'lieferant', 'Niederlassung');
+  const ansicht = mappe.getByRole('radiogroup', { name: 'Dokument oder Mappe zeigen' });
+  await ansicht.getByRole('radio', { name: 'Dokument' }).click();
+  const knopf = dokument.getByRole('button', { name: 'Bereich markieren' });
+  assert.ok(((await knopf.boundingBox())?.height ?? 0) >= 44, 'Knopf „Bereich markieren“ unter 44 px');
+  await knopf.click();
+  await ziehe(s, dokument, 2, 4);
+  await ansicht.getByRole('radio', { name: 'Niederlassung', checked: true }).waitFor();
+  await mappe.getByText('Anschrift aus dem markierten Bereich eingetragen – bitte prüfen.').waitFor();
+  assert.equal(await mappe.locator('#feld-e2-hausnummer').inputValue(), '1');
+  assert.deepEqual(await axePruefen(s, ['.spalte.mappe']), []);
+  await keineWaagerechteRolle(s);
+});

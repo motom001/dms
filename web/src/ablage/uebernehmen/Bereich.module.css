@@ -1,0 +1,10 @@
+/* Bereich im Dokument markieren (#1597): Umschalter im Kopf des Dokuments, Hinweis darunter, Fläche mit Fadenkreuz
+   und orangem Rechteck über der Seite. Werte nur aus web/src/tokens.css. */
+.knopf { display: inline-flex; align-items: center; gap: 6px; }
+button.knopf.an { background: var(--akzent-zart); border-color: var(--akzent); color: var(--akzent); }
+.zeichen { display: inline-block; width: 1em; height: 0.75em; border: 1.5px dashed currentColor; border-radius: 2px; box-sizing: border-box; }
+.hinweis { margin: 0; padding: 6px 10px; background: var(--akzent-zart); color: var(--tinte); border-bottom: 1px solid var(--linie); }
+.meldung { margin: 6px 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.meldung p { margin: 0; flex: 1 1 240px; }
+.flaeche { position: absolute; inset: 0; z-index: var(--ebene-innen); cursor: crosshair; touch-action: none; }
+.rechteck { position: absolute; box-sizing: border-box; border: 2px solid var(--warn); background: color-mix(in srgb, var(--warn) 12%, transparent); pointer-events: none; }

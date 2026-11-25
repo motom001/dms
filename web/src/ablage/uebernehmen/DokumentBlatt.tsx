@@ -11,6 +11,7 @@ import { farbeVon, setzeNutzlast, type Marke, type Nutzlast } from '../bruecke';
 import { ansichtVon } from '../Dokumente';
 import { GrosseSeiteMarke, grosseSeite, MitLeerseiten } from '../Leerseiten';
 import { klebenderKopf, SeiteFigur, SeitenSprung, useSeitenlage, type Seitenlage } from '../Seitenbetrachter';
+import { BereichFlaeche, BereichKnopf, BereichZeilen, type BereichLage } from './bereich';
 import type { Woerter } from './hilfen';
 
 /**
@@ -29,6 +30,7 @@ export function DokumentBlatt({
   leer,
   setzeLeer,
   herunterladen,
+  bereich,
 }: {
   x: Dokument;
   w: Woerter | 'keine' | undefined;
@@ -41,6 +43,8 @@ export function DokumentBlatt({
   setzeLeer(l: Leerseiten | null): void;
   /** Darf das Original heruntergeladen werden (Exportrecht, kein Pflicht-Stempel)? */
   herunterladen: boolean;
+  /** Bereich markieren (#1597); fehlt, wo es kein Formular rechts gibt. */
+  bereich?: BereichLage;
 }) {
   const weg = wegfallendeSeiten(leer);
   const mitArchiv = x.archivfassung?.stand === 'fertig';
@@ -53,7 +57,15 @@ export function DokumentBlatt({
   const lage = useSeitenlage(seiten?.length ?? 0);
   return (
     <article className="ue-dokument" aria-label={x.name} ref={lage.wurzel}>
-      <DokKopf x={x} archiv={mitArchiv ? archiv : null} setArchiv={setArchiv} tab={ansicht?.url} lage={seiten?.length ? lage : null} />
+      <DokKopf
+        x={x}
+        archiv={mitArchiv ? archiv : null}
+        setArchiv={setArchiv}
+        tab={ansicht?.url}
+        lage={seiten?.length ? lage : null}
+        bereich={bereich}
+      />
+      {bereich && <BereichZeilen b={bereich} dokId={x.id} />}
       {w === undefined ? (
         <p className="leise klein ue-betrachter-text">{t('ablage.uebernehmen.lade')}</p>
       ) : seiten?.length ? (
@@ -73,6 +85,7 @@ export function DokumentBlatt({
                 setHervor={setHervor}
                 insAktive={insAktive}
                 weg={weg.includes(i + 1)}
+                bereich={bereich}
               />
             ))}
           </MitLeerseiten>
@@ -111,6 +124,7 @@ function DokKopf({
   setArchiv,
   tab,
   lage,
+  bereich,
 }: {
   x: Dokument;
   archiv: boolean | null;
@@ -118,10 +132,12 @@ function DokKopf({
   tab?: string;
   /** Mit Seiten: „Seite n von N“ und der Kopf bleibt oben stehen (#1323, #1324). */
   lage: Seitenlage | null;
+  bereich?: BereichLage;
 }) {
   return (
     <div className={`dokansicht-kopf klein ue-dokkopf ${lage ? klebenderKopf : ''}`} data-seitenkopf>
       <span className="ue-dokname">{x.name}</span>
+      {bereich && lage && <BereichKnopf b={bereich} dokId={x.id} />}
       {archiv !== null && (
         <Umschalter
           wert={archiv ? 'archiv' : 'original'}
@@ -181,6 +197,7 @@ function Seite({
   setHervor,
   insAktive,
   weg = false,
+  bereich,
 }: {
   x: Dokument;
   nr: number;
@@ -193,6 +210,8 @@ function Seite({
   insAktive(n: Nutzlast, eigenesFeld?: string): void;
   /** Leerseite (#997): fällt beim Übernehmen weg – blass. */
   weg?: boolean;
+  /** Bereich markieren (#1597): Ist er für dieses Dokument an, zieht man ein Rechteck statt Wörter zu markieren. */
+  bereich?: BereichLage;
 }) {
   const [wahl, setWahl] = useState<{ von: number; bis: number; zieht: boolean } | null>(null);
   const prozent = (a: { x: number; y: number; b: number; h: number }) => ({
@@ -279,6 +298,7 @@ function Seite({
           {nummern[k].length === 1 && <span className="ue-rahmen-nr">{m.nr}</span>}
         </span>
       ))}
+      {bereich?.an === x.id && <BereichFlaeche fertig={(r) => bereich.fertig(x.id, s, r)} />}
       {/* Mehrere Nummern einer Stelle (#1647) über allen Rahmen; die Namen der Rahmen nennen sie schon. */}
       {hier.map(({ b }, k) =>
         nummern[k].length > 1 ? (
