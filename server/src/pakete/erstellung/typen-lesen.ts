@@ -68,6 +68,7 @@ const FELD = [
   'frist',
   'auswahlFilter',
   'folgtAus',
+  'ausDatum',
   'vorbelegen',
   'erkennung',
   'wiederfinden',

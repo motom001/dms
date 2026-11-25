@@ -9,6 +9,7 @@ import { t as tx, t, tn } from '../sprache';
 import { PauseHinweis, Warteschlange, zahl } from './texterkennung/teile';
 import { Auftraege } from './texterkennung/Auftraege';
 import { Zeitgrenze } from './texterkennung/Zeitgrenze';
+import { Schwelle } from './texterkennung/Schwelle';
 import type { TexterkennungZustand } from './texterkennung/zustand';
 import { KnopfLink } from '../bausteine';
 
@@ -89,6 +90,9 @@ export function TexterkennungPanel({
       <Zeitgrenze t={eintrag} />
 
       <Auftraege t={eintrag} />
+
+      {/* Expertenmodus (#1645): Schwelle für den Vorschlag des Mappentyps bei „Wohin gehört das?“. */}
+      <Schwelle />
     </>
   );
 }

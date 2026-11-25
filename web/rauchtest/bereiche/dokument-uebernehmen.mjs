@@ -66,7 +66,9 @@ rauchtest('Dokument übernehmen: Typ erkannt, Folgedokument abtrennen (#934)', {
 });
 
 rauchtest('Übernahme aus Markierung: Komma am Ende fällt weg (#1606)', { als: LENA }, async (s) => {
-  const brief = await eigenePost('Werkstatt Komma', ['Rechnung Nr. 4711, Werkstatt Beispiel 2027']);
+  // „Rechnung“ allein in der ersten Zeile: Seit #1657 trüge die Erkennung „Rechnung Nr. 4711“ selbst ein – hier geht es
+  // ums Markieren, also steht die Nummer hinter einem Wort, das die Erkennung nicht kennt.
+  const brief = await eigenePost('Werkstatt Komma', ['Rechnung\nBeleg 4711, Werkstatt Beispiel 2027']);
   await s.goto(BASIS + `/ablage/eingang/${brief.id}`);
   await s.waitForURL(new RegExp(`/${brief.id}/uebernehmen$`));
   const mappe = s.getByRole('region', { name: 'Mappe' });

@@ -43,6 +43,7 @@ import './bereiche/werkbank.mjs';
 import './bereiche/sicherung-und-export.mjs';
 import './bereiche/handy-und-tabellen.mjs';
 import './bereiche/dokument-uebernehmen.mjs';
+import './bereiche/erkennung-vorschlaege.mjs';
 import './bereiche/seitenbetrachter.mjs';
 import './bereiche/bausteine-und-knoepfe.mjs';
 import './bereiche/dreiteilung-und-systemzustand.mjs';

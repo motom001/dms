@@ -132,6 +132,10 @@ Läuft ein Auftrag länger, bricht Ablago ihn ab:
 
 Liest ein Paket die Texte, gelten zusätzlich die Grenzen des [Paket-Läufers](pakete.md).
 
+## Expertenmodus: Schwelle für den Mappentyp { #schwelle }
+
+Ganz unten auf der Seite klappt **Expertenmodus** die **Schwelle für den Vorschlag** auf: Ab dieser Sicherheit wählt Ablago unter *Wohin gehört das?* einen Mappentyp vor (Vorgabe 30 %, erlaubt 5 bis 95 %). Darunter zeigt Ablago die besten Typen nur zur Auswahl. **Zurück zur Vorgabe** stellt 30 % wieder her. Wie sicher Ablago bei einem Dokument war, sieht man dort unter **Wie sicher ist Ablago?** ([Post](https://help.ablago.app/benutzer/aktuell/post/)). Meist hilft ein besserer Satz unter *Woran man ihn erkennt* am Mappentyp mehr als eine andere Schwelle.
+
 ## Aufträge
 
 Unter **Aufträge** siehst du in einer Liste mit fester Höhe die Dokumente je Stand (*Fehler*, *wartet*, *läuft*, *wartet auf Texterkennung*, *ausgelassen*, *fertig*) – mit Mappe (als Link), Größe, Zeitpunkt und dem **Grund** bei Fehlern oder ausgelassenen Dokumenten.

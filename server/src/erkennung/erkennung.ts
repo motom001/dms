@@ -219,7 +219,9 @@ export class Erkennung extends ErkennungPost {
         }
       }
     }
-    const roh: Record<string, unknown> = ausPaket ?? vorschlaegeAus(typ, text, angaben);
+    // Gleichbedeutende Wörter (#1657): „Rechnung“ und „Beleg“ – weitere Wörter, hinter denen eine Nummer steht.
+    const gruppen = ausPaket ? [] : await this.d.suche.gleichbedeutendeWoerter().catch(() => []);
+    const roh: Record<string, unknown> = ausPaket ?? vorschlaegeAus(typ, text, angaben, { gruppen });
     // Hinweise am Vorschlag kommen nur aus dem Kern (eingebaute Erkennung, E-Rechnung, Verweise) – nie aus einem Paket.
     const hinweise = new Map<string, string>();
     if (!ausPaket) for (const [k, v] of Object.entries(roh)) if ((v as Vorschlag).hinweis) hinweise.set(k, (v as Vorschlag).hinweis!);
@@ -267,6 +269,8 @@ export class Erkennung extends ErkennungPost {
     await this.nenntNummer(typ, vorschlaege, bezuege, erlaubt, z);
     // Folgt aus (#886): Felder, die aus einem vorgeschlagenen Verweis folgen, bekommen ihren Vorschlag dazu.
     await this.d.mappenEingaben.folgeVorschlaege(typ, { vorschlaege, bezuege, neu }, z);
+    // Aus Datum ableiten (#1648): z. B. Steuerjahr aus „Bis“ – die passende Mappe oder „… anlegen“.
+    await this.d.mappenEingaben.ausDatumVorschlaege(typ, { vorschlaege, bezuege, neu }, erlaubt, z);
     // Beim Auswählen übernehmen (#1037): Werte aus vorgeschlagenen Mappen, mit den Rechten der Person – erst hier, nach
     // einer Erkennung per Paket, damit sie nie an ein KI-Paket gehen (#796).
     await this.d.mappenEingaben.vorbelegenVorschlaege(typ, { vorschlaege, bezuege, neu }, erlaubt, mappe, z);

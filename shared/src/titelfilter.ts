@@ -149,10 +149,16 @@ const LEER_MIT_TRENNER = new RegExp(`(^\\s*|${TRENNER})${LEER}(${TRENNER})?`, 'g
 /**
  * Entfernt leere Platzhalter samt einem Trenner (– — · | / , ; › » oder „ - “, „ > “):
  * „Strom – ␀ – 2026“ → „Strom – 2026“, „␀ · 2026“ → „2026“, „Strom – ␀“ → „Strom“.
+ * Satzzeichen direkt hinter einem leeren Platzhalter (#1657, dms-registry#258): kein Leerzeichen davor
+ * („Werkstatt ␀: 20.11.2026“ → „Werkstatt: 20.11.2026“), am Anfang und am Ende fallen sie mit weg
+ * („␀ ␀: 03.04.2026“ → „03.04.2026“, „Werkstatt: ␀“ → „Werkstatt“).
  */
 export function ohneLeereTeile(s: string): string {
   let alt: string;
-  let neu = s;
+  let neu = s
+    .replace(new RegExp(`^(?:\\s*${LEER})+\\s*[:;,]\\s*`), '')
+    .replace(new RegExp(`\\s*[:;,]\\s*(?:${LEER}\\s*)+$`), '')
+    .replace(new RegExp(`(?:\\s*${LEER})+(?=[:;,.!?)])`, 'g'), LEER);
   do {
     alt = neu;
     neu = alt.replace(LEER_MIT_TRENNER, (_m, vor: string, nach: string | undefined) => (vor.trim() === '' ? '' : (nach ?? '')));

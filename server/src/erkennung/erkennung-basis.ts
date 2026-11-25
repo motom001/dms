@@ -36,6 +36,7 @@ import { type Mappentyp, type Feld, auswahlText, type Werte, type Mappe, geschue
 import { liesMerkmale, MERKMALE_EINSTELLUNG } from '../../../shared/src/merkmale';
 import { merkmalFeld, istEigeneOrganisation } from '../../../shared/src/organisation';
 import { ohneErkennung } from '../../../shared/src/anlagen';
+import { liesSchwelle, SCHWELLE_MAX, SCHWELLE_MIN } from '../../../shared/src/klassifizierung';
 
 /**
  * Was Erkennung und Klassifizierung vom Dienst brauchen (#1278, Schritt 5b: schmaler Anschluss statt der ganzen Klasse `Dienst`): der Dienst bindet die Erkennung ein, sie
@@ -45,12 +46,12 @@ export interface ErkennungDienst {
   readonly kern: Pick<Kern, 'liesGanz' | 'ereignis' | 'leistung'>;
   readonly rechtepruefung: Pick<ZugriffDienst, 'pruefeRecht' | 'rechteAn' | 'lesbare'>;
   readonly mappentypen: Pick<MappentypenDienst, 'ausDokumentVon' | 'ausPostZiele'>;
-  readonly mappenEingaben: Pick<MappenEingaben, 'vorbelegenVorschlaege' | 'folgeVorschlaege'>;
+  readonly mappenEingaben: Pick<MappenEingaben, 'vorbelegenVorschlaege' | 'folgeVorschlaege' | 'ausDatumVorschlaege'>;
   readonly post: Pick<PostDienst, 'automatischZuordnen'>;
   readonly ki: Pick<KiTypen, 'kiSperreFuer'>;
   readonly dokumente: Pick<DokumenteDienst, 'textAusDatei'>;
   readonly dokumentArchiv: Pick<DokumentArchivfassung, 'wortpositionen'>;
-  readonly suche: Pick<SucheDienst, 'aehnlicheTypen'>;
+  readonly suche: Pick<SucheDienst, 'aehnlicheTypen' | 'gleichbedeutendeWoerter'>;
 }
 
 export abstract class ErkennungBasis {
@@ -75,9 +76,14 @@ export abstract class ErkennungBasis {
     return v && typeof v.paket === 'string' ? { paket: v.paket, ...(v.abfluss ? { abfluss: true } : {}) } : { paket: null };
   }
 
-  /** Für die Werkbank: Standard und die Pakete, die es gibt. */
+  /** Ab welcher Sicherheit „Wohin gehört das?“ einen Mappentyp vorschlägt (#1645, Expertenmodus); fehlt = Vorgabe. */
+  async schwelle(): Promise<number> {
+    return liesSchwelle(await this.einst()?.lies('erkennung_schwelle'));
+  }
+
+  /** Für die Werkbank: Standard, die Pakete, die es gibt, und die Schwelle für den Mappentyp (#1645). */
   async engineStand() {
-    return { standard: await this.standard(), pakete: await this.erkennPakete() };
+    return { standard: await this.standard(), pakete: await this.erkennPakete(), schwelle: await this.schwelle() };
   }
 
   /**
@@ -95,7 +101,16 @@ export abstract class ErkennungBasis {
   async setzeStandard(e: unknown): Promise<ReturnType<ErkennungBasis['engineStand']>> {
     const s = this.einst();
     if (!s) throw new Fachfehler(404, t('meldungen.erkennung.einstellungen-sind-nicht'));
-    const x = (e ?? {}) as { paket?: unknown; abfluss?: unknown };
+    const x = (e ?? {}) as { paket?: unknown; abfluss?: unknown; schwelle?: unknown };
+    // Nur die Schwelle (#1645, Expertenmodus): die Wahl der Erkennung bleibt, wie sie ist. null = zurück zur Vorgabe.
+    if ('schwelle' in x) {
+      const n = x.schwelle === null ? null : Number(x.schwelle);
+      if (n !== null && (!Number.isFinite(n) || n < SCHWELLE_MIN || n > SCHWELLE_MAX))
+        throw new Fachfehler(422, t('meldungen.erkennung.schwelle-ungueltig', { min: SCHWELLE_MIN * 100, max: SCHWELLE_MAX * 100 }));
+      await s.schreibe('erkennung_schwelle', n === null ? null : Math.round(n * 100) / 100);
+      log.info('Schwelle für den Mappentyp eingestellt', { schwelle: n ?? 'Vorgabe' });
+      if (!('paket' in x)) return this.engineStand();
+    }
     const paket = typeof x.paket === 'string' && x.paket && x.paket !== ENGINE_EINGEBAUT ? x.paket : null;
     if (paket) await this.pruefeWahl(paket, x.abfluss === true);
     await s.schreibe('erkennung_engine', paket ? { paket, ...(x.abfluss === true ? { abfluss: true } : {}) } : null);

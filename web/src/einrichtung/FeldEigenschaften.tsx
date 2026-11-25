@@ -5,7 +5,8 @@ import type { Mappentyp } from '../../../shared/src/model';
 import { moeglicheQuellen, moeglicheZielFelder } from '../../../shared/src/folgtaus';
 import { FRIST_STANDARD } from '../../../shared/src/fristen';
 import { FELDFORMATE, formatName, HEUTE, type Feldformat } from '../../../shared/src/feldformate';
-import { artenFuer, artVon, ERKENNUNG_HINWEIS_MAX, ERKENNUNGSARTEN, type Erkennungsart } from '../../../shared/src/erkennung';
+import { artenFuer, artVon, datumsPaare, ERKENNUNG_HINWEIS_MAX, ERKENNUNGSARTEN, type Erkennungsart } from '../../../shared/src/erkennung';
+import { moeglicheDatumsfelder, moeglicheJahresfelder } from '../../../shared/src/ausdatum';
 import { Link } from '../ort';
 import { t } from '../sprache';
 import { DatumEingabe, Feld, HakenFeld } from '../bausteine';
@@ -109,7 +110,17 @@ export function DatumGrenzen({ f, id, setze }: { f: EntwurfFeld; id: (x: string)
 }
 
 /** FeldDef-Eigenschaft „Aus Dokument füllen“ (#336, #391; bis #938 „Für die Erkennung nutzen“): Art und Erkennungshinweis. */
-export function ErkennungEditor({ f, id, setze }: { f: EntwurfFeld; id: (x: string) => string; setze(p: Partial<EntwurfFeld>): void }) {
+export function ErkennungEditor({
+  f,
+  id,
+  setze,
+  alleFelder = [],
+}: {
+  f: EntwurfFeld;
+  id: (x: string) => string;
+  setze(p: Partial<EntwurfFeld>): void;
+  alleFelder?: FeldDef[];
+}) {
   const an = !!f.erkennung;
   const geschaetzt = artVon({ key: f.key, label: f.label, typ: f.typ, format: f.format });
   return (
@@ -150,6 +161,114 @@ export function ErkennungEditor({ f, id, setze }: { f: EntwurfFeld; id: (x: stri
             value={f.erkennung?.hinweis ?? ''}
             onChange={(e) => setze({ erkennung: { ...f.erkennung, hinweis: e.target.value } })}
           />
+        </Feld>
+      )}
+      {an && f.typ === 'datum' && <ZeitraumEditor f={f} id={id} setze={setze} alleFelder={alleFelder} />}
+    </div>
+  );
+}
+
+/**
+ * Zeitraum (#1646) am Datumsfeld für das Ende: „Ende des Zeitraums ab …“ – welches Datumsfeld den Beginn trägt. Ohne Wahl
+ * ergibt es sich aus Kennung und Bezeichnung (Beginn/Ende, Von/Bis …); die Auswahl nennt, was Ablago dann annimmt.
+ */
+function ZeitraumEditor({
+  f,
+  id,
+  setze,
+  alleFelder,
+}: {
+  f: EntwurfFeld;
+  id: (x: string) => string;
+  setze(p: Partial<EntwurfFeld>): void;
+  alleFelder: FeldDef[];
+}) {
+  const andere = alleFelder.filter((x) => x.typ === 'datum' && x.key && x.key !== f.key);
+  if (!andere.length) return null;
+  const ohneWahl = alleFelder.map((x) => (x.key === f.key ? { ...x, erkennung: { ...x.erkennung, endeVon: undefined } } : x));
+  const auto = datumsPaare({ felder: ohneWahl as FeldDef[] }).find((p) => p.ende.key === f.key)?.beginn;
+  return (
+    <Feld beschriftung={t('mappentypen.editor.zeitraum-ende-von')} hinweis={t('mappentypen.editor.zeitraum-ende-von-hilfe')}>
+      <select
+        id={id('erkende')}
+        value={f.erkennung?.endeVon ?? ''}
+        onChange={(e) => setze({ erkennung: { ...f.erkennung, endeVon: e.target.value || undefined } })}>
+        <option value="">
+          {t('mappentypen.editor.automatisch', {
+            wert: auto ? ` – ${auto.label || auto.key}` : t('mappentypen.editor.zeitraum-keiner'),
+          })}
+        </option>
+        {andere.map((x) => (
+          <option key={x.key} value={x.key}>
+            {x.label || x.key}
+          </option>
+        ))}
+      </select>
+    </Feld>
+  );
+}
+
+/**
+ * Aus Datum ableiten (#1648): Das Verweisfeld schlägt die Mappe vor, deren Feld zum Jahr eines Datumsfelds dieser Mappe
+ * passt – z. B. Steuerjahr aus „Bis“. Nur ein Vorschlag; gibt es keine passende Mappe, bietet Ablago an, sie anzulegen.
+ */
+export function AusDatumEditor({
+  f,
+  id,
+  setze,
+  alleFelder,
+  felderVon,
+}: {
+  f: EntwurfFeld;
+  id: (x: string) => string;
+  setze(patch: Partial<EntwurfFeld>): void;
+  alleFelder: FeldDef[];
+  felderVon(typId: string): FeldDef[] | undefined;
+}) {
+  const daten = moeglicheDatumsfelder(alleFelder).filter((x) => x.key);
+  if (!daten.length && !f.ausDatum) return null;
+  const z = einzigesZiel(f);
+  const jahresfelder = z ? moeglicheJahresfelder(felderVon(z) ?? []) : [];
+  const a = f.ausDatum;
+  return (
+    <div className="raster folgtaus">
+      <Feld beschriftung={t('mappentypen.editor.aus-datum')} hinweis={t('mappentypen.editor.aus-datum-hilfe')}>
+        <select
+          id={id('ausdatum')}
+          value={a?.datumFeld ?? ''}
+          onChange={(e) =>
+            setze({
+              ausDatum: e.target.value
+                ? {
+                    datumFeld: e.target.value,
+                    zielFeld: a?.zielFeld || (jahresfelder.find((x) => /jahr|year/i.test(x.key)) ?? jahresfelder[0])?.key || '',
+                  }
+                : undefined,
+            })
+          }>
+          <option value="">{t('mappentypen.editor.folgt-aus-nicht')}</option>
+          {daten.map((x) => (
+            <option key={x.key} value={x.key}>
+              {x.label || x.key}
+            </option>
+          ))}
+          {a && !daten.some((x) => x.key === a.datumFeld) && <option value={a.datumFeld}>{a.datumFeld}</option>}
+        </select>
+      </Feld>
+      {a && (
+        <Feld
+          beschriftung={t('mappentypen.editor.aus-datum-jahr')}
+          hinweis={!jahresfelder.length && t('mappentypen.editor.aus-datum-kein-jahr')}>
+          <select id={id('ausdatum-ziel')} value={a.zielFeld} onChange={(e) => setze({ ausDatum: { ...a, zielFeld: e.target.value } })}>
+            {!jahresfelder.some((x) => x.key === a.zielFeld) && (
+              <option value={a.zielFeld}>{a.zielFeld || t('mappentypen.editor.bitte-waehlen')}</option>
+            )}
+            {jahresfelder.map((x) => (
+              <option key={x.key} value={x.key}>
+                {x.label || x.key}
+              </option>
+            ))}
+          </select>
         </Feld>
       )}
     </div>

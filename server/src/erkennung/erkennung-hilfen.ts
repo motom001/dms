@@ -113,7 +113,7 @@ export interface TypVorschlaege {
   /** Titel der vorgeschlagenen Mappen in Verweisfeldern. */
   bezuege: Record<string, MappenBezug>;
   /** Verweisfeld ohne passende Mappe: „neue Organisation mit diesen Angaben anlegen“. */
-  neu: Record<string, { typId: string; werte: Record<string, string>; fundstelle: string }>;
+  neu: Record<string, { typId: string; werte: Record<string, string | number>; fundstelle: string }>;
   /** Wie viele Werte die Prüfung verworfen hat. */
   verworfen: number;
   /** Länge des gelesenen Texts (0 = nichts gelesen). */

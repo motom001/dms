@@ -194,7 +194,7 @@ function FeldEditor({ p, id }: { p: FeldZeileProps; id: (x: string) => string })
             {besonders}
           </>
         )}
-        {ERKENNUNG_FELDTYPEN.includes(f.typ) && <ErkennungEditor f={f} id={id} setze={setze} />}
+        {ERKENNUNG_FELDTYPEN.includes(f.typ) && <ErkennungEditor f={f} id={id} setze={setze} alleFelder={p.alleFelder} />}
         {WIEDERFINDEN_FELDTYPEN.includes(f.typ) && <WiederfindenEditor f={f} setze={setze} />}
       </fieldset>
       {/* Beschriftungen der festen Werte (#728) – auch an Systemfeldern wie Stand oder Kanal der Post. */}

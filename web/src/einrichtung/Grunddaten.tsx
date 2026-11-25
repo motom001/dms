@@ -2,7 +2,6 @@ import {
   inAllgemeinerSuche,
   schluesselAus,
   zieleVon,
-  ERKENNBAR_AN_MAX,
   MEHRZAHL_MAX,
   type Feld as FeldDef,
   type Mappentyp,
@@ -135,8 +134,8 @@ export function GrunddatenBereich({ z }: { z: TypZustand }) {
 }
 
 /**
- * Grunddaten (#937): „Kann aus Post angelegt werden“ und „Woran man ihn erkennt“ – Grundlage für „Dokument übernehmen“.
- * Ohne eigene Wahl gilt die Vorgabe: an, wenn der Typ ein Dokumentenregister hat.
+ * Grunddaten (#937): „Kann aus Post angelegt werden“ – Grundlage für „Dokument übernehmen“. Ohne eigene Wahl gilt die
+ * Vorgabe: an, wenn der Typ ein Dokumentenregister hat. „Woran man ihn erkennt“ steht seit #1645 im Abschnitt „Erkennung“.
  */
 function DokumentUebernehmen({ e, setE }: { e: Entwurf; setE: (f: (x: Entwurf) => Entwurf) => void }) {
   const vorgabe = e.register.some((r) => r.art === 'dokumente');
@@ -152,18 +151,6 @@ function DokumentUebernehmen({ e, setE }: { e: Entwurf; setE: (f: (x: Entwurf) =
           onChange={(ev) => setE((x) => ({ ...x, ausPost: ev.target.checked === vorgabe ? null : ev.target.checked }))}
         />
       </HakenFeld>
-      <SprachText
-        beschriftung={t('mappentypen.editor.woran-erkennt')}
-        optional
-        hinweis={t('mappentypen.editor.woran-erkennt-hilfe', { anzahl: ERKENNBAR_AN_MAX - e.erkennbarAn.length })}
-        id="typ-erkennbar"
-        wert={e.erkennbarAn}
-        placeholder={t('mappentypen.editor.woran-erkennt-beispiel')}
-        teil="erkennbarAn"
-        beschriftungen={e.beschriftungen}
-        setzeWert={(erkennbarAn) => setE((x) => ({ ...x, erkennbarAn: erkennbarAn.slice(0, ERKENNBAR_AN_MAX) }))}
-        setzeBeschriftungen={(b) => setE((x) => ({ ...x, beschriftungen: b as Beschriftungen<TypTeile> | undefined }))}
-      />
     </>
   );
 }

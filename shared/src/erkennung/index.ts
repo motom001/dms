@@ -21,3 +21,5 @@ export * from './angaben';
 export * from './abgleich';
 export * from './vorschlaege';
 export * from './schema';
+export * from './nummern';
+export * from './zeitraum';

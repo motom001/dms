@@ -8,6 +8,8 @@ import { esc, domainVon, wertMuster } from './abgleich';
 import { formatFehler } from '../feldformate';
 import { leseZeitraum, leseProzent } from '../feldarten';
 import { optionTexte } from '../beschriftung';
+import { nummerHinterWort, nummernWoerter } from './nummern';
+import { datenIn, datumsPaare, zeitraumVorschlaege } from './zeitraum';
 
 /* ---------- Vorschläge für die Felder eines Mappentyps ---------- */
 
@@ -145,13 +147,28 @@ interface VorschlagLauf {
   /** Schon in einem Feld vorgeschlagene E-Mail-Adressen und Telefonnummern – das nächste Feld bekommt die nächste. */
   benutzt: Set<string>;
   setze: (f: Feld, wert: Wert, fund: { sicherheit: Sicherheit; fundstelle: string }) => void;
+  /** Gruppen gleichbedeutender Wörter (#1657): weitere Wortformen, hinter denen eine Nummer steht. */
+  gruppen: readonly (readonly string[])[];
+  /** Datumspaare (#1646): je Feld das andere Feld des Paars. */
+  partner: Map<string, string>;
+  vorschlag: (k: string) => Vorschlag | undefined;
+}
+
+/** Was die Erkennung zusätzlich zum Text nutzt (#1657): Gruppen gleichbedeutender Wörter aus Werkbank und Paketen. */
+export interface VorschlagOptionen {
+  gruppen?: readonly (readonly string[])[];
 }
 
 /**
  * Vorschläge für die Felder eines Typs aus den gefundenen Angaben (ohne Verweise – die gleicht der Server
  * mit vorhandenen Mappen ab). Werte sind schon im Format der Feldart (Datum ISO, Betrag mit Währung).
  */
-export function vorschlaegeAus(t: Pick<Mappentyp, 'felder'>, text: string, a: Angaben = findeAngaben(text)): Vorschlaege {
+export function vorschlaegeAus(
+  t: Pick<Mappentyp, 'felder'>,
+  text: string,
+  a: Angaben = findeAngaben(text),
+  opt: VorschlagOptionen = {},
+): Vorschlaege {
   const v: Vorschlaege = {};
   const felder = fuellfelder(t);
   const hatArt = (x: Erkennungsart) => felder.some((f) => f.art === x);
@@ -167,7 +184,24 @@ export function vorschlaegeAus(t: Pick<Mappentyp, 'felder'>, text: string, a: An
       if (wert !== '' && wert != null && !v[f.key] && passt(f, wert))
         v[f.key] = { wert, sicherheit: fund.sicherheit, fundstelle: fund.fundstelle };
     },
+    gruppen: opt.gruppen ?? [],
+    partner: new Map(
+      datumsPaare(
+        t,
+        felder.map((x) => x.feld),
+      ).flatMap((p) => [
+        [p.beginn.key, p.ende.key],
+        [p.ende.key, p.beginn.key],
+      ]),
+    ),
+    vorschlag: (k) => v[k],
   };
+  // Zeitraum (#1646): Datumspaare („vom 01.07.2012 – 31.07.2012“) gehen an Beginn und Ende – vor dem einzelnen Datum.
+  // Ein Erkennungshinweis mit Muster (#391) gewinnt auch hier.
+  for (const [k, x] of Object.entries(zeitraumVorschlaege(t, text, felder))) {
+    const f = t.felder.find((y) => y.key === k);
+    if (f && !musterAusHinweis(f.erkennung?.hinweis)?.test(text)) lauf.setze(f, x.wert, x);
+  }
   for (const { feld: f, art } of felder) {
     // Erkennungshinweis mit Muster (#391): gewinnt vor allem anderen.
     if (nachMuster(f, lauf)) continue;
@@ -240,9 +274,14 @@ function vorschlagKontakt(f: Feld, art: (typeof KONTAKT_ARTEN)[number], l: Vorsc
 function vorschlagWert(f: Feld, art: (typeof WERT_ARTEN)[number], l: VorschlagLauf) {
   const { a, text } = l;
   switch (art) {
-    case 'datum':
+    case 'datum': {
+      // Zwei Felder eines Paars (#1646) nicht mit demselben Wert aus einer Fundstelle, in der zwei Daten stehen.
+      const p = l.partner.get(f.key);
+      const andere = p ? l.vorschlag(p) : undefined;
+      if (a.datum && andere?.wert === a.datum.wert && andere.fundstelle === a.datum.fundstelle && datenIn(a.datum.fundstelle) >= 2) return;
       if (a.datum) l.setze(f, a.datum.wert, a.datum);
       return;
+    }
     case 'betrag':
       if (a.betrag) l.setze(f, f.typ === 'zahl' ? a.betrag.wert.betrag : a.betrag.wert, a.betrag);
       return;
@@ -307,10 +346,13 @@ function vorschlagNummer(f: Feld, l: VorschlagLauf) {
     klein(s)
       .replace(/[^a-z]/g, '')
       .replace(/(nummer|nr)$/, '');
-  const n = l.a.nummern.find((x) => {
-    const s = stamm(x.label);
-    return !!s && (s === stamm(f.label) || s === stamm(f.key));
-  });
+  const n =
+    l.a.nummern.find((x) => {
+      const s = stamm(x.label);
+      return !!s && (s === stamm(f.label) || s === stamm(f.key));
+    }) ??
+    // Ohne feste Beschriftung (#1657): direkt hinter dem Wort des Felds („Rechnung R-2026-1120“).
+    nummerHinterWort(l.text, nummernWoerter(f, l.gruppen));
   if (n) l.setze(f, f.typ === 'zahl' ? Number(n.wert.replace(/\D/g, '')) || '' : n.wert, n);
 }
 

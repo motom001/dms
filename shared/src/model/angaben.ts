@@ -88,6 +88,23 @@ export interface FeldErkennung {
   art?: Erkennungsart;
   /** Erkennungshinweis, z. B. „Kundennummer steht oben rechts, Muster 100-####“ (# = Ziffer). */
   hinweis?: string;
+  /**
+   * Nur am Datumsfeld für das Ende eines Zeitraums (#1646): Kennung des Datumsfelds für den Beginn („Ende des
+   * Zeitraums ab …“). Steht im Dokument ein Zeitraum („vom 01.07.2012 – 31.07.2012“), bekommt der Beginn das erste
+   * Datum und dieses Feld das zweite. Fehlt = aus Kennung und Bezeichnung (Beginn/Ende, Von/Bis …).
+   */
+  endeVon?: string;
+}
+
+/**
+ * Verweisfeld aus einem Datum ableiten (#1648), z. B. Steuerjahr aus „Bis“: Ablago schlägt die Mappe des Zieltyps vor,
+ * deren Feld `zielFeld` zum Jahr des Datumsfelds `datumFeld` dieser Mappe passt – gibt es keine, „… anlegen“.
+ */
+export interface AusDatum {
+  /** Datumsfeld dieser Mappe. */
+  datumFeld: string;
+  /** Feld des Zieltyps mit dem Jahr (Text oder Zahl, z. B. „jahr“) oder ein Datumsfeld (gleiches Jahr). */
+  zielFeld: string;
 }
 
 /**

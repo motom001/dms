@@ -16,9 +16,11 @@
  * fällt mit Hinweis weg. Es wird nichts gespeichert und nichts geschrieben: Das Ergebnis ist ein Vorschlag.
  * Netzaufrufe der Pakete protokolliert der Paket-Läufer (#807).
  */
-import { typAusText } from '../../../shared/src/erkennung';
+import { merkmalsfelder, typAusText } from '../../../shared/src/erkennung';
 import {
+  erkennbarImText,
   KANDIDATEN_MAX,
+  SCHWELLE_STANDARD,
   KLASSIFIZIEREN_HINWEIS,
   KLASSIFIZIEREN_TEXT_MAX,
   klassifizierSchema,
@@ -28,6 +30,7 @@ import {
   type Kandidat,
   type Klassbeleg,
   type Klassifizierung as Ergebnis,
+  type Typgrund,
   type Wegstand,
 } from '../../../shared/src/klassifizierung';
 import { zieleVon, type MappenBezug, type Mappentyp } from '../../../shared/src/model';
@@ -54,8 +57,8 @@ export const KLASSIFIZIEREN_MS = 45_000;
 export const AEHNLICH_MS = 5_000;
 /** Höchstens so viele ähnliche Mappen zählen. */
 export const AEHNLICHE_MAX = 10;
-/** Ab dieser verbundenen Sicherheit wird ein Typ vorgeschlagen (die Überschrift im Text allein reicht). */
-export const VORSCHLAG_AB = 0.3;
+/** Ab dieser verbundenen Sicherheit wird ein Typ vorgeschlagen (die Überschrift im Text allein reicht) – Vorgabe; seit #1645 einstellbar. */
+export const VORSCHLAG_AB = SCHWELLE_STANDARD;
 /** Gewicht der Kern-Erkennung (Name des Typs als Überschrift). */
 export const KERN_SICHERHEIT = 0.6;
 /** Gewicht des Abgleichs (starkes Merkmal bzw. nur schwache), geteilt durch die Zahl der Kandidaten mit passendem Verweis. */
@@ -67,8 +70,8 @@ const DOKS_MAX = 10;
 export class Klassifizierung {
   constructor(
     private d: ErkennungDienst,
-    /** Nur Standard-Weg und Abgleich (#1278, Schritt 5b: statt der ganzen Klasse `Erkennung`). */
-    private erkennung: Pick<ErkennungPositionen, 'standard' | 'abgleich'>,
+    /** Nur Standard-Weg, Abgleich und Schwelle (#1278, Schritt 5b: statt der ganzen Klasse `Erkennung`). */
+    private erkennung: Pick<ErkennungPositionen, 'standard' | 'abgleich' | 'schwelle'>,
     private repo: () => Repo,
   ) {}
 
@@ -116,7 +119,10 @@ export class Klassifizierung {
       { weg: 'abgleich', stand: abgleich.belege.length ? 'ok' : 'leer' },
     ];
     const typen = verbindeWege(belege, name);
-    const vorschlag = typen[0] && typen[0].sicherheit >= VORSCHLAG_AB ? typen[0] : null;
+    const schwelle = await this.erkennung.schwelle();
+    const vorschlag = typen[0] && typen[0].sicherheit >= schwelle ? typen[0] : null;
+    // Wie sicher ist Ablago? (#1645): je möglichem Typ, was fehlte – nur Kennungen und Zahlen, nichts davon ins Protokoll.
+    const gruende = await this.gruende(text, ziele, abgleich.gefunden, paketWege.aehnlich);
     const bezuege = Object.fromEntries(
       Object.entries(abgleich.bezuege).filter(([id]) => typen.some((x) => x.belege.some((b) => b.mappeId === id))),
     );
@@ -128,7 +134,37 @@ export class Klassifizierung {
       sicherheit: vorschlag?.sicherheit ?? 0,
       ms: Date.now() - start,
     });
-    return { vorschlag, typen, wege, ohneText, bezuege };
+    return { vorschlag, typen, wege, ohneText, bezuege, schwelle, gruende };
+  }
+
+  /**
+   * Was für oder gegen jeden möglichen Typ spricht (#1645): Name nicht als Überschrift, keine bekannte Mappe hinter einem
+   * Verweisfeld (z. B. kein bekanntes Konto, gesucht über die IBAN), wie viel von „Woran man ihn erkennt“ im Dokument steht
+   * und – mit einem Paket für Ähnlichkeit – zu wie vielen abgelegten Mappen das Dokument ähnlich ist.
+   */
+  private async gruende(
+    text: string,
+    ziele: Mappentyp[],
+    gefunden: ReadonlySet<string>,
+    aehnlich: ReadonlyMap<string, number>,
+  ): Promise<Record<string, Typgrund[]>> {
+    const alle = new Map((await this.repo().listeTypen()).map((x) => [x.id, x] as const));
+    const erg: Record<string, Typgrund[]> = {};
+    for (const zt of ziele) {
+      const g: Typgrund[] = [];
+      if (!typAusText(text, [zt])) g.push({ art: 'ueberschrift-fehlt' });
+      for (const f of zt.felder.filter((x) => x.typ === 'referenz' && !x.ausgeblendet)) {
+        const ziel = zieleVon(f)
+          .map((id) => alle.get(id))
+          .find((x) => x && x.id !== zt.id && !x.system && merkmalsfelder(x).length);
+        if (ziel && !gefunden.has(ziel.id)) g.push({ art: 'merkmal-fehlt', feld: f.key, typId: ziel.id });
+      }
+      g.push(zt.erkennbarAn?.trim() ? { art: 'erkennbar', ...erkennbarImText(zt.erkennbarAn, text) } : { art: 'erkennbar-leer' });
+      const n = aehnlich.get(zt.id);
+      if (n) g.push({ art: 'aehnlich', anzahl: n });
+      erg[zt.id] = g;
+    }
+    return erg;
   }
 
   /**
@@ -141,9 +177,10 @@ export class Klassifizierung {
     ziele: Mappentyp[],
     quellTypen: Set<string>,
     z?: Zugriff,
-  ): Promise<{ belege: Array<Klassbeleg & { typId: string }>; wege: Wegstand[] }> {
+  ): Promise<{ belege: Array<Klassbeleg & { typId: string }>; wege: Wegstand[]; aehnlich: Map<string, number> }> {
+    const aehnlich = new Map<string, number>();
     const pakete = this.anbieter?.pakete() ?? [];
-    if (!pakete.length) return { belege: [], wege: [] };
+    if (!pakete.length) return { belege: [], wege: [], aehnlich };
     const anfang = text.slice(0, KLASSIFIZIEREN_TEXT_MAX);
     const wahl = await this.erkennung.standard();
     const wege: Wegstand[] = [];
@@ -185,8 +222,12 @@ export class Klassifizierung {
           sprache: 'de',
         };
         // Ähnlichkeit: nur ein Paket ohne Netz, das selbst die Vektoren liefert – nur Typ und Maß, mit den Rechten beider.
-        if (!p.netz && p.vektoren)
-          eingang.aehnliche = (await this.d.suche.aehnlicheTypen(z, p.id, text, ids, AEHNLICHE_MAX, AEHNLICH_MS).catch(() => null)) ?? [];
+        if (!p.netz && p.vektoren) {
+          const liste = (await this.d.suche.aehnlicheTypen(z, p.id, text, ids, AEHNLICHE_MAX, AEHNLICH_MS).catch(() => null)) ?? [];
+          eingang.aehnliche = liste;
+          // Für „Wie sicher ist Ablago?“ (#1645): zu wie vielen abgelegten Mappen je Typ das Dokument ähnlich ist.
+          for (const x of liste) aehnlich.set(x.typ, (aehnlich.get(x.typ) ?? 0) + 1);
+        }
         try {
           const r = await this.anbieter!.klassifiziere(p.id, eingang, KLASSIFIZIEREN_MS);
           const roh = r.text.trim();
@@ -237,7 +278,7 @@ export class Klassifizierung {
       }),
     );
     wege.sort((a, b) => (a.paket?.id ?? '').localeCompare(b.paket?.id ?? ''));
-    return { belege, wege };
+    return { belege, wege, aehnlich };
   }
 
   /**
@@ -249,12 +290,14 @@ export class Klassifizierung {
     text: string,
     ziele: Mappentyp[],
     z?: Zugriff,
-  ): Promise<{ belege: Array<Klassbeleg & { typId: string }>; bezuege: Record<string, MappenBezug> }> {
+  ): Promise<{ belege: Array<Klassbeleg & { typId: string }>; bezuege: Record<string, MappenBezug>; gefunden: Set<string> }> {
     const a = await this.erkennung.abgleich(text, undefined, z).catch(() => null);
-    if (!a?.treffer.length) return { belege: [], bezuege: {} };
+    if (!a?.treffer.length) return { belege: [], bezuege: {}, gefunden: new Set() };
     const belege: Array<Klassbeleg & { typId: string }> = [];
     // Eigene Organisation und Haushalt (#1043) stehen auf fast jedem Dokument – kein Beleg für einen Mappentyp.
     const treffer = a.treffer.filter((x) => !x.unsicher && !a.eigene?.includes(x.mappeId));
+    // Typen der wiedergefundenen Mappen (#1645): Was hier fehlt, nennt „Wie sicher ist Ablago?“.
+    const gefunden = new Set(treffer.map((x) => x.typId));
     for (const tr of treffer) {
       const zeigen = ziele.flatMap((zt) =>
         zt.felder
@@ -276,6 +319,6 @@ export class Klassifizierung {
         });
       }
     }
-    return { belege, bezuege: a.bezuege };
+    return { belege, bezuege: a.bezuege, gefunden };
   }
 }

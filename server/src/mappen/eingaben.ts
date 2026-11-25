@@ -52,6 +52,7 @@ import { istUuid, type Repo } from '../repo';
 import { t } from '../sprache/sprache';
 import type { ZugriffDienst } from '../zugriff';
 import { keinSchluessel, passwortWert } from './passwortfelder';
+import { ausDatumWert } from './ausdatum';
 
 /** Auswahlfilter (#172) zählen nichts – nur Bedingungen auf Felder. */
 
@@ -440,14 +441,56 @@ export class MappenEingaben {
     const typ = istUuid(x.typId) ? await this.repo.holeTyp(x.typId) : undefined;
     if (!typ || (z && !z.admin && z.typen && !z.typen.has(typ.id))) throw new Fachfehler(422, t('meldungen.dienst.unbekannter-mappentyp'));
     const werte = x.werte && typeof x.werte === 'object' ? (x.werte as Werte) : {};
-    const felder: Record<string, { quelle: string; wert: string | null; titel?: string; typId?: string }> = {};
+    const felder: Record<
+      string,
+      {
+        quelle: string;
+        wert: string | null;
+        titel?: string;
+        typId?: string;
+        neu?: { typId: string; werte: Record<string, string | number> };
+      }
+    > = {};
     for (const { feld: f, quelle, zielFeld } of folgeReihenfolge(typ.felder)) {
       const q = ersteId(werte[quelle.key]);
       if (!istUuid(q)) continue;
       const m = await this.folgeWert(quelle, zielFeld, f, q, z);
       felder[f.key] = m ? { quelle: quelle.key, wert: m.id, titel: m.titel ?? '', typId: m.typId } : { quelle: quelle.key, wert: null };
     }
+    // Aus Datum ableiten (#1648): je Verweisfeld, dessen Datumsfeld in `werte` steht, die passende Mappe oder „anlegen“.
+    for (const f of typ.felder.filter((x) => x.typ === 'referenz' && x.ausDatum && !felder[x.key] && x.ausDatum.datumFeld in werte)) {
+      const quelle = f.ausDatum!.datumFeld;
+      const r = await ausDatumWert({ repo: this.repo, rechte: this.rechtepruefung }, f, werte[quelle], z);
+      felder[f.key] = r?.mappe
+        ? { quelle, wert: r.mappe.id, titel: r.mappe.titel ?? '', typId: r.mappe.typId }
+        : { quelle, wert: null, ...(r?.neu ? { neu: r.neu } : {}) };
+    }
     return { felder };
+  }
+
+  /**
+   * Aus Datum ableiten (#1648) beim Ausfüllen aus Dokumenten: Hat die Erkennung das Datum vorgeschlagen, kommt für das
+   * Verweisfeld ein Vorschlag dazu (wenn es selbst keinen hat) – die passende Mappe, sonst „… anlegen“ (`neu`).
+   */
+  async ausDatumVorschlaege(
+    typ: Mappentyp,
+    v: { vorschlaege: Vorschlaege; bezuege: Record<string, MappenBezug>; neu: Record<string, unknown> },
+    erlaubt: (f: Feld) => boolean,
+    z?: Zugriff,
+  ): Promise<void> {
+    for (const f of typ.felder.filter((x) => x.typ === 'referenz' && x.ausDatum && !x.ausgeblendet && erlaubt(x))) {
+      const vd = v.vorschlaege[f.ausDatum!.datumFeld];
+      if (v.vorschlaege[f.key] || !vd) continue;
+      const r = await ausDatumWert({ repo: this.repo, rechte: this.rechtepruefung }, f, vd.wert, z);
+      if (!r) continue;
+      const d = typ.felder.find((x) => x.key === f.ausDatum!.datumFeld);
+      const fundstelle = t('meldungen.dienst.aus-datum', { feld: d?.label || f.ausDatum!.datumFeld, jahr: r.jahr });
+      if (r.mappe) {
+        v.vorschlaege[f.key] = { wert: f.mehrfach ? [r.mappe.id] : r.mappe.id, sicherheit: vd.sicherheit, fundstelle };
+        v.bezuege[r.mappe.id] = { titel: r.mappe.titel ?? '', typId: r.mappe.typId };
+        delete v.neu[f.key];
+      } else if (r.neu && !v.neu[f.key]) v.neu[f.key] = { ...r.neu, fundstelle };
+    }
   }
 
   /**
