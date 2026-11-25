@@ -136,6 +136,8 @@ function LinkUpdate({
                 umbauBestaetigt: x.umbauBestaetigt,
                 umbauEntscheidungen: x.umbauEntscheidungen,
                 sichtenErsetzen: x.sichtenErsetzen,
+                typTeileErsetzen: x.typTeileErsetzen,
+                felderBehalten: x.felderBehalten,
               })
             : await paketeApi.paketInstallieren({ id, version: vorschau.paket.version, ...x });
           await z.laden();

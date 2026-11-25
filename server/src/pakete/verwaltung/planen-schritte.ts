@@ -40,10 +40,12 @@ import {
   type PaketTyp,
   str,
   typverweise,
+  umbenennenIn,
 } from './format';
 import { freierName, gleicheQuelle, installierteErsetzt, offiziellBelegt, paketFelderAus, uebernahmePlan, vertrauen } from './hilfen';
 import { log } from './optionen';
 import { type AbhaengigkeitPlan, type SichtPlan, type TypPlan, type Vorschau } from './plan';
+import { genutzteOptionen, planeTypUpdate } from './typ-update';
 import { problem, type PlanLauf, type PlanMehr, type TypIdVon, type Uebernahme } from './planen-lauf';
 import {
   abschnitteNeu,
@@ -338,6 +340,16 @@ export abstract class PaketPlanSchritte extends PaketVorschauTeile {
 
   /** Vorhandener Typ (Update): was neu dazukommt, und Angaben im alten Textfeld, die ein Verweis übernimmt (#534). */
   private async vorhandenerTypPlan(l: PlanLauf, paketTyp: PaketTyp, vorhanden: Mappentyp, dmsSchluessel: string): Promise<TypPlan> {
+    // Änderungen an Vorhandenem (#1658): je Teil gegen den Paketstand; entfallende Felder mit der Zahl der Mappen mit Wert.
+    const upd = planeTypUpdate({
+      paketTyp,
+      aktuell: vorhanden,
+      stand: l.ich?.typStand?.[vorhanden.id],
+      umbenennen: umbenennenIn(l.paket, paketTyp.schluessel),
+      belegung: await this.d.kern.repo.belegung(vorhanden.id),
+      genutzt: await genutzteOptionen(paketTyp, vorhanden, () => this.d.mappen.listeMappen(vorhanden.id)),
+      kennungVon: (id) => l.typen.find((y) => y.id === id)?.schluessel,
+    });
     return {
       schluessel: paketTyp.schluessel,
       dmsSchluessel,
@@ -356,6 +368,8 @@ export abstract class PaketPlanSchritte extends PaketVorschauTeile {
       abschnitte: abschnitteNeu(paketTyp, vorhanden, (r) => [...(r.felder ?? []), ...neueFelderAuf(paketTyp, vorhanden, r)]).map(
         (r) => r.name,
       ),
+      ...(upd.aenderungen.length ? { aenderungen: upd.aenderungen } : {}),
+      ...(upd.entfaellt.length ? { entfaellt: upd.entfaellt } : {}),
       konflikt: null,
       vorschlag: null,
     };

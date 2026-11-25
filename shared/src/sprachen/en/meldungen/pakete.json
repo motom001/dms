@@ -273,6 +273,8 @@
   "pakete.umbau.von": "{wo}: “von” is not a folder type identifier ({wert}).",
   "pakete.umbau.nach": "{wo}: “nach” is not a folder type identifier ({wert}).",
   "pakete.umbau.gleich": "{wo}: “von” and “nach” are the same folder type.",
+  "pakete.umbau.umbenennen-nur-felder": "{wo}: A step into the same folder type only renames fields – “felder” is required, “setzen” and “register” are not possible here.",
+  "pakete.umbau.umbenennen-alt-da": "{wo}: The folder type still brings the field “{feld}” – only a field that is dropped can be renamed.",
   "pakete.umbau.doppelt": "{wo}: “{von}” appears in several steps.",
   "pakete.umbau.von-noch-da": "{wo}: the package still brings the folder type “{von}” – only a type it gives up can be converted.",
   "pakete.umbau.dms": "{wo}: no package converts Ablago’s own folder types (dms:…).",

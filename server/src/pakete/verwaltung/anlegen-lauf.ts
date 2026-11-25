@@ -29,6 +29,8 @@ import { anzahlTexte } from '../../../../shared/src/sprachpaket';
 import { archivOhneName, modulInfo } from './hilfen';
 import { type LegeAuftrag } from './plan';
 import { wiederfindenAus } from './update-neu';
+import { type Geschrieben } from './typ-update';
+import { type WerteAuftragNeu } from '../index';
 
 /** Was die Schritte beim Anlegen teilen. */
 export interface AnlegeLauf {
@@ -68,6 +70,11 @@ export interface AnlegeLauf {
   typMap: Record<string, string>;
   sichtMap: Record<string, string>;
   umbauErg: UmbauErgebnis | null;
+  /** Update vorhandener Typen (#1658): trotzdem ersetzen bzw. behalten (Vorschau) und was je Typ geschrieben wurde. */
+  typWahl: { ersetzen: Set<string>; behalten: Set<string> };
+  teileGeschrieben: Map<string, Geschrieben>;
+  /** Werte entfallener Felder, die nach dem Speichern im Hintergrund in die Notiz bzw. ins neue Feld gehen. */
+  werteAuftraege: WerteAuftragNeu[];
 }
 
 /** Vorgabe (#1038) → Id ihrer Mappe; eigene aus der Lage, fremde vorab gesucht. */
@@ -266,21 +273,28 @@ export function typStandNach(l: AnlegeLauf, nachher: Map<string, Mappentyp>): Re
     if (!t) continue;
     const jetztBild = typBild(t, (id) => nachher.get(id)?.schluessel);
     const vorBild = alt?.typStand?.[tid];
+    // #1658: Was das Update an Typ, Feldern und Registern geschrieben hat, steht danach so im Paketstand; entfernte und
+    // behaltene Felder fallen heraus (behaltene gehören jetzt der Verwaltung).
+    const g = l.teileGeschrieben.get(tid);
+    const jetztFeld = (f: TypBild['felder'][number]) => (g?.felder.has(f.key) ? (jetztBild.felder.find((x) => x.key === f.key) ?? f) : f);
     typStand[tid] = !vorBild
       ? jetztBild
       : {
           ...vorBild,
+          ...(g?.typ ? typEigenschaften(jetztBild) : {}),
           felder: [
-            ...vorBild.felder,
+            ...vorBild.felder.filter((f) => !g?.entfernt.has(f.key) && !g?.behalten.has(f.key)).map(jetztFeld),
             ...jetztBild.felder.filter(
               (f) => !vorBild.felder.some((g) => g.key === f.key) && !vorher.get(tid)?.felder.some((g) => g.key === f.key),
             ),
           ],
           register: [
             ...vorBild.register.map((r) => {
-              if (!abschnittRegister.get(tid)?.has(r.key)) return r;
-              const jetzt = jetztBild.register.find((g) => g.key === r.key);
-              return jetzt?.werte.abschnitte ? { ...r, werte: { ...r.werte, abschnitte: jetzt.werte.abschnitte } } : r;
+              const jetzt = jetztBild.register.find((x) => x.key === r.key);
+              if (g?.register.has(r.key) && jetzt) return jetzt;
+              const ohne = g?.entfernt.size ? ohneEntfernte(r, g.entfernt) : r;
+              if (!abschnittRegister.get(tid)?.has(r.key)) return ohne;
+              return jetzt?.werte.abschnitte ? { ...ohne, werte: { ...ohne.werte, abschnitte: jetzt.werte.abschnitte } } : ohne;
             }),
             ...jetztBild.register.filter(
               (r) => !vorBild.register.some((g) => g.key === r.key) && !vorher.get(tid)?.register.some((g) => g.key === r.key),
@@ -289,6 +303,20 @@ export function typStandNach(l: AnlegeLauf, nachher: Map<string, Mappentyp>): Re
         };
   }
   return typStand;
+}
+
+/** Typ-Eigenschaften eines Bilds (#1658), wie das Update sie schreibt. */
+const typEigenschaften = (b: TypBild) => ({
+  titelVorlage: b.titelVorlage,
+  beschreibung: b.beschreibung,
+  mehrzahl: b.mehrzahl ?? '',
+  erkennbarAn: b.erkennbarAn ?? '',
+});
+
+/** Ein Register im Paketstand ohne die entfernten Felder (#1658). */
+function ohneEntfernte(r: TypBild['register'][number], weg: Set<string>): TypBild['register'][number] {
+  const felder = r.werte.felder as string[] | undefined;
+  return felder?.some((k) => weg.has(k)) ? { ...r, werte: { ...r.werte, felder: felder.filter((k) => !weg.has(k)) } } : r;
 }
 
 /** Herausgeber, ersetzte Ids und nötige DMS-Version für den Eintrag des Pakets. */

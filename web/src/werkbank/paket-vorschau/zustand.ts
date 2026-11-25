@@ -26,6 +26,9 @@ export interface VorschauAntwort {
   umbauBestaetigt?: boolean;
   umbauEntscheidungen?: UmbauEntscheidungen;
   sichtenErsetzen?: string[];
+  /** Update vorhandener Mappentypen (#1658): Teile trotzdem ersetzen, entfallende Felder behalten. */
+  typTeileErsetzen?: string[];
+  felderBehalten?: string[];
   sichern?: boolean;
 }
 
@@ -93,6 +96,8 @@ function antwortVon(x: {
   umbau: unknown[];
   umbauStand: UmbauStand;
   ersetzen: string[];
+  typErsetzen: string[];
+  behalten: string[];
 }): VorschauAntwort {
   return {
     namen: x.namen,
@@ -107,6 +112,8 @@ function antwortVon(x: {
       ? { umbauBestaetigt: true, umbauEntscheidungen: x.umbauStand.entscheidungen, ...(x.umbauStand.sichern ? { sichern: true } : {}) }
       : {}),
     ...(x.ersetzen.length ? { sichtenErsetzen: x.ersetzen } : {}),
+    ...(x.typErsetzen.length ? { typTeileErsetzen: x.typErsetzen } : {}),
+    ...(x.behalten.length ? { felderBehalten: x.behalten } : {}),
   };
 }
 
@@ -133,6 +140,9 @@ export function useVorschau({
   const n = useNamen(v);
   // Ansichten (#1125): geänderte bzw. vor #1125 installierte bleiben – außer, sie sind hier angehakt.
   const [ersetzen, setErsetzen] = useState<string[]>([]);
+  // Mappentypen (#1658): Geändertes bleibt, Entfallendes geht – außer, es ist hier angehakt („Trotzdem …“, „Feld behalten“).
+  const [typErsetzen, setTypErsetzen] = useState<string[]>([]);
+  const [behalten, setBehalten] = useState<string[]>([]);
   const [beispiele, setBeispiele] = useState(false);
   const [mit, setMit] = useState(true);
   const [ok, setOk] = useState(false);
@@ -172,6 +182,8 @@ export function useVorschau({
     umbau,
     umbauStand,
     ersetzen,
+    typErsetzen,
+    behalten,
   });
   // Ohne eigene Knöpfe (#1168): bei jeder Änderung melden – verglichen als Text, damit gleiche Antworten nicht erneut kommen.
   const gemeldet = JSON.stringify(gesperrt ? null : antwort);
@@ -185,6 +197,10 @@ export function useVorschau({
     setOhneAuto,
     ersetzen,
     setErsetzen,
+    typErsetzen,
+    setTypErsetzen,
+    behalten,
+    setBehalten,
     beispiele,
     setBeispiele,
     mit,

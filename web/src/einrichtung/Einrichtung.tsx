@@ -15,6 +15,7 @@ import { GrunddatenBereich } from './Grunddaten';
 import { TitelEditor, TrefferlisteEditor } from './TitelUndListen';
 import { RegisterEditor } from './RegisterEditor';
 import { ArchivBereich, ErkennungBereich, StempelBereich } from './TypEinstellungen';
+import { UpdateUebernahme } from './Uebernahme';
 
 /**
  * Mappentyp-Editor (Werkbank → Mappentypen). Seit #1279 in Teilen: Entwurf (entwurf.ts), Zustand und Handlungen
@@ -183,6 +184,7 @@ function TypHinweise({ z }: { z: TypZustand }) {
           </p>
         </div>
       )}
+      {gespeichert && <UpdateUebernahme typId={gespeichert.id} />}
       {unpassend > 0 && (
         <div className="hinweis warn">
           <p>{t('mappentypen.editor.mappen-passen-nicht-zur', { anzahl: unpassend })}</p>

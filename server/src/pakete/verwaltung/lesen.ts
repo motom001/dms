@@ -73,7 +73,9 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
     ...(vt.vorgaben.length ? { vorgaben: vt.vorgaben } : {}),
     ...(vt.ergaenzungen.length ? { ergaenzungen: vt.ergaenzungen } : {}),
     ...(vt.vorlagenDateien.size ? { vorlagenDateien: vt.vorlagenDateien } : {}),
-    ...(umbau.length ? { umbau } : {}),
+    // Umbau-Schritt in denselben Typ (#1658): Felder umbenennen beim Update – kein Umzug, das macht typ-update.ts.
+    ...(umbau.some((s) => s.von !== s.nach) ? { umbau: umbau.filter((s) => s.von !== s.nach) } : {}),
+    ...(umbau.some((s) => s.von === s.nach) ? { umbenennen: umbau.filter((s) => s.von === s.nach) } : {}),
     ...(ma.aktionen.length ? { mappenaktionen: ma.aktionen } : {}),
     ...(ablaufvorlagen.length ? { ablaufvorlagen } : {}),
     // Kurzanleitung (#1047): Ungültiges übergeht Ablago still, wie ältere Versionen das ganze Feld.

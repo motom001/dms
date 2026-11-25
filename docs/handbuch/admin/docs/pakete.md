@@ -210,14 +210,35 @@ Das Löschprotokoll vermerkt entfernte Vorgaben als „Unbenutzte Vorgaben eines
 
 **Nach neuen Versionen suchen** fragt die Kataloge ab (auf Knopfdruck) und markiert unter **Installiert** jedes Paket, für das es Neueres gibt, mit der neuen Version. Im Paket zeigt **Auf … aktualisieren …** eine Vorschau mit dem, was dazukommt, und einem Link zu den Änderungen. Nach dem Update verschwindet der Merker sofort; gibt es inzwischen eine noch neuere Version, steht diese da.
 
-Ein Update **ergänzt nur** – außer es [baut um](#umbau), dann sagt die Vorschau das ausdrücklich:
+Ein Update bringt, was das Paket neu oder anders mitbringt – außer es [baut um](#umbau), dann sagt die Vorschau das ausdrücklich:
 
 - neue Mappentypen und Ansichten,
 - neue Felder und Register bei vorhandenen Mappentypen,
+- an vorhandenen Feldern, wo du noch nichts eingestellt hast: Aus Dokument füllen, Zum Wiederfinden, Beim Auswählen übernehmen, Formate und Grenzen, Beschriftungen, berechnete Felder und Abschnitte,
+- **Änderungen an vorhandenen Mappentypen** – siehe [Mappentypen beim Update](#mappentypen-beim-update),
 - neue [Vorgaben](#vorgaben) und Vorlagen; unveränderte Vorgaben bekommen die neue Fassung,
 - neue Fassungen der **Ansichten** des Pakets – nur für Ansichten, die noch so sind, wie das Paket sie angelegt hat (#1125).
 
-Es **löscht nichts** und **überschreibt nichts**, was du selbst geändert hast: Hast du einen Mappentyp umbenannt, Felder ergänzt oder eine Ansicht gelöscht, bleibt das so.
+Es **überschreibt nichts**, was du selbst geändert hast: Hast du einen Mappentyp umbenannt, Felder ergänzt oder eine Ansicht gelöscht, bleibt das so.
+
+### Mappentypen beim Update { #mappentypen-beim-update }
+
+Ablago merkt sich je Mappentyp, wie das Paket ihn zuletzt geschrieben hat – je **Teil**: die Angaben des Typs (Titel-Vorlage, Beschreibung, Mehrzahl, „Woran man ihn erkennt“), jedes Feld und jedes Register. Ein Update übernimmt, was sich im Paket geändert hat, **solange du diesen Teil nicht selbst geändert hast**:
+
+- **Titel-Vorlage**, Beschreibung, Mehrzahl und „Woran man ihn erkennt“,
+- an Feldern **Beschriftung**, Hilfetext, Grenzen, Aus Dokument füllen, Übersetzungen und die **Auswahlwerte** – neue kommen dazu; einer, den das Paket nicht mehr nennt, fällt nur weg, wenn keine Mappe ihn nutzt,
+- die **Reihenfolge der Felder** in einem Register.
+
+Hast du einen Teil geändert, bleibt er so. Die Vorschau sagt es („Feld „Saldo“ (Hilfetext) – von dir geändert, bleibt so“); mit **Trotzdem durch die Fassung im Paket ersetzen** nimmst du die Fassung des Pakets doch. Was du selbst angelegt hast, bleibt immer.
+
+**Felder, die das Paket nicht mehr mitbringt**, entfallen – ohne Rückfrage, und ohne dass etwas verloren geht:
+
+- Ohne Werte geht das Feld einfach weg.
+- Haben Mappen dort Werte, sagt die Vorschau es („„Zeitraum“ entfällt – die Werte aus 12 Mappen stehen danach in deren Notiz“). Nach dem Update steht der Wert in der Notiz jeder Mappe, mit der Kopfzeile „Aus dem Update von „Finanzen“ 3.1.0:“, und in ihrer Historie. Der Wert selbst bleibt an der Mappe (unter „Werte ohne Felddefinition“).
+- Benennt das Paket das Feld nur um, ziehen die Werte ins neue Feld („„Zeitraum“ heißt jetzt „Abrechnungszeitraum““).
+- Bei vielen Mappen läuft das **im Hintergrund**, in Schüben; die Oberfläche bleibt frei. Bis es fertig ist, steht am Mappentyp „Update von „Finanzen“ wird übernommen (412 von 735)“. Startet Ablago dazwischen neu, macht es dort weiter.
+- Hast du das Feld geändert, bleibt es (mit **Trotzdem entfernen** auf Wunsch). Willst du es als eigenes Feld behalten, setze unter **Für Fortgeschrittene: Felder behalten** den Haken; das Paket kümmert sich danach nicht mehr darum.
+- **Rückweg:** Die Fassung des Mappentyps vor dem Update bleibt unter [Fassungen](fassungen.md) erhalten. **Wiederherstellen** holt das Feld zurück – mit seinen Werten; die Notizen bleiben zum Nachsehen.
 
 **Ansichten des Pakets** (#1125): Unter **Ansichten** sagt die Vorschau je vorhandener Ansicht, was geschieht:
 

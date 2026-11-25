@@ -336,7 +336,7 @@ begriffe:
     beschreibung: The round button at the bottom right of every page (a folder with a face) with the window “Ask · Tips · Manual” (#1219). It never opens by itself.
   Paket:
     begriff: Package
-    beschreibung: An installable bundle of folder types, views and examples from a package catalogue, e.g. "Basis". An update only adds; it removes and changes nothing – except a conversion, which the preview shows explicitly.
+    beschreibung: An installable bundle of folder types, views and examples from a package catalogue, e.g. "Basis". An update brings what is new or different in the package; whatever the administration changed itself stays. What is dropped or converted, the preview shows beforehand.
   Beispiel-Mappe:
     begriff: Sample folder
     beschreibung: A folder with invented data that a package creates on request when installing (tick "Create sample folders"), so you can see what belongs in a folder – to try out, not to keep. Unchanged examples can be removed again together with their documents. Unlike a preset.

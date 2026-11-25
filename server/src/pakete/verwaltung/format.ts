@@ -184,6 +184,11 @@ export interface Paket {
   vorlagenDateien?: Map<string, Buffer>;
   /** Umbau-Schritte (#1041, `umbau` im Manifest): Mappentypen ziehen in Typen dieses Pakets (shared/src/umbau.ts). */
   umbau?: UmbauSchritt[];
+  /**
+   * Felder umbenennen (#1658): Umbau-Schritte mit `von` = `nach` (ein Typ dieses Pakets) – beim Update ziehen die Werte
+   * eines entfallenden Felds (`felder`: alt → neu) ins neue Feld, statt in die Notiz.
+   */
+  umbenennen?: UmbauSchritt[];
   /** Mitgelieferte Automatisierungen (#712, dms-registry #108), roh aus inhalt/automatisierungen.yaml; Typen als Paket-Schlüssel. */
   automatisierungen: PaketAutomatisierung[];
   readme: string;
@@ -274,3 +279,7 @@ export interface PaketAutomatisierung {
   /** Gleich eingeschaltet (#1082): beim Installieren mit gesetztem Haken angeboten; fehlt = nicht angegeben. */
   eingeschaltet?: boolean;
 }
+
+/** Felder umbenennen (#1658) für einen Typ des Pakets: alt → neu (leer, wenn das Paket nichts umbenennt). */
+export const umbenennenIn = (p: Pick<Paket, 'manifest' | 'umbenennen'>, schluessel: string): Record<string, string> =>
+  Object.assign({}, ...(p.umbenennen ?? []).filter((s) => s.nach === `${p.manifest.id}:${schluessel}`).map((s) => s.felder));

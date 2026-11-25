@@ -465,6 +465,8 @@ function Update({ x: zustand, id, quelle }: { x: DetailZustand; id: string; quel
               umbauBestaetigt: x.umbauBestaetigt,
               umbauEntscheidungen: x.umbauEntscheidungen,
               sichtenErsetzen: x.sichtenErsetzen,
+              typTeileErsetzen: x.typTeileErsetzen,
+              felderBehalten: x.felderBehalten,
             });
             // Umzug (#1084): Das Paket heißt jetzt anders – dorthin.
             if (r.id !== id) geheZu(`/werkbank/pakete/${r.id}`);

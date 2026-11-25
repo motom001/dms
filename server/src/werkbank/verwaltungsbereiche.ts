@@ -50,6 +50,8 @@ const REGELN: Regel[] = [
   R('*', '/api/werkbank/verwaltungsmodus*', NUR_GESAMT),
 
   // Ablage aufbauen
+  // Paket-Update (#1658): „Update wird übernommen (412 von 735)“ steht auch am Mappentyp.
+  R('GET', '/api/werkbank/pakete/uebernahme', 'pakete', 'typen'),
   R('*', '/api/werkbank/pakete*', 'pakete'),
   R('*', '/api/typen*', 'typen'),
   R('*', '/api/werkbank/berechtigungen*', 'typen'),

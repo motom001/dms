@@ -13,6 +13,9 @@ export interface TypBild {
   titelVorlage: string;
   /** Name und Beschreibung je Sprache (#728); fehlt in älteren Ständen. */
   beschriftungen?: Mappentyp['beschriftungen'];
+  /** Mehrzahl (#1446) und „Woran man ihn erkennt“ (#937) – Teil der Typ-Eigenschaften beim Update (#1658); fehlen in älteren Ständen. */
+  mehrzahl?: string;
+  erkennbarAn?: string;
   felder: Array<{ key: string; label: string; werte: Record<string, unknown> }>;
   register: Array<{ key: string; name: string; werte: Record<string, unknown> }>;
 }
@@ -119,6 +122,8 @@ export function typBild(t: Mappentyp, kennungVon?: (typId: string) => string | u
     beschreibung: t.beschreibung ?? '',
     titelVorlage: t.titelVorlage ?? '',
     ...(t.beschriftungen ? { beschriftungen: t.beschriftungen } : {}),
+    ...(t.mehrzahl ? { mehrzahl: t.mehrzahl } : {}),
+    ...(t.erkennbarAn ? { erkennbarAn: t.erkennbarAn } : {}),
     felder: t.felder.filter((f) => !f.system).map(feld),
     register: t.register.map((r) => ({
       key: r.key,

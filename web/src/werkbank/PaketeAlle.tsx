@@ -104,6 +104,8 @@ export function AlleAktualisieren({ z }: { z: PaketeZustand }) {
           umbauBestaetigt: x?.umbauBestaetigt,
           umbauEntscheidungen: x?.umbauEntscheidungen,
           sichtenErsetzen: x?.sichtenErsetzen,
+          typTeileErsetzen: x?.typTeileErsetzen,
+          felderBehalten: x?.felderBehalten,
         });
         stand[e.u.id] = { zustand: 'fertig', text: t('werkbank.pakete.alle.fertig', { version: r.version }) };
       } catch (f) {

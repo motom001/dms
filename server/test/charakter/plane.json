@@ -3301,6 +3301,15 @@
         "formate": [],
         "beschriftungen": 0,
         "abschnitte": ["Daten"],
+        "aenderungen": [
+          {
+            "teil": "akte/typ",
+            "art": "typ",
+            "name": "Akte",
+            "was": ["beschreibung"],
+            "zustand": "aktualisiert"
+          }
+        ],
         "konflikt": null,
         "vorschlag": null
       },
@@ -3705,6 +3714,15 @@
         "formate": [],
         "beschriftungen": 0,
         "abschnitte": ["Daten"],
+        "aenderungen": [
+          {
+            "teil": "akte/typ",
+            "art": "typ",
+            "name": "Akte",
+            "was": ["beschreibung"],
+            "zustand": "aktualisiert"
+          }
+        ],
         "konflikt": null,
         "vorschlag": null
       },
@@ -4105,6 +4123,15 @@
         "formate": [],
         "beschriftungen": 0,
         "abschnitte": ["Daten"],
+        "aenderungen": [
+          {
+            "teil": "akte/typ",
+            "art": "typ",
+            "name": "Akte",
+            "was": ["beschreibung"],
+            "zustand": "aktualisiert"
+          }
+        ],
         "konflikt": null,
         "vorschlag": null
       },
@@ -4434,6 +4461,15 @@
         "formate": [],
         "beschriftungen": 0,
         "abschnitte": ["Daten"],
+        "aenderungen": [
+          {
+            "teil": "akte/typ",
+            "art": "typ",
+            "name": "Akte",
+            "was": ["beschreibung"],
+            "zustand": "aktualisiert"
+          }
+        ],
         "konflikt": null,
         "vorschlag": null
       },
@@ -7148,7 +7184,7 @@
       "maschinell": true,
       "abdeckung": {
         "vorhanden": 1,
-        "gesamt": 13737,
+        "gesamt": 13774,
         "prozent": 0
       },
       "uebergangen": 0,
@@ -7230,7 +7266,7 @@
       "maschinell": true,
       "abdeckung": {
         "vorhanden": 1,
-        "gesamt": 13737,
+        "gesamt": 13774,
         "prozent": 0
       },
       "uebergangen": 1,
@@ -7313,7 +7349,7 @@
       "maschinell": true,
       "abdeckung": {
         "vorhanden": 1,
-        "gesamt": 13737,
+        "gesamt": 13774,
         "prozent": 0
       },
       "uebergangen": 0,
@@ -7396,6 +7432,15 @@
         "formate": [],
         "beschriftungen": 0,
         "abschnitte": [],
+        "aenderungen": [
+          {
+            "teil": "ablageort/typ",
+            "art": "typ",
+            "name": "Ablageort",
+            "was": ["titelVorlage"],
+            "zustand": "unbekannt"
+          }
+        ],
         "konflikt": null,
         "vorschlag": null
       }

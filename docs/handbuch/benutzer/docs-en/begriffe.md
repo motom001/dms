@@ -437,7 +437,7 @@ The first page of the workbench – what needs doing in Ablago right now, with n
 See also: [Workbench](#werkbank).
 
 <a id="paket"></a>**Package** (*Paket*) · ~ with explanation · administrators  
-An installable bundle of folder types, views and examples from a package catalogue, e.g. "Basis". An update only adds; it removes and changes nothing – except a conversion, which the preview shows explicitly.  
+An installable bundle of folder types, views and examples from a package catalogue, e.g. "Basis". An update brings what is new or different in the package; whatever the administration changed itself stays. What is dropped or converted, the preview shows beforehand.  
 See also: [Package catalogue](#paketkatalog), [Expert mode](#expertenmodus), [Package runner](#paket-laufer), [Publisher](#herausgeber).
 
 <a id="paketkatalog"></a>**Package catalogue** (*Paketkatalog*) · ~ with explanation · administrators  

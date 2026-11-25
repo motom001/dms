@@ -48,7 +48,7 @@ import type { Tresor } from '../geheimnisse/tresor';
 import { Uebersetzung } from '../sprache/uebersetzung';
 import type { MailText } from '../mail/mail';
 import { Fassungen, typGegenstand, sichtGegenstand, nummernkreisGegenstand, stempelGegenstand } from '../fassungen';
-import { paketEinstellungen } from '../pakete/index';
+import { paketEinstellungen, UpdateWerte } from '../pakete/index';
 import { BerechtigungenDienst } from '../berechtigungen';
 import { sichereZuordnung, type PostErkennung } from '../erkennung/erkennung';
 import { WerkbankDienst } from '../werkbank';
@@ -145,6 +145,12 @@ export abstract class DienstBauteile {
    * übrigen melden sich selbst an. Die Repo-Hülle (`mitFassungen`, im Konstruktor) hält nach jeder Änderung an Typen,
    * Ansichten, Nummernkreisen und Automatisierungsvorlagen die Fassung fest – auf jedem Weg, auch in Transaktionen.
    */
+  /** Werte entfallener Felder nach einem Paket-Update (#1658): im Hintergrund in Schüben, setzt nach Neustart fort. */
+  get updateWerte(): UpdateWerte {
+    return (this.updateWerteDienst ??= new UpdateWerte(this.kern));
+  }
+  private updateWerteDienst?: UpdateWerte;
+
   get fassungen(): Fassungen {
     return (this.fassungenDienst ??= this.baueFassungen());
   }

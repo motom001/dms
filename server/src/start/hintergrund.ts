@@ -101,6 +101,8 @@ export async function starteHintergrund(bisher: Bisher) {
   // Leistungen (#1569): in jedem Prozess (Sperre in der Datenbank); Laufendes zurückstellen nur der Leiter, und nur allein.
   await dienst.leistungen.start({ zurueckstellen: leiter && lebt.allein });
   if (leiter) {
+    // Paket-Update (#1658): Werte entfallener Felder weiter übertragen, wo ein Neustart sie unterbrochen hat.
+    void dienst.updateWerte.anstossen();
     await texterkennung.start({ zurueckstellen: lebt.allein });
     await laeufer.start().catch((e: unknown) => log.error('Paket-Läufer startet nicht', { fehler: (e as Error).message }));
     // RESCUE-Datei (#108): Sie liegt neben der Schlüsseldatei, also für alle Prozesse dieselbe – prüfen nur unter Sperre.
