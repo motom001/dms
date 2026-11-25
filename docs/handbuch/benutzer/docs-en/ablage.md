@@ -39,6 +39,8 @@ With **+** and the name of the folder type at the top right, e.g. **+ Invoice**,
 
 Above the list it says how many folders it contains. If all have the same folder type, the number names it, e.g. “12 Contracts” – or “12 × Contract” if no plural is entered for the folder type; in views with different folder types it says “12 folders”.
 
+If something new arrives while a view is open – such as post via the inbox folder –, the list reloads by itself as soon as the number on the left changes. So that nothing jumps away under your finger, this only happens right away if the list is empty, or you are at the top, have nothing selected and no folder is open on the right. Otherwise a calm hint appears above the list, such as **14 new – show**; only a click reloads, selection and scroll position stay. The number above the list always matches the number on the left. If something still hangs, the button **Reload** (the round arrow next to **⋯**) reloads numbers and list.
+
 ### Compact or as a table {#kompakt-oder-als-tabelle}
 
 What the list looks like depends on its width:

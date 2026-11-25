@@ -117,6 +117,8 @@ export function useFolge(post: boolean, doks: Dokument[], dokKey: string, zielId
 export function useReihe(post: boolean, postId: string) {
   const d = useDaten();
   const np = d.zaehler.neuePost;
+  // Neue Post kommt herein (#1668): mit der Zahl links ändert sich auch „Post 1 von n“.
+  const zahl = np ? d.zaehler.sichten?.[np] : undefined;
   const [reihe, setReihe] = useState<string[] | null>(null);
   useEffect(() => {
     if (!post || !np) return;
@@ -128,6 +130,6 @@ export function useReihe(post: boolean, postId: string) {
     return () => {
       aktuell = false;
     };
-  }, [post, np, d.stand]);
+  }, [post, np, d.stand, zahl]);
   return { reihe, np, pos: reihe ? reihe.indexOf(postId) : -1 };
 }
