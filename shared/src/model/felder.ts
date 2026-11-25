@@ -74,6 +74,11 @@ export interface Feld {
    */
   ausDatum?: import('./angaben').AusDatum;
   /**
+   * Referenzfeld (#1671): Reihenfolge der Auswahl – Feld des Zieltyps oder Systemspalte und Richtung, z. B. Steuerjahr
+   * absteigend nach „Jahr“. Fehlt = Titel aufsteigend in natürlicher Reihenfolge (shared/src/auswahlreihenfolge.ts).
+   */
+  auswahlReihenfolge?: import('./angaben').AuswahlReihenfolge;
+  /**
    * „Aus Dokument füllen“ (#336, #391; bis #938 „Für die Erkennung nutzen“): vorhanden = an, mit Art und
    * Erkennungshinweis. Der Name im Code bleibt `erkennung` – gespeicherte Daten und Pakete ändern sich nicht.
    */

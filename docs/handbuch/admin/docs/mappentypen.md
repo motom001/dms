@@ -352,6 +352,15 @@ Manche Verweise ergeben sich aus einem Datum: Ein Kontoauszug vom Juli 2012 geh�
 - **Nur, was man lesen darf**, und „anlegen“ nur, wer im Ziel-Mappentyp anlegen darf. Beim Speichern füllt Ablago nichts von selbst, auch nicht über die [Schnittstelle](api.md).
 - In [Paketen](pakete.md) heißt die Eigenschaft `ausDatum: { datumFeld: ende, zielFeld: jahr }` (ab Ablago 0.321).
 
+#### Reihenfolge der Auswahl { #reihenfolge-der-auswahl }
+
+In welcher Reihenfolge die Mappen in der Auswahl eines Verweisfelds stehen, stellst du unter **Reihenfolge der Auswahl** ein: nach einem Feld des Ziel-Mappentyps (etwa *Jahr*) oder nach *Titel*, *Angelegt* oder *Zuletzt geändert*, darunter die **Richtung** *Aufsteigend* oder *Absteigend*. Beim *Steuerjahr* ist „Jahr, absteigend“ sinnvoll: Das neueste Jahr steht oben, auch wenn es mehr als 20 Steuerjahre gibt.
+
+- **Ohne Einstellung** (*Titel (Vorgabe, Zahlen der Größe nach)*) stehen die Mappen nach Titel aufsteigend, Zahlen der Größe nach – „Steuerjahr 9“ vor „Steuerjahr 10“.
+- **Felder des Ziel-Mappentyps** gibt es nur bei genau einem Ziel-Mappentyp, und nur solche, nach denen sich auch die Liste sortieren lässt (keine Verweise, langen Texte, Passwörter oder Tabellen). Bei mehreren Ziel-Mappentypen bleiben *Titel*, *Angelegt* und *Zuletzt geändert*; ist eine Reihenfolge eingestellt, stehen dort zuletzt geöffnete Mappen nicht mehr vorn.
+- **Wo:** im Formular jeder Mappe, in *Neue Post* und auf der Seite *Dokument übernehmen* – überall, wo das Verweisfeld ausgefüllt wird. Gewählte und vorgeschlagene Mappen stehen wie bisher unter dem Feld.
+- In [Paketen](pakete.md) heißt die Eigenschaft `auswahlReihenfolge: { feld: jahr, absteigend: true }`.
+
 #### Beim Auswählen übernehmen { #vorbelegen }
 
 Manche Mappen bringen typische Angaben mit: Eine *Vertragsart* „Mobilfunk“ kennt die übliche Kündigungsfrist, eine *Versicherungsart* die Zahlweise. Unter **Beim Auswählen übernehmen** legst du am Verweisfeld Paare fest – *Feld der verwiesenen Mappe* → *in dieses Feld*, etwa *Kündigungsfrist* → *Kündigungsfrist*. **+ Feld übernehmen** schlägt zuerst gleichnamige Felder vor. Am Feld steht dann der Chip „übernimmt 3 Felder“.

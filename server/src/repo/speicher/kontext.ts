@@ -1,5 +1,6 @@
 /** Gemeinsamer Kontext der Teile des Repos im Arbeitsspeicher (#1278): der Zustand und Hilfen, die ihn lesen. */
 import type { MappenAblauf } from '../../../../shared/src/ablaufvorlagen';
+import { natuerlicherSchluessel } from '../../../../shared/src/auswahlreihenfolge';
 import { istZeitraum, zeitraumTage } from '../../../../shared/src/feldarten';
 import type { Aufgabe, FallOhneLeserecht, Mappe } from '../../../../shared/src/model';
 import { datumIn, ziehe } from '../../../../shared/src/nummernkreis';
@@ -95,6 +96,8 @@ function sortierHilfen(z: SpeicherZustand) {
     switch (so.art) {
       case 'titel':
         return (m.titel ?? '').toLowerCase();
+      case 'titelNatuerlich':
+        return natuerlicherSchluessel(m.titel ?? '');
       case 'erstellt':
         return m.erstellt;
       case 'geaendert':

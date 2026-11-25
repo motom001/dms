@@ -65,6 +65,11 @@ export interface MappenWahlProps {
   neuesFormular: NeuesFormular;
   /** Name des Felds (#1288): Der Knopf ✕ heißt für Bildschirmleser „<Feld> entfernen“. */
   feldName?: string;
+  /**
+   * Reihenfolge der Auswahl (#1671), eingestellt am Verweisfeld; fehlt = Titel aufsteigend in natürlicher Reihenfolge.
+   * Ist sie eingestellt, gilt sie auch bei mehreren Zieltypen – „zuletzt geöffnet zuerst“ (#1036) nur ohne Einstellung.
+   */
+  reihenfolge?: FeldDef['auswahlReihenfolge'];
 }
 
 /* ---------- Auswahl verwiesener Mappen (mit Suche statt langer Klappliste) ---------- */
@@ -76,9 +81,10 @@ export function MappenWahlKern(p: MappenWahlProps) {
   const [eingabe, setEingabe] = useState('');
   // Kein „Ändern“ (#1288): Ein gesetzter Verweis wird mit ✕ entfernt und neu gewählt.
   const zeigeSuche = mehrfach || !gewaehlt.length;
-  const zuletzt = useZuletzt(mehrere, offen);
+  const zuletzt = useZuletzt(mehrere, offen, p.reihenfolge);
   useFehlendeTitel(gewaehlt, bekannt, merke);
-  const { treffer, gesamt } = useTreffer({ offen, eingabe, ziel, sicht, eigeneText, quelle: p.quelle, mehrere, alleIds });
+  const quelle = p.quelle;
+  const { treffer, gesamt } = useTreffer({ offen, eingabe, ziel, sicht, eigeneText, quelle, mehrere, alleIds, reihenfolge: p.reihenfolge });
   // Passen die gewählten Mappen noch zu den Werten dieser Mappe (#173, #886)? Hinweis mit Grund (#887) schon vor dem Speichern.
   const { unpassend, gruende } = useLivePruefung(p, gewaehlt.join(','), eigeneText);
 

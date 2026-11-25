@@ -8,6 +8,7 @@ import { abfrageAus, liesSuche } from '../../../shared/src/erweitertesuche';
 import { inAllgemeinerSuche, type Mappentyp, sortierbar, type Werte, zieleVon } from '../../../shared/src/model';
 import { auswahlKlausel, filterFuer, klauselnFuer, setzeEigeneWerte, type Sicht, wirksameTypen } from '../../../shared/src/sichten';
 import { istTeiltyp } from '../../../shared/src/teile';
+import { TITEL_NATUERLICH } from '../../../shared/src/auswahlreihenfolge';
 import { Fachfehler } from '../grundlagen/fehler';
 import type { SeitenAnfrage, SortierungIntern } from '../repo';
 import { t } from '../sprache/sprache';
@@ -22,8 +23,10 @@ export function suchTypen(gewaehlt: Mappentyp[], typen: Map<string, Mappentyp>):
   return (gewaehlt.length ? gewaehlt : [...typen.values()].filter(inAllgemeinerSuche)).filter((t) => !istTeiltyp(t));
 }
 
+/** Systemspalten – und für die Auswahl an Verweisfeldern (#1671) der Titel in natürlicher Reihenfolge. */
 const SYSTEMSORTIERUNG: Record<string, SortierungIntern['art']> = {
   _titel: 'titel',
+  [TITEL_NATUERLICH]: 'titelNatuerlich',
   _typ: 'typ',
   _erstellt: 'erstellt',
   _geaendert: 'geaendert',
@@ -115,7 +118,7 @@ export function seitenZiel(q: SeitenQuery, typen: Map<string, Mappentyp>, sichte
   const erweitert =
     q.sicht === 'suche' ? abfrageAus(liesSuche(new URLSearchParams(text(q.link).slice(0, 8000))), [...typen.values()]) : null;
   if (erweitert?.fehler.length) throw new Fachfehler(422, erweitert.fehler.join(' '));
-  const einTyp = einTypAus(q, { nurTyp, sicht, link, erweitert }, typen, sichten);
+  const einTyp = einTypAus(q, { nurTyp, sicht, link, erweitert, auswahl }, typen, sichten);
   const sortierung =
     link && !text(q.sortierung)
       ? link.sortierung
@@ -126,15 +129,19 @@ export function seitenZiel(q: SeitenQuery, typen: Map<string, Mappentyp>, sichte
 }
 export type SeitenZiel = ReturnType<typeof seitenZiel>;
 
-/** Sortieren nach Feldern geht, wenn die Sicht genau einen Mappentyp zeigt. */
+/**
+ * Sortieren nach Feldern geht, wenn die Sicht genau einen Mappentyp zeigt – auch die Auswahl eines Verweisfelds mit
+ * genau einem Zieltyp (#1671, z. B. Steuerjahr nach „Jahr“).
+ */
 function einTypAus(
   q: SeitenQuery,
-  ziel: Pick<SeitenZiel, 'nurTyp' | 'sicht' | 'link' | 'erweitert'>,
+  ziel: Pick<SeitenZiel, 'nurTyp' | 'sicht' | 'link' | 'erweitert' | 'auswahl'>,
   typen: Map<string, Mappentyp>,
   sichten: Sicht[],
 ): Mappentyp | undefined {
-  const { nurTyp, sicht, link, erweitert } = ziel;
+  const { nurTyp, sicht, link, erweitert, auswahl } = ziel;
   const fest = q.sicht === 'eingang' || q.sicht === 'favoriten';
+  if (auswahl) return auswahl.ziele.length === 1 ? auswahl.ziele[0] : undefined;
   return erweitert
     ? erweitert.typen.length === 1
       ? erweitert.typen[0]

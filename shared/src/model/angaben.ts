@@ -97,6 +97,16 @@ export interface FeldErkennung {
 }
 
 /**
+ * Reihenfolge der Auswahl an einem Verweisfeld (#1671): `feld` ist ein Feld des Zieltyps (z. B. „jahr“) oder eine
+ * Systemspalte (`_titel`, `_erstellt`, `_geaendert`); fehlt die Angabe, gilt Titel aufsteigend in natürlicher
+ * Reihenfolge (Zahlen als Zahlen). Felder des Zieltyps nur bei genau einem Zieltyp.
+ */
+export interface AuswahlReihenfolge {
+  feld: string;
+  absteigend?: boolean;
+}
+
+/**
  * Verweisfeld aus einem Datum ableiten (#1648), z. B. Steuerjahr aus „Bis“: Ablago schlägt die Mappe des Zieltyps vor,
  * deren Feld `zielFeld` zum Jahr des Datumsfelds `datumFeld` dieser Mappe passt – gibt es keine, „… anlegen“.
  */

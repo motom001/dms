@@ -352,6 +352,15 @@ Some links follow from a date: a bank statement from July 2012 belongs to *Tax y
 - **Only what you may read**, and "create" only for people who may create folders of the target type. Saving never fills anything by itself, not via the [API](api.md) either.
 - In [packages](pakete.md) the property is called `ausDatum: { datumFeld: ende, zielFeld: jahr }` (from Ablago 0.321).
 
+#### Order of the choice { #reihenfolge-der-auswahl }
+
+Under **Order of the choice** you set the order in which the folders appear in the choice of a link field: by a field of the target folder type (such as *Year*) or by *Title*, *Created* or *Last changed*, and below it the **Direction** *Ascending* or *Descending*. For *Tax year* “Year, descending” makes sense: the newest year is on top, even with more than 20 tax years.
+
+- **Without a setting** (*Title (default, numbers by size)*) the folders are sorted by title ascending, numbers by size – “Tax year 9” before “Tax year 10”.
+- **Fields of the target folder type** are only available with exactly one target folder type, and only those the list can sort by (no links, long texts, passwords or tables). With several target folder types *Title*, *Created* and *Last changed* remain; once an order is set, recently opened folders no longer come first there.
+- **Where:** in the form of every folder, in *New post* and on the page *Take over document* – wherever the link field is filled in. Chosen and suggested folders stay below the field as before.
+- In [packages](pakete.md) the property is `auswahlReihenfolge: { feld: jahr, absteigend: true }`.
+
 #### Copy when selected { #vorbelegen }
 
 Some folders carry typical details: a *contract type* "Mobile" knows the usual notice period, an *insurance type* the payment interval. Under **Copy when selected** you set pairs on the link field – *field of the referenced folder* → *into this field*, for instance *Notice period* → *Notice period*. **+ Copy a field** suggests fields with the same key first. The field then shows the chip "copies 3 fields".
