@@ -20,6 +20,8 @@ const CODE = ['server/src/**/*.ts', 'web/src/**/*.{ts,tsx}', 'shared/src/**/*.ts
 const WERKZEUGE = [
   '.github/werkzeuge/*.mjs',
   'server/test/*.mjs',
+  // Prüfstand Erkennung (#1679): Node-Skripte ohne Typen, auch außerhalb von Ablago lauffähig.
+  'server/werkzeuge/**/*.mjs',
   'web/test/*.mjs',
   'web/rauchtest/**/*.mjs',
   'eslint.config.js',
