@@ -13,7 +13,7 @@ import {
 } from '../../../shared/src/region';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { liesTelefon, telefonText } from '../../../shared/src/telefon';
-import { Feld, FeldGruppe, Knopf } from '../bausteine';
+import { Feld, FeldGruppe, HakenFeld, Knopf } from '../bausteine';
 import { t } from '../sprache';
 
 /**
@@ -173,15 +173,16 @@ export function RegionFormate({ f, setze }: { f: Formate; setze: (f: Formate) =>
       </div>
       <FeldGruppe beschriftung={t('werkbank.region.formate.arbeitstage')} hinweis={t('werkbank.region.formate.arbeitstage.hinweis')}>
         <div className="knoepfe">
+          {/* HakenFeld (#1214): die ganze Zeile ist Tippfläche, auch am Handy. */}
           {[1, 2, 3, 4, 5, 6, 7].map((n) => (
-            <label key={n} className="haken">
+            <HakenFeld key={n} beschriftung={tagName(n)}>
               <input
                 type="checkbox"
+                title={tagName(n, 'long')}
                 checked={f.arbeitstage.includes(n)}
                 onChange={(x) => tage(x.target.checked ? [...f.arbeitstage, n] : f.arbeitstage.filter((y) => y !== n))}
               />
-              <span title={tagName(n, 'long')}>{tagName(n)}</span>
-            </label>
+            </HakenFeld>
           ))}
         </div>
         <span className="knoepfe">
