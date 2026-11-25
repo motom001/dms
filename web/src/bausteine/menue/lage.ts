@@ -70,14 +70,17 @@ function platzUnten(): number {
 /**
  * Die Liste fest ins Fenster legen. Ein Vorfahr kann der Bezugsrahmen für `position: fixed` sein (z. B. mit
  * `container`): Gemessen wird daher, wo die Liste bei 0/0 landet, und um diesen Versatz verschoben. Gesetzt werden nur
- * `top` und `left` – sie gelten in jedem Bezugsrahmen gleich.
+ * `top` und `left` – sie gelten in jedem Bezugsrahmen gleich. `hoechstens` (#1670): die Liste wird nie höher, auch wenn
+ * mehr Platz ist (z. B. die Vorschläge der Mehrfachauswahl, sonst bis 280 px wie in gemeinsam-listen.css).
  */
-export function legeFest(liste: HTMLElement, knopf: HTMLElement, links?: boolean): Aufklapplage {
+export function legeFest(liste: HTMLElement, knopf: HTMLElement, links?: boolean, hoechstens = Infinity): Aufklapplage {
   const st = liste.style;
   Object.assign(st, { position: 'fixed', top: '0px', left: '0px', right: 'auto', bottom: 'auto', maxHeight: 'none' });
   const ursprung = liste.getBoundingClientRect();
   const fenster = { breite: innerWidth, hoehe: innerHeight };
-  const l = aufklapplage(knopf.getBoundingClientRect(), ursprung.height, fenster, { frei: platzUnten(), links, breite: ursprung.width });
+  const gross = Math.min(ursprung.height, hoechstens);
+  const lage = aufklapplage(knopf.getBoundingClientRect(), gross, fenster, { frei: platzUnten(), links, breite: ursprung.width });
+  const l = { ...lage, maxHoehe: Math.min(lage.maxHoehe, hoechstens) };
   const hoehe = Math.min(ursprung.height, l.maxHoehe);
   const top = l.oben ? fenster.hoehe - (l.bottom ?? 0) - hoehe : (l.top ?? 0);
   const left = l.left ?? Math.max(RAND, fenster.breite - (l.right ?? 0) - ursprung.width);

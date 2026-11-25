@@ -46,6 +46,7 @@ function Zustand(p: {
           ohneSuche={!!p.gewaehlt?.length}
           gewaehlt={(p.gewaehlt ?? []).map((x): GewaehlterEintrag => ({ id: x, inhalt: x, entfernenText: p.entfernenText ?? x }))}
           entferne={nichts}
+          imFluss
         />
       </Feld>
     </div>
