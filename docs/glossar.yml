@@ -796,7 +796,7 @@ begriffe:
     code: Begleiter
   - begriff: Paket
     bereich: werkbank
-    beschreibung: Ein installierbares Bündel aus Mappentypen, Ansichten und Beispielen aus einem Paketkatalog, z. B. „Basis“. Ein Update ergänzt nur; es entfernt und ändert nichts – außer ein Umbau, den die Vorschau ausdrücklich zeigt.
+    beschreibung: Ein installierbares Bündel aus Mappentypen, Ansichten und Beispielen aus einem Paketkatalog, z. B. „Basis“. Ein Update bringt, was im Paket neu oder anders ist; was die Verwaltung selbst geändert hat, bleibt. Was entfällt oder umgebaut wird, zeigt die Vorschau vorher.
     einsteiger: erklaeren
     begegnet: admin
     nicht_verwenden: [Plugin, Erweiterung, App, Modul]

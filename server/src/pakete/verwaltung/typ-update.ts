@@ -103,15 +103,22 @@ export function planeTypUpdate(x: TypUpdateEingabe): TypUpdate {
   const jetzt = typBild(x.aktuell, x.kennungVon);
   const entfaellt = entfallende(x, jetzt);
   const weg = new Set(entfaellt.filter((e) => e.zustand === 'aktualisiert').map((e) => e.key));
+  // Text → Verweis (#534) steht noch aus: Titel-Vorlage und Register stellt erst das Umwandeln um (sonst stünde im
+  // Titel ein noch leerer Verweis).
+  const umwandeln = x.paketTyp.felder.some((f) => f.ausText && x.aktuell.felder.some((g) => g.key === f.ausText));
   return {
-    aenderungen: [...typAenderung(x, jetzt), ...feldAenderungen(x, jetzt), ...registerAenderungen(x, jetzt, weg)],
+    aenderungen: [
+      ...typAenderung(x, jetzt, umwandeln),
+      ...feldAenderungen(x, jetzt),
+      ...(umwandeln ? [] : registerAenderungen(x, jetzt, weg)),
+    ],
     entfaellt,
   };
 }
 
 /** Typ-Eigenschaften: nur, was das Paket angibt (eine fehlende Angabe löscht nichts). */
-function typAenderung({ paketTyp, aktuell, stand }: TypUpdateEingabe, jetzt: TypBild): TeilPlan[] {
-  const was = TYP_UPDATE.filter((k) => !leer(paketTyp[k]) && !gleich(paketTyp[k], aktuell[k]));
+function typAenderung({ paketTyp, aktuell, stand }: TypUpdateEingabe, jetzt: TypBild, umwandeln: boolean): TeilPlan[] {
+  const was = TYP_UPDATE.filter((k) => !(umwandeln && k === 'titelVorlage') && !leer(paketTyp[k]) && !gleich(paketTyp[k], aktuell[k]));
   if (!was.length) return [];
   const zu = zustand(typTeil(jetzt, stand), stand && typTeil(stand, stand));
   return [{ teil: teilKennung(paketTyp.schluessel, 'typ'), art: 'typ', name: aktuell.name, was: [...was], zustand: zu }];
@@ -119,7 +126,8 @@ function typAenderung({ paketTyp, aktuell, stand }: TypUpdateEingabe, jetzt: Typ
 
 /** Entfallende Felder: aus dem Paketstand, nicht mehr im Paket, noch am Typ (ohne Systemfelder). */
 function entfallende({ paketTyp, aktuell, stand, umbenennen, belegung }: TypUpdateEingabe, jetzt: TypBild): EntfallPlan[] {
-  const imPaket = new Set(paketTyp.felder.map((f) => f.key));
+  // Ein altes Textfeld, aus dem ein neuer Verweis gefüllt wird (`aus_text`, #534), bleibt bis zum Umwandeln.
+  const imPaket = new Set([...paketTyp.felder.map((f) => f.key), ...paketTyp.felder.flatMap((f) => (f.ausText ? [f.ausText] : []))]);
   return (stand?.felder ?? []).flatMap((sf) => {
     const g = aktuell.felder.find((f) => f.key === sf.key && !f.system);
     const j = jetzt.felder.find((f) => f.key === sf.key);

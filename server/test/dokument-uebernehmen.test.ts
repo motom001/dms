@@ -510,7 +510,7 @@ function paketFaelle(pg: boolean) {
         const m = await holen('merkzettel');
         assert.deepEqual([m.ausPost, kannAusPost(m)], [false, false]);
 
-        // Update: erkennbarAn hat der Administrator geleert → Paket darf; ausPost null → Paket darf; notiz bekommt den Haken.
+        // Update: erkennbarAn kam vom Paket (unverändert) → neue Fassung (#1658); ausPost null → Paket darf; notiz bekommt den Haken.
         const vorschau = await p.vorschau({ id: 'haushalt_test' });
         assert.deepEqual(vorschau.typen.find((t) => t.schluessel === 'rechnung')!.wiederfinden, ['Notiz']);
         assert.equal(vorschau.typen.find((t) => t.schluessel === 'rechnung')!.typAngaben, true);
@@ -522,8 +522,8 @@ function paketFaelle(pg: boolean) {
         const r2 = await holen('rechnung');
         assert.deepEqual(
           [r2.ausPost, r2.erkennbarAn],
-          [false, 'Enthält Rechnungsnummer, Betrag und Zahlungsziel'],
-          'erkennbarAn war eingestellt und bleibt; ausPost war Vorgabe und kommt aus dem Paket',
+          [false, 'Neuer Text aus dem Paket'],
+          'erkennbarAn kam vom Paket und ist unverändert – seit #1658 übernimmt das Update die neue Fassung; ausPost war Vorgabe und kommt aus dem Paket',
         );
         assert.deepEqual(wf(r2), { nr: true, kundennummer: false, name: false, notiz: true }, 'abgewählter Haken bleibt aus');
 
@@ -558,7 +558,7 @@ function paketFaelle(pg: boolean) {
         const datei = bau.dateien.find((x) => x.name.endsWith('mappentypen.yaml'));
         assert.ok(datei, bau.dateien.map((x) => x.name).join(', '));
         const yaml = parse(datei.daten.toString()) as Array<Record<string, unknown>>;
-        assert.deepEqual([yaml[0].ausPost, yaml[0].erkennbarAn], [false, 'Enthält Rechnungsnummer, Betrag und Zahlungsziel']);
+        assert.deepEqual([yaml[0].ausPost, yaml[0].erkennbarAn], [false, 'Neuer Text aus dem Paket']);
         const felder = Object.fromEntries((yaml[0].felder as Array<Record<string, unknown>>).map((f) => [f.key, f.wiederfinden]));
         assert.deepEqual(felder, { nr: true, kundennummer: false, name: false, notiz: true });
       });
