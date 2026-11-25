@@ -135,6 +135,15 @@ function liesSetzen(roh: unknown, wo: string, ziel: PaketTypKurz | undefined, fe
 }
 
 /** von und nach: Typverweise, nicht gleich, Ziel im Paket oder in einer Abhängigkeit, Quelle nicht mehr im Paket. */
+/** Felder umbenennen (#1658): ein Schritt in denselben eigenen Typ – nur `felder`, beim Update (typ-update.ts). */
+function umbenennenSchritt(k: string, wo: string, p: PaketKurz, fehler: string[]) {
+  const { paket, schluessel } = teileKennung(k);
+  const eigen = paket === p.id ? p.typen.find((y) => y.schluessel === schluessel) : undefined;
+  if (eigen) return { von: k, nach: k, ziel: eigen };
+  fehler.push(t('meldungen.pakete.umbau.gleich', { wo }));
+  return null;
+}
+
 function liesVonNach(
   x: Record<string, unknown>,
   wo: string,
@@ -153,10 +162,7 @@ function liesVonNach(
   }
   const vonK = von.includes(':') ? von : typKennung(p.id, von),
     nachK = nach.includes(':') ? nach : typKennung(p.id, nach);
-  if (vonK === nachK) {
-    fehler.push(t('meldungen.pakete.umbau.gleich', { wo }));
-    return null;
-  }
+  if (vonK === nachK) return umbenennenSchritt(vonK, wo, p, fehler);
   const vk = teileKennung(vonK),
     nk = teileKennung(nachK);
   // Der alte Typ ist einer, den das Paket nicht mehr mitbringt – sonst bliebe er und würde zugleich leer.
@@ -169,6 +175,19 @@ function liesVonNach(
   if (nk.paket !== p.id && !((nk.paket ?? '') in p.abh))
     fehler.push(t('meldungen.pakete.umbau.ziel-abhaengigkeit', { wo, nach, paket: nk.paket ?? '' }));
   return { von: vonK, nach: nachK, ziel };
+}
+
+/**
+ * Felder umbenennen (#1658): Ein Schritt mit `von` = `nach` nennt nur `felder` (alt → neu); das alte Feld bringt der Typ
+ * nicht mehr mit (sonst entfiele es nicht), das neue schon (prüft liesPaare).
+ */
+function umbenennenFehler(x: Record<string, unknown>, wo: string, ziel: PaketTypKurz): string[] {
+  const f: string[] = [];
+  if (!istObjekt(x.felder) || !Object.keys(x.felder).length || x.setzen !== undefined || x.register !== undefined)
+    f.push(t('meldungen.pakete.umbau.umbenennen-nur-felder', { wo }));
+  for (const alt of Object.keys(istObjekt(x.felder) ? x.felder : {}))
+    if (ziel.felder.some((y) => y.key === alt)) f.push(t('meldungen.pakete.umbau.umbenennen-alt-da', { wo, feld: alt }));
+  return f;
 }
 
 /**
@@ -192,6 +211,7 @@ export function liesUmbau(roh: unknown, p: PaketKurz, fehler: string[]): UmbauSc
     const vn = liesVonNach(x, wo, p, fehler);
     if (!vn) continue;
     if (schritte.some((s) => s.von === vn.von)) fehler.push(t('meldungen.pakete.umbau.doppelt', { wo, von: str(x.von) }));
+    if (vn.von === vn.nach) fehler.push(...umbenennenFehler(x, wo, vn.ziel!));
     schritte.push({
       von: vn.von,
       nach: vn.nach,

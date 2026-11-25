@@ -135,6 +135,9 @@ export abstract class PaketAnlegen extends PaketAnlegenSchritte {
       typMap: { ...(alt?.typen ?? {}), ...ueb?.typen },
       sichtMap: { ...(alt?.sichten ?? {}), ...ueb?.sichten },
       umbauErg: null,
+      typWahl: this.typWahl.get(plan) ?? { ersetzen: new Set<string>(), behalten: new Set<string>() },
+      teileGeschrieben: new Map(),
+      werteAuftraege: [],
     };
   }
 
@@ -286,6 +289,13 @@ export abstract class PaketAnlegen extends PaketAnlegenSchritte {
       }),
     );
     if (paket.code || alt?.laeufer) await this.spaeter(() => Promise.resolve(this.o.laeufer?.codeGeaendert?.()).catch(() => {}));
+    // #1658: Werte entfallener Felder im Hintergrund in die Notiz bzw. ins neue Feld – erst nach dem Speichern.
+    if (l.werteAuftraege.length)
+      await this.spaeter(() =>
+        this.d.updateWerte
+          .einreihen(l.werteAuftraege)
+          .catch((e: Error) => log.error('Paket-Update: Werte entfallener Felder nicht eingereiht', { paket: m.id, fehler: e.message })),
+      );
     // Sprachpaket (#731): Sprache sofort in diesem Prozess (die anderen lesen sie binnen einer Minute), dann Beschriftungen
     // der Standardpakete – beim Sprachpaket für alle installierten Pakete, sonst die installierten Sprachen für dieses.
     if (paket.sprache || alt?.sprache)

@@ -432,7 +432,7 @@ Siehe auch: [Mappentyp](#mappentyp), [Post](#post), [Woran man ihn erkennt](#wor
 Fortlaufende Nummern nach einem Muster wie {jjjj}-R{zaehler:4} (ergibt z. B. 2026-R0001), etwa für Rechnungsnummern.
 
 <a id="paket"></a>**Paket** · ~ mit Erklärung · Administratoren  
-Ein installierbares Bündel aus Mappentypen, Ansichten und Beispielen aus einem Paketkatalog, z. B. „Basis“. Ein Update ergänzt nur; es entfernt und ändert nichts – außer ein Umbau, den die Vorschau ausdrücklich zeigt.  
+Ein installierbares Bündel aus Mappentypen, Ansichten und Beispielen aus einem Paketkatalog, z. B. „Basis“. Ein Update bringt, was im Paket neu oder anders ist; was die Verwaltung selbst geändert hat, bleibt. Was entfällt oder umgebaut wird, zeigt die Vorschau vorher.  
 Siehe auch: [Paketkatalog](#paketkatalog), [Expertenmodus](#expertenmodus), [Paket-Läufer](#paket-laufer), [Herausgeber](#herausgeber).
 
 <a id="paket-nach-zeitplan-ausfuhren"></a>**Paket nach Zeitplan ausführen** · ~ mit Erklärung · Administratoren  

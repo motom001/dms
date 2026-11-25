@@ -47,6 +47,8 @@ export abstract class PaketBasis {
 
   /** Ansichten, die trotz Änderung ersetzt werden (#1125) – je Vorschau, wie die Lage des Umbaus. */
   protected sichtenErsetzen = new WeakMap<Vorschau, Set<string>>();
+  /** Teile vorhandener Mappentypen, die trotz Änderung ersetzt werden, und Felder, die bleiben (#1658) – je Vorschau. */
+  protected typWahl = new WeakMap<Vorschau, { ersetzen: Set<string>; behalten: Set<string> }>();
 
   constructor(
     protected d: Dienst,

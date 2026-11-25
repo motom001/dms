@@ -8,6 +8,8 @@ import {
   type InstalliertesPaket,
   type SichtZustand,
   type KatalogVersion,
+  type EntfallPlan,
+  type TeilPlan,
 } from '../../../../shared/src/pakete';
 import { type Archiv } from '../../../../shared/src/archiv';
 import { type Abdeckung, type Sprachangabe } from '../../../../shared/src/sprachpaket';
@@ -42,6 +44,10 @@ export interface TypPlan {
   beschriftungen?: number;
   /** Bei Update (#890): Feldregister, die Abschnitte bekommen (nur, wo noch keine sind). */
   abschnitte?: string[];
+  /** Bei Update (#1658): was sich an Typ-Eigenschaften, Feldern und Registern ändert bzw. bleibt (Prüfwert je Teil). */
+  aenderungen?: TeilPlan[];
+  /** Bei Update (#1658): Felder, die das Paket nicht mehr mitbringt – mit der Zahl der Mappen mit Wert. */
+  entfaellt?: EntfallPlan[];
   /** Name schon vergeben (von einem anderen Typ) – mit Vorschlag. */
   konflikt: string | null;
   vorschlag: string | null;
@@ -235,6 +241,10 @@ export interface InstallierenEingabe {
   gesamteVerwaltung?: boolean;
   /** Ansichten (Schlüssel), die das Update ersetzt, obwohl sie geändert sind (#1125, Zustand geaendert/unbekannt). */
   sichtenErsetzen?: string[];
+  /** Teile vorhandener Mappentypen (TeilPlan.teil, EntfallPlan.teil), die das Update trotzdem ersetzt bzw. entfernt (#1658). */
+  typTeileErsetzen?: string[];
+  /** Entfallende Felder (EntfallPlan.teil), die als eigenes Feld bleiben (#1658, „Feld behalten“). */
+  felderBehalten?: string[];
 }
 
 /** Was ein Update mit Umbau zusätzlich braucht (#1041); setzt die Route aus Anfrage und Anmeldung. */
@@ -243,6 +253,8 @@ export interface UmbauEingabe {
   umbauEntscheidungen?: UmbauEntscheidungen;
   gesamteVerwaltung?: boolean;
   /** #1125, wie bei InstallierenEingabe. */ sichtenErsetzen?: string[];
+  /** #1658, wie bei InstallierenEingabe. */ typTeileErsetzen?: string[];
+  /** #1658, wie bei InstallierenEingabe. */ felderBehalten?: string[];
 }
 
 export const mitPruefung = (v: Vorschau, pruefung: HerkunftPruefung): Vorschau => ({ ...v, pruefung });

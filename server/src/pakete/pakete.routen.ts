@@ -20,6 +20,13 @@ export function paketeRouten(k: RoutenKontext): Route[] {
 function katalogRouten(k: RoutenKontext): Route[] {
   const { pakete, wer } = k;
   return [
+    // Paket-Update (#1658): Werte entfallener Felder, die gerade übertragen werden – je Mappentyp, wie weit.
+    {
+      methode: 'GET',
+      pfad: '/api/werkbank/pakete/uebernahme',
+      zugang: 'admin',
+      handler: async () => ok(await k.dienst.updateWerte.stand()),
+    },
     /* ---------- Nummernkreise (#171) ---------- */
     // Paketverwaltung (#188, #189): Kataloge nur auf Knopfdruck; weitere Quellen und Hochladen in der erweiterten Ansicht.
     {

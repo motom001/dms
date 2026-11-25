@@ -131,6 +131,9 @@ export interface PaketVorschau {
     beschriftungen?: number;
     abschnitte?: string[];
     umwandeln?: Array<{ feld: string; aus: string; anzahl: number }>;
+    /** Update (#1658): Änderungen an Typ, Feldern, Registern je Teil; entfallende Felder. */
+    aenderungen?: import('../../../shared/src/pakete').TeilPlan[];
+    entfaellt?: import('../../../shared/src/pakete').EntfallPlan[];
     konflikt: string | null;
     vorschlag: string | null;
     geloescht?: boolean;
@@ -306,6 +309,8 @@ export const paketeApi = {
     umbauBestaetigt?: boolean;
     umbauEntscheidungen?: import('../../../shared/src/umbau').UmbauEntscheidungen;
     sichtenErsetzen?: string[];
+    typTeileErsetzen?: string[];
+    felderBehalten?: string[];
     automatisierungen?: string[];
     namen?: Record<string, string>;
     sichtNamen?: Record<string, string>;
@@ -328,6 +333,8 @@ export const paketeApi = {
       umbauBestaetigt?: boolean;
       umbauEntscheidungen?: import('../../../shared/src/umbau').UmbauEntscheidungen;
       sichtenErsetzen?: string[];
+      typTeileErsetzen?: string[];
+      felderBehalten?: string[];
     } = {},
   ) =>
     anfrage<InstalliertesPaket>('POST', `/api/werkbank/pakete/${encodeURIComponent(id)}/aktualisieren`, {
@@ -337,6 +344,9 @@ export const paketeApi = {
       ...mehr,
     }),
   paketLaeufer: () => anfrage<PaketlaeuferStand | null>('GET', '/api/werkbank/pakete/laeufer'),
+  /** Paket-Update (#1658): Werte entfallener Felder, die gerade übertragen werden – je Mappentyp, wie weit. */
+  paketUebernahme: () =>
+    anfrage<Array<{ typId: string; paket: string; fertig: number; gesamt: number | null }>>('GET', '/api/werkbank/pakete/uebernahme'),
   /** Vorgaben (#1038): unbenutzte in Typen anderer Pakete nur mit `vorgaben` – ohne fragt der Server (409, `vorgaben`). */
   /** Anhalten und Fortsetzen (#1563). */
   paketAnhalten: (id: string) => anfrage<InstalliertesPaket>('POST', `/api/werkbank/pakete/${encodeURIComponent(id)}/anhalten`),

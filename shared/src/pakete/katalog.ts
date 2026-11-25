@@ -350,3 +350,36 @@ export interface SichtStand {
  * unbekannt – vor #1125 installiert und anders als im Paket, bleibt (auf Wunsch ersetzen); geloescht – gelöscht, bleibt weg.
  */
 export type SichtZustand = 'gleich' | 'aktualisiert' | 'geaendert' | 'unbekannt' | 'geloescht';
+
+/**
+ * Teil eines vorhandenen Mappentyps beim Update (#1658): aktualisiert – unverändert, das Update übernimmt die neue
+ * Fassung; geaendert – von der Verwaltung geändert, bleibt (auf Wunsch ersetzen); unbekannt – ohne Paketstand (vor
+ * #653 installiert), bleibt (auf Wunsch ersetzen).
+ */
+export type TeilZustand = 'aktualisiert' | 'geaendert' | 'unbekannt';
+
+/** Was ein Update an einem Teil eines vorhandenen Mappentyps ändern würde (#1658). */
+export interface TeilPlan {
+  /** Kennung für „Trotzdem ersetzen“ (`typTeileErsetzen`): `<Typ-Schlüssel>/typ|feld:<key>|register:<key>`. */
+  teil: string;
+  art: 'typ' | 'feld' | 'register';
+  /** Name des Typs, Beschriftung des Felds bzw. Name des Registers in Ablago. */
+  name: string;
+  /** Geänderte Angaben: titelVorlage, beschreibung, mehrzahl, erkennbarAn · label, hilfe, min, max, … · felder (Reihenfolge). */
+  was: string[];
+  zustand: TeilZustand;
+}
+
+/** Ein Feld, das das Paket nicht mehr mitbringt (#1658). */
+export interface EntfallPlan {
+  /** Kennung für „Trotzdem entfernen“ (`typTeileErsetzen`) bzw. „Feld behalten“ (`felderBehalten`). */
+  teil: string;
+  key: string;
+  label: string;
+  /** Mappen mit einem Wert in diesem Feld. */
+  anzahl: number;
+  /** aktualisiert = unverändert, entfällt; geaendert/unbekannt = bleibt (auf Wunsch entfernen). */
+  zustand: TeilZustand;
+  /** Umbau-Schritt in denselben Typ (#1041): Die Werte ziehen in dieses Feld. */
+  nach?: { key: string; label: string };
+}

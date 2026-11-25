@@ -210,14 +210,35 @@ The deletion log records removed presets as "unused package presets removed".
 
 **Look for new versions** queries the catalogues (at the push of a button) and marks every package under **Installed** for which there is something newer, with the new version. In the package, **Update to … …** shows a preview of what is added and a link to the changes. After the update the marker disappears at once; if there is an even newer version by now, that one is shown.
 
-An update **only adds** – unless it [converts](#umbau); then the preview says so explicitly:
+An update brings what the package brings new or changed – unless it [converts](#umbau); then the preview says so explicitly:
 
 - new folder types and views,
 - new fields and tabs on existing folder types,
+- on existing fields where you have not set anything yet: fill from document, use for finding again, take over when selecting, formats and limits, labels, calculated fields and sections,
+- **changes to existing folder types** – see [Folder types during an update](#mappentypen-beim-update),
 - new [presets](#vorgaben) and templates; unchanged presets get the new version,
 - new versions of the package's **views** – only for views that are still as the package created them (#1125).
 
-It **deletes nothing** and **overwrites nothing** you have changed yourself: if you renamed a folder type, added fields or deleted a view, that stays so.
+It **overwrites nothing** you have changed yourself: if you renamed a folder type, added fields or deleted a view, that stays so.
+
+### Folder types during an update { #mappentypen-beim-update }
+
+Ablago remembers for each folder type how the package last wrote it – per **part**: the details of the type (title template, description, plural, “how to recognise it”), each field and each tab. An update takes over what has changed in the package **as long as you have not changed that part yourself**:
+
+- **title template**, description, plural and “how to recognise it”,
+- on fields the **label**, help text, limits, fill from document, translations and the **choices** – new ones are added; one the package no longer lists only goes if no folder uses it,
+- the **order of the fields** in a tab.
+
+If you changed a part, it stays as it is. The preview says so (“Field “Balance” (help text) – changed by you, stays as it is”); with **Replace with the version in the package anyway** you take the package's version after all. What you created yourself always stays.
+
+**Fields the package no longer brings** are dropped – without asking, and without anything being lost:
+
+- Without values the field simply goes.
+- If folders have values there, the preview says so (““Period” is dropped – the values from 12 folders will then be in their notes”). After the update the value is in the note of each folder, headed “From the update of “Finances” 3.1.0:”, and in its history. The value itself stays on the folder (under “values without field definition”).
+- If the package only renames the field, the values move into the new field (““Period” is now called “Billing period””).
+- With many folders this runs **in the background**, in batches; the interface stays free. Until it is done, the folder type shows “Update of “Finances” is being taken over (412 of 735)”. If Ablago restarts in between, it continues there.
+- If you changed the field, it stays (with **Remove anyway** if you wish). If you want to keep it as your own field, tick it under **For advanced users: keep fields**; the package then no longer looks after it.
+- **Way back:** the version of the folder type before the update is kept under [Versions](fassungen.md). **Restore** brings the field back – with its values; the notes stay for reference.
 
 **The package's views** (#1125): under **Views**, the preview says for each existing view what happens:
 

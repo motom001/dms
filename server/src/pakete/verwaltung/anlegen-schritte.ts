@@ -28,10 +28,13 @@ import {
   wiederfindenNeu,
 } from './update-neu';
 import { anzeige, type AnlegeLauf, typEingabe, vorgabeId, ziel, zieltypenIn } from './anlegen-lauf';
+import { genutzteOptionen, optionenSchreiben, schreibt, wendeTypUpdateAn } from './typ-update';
 import { PaketErgaenzen } from './ergaenzen';
 
 /** Bringt das Update für einen vorhandenen Typ nichts mit (keine neuen Felder, Register, Angaben …)? */
-const nichtsNeu = (p: TypPlan, berechnetNeu: Map<string, string | null>) =>
+const nichtsNeu = (p: TypPlan, berechnetNeu: Map<string, string | null>, wahl: AnlegeLauf['typWahl']) =>
+  !p.aenderungen?.some((a) => schreibt(a, wahl.ersetzen)) &&
+  !p.entfaellt?.some((e) => wahl.behalten.has(e.teil) || schreibt(e, wahl.ersetzen)) &&
   !p.neueFelder.length &&
   !p.neueRegister.length &&
   !p.erkennung?.length &&
@@ -142,7 +145,7 @@ export abstract class PaketAnlegenSchritte extends PaketErgaenzen {
     // Berechnete Felder (#1034): Das Update gilt auch für vorhandene Felder – neu berechnet oder nicht mehr.
     const vorab = p.vorhanden ? vorher.get(ids.get(paketTyp.schluessel)!) : undefined;
     const berechnetNeu = vorab ? berechnetAenderung(paketTyp, vorab, m.id) : new Map<string, string | null>();
-    if (!p.vorhanden || nichtsNeu(p, berechnetNeu)) return;
+    if (!p.vorhanden || nichtsNeu(p, berechnetNeu, l.typWahl)) return;
     const aktuell = vorher.get(ids.get(paketTyp.schluessel)!)!;
     const neu = typEingabe(l, paketTyp, false).daten;
     // Erkennung (#336): Markierung des Pakets an vorhandene Felder, an denen der Administrator nichts eingestellt hat.
@@ -191,23 +194,46 @@ export abstract class PaketAnlegenSchritte extends PaketErgaenzen {
         const { ausgeblendet: _a, ...ohne } = r as Register;
         register.push(ohne);
       }
+    // #1658: Änderungen an Vorhandenem je Teil (Prüfwert gegen den Paketstand) und entfallende Felder.
+    const upd = wendeTypUpdateAn({
+      plan: p,
+      wahl: l.typWahl,
+      neu,
+      felder: felder as Array<Record<string, unknown> & { key: string }>,
+      register: register as unknown as Parameters<typeof wendeTypUpdateAn>[0]['register'],
+      genutzt: await genutzteOptionen(paketTyp, aktuell, () => this.d.mappen.listeMappen(aktuell.id), optionenSchreiben(p, l.typWahl)),
+    });
     geaendert.push(aktuell);
+    // Rückweg (#1006): Die Fassung vor dem Update ist festgehalten – „Wiederherstellen“ holt ein entferntes Feld zurück.
+    if (upd.g.entfernt.size) await this.d.fassungen.halte('typ', aktuell.id);
     try {
       await this.d.mappentypen.aendereTyp(
         aktuell.id,
         {
           ...aktuell,
-          ...typAngabenNeu(paketTyp, { ...aktuell, felder: felder as unknown as Feld[] }),
-          felder,
-          register,
+          ...typAngabenNeu(paketTyp, { ...aktuell, felder: upd.felder as unknown as Feld[] }),
+          felder: upd.felder,
+          register: upd.register,
           beschriftungen: besch.typ.beschriftungen ?? null,
           ...(besch.typ.mehrzahl ? { mehrzahl: besch.typ.mehrzahl } : {}),
+          ...upd.typ,
         },
         m.id,
       );
     } catch (f) {
       throw new Fachfehler(422, t('meldungen.pakete.mappentyp', { name: aktuell.name, meldungen: meldungen(f) }));
     }
+    l.teileGeschrieben.set(aktuell.id, upd.g);
+    // Werte entfernter Felder: nach dem Speichern im Hintergrund in die Notiz bzw. ins neue Feld (update-werte.ts).
+    const mitWert = (p.entfaellt ?? []).filter((e) => upd.g.entfernt.has(e.key) && e.anzahl > 0);
+    if (mitWert.length)
+      l.werteAuftraege.push({
+        paket: { id: m.id, name: m.name, version: m.version },
+        typId: aktuell.id,
+        typName: aktuell.name,
+        felder: mitWert.map((e) => ({ ...aktuell.felder.find((f) => f.key === e.key)!, ...(e.nach ? { nach: e.nach.key } : {}) })),
+        von: l.a.von.id,
+      });
   }
 
   /** Übernahme (#883): Der frühere Ablageort gehört jetzt dem Paket und heißt wie dessen Typ (#1084: basis:ablageort). */

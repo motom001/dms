@@ -273,6 +273,8 @@
   "pakete.umbau.von": "{wo}: „von“ ist keine Typkennung ({wert}).",
   "pakete.umbau.nach": "{wo}: „nach“ ist keine Typkennung ({wert}).",
   "pakete.umbau.gleich": "{wo}: „von“ und „nach“ sind derselbe Mappentyp.",
+  "pakete.umbau.umbenennen-nur-felder": "{wo}: Ein Schritt in denselben Mappentyp benennt nur Felder um – „felder“ ist nötig, „setzen“ und „register“ gehen hier nicht.",
+  "pakete.umbau.umbenennen-alt-da": "{wo}: Das Feld „{feld}“ bringt der Mappentyp weiter mit – umbenennen lässt sich nur ein Feld, das entfällt.",
   "pakete.umbau.doppelt": "{wo}: „{von}“ steht in mehreren Schritten.",
   "pakete.umbau.von-noch-da": "{wo}: Den Mappentyp „{von}“ bringt das Paket weiter mit – umbauen lässt sich nur ein Typ, den es abgibt.",
   "pakete.umbau.dms": "{wo}: Mappentypen von Ablago selbst (dms:…) baut kein Paket um.",

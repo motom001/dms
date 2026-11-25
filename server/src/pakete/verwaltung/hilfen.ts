@@ -37,6 +37,12 @@ export const gleicheQuelle = (a: InstalliertesPaket['herkunft'], b: Installierte
 export const ersetzenAus = (e: { sichtenErsetzen?: unknown }) =>
   new Set(Array.isArray(e.sichtenErsetzen) ? e.sichtenErsetzen.map(String) : []);
 
+/** Teile vorhandener Mappentypen trotzdem ersetzen bzw. entfallende Felder behalten (#1658): nur Kennungen. */
+export const typWahlAus = (e: { typTeileErsetzen?: unknown; felderBehalten?: unknown }) => ({
+  ersetzen: new Set(Array.isArray(e.typTeileErsetzen) ? e.typTeileErsetzen.map(String) : []),
+  behalten: new Set(Array.isArray(e.felderBehalten) ? e.felderBehalten.map(String) : []),
+});
+
 /**
  * Eine Ansicht des Pakets, wie Ablago sie anlegt (#1125: auch zum Vergleichen und Ersetzen). `typId` löst Typverweise auf
  * (null = gibt es nicht), `fremd` die Ids der `fremde_typen`, `zieltypenIn` „zeigt auf Mappe vom Typ …“ (#1036).

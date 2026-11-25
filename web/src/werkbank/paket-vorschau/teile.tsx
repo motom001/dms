@@ -5,6 +5,7 @@ import type { PaketVorschau } from '../../api/pakete';
 import { Hilfe } from '../../Hilfe';
 import { t as tx, t, tn } from '../../sprache';
 import { SichtZustandZeile } from './abschnitte';
+import { TypUpdateZeilen } from './typ-update';
 import type { VorschauAntwort, VorschauZustand } from './zustand';
 
 /**
@@ -133,6 +134,8 @@ function typAenderung(eintrag: Typ): string {
     eintrag.beschriftungen ? t('werkbank.pakete.beschriftungen', { anzahl: eintrag.beschriftungen }) : '',
     mitListe(eintrag.abschnitte, (map) => t('werkbank.pakete.abschnitte', { map })),
   ].filter(Boolean);
+  // Änderungen an Vorhandenem (#1658) stehen darunter in eigenen Zeilen.
+  if (!teile.length && (eintrag.aenderungen?.length || eintrag.entfaellt?.length)) return t('werkbank.pakete.update.vorhanden');
   return teile.length ? teile.join('; ') : t('werkbank.pakete.keine-aenderung');
 }
 
@@ -182,6 +185,7 @@ export function TypenListe({ v, z }: { v: PaketVorschau; z: Z }) {
             )}
             {/* Umbau (#1041): Der Typ entsteht aus einem vorhandenen – gleiche Mappen, Rechte und Ansichten. */}
             {eintrag.uebernimmt && <p className="leise klein">{t('pakete.umbau.vorschau.typ-aus', { name: eintrag.uebernimmt })}</p>}
+            {eintrag.vorhanden && <TypUpdateZeilen eintrag={eintrag} z={z} />}
             <ArchivZeile eintrag={eintrag} />
             {/* Text → Verweis (#534): Das Update ändert vorhandene Angaben nicht; umgewandelt wird danach mit Vorschau. */}
             {eintrag.vorhanden &&

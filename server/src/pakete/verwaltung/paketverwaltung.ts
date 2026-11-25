@@ -34,7 +34,7 @@ import { t } from '../../sprache/sprache';
 import { nachweis } from '../../protokoll/nachweisjournal';
 import { paketQuellen, setzePaketQuellen } from '../index';
 import { einzuschalten } from './automatisierungen';
-import { ersetzenAus, herkunftFehler, installierteErsetzt, meldungen, sammelKennungen } from './hilfen';
+import { ersetzenAus, herkunftFehler, installierteErsetzt, meldungen, sammelKennungen, typWahlAus } from './hilfen';
 import { type Handelnder, log, type Quelle } from './optionen';
 import { type InstallierenEingabe, type UmbauEingabe, type Vorschau } from './plan';
 import { PaketEntfernen } from './entfernen';
@@ -186,6 +186,7 @@ export class Paketverwaltung extends PaketEntfernen {
     Paketverwaltung.herausgeberBestaetigen(vorschau, e);
     this.umbauBestaetigen(vorschau, e);
     this.sichtenErsetzen.set(vorschau, ersetzenAus(e));
+    this.typWahl.set(vorschau, typWahlAus(e));
     // Abhängigkeiten mit Code installiert das DMS nicht still mit: ihre Rechte bestätigt man an ihnen selbst (#338).
     for (const a of fehlen) {
       if (!a.verfuegbar) continue;
@@ -344,6 +345,7 @@ export class Paketverwaltung extends PaketEntfernen {
     Paketverwaltung.herausgeberBestaetigen(plan, e);
     this.umbauBestaetigen(plan, e);
     this.sichtenErsetzen.set(plan, ersetzenAus(e));
+    this.typWahl.set(plan, typWahlAus(e));
     const neu = await this.lege(paket, alt.herkunft, v, plan, false, von, alt, einzuschalten(e.automatisierungen, paket));
     log.info('Paket aktualisiert', {
       von: von.email,
