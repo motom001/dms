@@ -110,7 +110,7 @@ What server and interface must compute the same way is written once in `shared/s
 | `shared/entdecken/` | tours, tips and the fixed anchor points (`anker.yaml`) of the interface |
 | other files | one topic each, mostly named after the function (`heimnetz.ts`, `fristen.ts`, `loeschkonzept.ts` …) |
 
-Tests live in `server/test/`, `web/test/` and `shared/test/` ([checking](loslegen.md#prufen)). Characterisation tests record what a part outputs today (`server/test/charakter/*.json`, for example the route table, the package preview `plane.json` and the anchors `anker.json`); if that changes on purpose, `CHARAKTER_SCHREIBEN=1` with the respective test rewrites them – then check the difference.
+Tests live in `server/test/`, `web/test/` and `shared/test/` ([checking](loslegen.md#prufen)). Characterisation tests record what a part outputs today (`server/test/charakter/*.json`, for example the route table, the package preview `plane.json` and the anchors `anker.json`); if that changes on purpose, `CHARAKTER_SCHREIBEN=1` with the respective test rewrites them – then check the difference. Numbers that grow with every extension are not stored there: the number of all German texts in `plane.json` reads "GESAMT" and is computed by the test from the current state, so a new language key does not change the file (#1665).
 
 ## Pages in detail { #seiten }
 

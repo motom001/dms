@@ -5,13 +5,17 @@
  *
  * Erwartung: `test/charakter/plane.json` (Ids durch Namen ersetzt, ohne Zeiten). Neu schreiben nur, wenn sich das
  * Verhalten bewusst ändert: `CHARAKTER_SCHREIBEN=1 npm run test:datei -w server -- test/pakete-planen-charakter.test.ts`.
+ * Die Zahl aller deutschen Texte (`abdeckung.gesamt` beim Sprachpaket) steht nicht in der Datei, sondern wird hier aus dem
+ * Stand berechnet und geprüft (#1665): Sonst müsste jeder neue Sprachschlüssel die Datei ändern.
  */
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { DEUTSCH } from '../../shared/src/deutsch';
 import type { HerkunftPruefung, InstalliertesPaket, Katalog, KatalogVersion } from '../../shared/src/pakete';
+import { abdeckung } from '../../shared/src/sprachpaket';
 import { speicherDateien } from '../src/dateien/dateispeicher';
 import { Dienst } from '../src/dienst/dienst';
 import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
@@ -342,6 +346,9 @@ async function aendere(x: Ablage, id: string, f: (p: InstalliertesPaket) => Inst
   await x.d.kern.repo.speicherePaket(f(structuredClone(p)));
 }
 
+/** Alle deutschen Texte (#1665): wächst mit jedem Sprachschlüssel und steht deshalb als „GESAMT“ in der Erwartung. */
+const GESAMT = abdeckung(DEUTSCH, {}).gesamt;
+
 /** Vorschau ohne Ids und Zeiten: Typen über ihre Kennung, Ansichten über den Namen, der Rest „ID“. */
 async function neutral(x: Ablage, v: Vorschau | string): Promise<unknown> {
   if (typeof v === 'string') return { fehler: v };
@@ -349,11 +356,18 @@ async function neutral(x: Ablage, v: Vorschau | string): Promise<unknown> {
   for (const t of await x.d.mappentypen.listeTypen()) namen.set(t.id, `T(${t.schluessel ?? t.name})`);
   for (const s of await x.d.sichtenVerwaltung.listeSichten()) namen.set(s.id, `S(${s.name})`);
   namen.set(ICH.id, 'ICH');
-  return JSON.parse(
+  const erg = JSON.parse(
     JSON.stringify(v)
       .replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, (u) => namen.get(u) ?? 'ID')
       .replace(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z/g, 'ZEIT'),
-  );
+  ) as { sprache?: { abdeckung?: { gesamt: unknown } } | null };
+  const a = erg.sprache?.abdeckung;
+  if (a) {
+    assert.ok(GESAMT > 1000, `nur ${GESAMT} deutsche Texte`);
+    assert.equal(a.gesamt, GESAMT, 'abdeckung.gesamt: alle deutschen Texte');
+    a.gesamt = 'GESAMT';
+  }
+  return erg;
 }
 
 async function plane(

@@ -110,7 +110,7 @@ Was Server und Oberfläche gleich rechnen müssen, steht einmal in `shared/src/`
 | `shared/entdecken/` | Rundgänge, Tipps und die festen Ankerpunkte (`anker.yaml`) der Oberfläche |
 | übrige Dateien | je ein Thema, meist mit dem Namen der Funktion (`heimnetz.ts`, `fristen.ts`, `loeschkonzept.ts` …) |
 
-Tests stehen in `server/test/`, `web/test/` und `shared/test/` ([Prüfen](loslegen.md#prufen)). Charakter-Tests halten fest, was ein Teil heute ausgibt (`server/test/charakter/*.json`, etwa die Routentabelle, die Paketvorschau `plane.json` und die Anker `anker.json`); ändert sich das bewusst, schreibt `CHARAKTER_SCHREIBEN=1` mit dem jeweiligen Test sie neu – danach den Unterschied prüfen.
+Tests stehen in `server/test/`, `web/test/` und `shared/test/` ([Prüfen](loslegen.md#prufen)). Charakter-Tests halten fest, was ein Teil heute ausgibt (`server/test/charakter/*.json`, etwa die Routentabelle, die Paketvorschau `plane.json` und die Anker `anker.json`); ändert sich das bewusst, schreibt `CHARAKTER_SCHREIBEN=1` mit dem jeweiligen Test sie neu – danach den Unterschied prüfen. Zahlen, die mit jeder Erweiterung wachsen, stehen nicht darin: Die Zahl aller deutschen Texte in `plane.json` heißt dort „GESAMT“ und wird im Test aus dem Stand berechnet; ein neuer Sprachschlüssel ändert die Datei also nicht (#1665).
 
 ## Seiten im Einzelnen { #seiten }
 

@@ -3,7 +3,9 @@
  * doppelt hinzukommen, und jede nennt ihre Zugriffsstufe.
  */
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
+import { fileURLToPath } from 'node:url';
 import { speicherDateien } from '../src/dateien/dateispeicher';
 import { Dienst } from '../src/dienst/dienst';
 import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
@@ -12,8 +14,14 @@ import { speicherKontoRepo } from '../src/konten/konto-repo';
 import { speicherRepo } from '../src/repo/speicher';
 import { routen } from '../src/http/routen';
 
-/** Interne Routen, öffentliche API /api/v1 und die beiden Beschreibungen (openapi.json). Neue Routen: Zahl anpassen (#1034: Hinweise setzen und entfernen, intern und /api/v1; #1030: Zeilen einer Tabelle, intern und /api/v1; #1037: Vorschläge beim Auswählen, intern; #995: eigene Organisation lesen, setzen, übernehmen, intern; #1045: eigene Organisation anlegen, intern; #1040: Vorlagen einer Mappe und Text setzen, intern und /api/v1; #1039: Paket-Aktionen – Angebot, Start, Schritt, Abbrechen, Datei, intern und /api/v1, dazu drei Schalter der Werkbank; #565: externe Dienste, Kosten lesen und setzen, je Paket, intern; #811: Passkeys – Anmeldung (2), eigene Passkeys (6), Pflicht (2), Zurücksetzen durch die Verwaltung (2), intern; #975: Sicherung herunterladen, Datei und Metadaten, intern; #888: Sichtbarkeit verwiesener Mappen, intern; #997: Leerseiten lesen, markieren, je Seite wählen, intern und /api/v1; #1044: Mappen-Abläufe – lesen, anwenden, ändern, löschen, intern und /api/v1, fortsetzen, dazu 13 Routen der Werkbank „Automatisierungsvorlagen“; #1001: weg sind 5 Routen der Werkbank – Tägliche Zusammenfassung speichern und jetzt senden, Freigabe „Favoriten benachrichtigen“ lesen, speichern, anwenden; #991: Webhooks ausgebaut, 4 der Werkbank und 7 unter Mein Konto entfallen; #1006: Fassungen – je Gegenstand Liste, Vergleich, Vorschau, Wiederherstellen (7 × 4) und gelöschte Einträge, statt der zwei der Automatisierungen, intern; für Mappentypen Liste, Vorschau, Wiederherstellen auch in /api/v1; Automatisierungsvorlagen: vier statt ihrer zwei; #812: Notfallkontakte lesen, anlegen, ändern, löschen, erneut senden, intern; #679: Aufruf von außen – annehmen (offen), Adresse anlegen/erneuern und entfernen, intern; #998: Anlagen lesen, anhängen, umsortieren, umbenennen, lösen, intern und /api/v1; #671: Ziele nach außen lesen und setzen, Geheimnis je Karte anlegen und entfernen, Zustellungen, intern; #1195: Prüfsummen eines Vollexports, intern; #1196: Werkbank „Einstellungen“ zum Sichern lesen, intern; #996/#1003/#1004: Anzeigen, Verlauf, Auslastung und Ausprobieren eines Pakets, intern; #1054: Freigabe lesen und speichern, intern; #1053: Einrichtung, Vergleich, Nachweise für Pakete, intern und /api/v1; #988: Beispiel-Ablage lesen, anlegen, entfernen, intern; #976: entfernte Sicherung zurückholen in der Werkbank, Stücke vom Paket intern und /api/v1; #889: Vorschläge nach @, Titel erwähnter Mappen, Erwähnungen einer Mappe intern und /api/v1; #1331: eigene Fehlermeldungen lesen, intern; #1481: aktive Sperren des Anmeldeschutzes lesen, intern; #1445: Seitengrößen eines Dokuments für die Mappe, intern; #1562: Was Ablago darf lesen und setzen, intern; #1529: „Wozu?“ einer Sicherung ändern, #1320: Sicherungen aus der Liste nehmen und wieder zeigen, #1316: Zeitplan für „Alle Dateien prüfen“ lesen und speichern, intern; #1563: Paket anhalten und fortsetzen, intern; #1551: Paket reparieren, intern; #1566: Pakete des Katalogs nach Was Ablago darf eingeordnet, Einrichtung; #1548: gleichbedeutende Wörter lesen, intern; #1569: Leistungen – Katalog, direkt, im Hintergrund, Stand eines Auftrags, Aufbewahrung lesen und setzen, intern; #1315: Mappentypen als Datei – Export, Vorschau und Einspielen, intern; #1594: Dokument umbenennen, intern und /api/v1; #1570: Von Ablago mitgeliefert – Stand, Schalter, „Wer macht das?“, intern; #1635: Dienste im Netz – alle Bereiche erlauben, intern; #1639: Post automatisch zuordnen – alle angleichen, intern; #1658: Paket-Update – Stand der Übernahme je Mappentyp, intern). */
-const ANZAHL = 809;
+/**
+ * Alle Routen mit Zugriffsstufe, aus der Routentabelle (`charakter/routen-tabelle.json`, #1278). Früher stand hier nur
+ * ihre Zahl; die änderte jeder PR mit einer neuen Route an derselben Stelle, und nach jedem Merge waren die anderen
+ * offenen PRs im Konflikt (#1665). Eine neue Route bekommt ihre eigene Zeile in der Tabelle (neu schreiben mit
+ * `CHARAKTER_SCHREIBEN=1 npm run test:datei -w server -- test/routen-tabelle-charakter.test.ts`).
+ */
+const TABELLE = fileURLToPath(new URL('./charakter/routen-tabelle.json', import.meta.url));
+const ROUTEN = (JSON.parse(readFileSync(TABELLE, 'utf8')) as { routen: string[] }).routen.map((z) => z.split(' ').slice(0, 3).join(' '));
 
 /**
  * Alle Routen ohne Anmeldung (`zugang: 'offen'`) mit Grund (#1029). Eine neue offene Route oder ein Wechsel der Stufe
@@ -75,8 +83,14 @@ describe('Routenliste (#960)', () => {
   const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   const alle = routen(d, konten, {});
 
-  it('Anzahl der Routen unverändert', () => {
-    assert.equal(alle.length, ANZAHL);
+  it('jede Route steht mit ihrer Zugriffsstufe in der Routentabelle, keine fehlt (#1665)', () => {
+    assert.ok(ROUTEN.length > 700, `nur ${ROUTEN.length} Routen in der Tabelle`);
+    const ist = alle.map((r) => `${r.methode} ${r.pfad} ${String(r.zugang)}`);
+    const neu = ist.filter((k) => !ROUTEN.includes(k));
+    const weg = ROUTEN.filter((k) => !ist.includes(k));
+    assert.deepEqual(neu, [], 'Neue Route oder neue Zugriffsstufe: Routentabelle neu schreiben und den Unterschied prüfen');
+    assert.deepEqual(weg, [], 'Route fehlt oder hat eine andere Zugriffsstufe');
+    assert.equal(alle.length, ROUTEN.length, 'Zahl der Routen wie in der Routentabelle');
   });
 
   it('jede Route mit Zugriffsstufe und Handler', () => {
