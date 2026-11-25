@@ -29,6 +29,9 @@
         "src/laeufer/{prozess,arbeiter}.ts",
         "src/arbeit/arbeitsfaden.ts",
         "werkzeuge/*.ts",
+        // Prüfstand Erkennung (#1679): von Hand bzw. im Workflow des privaten Satzes gestartet; die Tests laden die Module
+        // per import(URL), das sieht knip nicht.
+        "werkzeuge/pruefstand/*.mjs",
         "test/**/*.{ts,mjs}",
       ],
       "project": ["src/**", "test/**", "werkzeuge/**"],
