@@ -13,6 +13,7 @@ import {
 } from '../../shared/src/model';
 import {} from './sprache';
 import { istZeitraum, leseProzent, leseZeitraum, type Zeitraum, type Zeitraumeinheit } from '../../shared/src/feldarten';
+import { formate } from '../../shared/src/region';
 
 /**
  * Formulare arbeiten mit Rohwerten (Texten, wie getippt). Erst beim Speichern
@@ -44,7 +45,7 @@ export function zuRoh(f: Feld, v: Wert | undefined): Roh {
       return istZeitraum(v) ? { anzahl: String(v.anzahl), einheit: v.einheit } : zeitraumRoh(v);
     case 'betrag': {
       const b = v as Betrag | null | undefined;
-      const waehrung = b?.waehrung || f.waehrung || 'EUR';
+      const waehrung = b?.waehrung || f.waehrung || formate().waehrung;
       // Mit den Nachkommastellen der Währung (#1608): „12,50“, nicht „12,5“.
       return { betrag: b && typeof b.betrag === 'number' ? betragZahl(b.betrag, waehrung) : '', waehrung };
     }
@@ -78,7 +79,7 @@ export function ausRoh(f: Feld, r: Roh | undefined): Wert {
       const b = r as RohBetrag | undefined;
       const n = leseZahl(b?.betrag);
       if (n == null) return null;
-      return { betrag: n, waehrung: (b?.waehrung || 'EUR').trim().toUpperCase() };
+      return { betrag: n, waehrung: (b?.waehrung || formate().waehrung).trim().toUpperCase() };
     }
     case 'janein':
       return !!r;
@@ -118,7 +119,7 @@ export function standardRoh(mappentyp: Mappentyp): RohWerte {
       r[f.key] = n != null && Number.isFinite(n) ? mitKomma(n) : '';
     } else if (f.typ === 'betrag') {
       const n = leseZahl(s);
-      r[f.key] = { betrag: n != null && Number.isFinite(n) ? betragZahl(n, f.waehrung) : '', waehrung: f.waehrung || 'EUR' };
+      r[f.key] = { betrag: n != null && Number.isFinite(n) ? betragZahl(n, f.waehrung) : '', waehrung: f.waehrung || formate().waehrung };
     } else if (f.mehrfach && (f.typ === 'auswahl' || f.typ === 'referenz')) r[f.key] = [];
     // Nummernkreis (#171): vergibt der Server beim Speichern.
     else r[f.key] = f.typ === 'referenz' || s == null || kreisVon(f) ? '' : String(s);

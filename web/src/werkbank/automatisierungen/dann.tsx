@@ -2,6 +2,7 @@ import { feldLabel, optionText } from '../../../../shared/src/beschriftung';
 import {
   AUTOMATISIERUNG_GRENZEN,
   paketKarteLeer,
+  verknuepftKurz,
   zielHost,
   type AutomatisierungAnsicht,
   type DannKarte,
@@ -17,6 +18,7 @@ import { EmailKarte, platzhalterGruppen, UrlKarte } from '../AutomatisierungAuss
 import { RollenWahl } from '../RollenWahl';
 import { grundArt, neueId, ohneMappeWenn, PAKET_KARTE } from './hilfen';
 import { EmpfaengerWahl, empfaengerName } from './und';
+import { VerknuepftKarte } from './verknuepft';
 
 /**
  * Dann- und Sonst-Karten einer Automatisierung (#675, #677, #678; #1279 aus Automatisierungen.tsx gezogen): neue Karten,
@@ -34,6 +36,7 @@ function neuePaketKarte(art: string, k?: Kontextdaten): DannKarte {
 export function neueDann(art: string, w?: WennKarte, k?: Kontextdaten): DannKarte {
   if (grundArt(art) === 'paket') return neuePaketKarte(art, k);
   if (art === 'feld') return { id: neueId(), art: 'feld', werte: {} };
+  if (art === 'feld_verknuepft') return { id: neueId(), art: 'feld_verknuepft', ueber: '', werte: {} };
   if (art === 'zusammenfassung' || art === 'favoriten' || art === 'sicherung') return { id: neueId(), art };
   // Nach außen (#671): Adresse vorbelegt mit dem ersten freigegebenen Ziel; Inhalt „nur Meldung“.
   if (art === 'url')
@@ -44,6 +47,9 @@ export function neueDann(art: string, w?: WennKarte, k?: Kontextdaten): DannKart
   return { id: neueId(), art: 'stopp' };
 }
 
+/** Karten ohne Einstellungen – ohne Kurzform. */
+const OHNE_KURZ = new Set<string>(['stopp', 'zusammenfassung', 'sicherung']);
+const ohneKurz = (k: DannKarte): k is Extract<DannKarte, { art: 'stopp' | 'zusammenfassung' | 'sicherung' }> => OHNE_KURZ.has(k.art);
 export function dannKurz(k: DannKarte, typ: Mappentyp | null, kx: Kontextdaten): string {
   if (k.art === 'favoriten')
     return k.rollen?.length
@@ -51,13 +57,14 @@ export function dannKurz(k: DannKarte, typ: Mappentyp | null, kx: Kontextdaten):
           rollen: k.rollen.map((r) => kx.rollen.find((x) => x.id === r)?.name ?? '?').join(', '),
         })
       : '';
-  if (k.art === 'stopp' || k.art === 'zusammenfassung' || k.art === 'sicherung') return '';
+  if (ohneKurz(k)) return '';
   if (k.art === 'anmeldeschutz') return t.frei(`automatisierung.ui.karte.dann.anmeldeschutz.${k.was}`);
   if (k.art === 'paket') return `${kx.pakete?.find((p) => p.id === k.paket)?.name ?? k.paket}${k.aufgabe ? ` · ${k.aufgabe}` : ''}`;
   if (k.art === 'url')
     return `${k.methode} ${k.adresse ? zielHost(k.adresse) : '?'} · ${t.frei(`automatisierung.ui.karte.dann.url.inhalt.${k.inhalt}`)}`;
   if (k.art === 'email')
     return `${k.betreff || '?'} → ${k.an.map((e) => (e.art === 'adresse' ? e.adresse : empfaengerName(e, typ, kx))).join(', ') || '?'}`;
+  if (k.art === 'feld_verknuepft') return verknuepftKurz(k, typ, kx.typen);
   if (k.art === 'feld')
     return Object.entries(k.werte)
       .map(([key, v]) => `${typ?.felder.find((f) => f.key === key)?.label ?? key} = ${String(v ?? '')}`)
@@ -325,6 +332,7 @@ export function DannEditor({
   if (karte.art === 'favoriten') return <FavoritenKarte karte={karte} k={k} setze={setze} />;
   if (karte.art === 'anmeldeschutz') return <AnmeldeschutzKarte karte={karte} setze={setze} />;
   if (karte.art === 'feld') return <FeldKarte karte={karte} typ={typ} wenn={wenn} setze={setze} />;
+  if (karte.art === 'feld_verknuepft') return <VerknuepftKarte karte={karte} typ={typ} wenn={wenn} k={k} setze={setze} />;
   return <AufgabeKarte karte={karte} typ={typ} wenn={wenn} k={k} setze={setze} />;
 }
 

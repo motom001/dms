@@ -1,15 +1,16 @@
 import { useCallback, useEffect, useState } from 'react';
-import { setzeZeitzone } from '../../../shared/src/region';
+import { setzeFormate, setzeZeitzone } from '../../../shared/src/region';
 import { werkbankApi, type Region, type RegionStand } from '../api/werkbank';
 import { Speicherleiste, useEntwurf } from '../Speicherleiste';
 import { t } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
 import { Kopf } from './Kopf';
+import { RegionFormate } from './RegionFormate';
 import { Feld } from '../bausteine';
 
 /**
- * Werkbank → Einstellungen → Region (#726): Land, Bundesland und Zeitzone an einer Stelle,
- * dazu die Feiertage des laufenden Jahres als Vorschau.
+ * Werkbank → Einstellungen → Region (#726): Land, Bundesland und Zeitzone an einer Stelle, dazu die Formate (#1610) und
+ * die Feiertage des laufenden Jahres als Vorschau.
  */
 export function useRegion(offen: boolean) {
   const [stand, setStand] = useState<RegionStand | null>(null);
@@ -62,6 +63,7 @@ export function RegionPanel({ z }: { z: RegionZustand }) {
       z.setStand(n);
       setE(n.region);
       setzeZeitzone(n.region.zeitzone);
+      setzeFormate(n.region.formate);
       setMeldung({ art: 'gut', text: t('werkbank.region.gespeichert') });
     } catch (x) {
       setMeldung({ art: 'schlecht', text: (x as Error).message });
@@ -117,6 +119,8 @@ export function RegionPanel({ z }: { z: RegionZustand }) {
             ))}
           </select>
         </Feld>
+        {/* Formate (#1610): Datum, Zahlen, Telefon, Arbeitstage und Wochenbeginn – mit Vorschau des Entwurfs. */}
+        <RegionFormate f={e.formate} setze={(formate) => setE({ ...e, formate })} />
         <Speicherleiste ent={ent} gegenstand={t('werkbank.bereich.region.name')} sendet={sendet} />
       </form>
       <section className="blatt" aria-labelledby="region-feiertage">

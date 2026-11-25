@@ -23,6 +23,7 @@ import { EREIGNISKATALOG, KATALOG_ARTEN, wennFaehig, type BetriebWenn } from './
 import { bereinigeBetrieb, betriebKurz, betriebPlatzhalter, betriebProbleme, istBetrieb } from './automatisierung-werkbank';
 import { aufrufKurz, aufrufPlatzhalter, bereinigeAufruf, istAufruf } from './automatisierung-aufruf';
 import { aussenKurz, aussenProbleme, bereinigeAussen, istAussenKarte } from './automatisierung-aussen';
+import { bereinigeVerknuepft, verknuepftKurz, verknuepftProbleme } from './automatisierung-verknuepft';
 import type {
   AussenZiel,
   AutomatisierungDaten,
@@ -79,6 +80,7 @@ export * from './automatisierung-typen';
 export * from './automatisierung-werkbank';
 export * from './automatisierung-aufruf';
 export * from './automatisierung-aussen';
+export * from './automatisierung-verknuepft';
 
 /** Reihenfolge (1–99): kleiner = früher; Vorgaben je Herkunft. */
 export const REIHENFOLGE = { min: 1, max: 99, eigen: 50, dms: 10, paket: 30 } as const;
@@ -110,6 +112,7 @@ export const EREIGNIS_PERSON: Record<string, string> = { vertreter: 'Vertreter',
 export type DannArt = DannKarte['art'];
 export const DANN_ARTEN: DannArt[] = [
   'feld',
+  'feld_verknuepft',
   'aufgabe',
   'zusammenfassung',
   'favoriten',
@@ -415,12 +418,18 @@ function bereinigeFavoriten(x: Record<string, unknown>, kid: string): DannKarte 
 }
 
 const OHNE_EINSTELLUNG = new Set(['stopp', 'zusammenfassung', 'sicherung']);
+/** Karten mit eigener Bereinigung: Favoriten (#1001), Feld in verknüpfter Mappe (#1557). */
+const EIGENE_BEREINIGUNG: Record<string, (x: Record<string, unknown>, kid: string) => DannKarte> = {
+  favoriten: bereinigeFavoriten,
+  feld_verknuepft: (x, kid) => bereinigeVerknuepft(x, kid, id, AUTOMATISIERUNG_GRENZEN.text),
+};
 function bereinigeDann(e: unknown, i: number): DannKarte | null {
   const x = (e ?? {}) as Record<string, unknown>;
   const kid = id(x.id) || `k${i + 1}`;
   // Karten ohne Einstellungen (#677: „Sicherung anstoßen“).
   if (OHNE_EINSTELLUNG.has(String(x.art))) return { id: kid, art: x.art as 'stopp' | 'zusammenfassung' | 'sicherung' };
-  if (x.art === 'favoriten') return bereinigeFavoriten(x, kid);
+  const eigen = EIGENE_BEREINIGUNG[String(x.art)];
+  if (eigen) return eigen(x, kid);
   // Nach außen (#671).
   if (istAussenKarte({ art: String(x.art) })) return bereinigeAussen(x, kid, bereinigeEmpfaenger);
   if (x.art === 'anmeldeschutz') return { id: kid, art: 'anmeldeschutz', was: x.was === 'konto' ? 'konto' : 'sammel' };
@@ -587,6 +596,7 @@ export function automatisierungsProblemOrte(a: AutomatisierungDaten, k: Kontextd
           else if (f.berechnetVon) p.push(t('gemeinsam.automatisierung.feld-aendern-berechnet', { label: f.label }));
         }
     }
+    if (d.art === 'feld_verknuepft') p.push(...verknuepftProbleme(d, typ, k.typen));
     if (d.art === 'zusammenfassung' && !(w.art === 'zeitplan' && w.jeBenutzer))
       p.push(t('gemeinsam.automatisierung.taegliche-zusammenfassung-senden'));
     if (d.art === 'favoriten' && w.art !== 'favorit.geaendert') p.push(t('gemeinsam.automatisierung.favoriten-aenderungen-melden-braucht'));
@@ -661,8 +671,22 @@ export function wennText(
           : `${typ && EREIGNISKATALOG[w.art].gruppe !== 'benutzer' ? `${typ.name} ` : ''}${w.art === 'mappe.geaendert' && w.angelegt ? t('gemeinsam.automatisierung.angelegt-oder', { wert: ereignisName(w.art) }) : ereignisName(w.art)}`;
 }
 
+const istFeldKarte = (d: DannKarte): d is Extract<DannKarte, { art: 'feld' | 'feld_verknuepft' }> =>
+  d.art === 'feld' || d.art === 'feld_verknuepft';
+/** „Feld ändern“ bzw. „Feld in verknüpfter Mappe setzen“ (#1557) kurz. */
+function feldKarteText(d: Extract<DannKarte, { art: 'feld' | 'feld_verknuepft' }>, typ: Mappentyp | null, typen: Mappentyp[] = []) {
+  if (d.art === 'feld_verknuepft') return verknuepftKurz(d, typ, typen);
+  return `${Object.keys(d.werte)
+    .map((x) => feldIn(typ, x)?.label ?? x)
+    .join(', ')} setzen`;
+}
+
 /** Eine Dann- oder Sonst-Karte kurz, z. B. „Aufgabe an Markus“ – Kurzform und Fassungen (#1006). */
-export function dannText(d: DannKarte, typ: Mappentyp | null, k: Pick<Kontextdaten, 'benutzer' | 'rollen' | 'pakete'>): string {
+export function dannText(
+  d: DannKarte,
+  typ: Mappentyp | null,
+  k: Pick<Kontextdaten, 'benutzer' | 'rollen' | 'pakete'> & Partial<Pick<Kontextdaten, 'typen'>>,
+): string {
   const wer = (e: Empfaenger) =>
     e.art === 'person'
       ? (k.benutzer.find((b) => b.id === e.id)?.name ?? '?')
@@ -696,10 +720,8 @@ export function dannText(d: DannKarte, typ: Mappentyp | null, k: Pick<Kontextdat
                     name: k.pakete?.find((x) => x.id === d.paket)?.name ?? (d.paket || '?'),
                     wert: d.aufgabe ? ` (${aufgabeName(d.paket, d.aufgabe, k.pakete)})` : '',
                   })
-                : d.art === 'feld'
-                  ? `${Object.keys(d.werte)
-                      .map((x) => feldIn(typ, x)?.label ?? x)
-                      .join(', ')} setzen`
+                : istFeldKarte(d)
+                  ? feldKarteText(d, typ, k.typen)
                   : `${d.als === 'aufgabe' ? 'Aufgabe' : 'Benachrichtigung'} an ${d.empfaenger.map(wer).join(', ') || '?'}`;
 }
 

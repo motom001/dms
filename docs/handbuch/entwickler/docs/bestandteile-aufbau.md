@@ -15,6 +15,7 @@ Ablago bindet nur wenige Pakete **direkt** ein (**Ebene 1**). Was diese brauchen
 | `@simplewebauthn/server` | Passkeys prüfen (WebAuthn: CBOR, COSE-Schlüssel, Signaturen, Zähler). | MIT | 23 |
 | `fastify` | HTTP-Server: Routen, Prüfung der Anfragen, Antworten. | MIT | 46 |
 | `imapflow` | Post aus Postfächern über IMAP abholen. | MIT | 23 |
+| `libphonenumber-js` | Telefonnummern lesen und einheitlich zeigen: Länge der Ortsvorwahlen je Land (nur die kleinen Daten „min“, #1609). | MIT | 0 |
 | `mailparser` | Abgeholte E-Mails in Text und Anhänge zerlegen. | MIT | 25 |
 | `nodemailer` | E-Mails über SMTP senden (Einladungen, Hinweise, Mappen versenden). | MIT-0 | 0 |
 | `pdf-lib` | PDFs zusammenstellen, verkleinern, schwärzen und stempeln (nur über die PDF-Stelle). | MIT | 4 |
@@ -49,6 +50,7 @@ Die Bibliotheken der Oberfläche bündelt Vite beim Bauen in eine Datei; im Imag
 
 | Paket | Wozu | Lizenz | Bringt mit |
 | --- | --- | --- | ---: |
+| `libphonenumber-js` | Telefonnummern lesen und einheitlich zeigen: Länge der Ortsvorwahlen je Land (nur die kleinen Daten „min“, #1609). | MIT | 0 |
 | `qrcode` | QR-Codes, z. B. für die Zwei-Faktor-Anmeldung und das Notfallblatt. | MIT | 28 |
 | `react` | Grundlage der Weboberfläche. | MIT | 0 |
 | `react-dom` | Zeichnet die React-Oberfläche im Browser. | MIT | 1 |

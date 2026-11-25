@@ -1,12 +1,15 @@
-/** Region der Ablage (#726): Land, Bundesland, Zeitzone an einer Stelle. */
+/** Region der Ablage (#726): Land, Bundesland, Zeitzone und Formate (#1610) an einer Stelle. */
 import assert from 'node:assert/strict';
 import { afterEach, describe, it } from 'node:test';
 import { formatiere, tagVon, type Feld } from '../../shared/src/model';
 import {
   datumsformat,
+  FORMATE_STANDARD,
+  formate,
   istZeitzone,
   liesRegion,
   REGION_STANDARD,
+  setzeFormate,
   setzeZeitzone,
   tagIn,
   zahlformat,
@@ -21,10 +24,13 @@ import { RegionDienst } from '../src/einstellungen/region';
 const status = (s: number) => (e: unknown) => e instanceof Fachfehler && e.status === s;
 
 describe('Region (#726)', () => {
-  afterEach(() => setzeZeitzone('Europe/Berlin'));
+  afterEach(() => {
+    setzeZeitzone('Europe/Berlin');
+    setzeFormate(FORMATE_STANDARD);
+  });
 
   it('Vorgabe: Deutschland, ohne Bundesland, Europe/Berlin', async () => {
-    assert.deepEqual(REGION_STANDARD, { land: 'DE', bundesland: null, zeitzone: 'Europe/Berlin' });
+    assert.deepEqual(REGION_STANDARD, { land: 'DE', bundesland: null, zeitzone: 'Europe/Berlin', formate: FORMATE_STANDARD });
     assert.deepEqual(await new RegionDienst(speicherEinstellungen()).lies(), REGION_STANDARD);
     assert.deepEqual(liesRegion({ land: 'XX', bundesland: 'XX', zeitzone: 'Mond/Krater' }), REGION_STANDARD);
   });
@@ -33,7 +39,7 @@ describe('Region (#726)', () => {
     const e = speicherEinstellungen();
     await e.schreibe('aufgaben_mail', { aktiv: true, uhrzeit: '07:00', bundesland: 'SN' });
     const r = new RegionDienst(e);
-    assert.deepEqual(await r.lies(), { land: 'DE', bundesland: 'SN', zeitzone: 'Europe/Berlin' });
+    assert.deepEqual(await r.lies(), { land: 'DE', bundesland: 'SN', zeitzone: 'Europe/Berlin', formate: FORMATE_STANDARD });
     await r.speichere({ bundesland: 'BY' });
     assert.equal((await r.lies()).bundesland, 'BY');
     await r.speichere({ bundesland: null });
@@ -46,7 +52,32 @@ describe('Region (#726)', () => {
     await assert.rejects(r.speichere({ bundesland: 'XX' }), status(422));
     await assert.rejects(r.speichere({ zeitzone: 'Europe/Nirgendwo' }), status(422));
     assert.ok(istZeitzone('Europe/Vienna') && !istZeitzone('') && !istZeitzone(7));
-    assert.deepEqual(await r.speichere({ zeitzone: 'Europe/Vienna' }), { land: 'DE', bundesland: null, zeitzone: 'Europe/Vienna' });
+    assert.deepEqual(await r.speichere({ zeitzone: 'Europe/Vienna' }), {
+      land: 'DE',
+      bundesland: null,
+      zeitzone: 'Europe/Vienna',
+      formate: FORMATE_STANDARD,
+    });
+  });
+
+  it('Formate (#1610): speichern, gelten im Prozess, Unbekanntes lehnt der Server ab', async () => {
+    const r = new RegionDienst(speicherEinstellungen());
+    await assert.rejects(r.speichere({ formate: { datum: 'tt-mm' } }), status(422));
+    await assert.rejects(r.speichere({ formate: { waehrung: 'Euro' } }), status(422));
+    await assert.rejects(r.speichere({ formate: { arbeitstage: [0] } }), status(422));
+    const neu = await r.speichere({
+      formate: { datum: 'jjjj-mm-tt', telefon: 'kanonisch', arbeitstage: [1, 2, 3, 4, 5, 6], wochenbeginn: 7 },
+    });
+    assert.equal(neu.formate.datum, 'jjjj-mm-tt');
+    assert.equal(neu.formate.vorwahl, '49', 'nicht genannte bleiben');
+    assert.equal(formate().wochenbeginn, 7, 'gilt sofort in diesem Prozess');
+    assert.equal(tagVon('2026-11-04T12:00:00Z'), '2026-11-04');
+    const f = { key: 'tel', label: 'Telefon', typ: 'text', format: 'telefon' } as Feld;
+    assert.equal(formatiere(f, '0351/123 45 67'), '+49 (351) 1234567');
+    // Ein anderer Server liest sie beim nächsten Durchlauf.
+    setzeFormate(FORMATE_STANDARD);
+    await r.lade();
+    assert.equal(formate().datum, 'jjjj-mm-tt');
   });
 
   it('die Zeitzone gilt für „heute“ und Tage aus Zeitstempeln', async () => {

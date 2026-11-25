@@ -52,6 +52,8 @@ interface PlanTeile {
 export interface MitkommtNamen {
   typ(verweis: string): string;
   feld(verweis: string, key: string): string;
+  /** Verweisfeld (#1557): der (erste) Zieltyp als Verweis wie `typ`, wenn bekannt. */
+  ziel?(verweis: string, key: string): string | undefined;
 }
 
 const istObjekt = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
@@ -109,6 +111,13 @@ function dannAus(d: unknown, typ: string, n: MitkommtNamen): MitkommtDann {
     };
   if (d.art === 'feld')
     return { art: 'feld', felder: Object.keys(istObjekt(d.werte) ? d.werte : {}).map((k) => (typ ? n.feld(typ, k) : k)) };
+  // Feld in verknüpfter Mappe (#1557): Bezeichnungen der Zielfelder aus dem Zieltyp des Verweisfelds, sonst die Kennung.
+  if (d.art === 'feld_verknuepft') {
+    const ueber = text(d.ueber);
+    const ziel = typ ? n.ziel?.(typ, ueber) : undefined;
+    const felder = Object.keys(istObjekt(d.werte) ? d.werte : {}).map((k) => (ziel ? n.feld(ziel, k) : k));
+    return { art: 'feld_verknuepft', ueber: typ ? n.feld(typ, ueber) : ueber, felder };
+  }
   if (d.art === 'anmeldeschutz') return { art: d.was === 'sammel' ? 'sammelmeldung' : 'kontosperre' };
   if (d.art === 'zusammenfassung' || d.art === 'favoriten' || d.art === 'paket' || d.art === 'stopp') return { art: d.art };
   return { art: 'sonst' };

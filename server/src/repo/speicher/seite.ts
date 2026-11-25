@@ -4,6 +4,7 @@ import { type Ausschnitt, type Mappe, TREFFER_ANFANG, TREFFER_ENDE } from '../..
 import { lesbar, werte } from '../../../../shared/src/rechte';
 import { inSicht } from '../../../../shared/src/sichten';
 import { falte, type Varianten } from '../../../../shared/src/suche';
+import { telefonFindet, telefonSuchformen } from '../../../../shared/src/telefon';
 import { ausschnittAus } from '../ausschnitt';
 import type { Repo, RepoTeil } from '..';
 import { enthaelt, findet, kopie, woerter } from './hilfen';
@@ -28,9 +29,18 @@ export function speicherSeite(sp: SpeicherKontext) {
     const vv: Varianten = { ...(o.varianten ?? {}) };
     for (const [k, w] of Object.entries(o.aehnlich ?? {})) vv[k] = [...(vv[k] ?? []), ...w];
     const wertText = (v: unknown) => (typeof v === 'object' ? JSON.stringify(v) : String(v));
-    const inFeldern = (m: Mappe, text: string) =>
-      enthaelt(m.titel ?? '', text, vv) ||
-      Object.values(m.werte).some((v) => !(typeof v === 'string' && v.startsWith('dms1$')) && enthaelt(wertText(v), text, vv));
+    const inFeldern = (m: Mappe, text: string) => {
+      // Telefonnummern (#1609): in jeder Schreibweise – wie im PostgreSQL-Repo.
+      const tel = telefonSuchformen(text);
+      return (
+        enthaelt(m.titel ?? '', text, vv) ||
+        Object.values(m.werte).some(
+          (v) =>
+            !(typeof v === 'string' && v.startsWith('dms1$')) &&
+            (enthaelt(wertText(v), text, vv) || (tel.length > 0 && typeof v === 'string' && telefonFindet(v, tel))),
+        )
+      );
+    };
     // Teile (#1031): übergeordnete Mappen, in deren Teilen der Begriff steht, zählen als Treffer.
     const auch = new Set(o.auchIds ?? []);
     const ohneLesen = [...mappen.values()]

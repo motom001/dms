@@ -43,6 +43,7 @@
   "editor.chip.max": "bis {datum}",
   "eingabe.link.email": "E-Mail an {wert} schreiben",
   "eingabe.link.telefon": "{wert} anrufen",
+  "eingabe.telefon.nicht-erkannt": "nicht als Telefonnummer erkannt – steht da, wie eingegeben",
   "eingabe.link.internetseite": "{wert} in neuem Tab öffnen",
   "wartung.titel": "Angaben, die nicht zum Format passen",
   "wartung.text": "Bekommt ein Feld ein Format oder Grenzen, bleiben gespeicherte Angaben gültig. Hier siehst du je Mappentyp und Feld, welche nicht passen. Sobald jemand das Feld ändert, muss die Angabe passen.",

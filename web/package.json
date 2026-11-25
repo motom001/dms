@@ -12,6 +12,7 @@
     "test:datei": "node --import tsx --import ./test/lader.mjs --test --test-reporter=spec"
   },
   "dependencies": {
+    "libphonenumber-js": "^1.13.17",
     "qrcode": "^1.5.4",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"

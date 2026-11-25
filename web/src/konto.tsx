@@ -21,7 +21,9 @@ import { Ctx } from './konto-kontext';
 
 export { useKonto, useKontoOptional } from './konto-kontext';
 import { LasttestSeite } from './lasttest';
-import { setzeZeitzone } from '../../shared/src/region';
+import { setzeFormate, setzeZeitzone } from '../../shared/src/region';
+// Telefonnummern (#1609): meldet die Anzeige im Format der Region an (Werte, tel:-Link).
+import '../../shared/src/telefon';
 import { zielNachAnmeldung } from '../../shared/src/startseite';
 import { darfVerwalten, type Verwaltungsstand } from '../../shared/src/verwaltungsrecht';
 import { Verwaltungsanmeldung, verwaltungBeginnen } from './verwaltungsmodus';
@@ -64,6 +66,8 @@ export function KontoProvider({ children }: { children: ReactNode }) {
       const st = await kontoApi.status();
       // Region (#726): „heute“, Uhrzeiten und Kalendertage wie auf dem Server.
       setzeZeitzone(st.zeitzone);
+      // Formate der Region (#1610): Datum, Zahlen, Telefon und Wochenbeginn wie auf dem Server.
+      setzeFormate(st.formate);
       // Sprachen (#729): Beschriftungen nur in erlaubten Sprachen; gilt nach der Anmeldung eine andere Sprache, neu laden.
       if (st.sprachen) {
         setzeErlaubteSprachen(st.sprachen.erlaubt);

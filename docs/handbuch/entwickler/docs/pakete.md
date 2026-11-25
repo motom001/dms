@@ -262,6 +262,23 @@ Das Format beschreiben die JSON-Schemas in der Registry: [`schema/manifest.schem
     ```
 
     Am Datumsfeld bleibt nur `frist` („ist eine Frist“: steht unter *Zu erledigen*, im Kalender und löst *Datum erreicht* aus). Seit 0.177.0 legt das Feld **keine Aufgaben mehr selbst an**; `frist.vorlauf`, `einheit`, `wiederholung` und `text` dienen nur noch als Vorgabe – erinnern soll eine mitgelieferte Automatisierung mit derselben Vorlaufzeit.
+
+    **Feld in verknüpfter Mappe setzen** (dms #1557, Dann-Karte `feld_verknuepft`): setzt Felder der Mappe, auf die ein Verweisfeld der auslösenden Mappe zeigt – bei `mehrfach` in jeder. `ueber` ist das Verweisfeld, `werte` sind Felder des Zieltyps (fest oder mit Platzhaltern wie bei `feld`; ein Platzhalter allein wie `"{naechste_hu}"` übernimmt den Wert unverändert, dafür müssen die Feldarten gleich sein), `nur_wenn` ist `immer` (Vorgabe), `leer`, `spaeter` oder `frueher` (die beiden letzten nur bei Datum und Zahl). Geschrieben wird mit den Rechten des Systemkontos „Automatisierung“; darf es die Zielmappe nicht ändern, bleibt sie unverändert und der Lauf vermerkt es. `pakete-pruefen` prüft das Verweisfeld und die Zielfelder (Feld existiert, Feldart passt, nicht berechnet), wenn Auslöser und Ziel Typen des Pakets sind; Zieltypen anderer Pakete prüft Ablago erst beim Installieren (die Automatisierung zeigt dann ein Problem). Pakete damit verlangen `dms: ">=<Version>"` – die Version nennt das Änderungsprotokoll unter #1557; ältere Ablago verwerfen die unbekannte Karte (ohne andere Dann-Karte läuft die Automatisierung dort nicht). Beispiel (dms-registry #227):
+
+    ```yaml
+    # inhalt/automatisierungen.yaml im Paket fahrzeuge
+    - schluessel: hu_ans_fahrzeug
+      name: Nächste HU ans Fahrzeug übernehmen
+      beschreibung: Aus dem Prüfbericht kommt „Nächste HU“ als „HU fällig“ ans Fahrzeug – nur, wenn das Datum später ist.
+      eingeschaltet: true
+      wenn: { art: mappe.geaendert, typ: hauptuntersuchung, felder: [naechste_hu], angelegt: true }
+      dann:
+        - art: feld_verknuepft
+          ueber: fahrzeug
+          werte: { hu_faellig: "{naechste_hu}" }
+          nur_wenn: spaeter
+    ```
+
 - **Abhängigkeiten** (`abhaengigkeiten: { <paket>: "<bereich>" }`): Pakete, die vorher installiert sein müssen. Beim Installieren kommen fehlende Abhängigkeiten im selben Ablauf mit – seit Ablago 0.151.0 (#405) auch solche **mit Code**: Der Administrator sieht die Rechte aller Pakete auf einer Seite und bestätigt sie einmal; jedes Paket behält sein eigenes Dienstkonto und seine eigenen Rechte. Ein Update, das die Rechte ändert, braucht wie bisher eine neue Bestätigung.
 - **Ergänzungen** (`ergaenzt`, dms #405, ab 0.151.0): Ein Paket, das ein anderes erweitert – etwa eine Zusatzsprache der Texterkennung –, sagt das mit `ergaenzt`. Das ergänzte Paket muss auch unter `abhaengigkeiten` stehen. Die Installation zeigt Ergänzungen als **Häkchen unter dem ergänzten Paket** (beim ersten Installieren, im Einrichtungsassistenten, aus einer Sammeldatei und nachträglich am installierten Paket), gruppiert nach `gruppe` – ohne Gruppe unter „Ergänzungen“. Die Gruppe ist eine kurze Frage ohne Fragezeichen (höchstens 40 Zeichen), Ablago hängt „?“ an. Jede Ergänzung bleibt ein eigenes Paket mit eigener Version und eigenem Update. Ältere Ablago ignorieren das Feld; ein Paket braucht dafür kein höheres `dms`. Ohne `ergaenzt` erscheint ein abhängiges Paket nur als normales Paket in der Liste.
 

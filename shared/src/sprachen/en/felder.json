@@ -43,6 +43,7 @@
   "editor.chip.max": "until {datum}",
   "eingabe.link.email": "Write an email to {wert}",
   "eingabe.link.telefon": "Call {wert}",
+  "eingabe.telefon.nicht-erkannt": "not recognised as a phone number – shown as entered",
   "eingabe.link.internetseite": "Open {wert} in a new tab",
   "wartung.titel": "Details that don’t match the format",
   "wartung.text": "If a field gets a format or limits, saved details stay valid. Here you see, for each folder type and field, which ones don’t match. As soon as someone changes the field, the detail must match.",

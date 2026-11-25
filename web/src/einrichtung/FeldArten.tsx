@@ -10,6 +10,7 @@ import { t } from '../sprache';
 import { DatumEingabe, Feld, FeldGruppe, HakenFeld } from '../bausteine';
 import { standardAnzeige, type EntwurfFeld, type EntwurfRegister, type Zahlprop } from './entwurf';
 import { AusDatumEditor, DatumGrenzen, FolgtAusEditor, FormatEditor, FristEditor, ZielTypenWahl } from './FeldEigenschaften';
+import { formate } from '../../../shared/src/region';
 
 /**
  * Eigenschaften je Feldart und Standardwert im Mappentyp-Editor (#1279 aus `FeldZeile` gezogen). Hier stehen auch die
@@ -155,7 +156,7 @@ function betragEigenschaften(b: Basis) {
           id={id('waehrung')}
           className="mono"
           maxLength={3}
-          value={f.waehrung ?? 'EUR'}
+          value={f.waehrung ?? formate().waehrung}
           onChange={(e) => setze({ waehrung: e.target.value.toUpperCase() })}
         />
       </Feld>

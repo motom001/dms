@@ -6,13 +6,14 @@ import { istLeer, istPasswortWert, type Betrag, type Mappe, type Werte, type Wer
 import { istZeitraum, zeitraumText, prozentText } from '../feldarten';
 import { PLATZHALTER_MIT_FILTERN, wendeFilterAn, liesFilter, LEER, ohneLeereTeile, pruefeFilter } from '../titelfilter';
 import { t } from '../texte';
-import { datumsformat, zahlformat } from '../region';
+import { datumsformat, regionDatum, regionZahl, zahlformat } from '../region';
 import { gebietsschema } from '../sprache';
 import type { Mappentyp, Register } from './mappentyp';
 import type { Feld } from './felder';
 import { optionText } from '../beschriftung';
 import { alsText } from '../markdown';
 import { ibanGruppen } from '../feldformate';
+import { telefonanzeige } from '../telefon-anzeige';
 
 /** Platzhalter `{feld}` bzw. `{feld|filter…}` (#170). */
 const PLATZHALTER = PLATZHALTER_MIT_FILTERN;
@@ -26,18 +27,15 @@ export type Indexwerte = Partial<Pick<Mappe, 'erstellt' | 'geaendert'>>;
 /** Betreff einer fotografierten Post (#490): „Post vom 01.11.2026, 20:52“ statt des Dateinamens „image“. */
 export function fotoBetreff(d: Date = new Date()): string {
   return t('gemeinsam.model.foto-betreff', {
-    zeit: datumsformat(gebietsschema(), { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(
-      d,
-    ),
+    zeit: regionDatum(d, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
   });
 }
-const TAG_FORMAT = () => datumsformat(gebietsschema(), { day: '2-digit', month: '2-digit', year: 'numeric' });
 
-/** Tag eines Zeitstempels als TT.MM.JJJJ in der Zeitzone des Haushalts. */
+/** Tag eines Zeitstempels als TT.MM.JJJJ (bzw. im Datumsformat der Region, #1610) in der Zeitzone des Haushalts. */
 export function tagVon(zeitstempel: string | undefined): string {
   if (!zeitstempel) return '';
   const d = new Date(zeitstempel);
-  return Number.isNaN(d.getTime()) ? '' : TAG_FORMAT().format(d);
+  return Number.isNaN(d.getTime()) ? '' : regionDatum(d, { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
 /** Feldschlüssel, die eine Titel-Vorlage verwendet. */
@@ -210,23 +208,21 @@ export function formatiere(
       const b = v as Betrag;
       if (typeof b.betrag !== 'number') return '';
       try {
-        return zahlformat(gebietsschema(), { style: 'currency', currency: b.waehrung || 'EUR' }).format(b.betrag);
+        return regionZahl(b.betrag, { style: 'currency', currency: b.waehrung || 'EUR' });
       } catch {
-        return `${zahlformat(gebietsschema(), { minimumFractionDigits: 2 }).format(b.betrag)} ${b.waehrung}`;
+        return `${regionZahl(b.betrag, { minimumFractionDigits: 2 })} ${b.waehrung}`;
       }
     }
     case 'datum': {
       const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(v));
       return m
-        ? datumsformat(gebietsschema(), { day: '2-digit', month: '2-digit', year: 'numeric' }, 'UTC').format(
-            new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])),
-          )
+        ? regionDatum(new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])), { day: '2-digit', month: '2-digit', year: 'numeric' }, 'UTC')
         : String(v);
     }
     case 'janein':
       return v ? t('gemeinsam.model.ja') : t('gemeinsam.model.nein');
     case 'zahl':
-      return typeof v === 'number' ? zahlformat(gebietsschema(), { maximumFractionDigits: f.nachkomma ?? 10 }).format(v) : String(v);
+      return typeof v === 'number' ? regionZahl(v, { maximumFractionDigits: f.nachkomma ?? 10 }) : String(v);
     // Zeitraum und Prozent (#1035): „3 Monate“, „19 %“.
     case 'zeitraum':
       return istZeitraum(v) ? zeitraumText(v) : '';
@@ -244,8 +240,10 @@ export function formatiere(
       return '';
     case 'formatiert':
       return alsText(String(v));
-    // IBAN in Vierergruppen (#535), auch gespeicherte ohne Leerzeichen.
+    // IBAN in Vierergruppen (#535), auch gespeicherte ohne Leerzeichen; Telefon im Format der Region (#1609), gespeichert
+    // bleibt die Eingabe – eine nicht erkannte Nummer erscheint, wie sie eingegeben ist.
     case 'text':
+      if (f.format === 'telefon' && typeof v === 'string') return telefonanzeige().anzeige(v).text;
       return f.format === 'iban' && typeof v === 'string' && /^[A-Za-z]{2}\d{2}[A-Za-z0-9 ]+$/.test(v.trim()) ? ibanGruppen(v) : String(v);
     default:
       return String(v);

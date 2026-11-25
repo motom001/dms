@@ -304,7 +304,7 @@ Ist ein ausgeblendeter Bereich eingerichtet, etwa ein Postfach oder die Anmeldun
 | [Papierkorb](papierkorb.md) | Gelöschte Mappen zurückholen | ab Einsteiger |
 | [Daten sichern → Einstellungen](daten-einstellungen.md) | Wie lange Gelöschtes im Papierkorb bleibt und ob Benutzer ihre eigenen Daten exportieren dürfen | ab Haushalt |
 | [E-Mail und Adresse](installation.md#e-mail-und-adresse) | E-Mail-Versand und Adresse von Ablago | ab Einsteiger |
-| [Region](region.md) | Land, Bundesland und Zeitzone – für Feiertage, „heute“ und Uhrzeiten von Erinnerungen und Zusammenfassungen | ab Einsteiger |
+| [Region](region.md) | Land, Bundesland, Zeitzone und Formate – für Feiertage, „heute“, Uhrzeiten, Datum, Zahlen, Telefonnummern und den Wochenbeginn | ab Einsteiger |
 | [Sprachen](sprachen.md) | Wenn in deiner Ablage auch Englisch oder eine weitere Sprache gesprochen wird. | ab Haushalt |
 | [Eigene Organisation](organisation.md) | Ob die Ablage auch beruflich genutzt wird, dazu Name, Anschrift und Verantwortliche des eigenen Betriebs – gepflegt an der Organisation in der Ablage | ab Haushalt |
 | [Aufgaben](aufgaben.md#werkbank-aufgaben) | Alle offenen Aufgaben aller Benutzer im Blick behalten | ab Haushalt |
