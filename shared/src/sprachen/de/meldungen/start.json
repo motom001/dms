@@ -63,6 +63,7 @@
   "index.das-skript-des-lasttests": "Das Skript des Lasttests (dms-lasttest) fehlt in diesem Image.",
   "prozess.ungueltige-anfrage-json": "Ungültige Anfrage (JSON).",
   "prozess.netz-gesperrt-steht-weder": "Netz gesperrt: {url} steht weder im Manifest noch ist es die bestätigte Dienst-Adresse.",
+  "prozess.netz-privat": "Netz gesperrt: {url} steht nur im Manifest des Pakets und zeigt auf eine Adresse im Heimnetz oder auf diesen Rechner. Dafür muss der Admin sie als Dienst-Adresse bestätigen.",
   "prozess.antwort-zu-gross": "Antwort zu groß.",
   "prozess.keine-antwort-geoeffnet-erst": "Keine Antwort geöffnet (erst netz_strom).",
   "prozess.das-paket-ist-nicht": "Das Paket ist nicht geladen.",

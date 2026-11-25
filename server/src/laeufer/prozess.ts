@@ -16,6 +16,8 @@ import { ladeArgumente, pruefeModul, SEITE, type Modulpruefung } from './modul';
 import { t } from '../sprache/sprache';
 import { MB, NETZ_LANG_AB, NETZ_MAX, NETZ_TOKEN_LESEN } from '../grundlagen/grenzen';
 import { mitNetzUrsache } from '../grundlagen/fehler';
+import { AdresseGesperrt, adresseErlaubt, dnsAlle, pruefendesLookup, type Aufloesen } from '../grundlagen/netzadressen';
+import { isIP } from 'node:net';
 import { liesToken } from '../../../shared/src/extern';
 
 export interface Grenzen {
@@ -321,18 +323,75 @@ function unter(u: URL, e: string): boolean {
  * (#444, http oder https): gleicher Ursprung und Pfad darunter; keine Zugangsdaten, keine Weiterleitungen.
  */
 export function netzErlaubt(url: string, erlaubt: string[], adressen: string[] = []): boolean {
+  return netzZiel(url, erlaubt, adressen) !== null;
+}
+
+/**
+ * Wofür ist die Adresse erlaubt (#1628)? `dienst`: bestätigte Dienst-Adresse – der Admin hat sie eingetragen, sie darf
+ * ins Heimnetz (Ollama, NAS). `manifest`: nur aus dem Manifest des Pakets – dann nur öffentliche Adressen, geprüft beim
+ * Verbinden (`oeffentlichesNetz`). Passt beides, gilt die Dienst-Adresse. null: nicht erlaubt.
+ */
+export function netzZiel(url: string, erlaubt: string[], adressen: string[] = []): 'dienst' | 'manifest' | null {
   let u: URL;
   try {
     u = new URL(url);
   } catch {
-    return false;
+    return null;
   }
-  if (u.username || u.password) return false;
+  if (u.username || u.password) return null;
   // Kodierte Schrägstriche (#613): `/v1/..%2Fadmin` läge für die Prüfung unter `/v1/`, ein Dienst, der `%2F` vor dem
   // Auflösen der Pfadteile entschlüsselt, landet aber bei `/admin`. Solche Pfade braucht kein Paket.
-  if (/%2f|%5c/i.test(u.pathname)) return false;
-  if (u.protocol === 'https:' && erlaubt.some((e) => unter(u, e))) return true;
-  return (u.protocol === 'https:' || u.protocol === 'http:') && adressen.some((e) => unter(u, e));
+  if (/%2f|%5c/i.test(u.pathname)) return null;
+  if ((u.protocol === 'https:' || u.protocol === 'http:') && adressen.some((e) => unter(u, e))) return 'dienst';
+  if (u.protocol === 'https:' && erlaubt.some((e) => unter(u, e))) return 'manifest';
+  return null;
+}
+
+/**
+ * Verbindungen für Manifest-Adressen (#1628): wie „URL aufrufen“ ohne Heimnetz (`pruefendesLookup`) – jede aufgelöste
+ * Adresse wird beim Verbinden geprüft, private, Loopback- und Link-Local-Adressen sind gesperrt, kein zweites Auflösen.
+ * `fetch` von Node nimmt dafür einen eigenen Dispatcher; dessen Klasse (Agent aus dem in Node eingebauten undici) holen
+ * wir vom globalen Dispatcher (`agentKlasse`), damit keine Abhängigkeit dazukommt. Fehlt sie, ist das Netz für Manifest-Adressen zu
+ * (lieber kein Abruf als einer ohne Prüfung) – der Test `laeufer-manifest-netz` hält fest, dass es sie gibt.
+ */
+let oeffentlich: unknown = null;
+
+type AgentKlasse = new (o: unknown) => unknown;
+const DISPATCHER_SCHLUESSEL = /^undici\.globalDispatcher\.(\d+)$/;
+
+/**
+ * Die Klasse `Agent` des in Node eingebauten undici – vom globalen Dispatcher. Der Schlüssel dafür wechselt mit der
+ * undici-Version (Node 22: `…globalDispatcher.1`, ab Node 26 `…globalDispatcher.2`, unter `.1` dann nur eine Hülle);
+ * genommen wird der höchste, dessen Wert ein `Agent` ist. Nichts gefunden → null (Netz für Manifest-Adressen zu).
+ */
+function agentKlasse(): AgentKlasse | null {
+  const g = globalThis as unknown as Record<symbol, { constructor?: unknown } | undefined>;
+  const kandidaten = Object.getOwnPropertySymbols(g)
+    .map((s) => ({ s, nr: Number(DISPATCHER_SCHLUESSEL.exec(s.description ?? '')?.[1] ?? NaN) }))
+    .filter((k) => Number.isFinite(k.nr))
+    .sort((x, y) => y.nr - x.nr);
+  for (const { s } of kandidaten) {
+    const k = g[s]?.constructor;
+    if (typeof k === 'function' && k.name === 'Agent') return k as AgentKlasse;
+  }
+  return null;
+}
+
+export async function oeffentlichesNetz(aufloesen: Aufloesen = dnsAlle): Promise<unknown> {
+  if (oeffentlich && aufloesen === dnsAlle) return oeffentlich;
+  // Der globale Dispatcher entsteht erst beim ersten Abruf.
+  if (!agentKlasse()) await fetch('data:,').catch(() => undefined);
+  const Agent = agentKlasse();
+  if (!Agent) return null;
+  const d = new Agent({ connect: { lookup: pruefendesLookup(false, aufloesen) } });
+  if (aufloesen === dnsAlle) oeffentlich = d;
+  return d;
+}
+
+/** Steht im Host einer Manifest-Adresse gleich eine IP, gibt es nichts aufzulösen – sie wird hier geprüft (#1628). */
+export function manifestHostGesperrt(url: string): boolean {
+  const host = new URL(url).hostname.replace(/^\[|\]$/g, '');
+  return isIP(host) !== 0 && !adresseErlaubt(host, false);
 }
 
 /**
@@ -376,6 +435,37 @@ export async function liesBegrenzt(
   return buf;
 }
 
+/**
+ * Weg für einen Abruf (#807, #1628): gesperrt (nicht erlaubt oder Paket angehalten), Standard für Dienst-Adressen
+ * (`dispatcher` undefined) oder für Manifest-Adressen ein Dispatcher mit geprüftem `lookup` – steht dort eine IP im Host,
+ * die nicht öffentlich ist, oder gibt es keinen geprüften Weg, ist der Abruf gesperrt.
+ */
+async function netzWeg(
+  g: Geladen,
+  url: string,
+  log: NetzLog,
+  methode: string,
+): Promise<{ antwort: Hostantwort } | { dispatcher: unknown }> {
+  const abgelehnt = (schluessel: 'meldungen.prozess.netz-gesperrt-steht-weder' | 'meldungen.prozess.netz-privat') => {
+    log({ methode, url, status: null, hin: 0, zurueck: 0, abgelehnt: true });
+    return { antwort: fehlerAntwort(-2, t(schluessel, { url })) };
+  };
+  if (netzGesperrt(g, url)) return abgelehnt('meldungen.prozess.netz-gesperrt-steht-weder');
+  if (netzZiel(url, g.info.netz, g.info.adressen) !== 'manifest') return { dispatcher: undefined };
+  const d = manifestHostGesperrt(url) ? null : await oeffentlichesNetz();
+  return d ? { dispatcher: d } : abgelehnt('meldungen.prozess.netz-privat');
+}
+
+/** Fehler beim Abruf; gesperrt beim Verbinden (#1628) gilt wie eine abgelehnte Adresse – nichts ist hinausgegangen. */
+function netzFehler(e: unknown, log: NetzLog, methode: string, url: string, hin: number): Hostantwort {
+  if ((e as { cause?: unknown }).cause instanceof AdresseGesperrt) {
+    log({ methode, url, status: null, hin: 0, zurueck: 0, abgelehnt: true });
+    return fehlerAntwort(-2, t('meldungen.prozess.netz-privat', { url }));
+  }
+  log({ methode, url, status: null, hin, zurueck: 0 });
+  return fehlerAntwort(-4, `Netzfehler: ${mitNetzUrsache(e)}`);
+}
+
 /** Eine mit netz_strom geöffnete Antwort (#444): wird Stück für Stück gelesen, je Aufruf höchstens eine. */
 interface Strom {
   leser: ReadableStreamDefaultReader<Uint8Array>;
@@ -407,11 +497,9 @@ async function netz(
     log({ methode: '?', url, status: null, hin: 0, zurueck: 0, abgelehnt: true });
     return fehlerAntwort(-1, t('meldungen.prozess.ungueltige-methode'));
   }
-  // Abgelehnt (#807): steht als Warnung im Protokoll des Pakets – nur der Host, nichts hinausgegangen.
-  if (netzGesperrt(g, url)) {
-    log({ methode, url, status: null, hin: 0, zurueck: 0, abgelehnt: true });
-    return fehlerAntwort(-2, t('meldungen.prozess.netz-gesperrt-steht-weder', { url }));
-  }
+  // Abgelehnt (#807, #1628): steht als Warnung im Protokoll des Pakets – nur der Host, nichts hinausgegangen.
+  const weg = await netzWeg(g, url, log, methode);
+  if ('antwort' in weg) return weg.antwort;
   const kopf = Object.fromEntries(
     Object.entries(a.kopf ?? {})
       .filter(([k]) => !/^(host|cookie|authorization-dms)$/i.test(k))
@@ -434,12 +522,12 @@ async function netz(
       body: body && body.length ? body : undefined,
       redirect: 'manual',
       signal: ende.signal,
-    });
+      dispatcher: weg.dispatcher,
+    } as RequestInit);
   } catch (e) {
     clearTimeout(uhr);
     mu.ende(fehlerArt(e));
-    log({ methode, url, status: null, hin, zurueck: 0 });
-    return fehlerAntwort(-4, `Netzfehler: ${mitNetzUrsache(e)}`);
+    return netzFehler(e, log, methode, url, hin);
   }
   mu.kopf(r);
   // Ins Protokoll (#807): Bytes hin und zurück; bei einer Antwort Stück für Stück zählt netzWeiter nach.

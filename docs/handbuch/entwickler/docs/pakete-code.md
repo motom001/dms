@@ -75,7 +75,7 @@ code:
       lesen: [vertrag]
   ```
 
-- **Netzwerk/Internet (`netz`):** nur `https://`, ohne Zugangsdaten. Weiterleitungen folgt der Läufer nicht. Die Vorschau zeigt „kein Zugriff auf Netzwerk und Internet“ bzw. „Zugriff auf Netzwerk/Internet nur zu: …“ (#449).
+- **Netzwerk/Internet (`netz`):** nur `https://`, ohne Zugangsdaten. Weiterleitungen folgt der Läufer nicht. Die Vorschau zeigt „kein Zugriff auf Netzwerk und Internet“ bzw. „Zugriff auf Netzwerk/Internet nur zu: …“ (#449). Adressen aus `netz` sind für Dienste im Internet: Zeigt der Name auf eine Adresse im Heimnetz, auf den Rechner selbst oder auf eine Metadaten-Adresse, lehnt der Läufer den Abruf ab (#1628, geprüft beim Verbinden wie bei „URL aufrufen“). Dienste im Heimnetz gehen nur über die Dienst-Adresse.
 - **Dienst-Adresse als Einstellung** (seit 0.124.0): Statt einer festen Adresse in `netz` kann ein Paket eine Einstellung vom Typ `adresse` verlangen – etwa für einen KI-Dienst, den jeder Haushalt woanders betreibt. Der Administrator trägt sie ein und bestätigt beim Speichern einen Hinweis; erst dann erlaubt der Läufer Netz dorthin (und zu Pfaden darunter), auch mit `http://` (Dienste im Heimnetz). Höchstens eine je Paket, nur in einem Abschnitt, **ohne** `standard` – höchstens mit `beispiel`, das im leeren Feld steht:
 
   ```yaml
@@ -217,7 +217,7 @@ Alle Funktionen sind synchron; Zeiger und Längen beziehen sich auf den importie
 |---|---|
 | `api(json, len)` | HTTP-Status. `json`: `{"methode":"GET","pfad":"/mappen/…","body":{…}}` – Pfade der [API v1](https://help.ablago.app/admin/aktuell/api/) ohne `/api/v1`. Antwort mit `antwort_*` abholen. |
 | `api_binaer(json, len, body, blen)` | Wie `api`, mit Rohdaten als Body; den Inhaltstyp nennt `"typ"` im JSON (Standard `application/octet-stream`). |
-| `netz(json, len, body, blen)` | HTTP-Status oder negativ bei Fehler. `json`: `{"methode":"POST","url":"https://…","kopf":{…}}`. Nur Adressen aus `code.netz` und die bestätigte Dienst-Adresse; 30 s (seit 0.142.0 mit mehr als 1 MB Körper so lange wie der Aufruf – zum Hochladen in Teilen), höchstens 10 MB Antwort. Weiterleitungen folgt der Läufer nicht. |
+| `netz(json, len, body, blen)` | HTTP-Status oder negativ bei Fehler. `json`: `{"methode":"POST","url":"https://…","kopf":{…}}`. Nur Adressen aus `code.netz` (nur öffentliche Ziele, sonst `-2`) und die bestätigte Dienst-Adresse; 30 s (seit 0.142.0 mit mehr als 1 MB Körper so lange wie der Aufruf – zum Hochladen in Teilen), höchstens 10 MB Antwort. Weiterleitungen folgt der Läufer nicht. |
 | `netz_strom(json, len, body, blen)` | Seit 0.124.0. Wie `netz`, liefert aber nur den HTTP-Status; den Körper liest `netz_weiter` Stück für Stück (z. B. eine Antwort mit `"stream": true`). Die ganze Antwort darf so lange dauern wie der Aufruf, jedes Stück höchstens 30 s; zusammen höchstens 10 MB. |
 | `netz_weiter()` | Seit 0.124.0. Länge des nächsten Stücks (mit `antwort_lesen` abholen), `0` am Ende, negativ bei Fehler. |
 | `teil(text, len)` | Seit 0.124.0. Ein Stück einer Antwort an Ablago, das es gleich weitergibt (z. B. an den Chat „Frag deine Ablage“). `0` oder `-1` (zu viel: je Stück 8 000, zusammen 64 000 Zeichen). Maßgeblich bleibt `ergebnis`. |

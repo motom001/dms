@@ -41,4 +41,4 @@ export {
   type AusleitungDeps,
   type AussenGeheimnis,
 } from './ausleitung';
-export { adressArt, adresseErlaubt, alsIpv4, sichererAbruf, type AbrufAuftrag, type AbrufErgebnis } from './sicherer-abruf';
+export { adressArt, adresseErlaubt, sichererAbruf, type AbrufAuftrag, type AbrufErgebnis } from './sicherer-abruf';
