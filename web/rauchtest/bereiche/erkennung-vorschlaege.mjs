@@ -148,18 +148,20 @@ rauchtest(
     const mappe = s.getByRole('region', { name: 'Mappe' });
     await mappe.getByRole('group', { name: 'Vorschläge' }).getByRole('button', { name: 'Beleg Hand', pressed: true }).waitFor();
     const feld = mappe.locator('[data-anker="mappe.feld:steuerjahr"]');
+    // „Zurücknehmen“ am Vorschlag des Steuerjahrs („aus „Bis“: Jahr …“).
+    const zuruecknehmen = () => mappe.locator('.ad-hinweis').filter({ hasText: 'aus „Bis“' }).getByRole('button', { name: 'Zurücknehmen' });
     const bis = mappe.locator('#feld-ende');
-    // Getippt, Tag für Tag wie ein Mensch (Tag, Monat, Jahr – de-DE).
-    await bis.focus();
-    await s.keyboard.type('20052026');
+    // Getippt: Beim Jahr meldet das Datumsfeld jede Stelle einzeln (0002, 0020, 0202, 2026) – so wie hier nacheinander.
+    await bis.fill('');
+    for (const jahr of ['0002', '0020', '0202', '2026']) await bis.fill(`${jahr}-05-20`);
     await feld.getByText('Steuerjahr 2026').first().waitFor();
     // Zurückgenommen: leer – ein neues Datum schlägt es wieder vor.
-    await feld.getByRole('button', { name: 'Zurücknehmen' }).click();
+    await zuruecknehmen().click();
     await feld.getByText('Steuerjahr 2026').waitFor({ state: 'detached' });
     await bis.fill('2026-06-30');
     await feld.getByText('Steuerjahr 2026').first().waitFor();
     // Im Kalender gewählt: vom 30.12.2024 (kein Steuerjahr) zwei Tage weiter ins Jahr 2025.
-    await feld.getByRole('button', { name: 'Zurücknehmen' }).click();
+    await zuruecknehmen().click();
     await feld.getByText('Steuerjahr 2026').waitFor({ state: 'detached' });
     await bis.fill('2024-12-30');
     await mappe.getByText('Für „Steuerjahr“ gibt es noch keine passende Mappe: 2024').waitFor();
