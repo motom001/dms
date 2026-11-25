@@ -46,7 +46,7 @@ const OHNE_TUER = {
   einstellungen: 'einstellungen|region|betrieb',
   entdecken: 'entdecken|entdecken-werkbank',
   ereignisse: 'ereignisse',
-  erkennung: 'erkennung|klassifizierung|erechnung|erkennung-hilfen|erkennung-basis|erkennung-positionen|erkennung-abgleich|erkennung-post',
+  erkennung: 'erkennung|klassifizierung|klassifizierung-wege|erechnung|erkennung-hilfen|erkennung-basis|erkennung-positionen|erkennung-abgleich|erkennung-post',
   export:
     'export|vollexport|vollexport-pruefsummen|exportordner|vollexport-quelle|vollexport-formate|vollexport-schreiben|vollexport-verwaltung|vollexport-lauf|vollexport-tabellen|vollexport-ablage',
   formate: 'xlsx|zip|xml|schriftstueck',

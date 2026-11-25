@@ -3,7 +3,7 @@ import { registerName } from '../../../../shared/src/beschriftung';
 import type { AnsichtsRegister } from '../../../../shared/src/mappenansicht';
 import type { Wert } from '../../../../shared/src/model';
 import { ersteId } from '../../../../shared/src/folgtaus';
-import { ausRoh, werteAusRoh, zuRoh } from '../../werte';
+import { ausRoh, werteAusRoh, zuRoh, type Roh } from '../../werte';
 import { Reiter, ReiterFlaeche, Speicherleiste, type Entwurf } from '../../bausteine';
 import { geheZu, loeseWache } from '../../ort';
 import { t } from '../../sprache';
@@ -243,8 +243,21 @@ function useVorschlagStart(z: Kern, uebernimmVorschlaege: ReturnType<typeof ausD
 function useBrueckeAnschluss(z: Kern, ein: ReturnType<typeof eingabeWege>) {
   const { typ } = z.p;
   const { roh, register, felderAuf, oeffneAbschnitte, geschuetzt, nurLesen, merke, setFehler, bruecke, vorschlaege } = z;
-  const { folge, vorbelege } = ein;
-  const stand = { roh, register, felderAuf, oeffneAbschnitte, geschuetzt, nurLesen, merke, setFehler, folge, vorbelege, vorschlaege };
+  const { folge, vorbelege, leiteAb } = ein;
+  const stand = {
+    roh,
+    register,
+    felderAuf,
+    oeffneAbschnitte,
+    geschuetzt,
+    nurLesen,
+    merke,
+    setFehler,
+    folge,
+    vorbelege,
+    leiteAb,
+    vorschlaege,
+  };
   const anschluss = useRef(stand);
   anschluss.current = stand;
   /* eslint-disable react-hooks/exhaustive-deps -- die Brücke liest über anschluss.current immer den aktuellen Stand */
@@ -265,9 +278,10 @@ function useBrueckeAnschluss(z: Kern, ein: ReturnType<typeof eingabeWege>) {
           a.setFehler((x) =>
             x && x.felder[k] ? { ...x, felder: Object.fromEntries(Object.entries(x.felder).filter(([y]) => y !== k)) } : x,
           );
-          // Folgt aus (#886) und beim Auswählen übernehmen (#1037): wie bei einer Eingabe von Hand.
+          // Folgt aus (#886), beim Auswählen übernehmen (#1037) und aus Datum ableiten (#1648, #1678): wie von Hand.
           void a.folge(k, roh);
           void a.vorbelege(k, roh);
+          void a.leiteAb(k, roh);
         },
         vorschlagen: (werte, fundstelle) => vorschlagenIn(z, anschluss.current, werte, fundstelle),
         zeige(k) {
@@ -295,7 +309,13 @@ function useBrueckeAnschluss(z: Kern, ein: ReturnType<typeof eingabeWege>) {
  */
 function vorschlagenIn(
   z: Kern,
-  a: { roh: Kern['roh']; geschuetzt: Kern['geschuetzt']; nurLesen: boolean; vorschlaege: Kern['vorschlaege'] },
+  a: {
+    roh: Kern['roh'];
+    geschuetzt: Kern['geschuetzt'];
+    nurLesen: boolean;
+    vorschlaege: Kern['vorschlaege'];
+    leiteAb: (k: string, v: Roh) => Promise<void>;
+  },
   werte: Array<{ key: string; wert: Wert }>,
   fundstelle: string,
 ): (() => void) | null {
@@ -320,6 +340,9 @@ function vorschlagenIn(
   const r = z.register.find((x) => x.art === 'felder' && z.felderAuf(x).some((f) => f.key === keys[0]));
   if (r) z.setAktiv(r.key);
   z.oeffneAbschnitte(keys);
+  // Aus Datum ableiten (#1678): ein markiertes Datum wie eine Eingabe – nicht, wenn das Verweisfeld selbst mit markiert ist.
+  for (const { f, wert } of felder)
+    if (f.typ === 'datum' && !felder.some((x) => x.f.ausDatum?.datumFeld === f.key)) void a.leiteAb(f.key, zuRoh(f, wert));
   return () => {
     z.setRoh((x) => ({ ...x, ...vorherRoh }));
     z.setVorschlaege((v) => {

@@ -1,7 +1,14 @@
 import { useState } from 'react';
 import { feldLabel, typName } from '../../../shared/src/beschriftung';
 import { merkmalsfelder } from '../../../shared/src/erkennung';
-import { SCHWELLE_STANDARD, type Klassbeleg, type Klassifizierung, type Typgrund } from '../../../shared/src/klassifizierung';
+import {
+  erkennbarStufe,
+  SCHWELLE_STANDARD,
+  SICHER_AB,
+  type Klassbeleg,
+  type Klassifizierung,
+  type Typgrund,
+} from '../../../shared/src/klassifizierung';
 import type { Mappentyp } from '../../../shared/src/model';
 import type { Bezuege } from '../api/mappen';
 import { Aufklapper, Knopf } from '../bausteine';
@@ -9,11 +16,11 @@ import { useDaten } from '../daten';
 import { titelOder } from '../seiten';
 import { t } from '../sprache';
 
-/** Ab dieser Sicherheit heißt es „sicher“ (darunter bis zur Schwelle „wahrscheinlich“, darunter „unsicher“). */
-const SICHER_AB = 0.75;
+/** Darunter heißt eine ähnliche Mappe „nur entfernt ähnlich“ (#1672). */
+const AEHNLICH_ENTFERNT = 0.65;
 const prozent = (x: number) => Math.round(x * 100);
 
-/** Ein Beleg für einen Typ (#939) als Satz: Überschrift, KI, Ähnlichkeit oder wiedergefundene Mappe. */
+/** Ein Beleg für einen Typ (#939) als Satz: Überschrift, KI, Ähnlichkeit, wiedergefundene Mappe, Absender, „Woran man ihn erkennt“. */
 export function belegText(b: Klassbeleg, bezuege: Bezuege): string {
   switch (b.weg) {
     case 'kern':
@@ -34,7 +41,19 @@ export function belegText(b: Klassbeleg, bezuege: Bezuege): string {
         titel: titelOder(b.mappeId ? bezuege[b.mappeId]?.titel : ''),
         merkmal: b.merkmal ?? '',
       });
+    case 'absender':
+    case 'erkennbar':
+      return belegNeu(b, bezuege);
   }
+}
+
+/** Absender (#1680) und „Woran man ihn erkennt“ (#1673) als Satz. */
+function belegNeu(b: Klassbeleg, bezuege: Bezuege): string {
+  if (b.weg === 'erkennbar') return t('ablage.uebernehmen.beleg-erkennbar', { gefunden: b.gefunden ?? 0, von: b.von ?? 0 });
+  const titel = b.mappeId ? bezuege[b.mappeId]?.titel : '';
+  return titel
+    ? t('ablage.uebernehmen.beleg-absender', { absender: titel, anzahl: b.anzahl ?? 0 })
+    : t('ablage.uebernehmen.beleg-absender-ohne', { anzahl: b.anzahl ?? 0 });
 }
 
 /** Was fehlte bzw. dafür sprach (#1645) als Satz – ohne Fachbegriffe. */
@@ -51,20 +70,27 @@ function grundText(g: Typgrund, typ: Mappentyp, typVon: (id: string) => Mappenty
       return t('ablage.uebernehmen.sicher.merkmal-fehlt', { ziel: typName(ziel), merkmale });
     }
     case 'erkennbar': {
-      if (!g.von) return null;
-      const anteil = g.gefunden / g.von;
-      const schluessel =
-        anteil >= 0.5
-          ? 'ablage.uebernehmen.sicher.erkennbar-gut'
-          : anteil >= 0.25
-            ? 'ablage.uebernehmen.sicher.erkennbar-teils'
-            : 'ablage.uebernehmen.sicher.erkennbar-kaum';
-      return t(schluessel, { gefunden: g.gefunden, von: g.von });
+      const stufe = erkennbarStufe(g.gefunden, g.von);
+      if (!stufe) return null;
+      const schluessel = {
+        gut: 'ablage.uebernehmen.sicher.erkennbar-gut',
+        teils: 'ablage.uebernehmen.sicher.erkennbar-teils',
+        kaum: 'ablage.uebernehmen.sicher.erkennbar-kaum',
+      } as const;
+      return t(schluessel[stufe], { gefunden: g.gefunden, von: g.von });
     }
     case 'erkennbar-leer':
       return t('ablage.uebernehmen.sicher.erkennbar-leer');
     case 'aehnlich':
+      // Die Nähe, nicht nur die Anzahl (#1672).
+      if (g.sehr) return t('ablage.uebernehmen.sicher.aehnlich-sehr', { sehr: g.sehr, anzahl: g.anzahl, typ: typName(typ) });
+      if (g.beste !== undefined && g.beste < AEHNLICH_ENTFERNT)
+        return t('ablage.uebernehmen.sicher.aehnlich-entfernt', { anzahl: g.anzahl, typ: typName(typ) });
       return t('ablage.uebernehmen.sicher.aehnlich', { anzahl: g.anzahl, typ: typName(typ) });
+    case 'ohne-beispiele':
+      return t('ablage.uebernehmen.sicher.ohne-beispiele', { typ: typName(typ) });
+    case 'gesenkt':
+      return t('ablage.uebernehmen.sicher.gesenkt');
   }
 }
 
@@ -111,7 +137,10 @@ export function WieSicher({
           <ul>
             {eintraege.map(({ typ, e }) => {
               const s = e?.sicherheit ?? 0;
+              // „Woran man ihn erkennt“ als Beleg (#1673): derselbe Satz nicht noch einmal als Grund.
+              const alsBeleg = e?.belege.some((b) => b.weg === 'erkennbar');
               const gruende = (klass.gruende?.[typ.id] ?? [])
+                .filter((g) => !(alsBeleg && g.art === 'erkennbar'))
                 .map((g) => grundText(g, typ, (id) => d.typ(id)))
                 .filter((x): x is string => !!x);
               return (

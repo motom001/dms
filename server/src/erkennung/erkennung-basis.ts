@@ -51,7 +51,7 @@ export interface ErkennungDienst {
   readonly ki: Pick<KiTypen, 'kiSperreFuer'>;
   readonly dokumente: Pick<DokumenteDienst, 'textAusDatei'>;
   readonly dokumentArchiv: Pick<DokumentArchivfassung, 'wortpositionen'>;
-  readonly suche: Pick<SucheDienst, 'aehnlicheTypen' | 'gleichbedeutendeWoerter'>;
+  readonly suche: Pick<SucheDienst, 'aehnlicheTypen' | 'typAnzahlen' | 'gleichbedeutendeWoerter'>;
 }
 
 export abstract class ErkennungBasis {

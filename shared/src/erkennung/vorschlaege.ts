@@ -9,7 +9,7 @@ import { formatFehler } from '../feldformate';
 import { leseZeitraum, leseProzent } from '../feldarten';
 import { optionTexte } from '../beschriftung';
 import { nummerHinterWort, nummernWoerter } from './nummern';
-import { datenIn, datumsPaare, zeitraumVorschlaege } from './zeitraum';
+import { datenIn, datumsPaare, ungeklaerterZeitraum, zeitraumVorschlaege } from './zeitraum';
 
 /* ---------- Vorschläge für die Felder eines Mappentyps ---------- */
 
@@ -279,6 +279,8 @@ function vorschlagWert(f: Feld, art: (typeof WERT_ARTEN)[number], l: VorschlagLa
       const p = l.partner.get(f.key);
       const andere = p ? l.vorschlag(p) : undefined;
       if (a.datum && andere?.wert === a.datum.wert && andere.fundstelle === a.datum.fundstelle && datenIn(a.datum.fundstelle) >= 2) return;
+      // Zeitraum, den Ablago nicht als Paar lesen konnte (#1669): lieber leer als das Ende in „Von“.
+      if (a.datum && p && !andere && ungeklaerterZeitraum(a.datum.fundstelle)) return;
       if (a.datum) l.setze(f, a.datum.wert, a.datum);
       return;
     }

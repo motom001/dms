@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { SCHWELLE_STANDARD, erkennbarImText } from '../../shared/src/klassifizierung';
 import type { Register } from '../../shared/src/model';
+import { jahrPasst } from '../../shared/src/ausdatum';
 import { speicherDateien } from '../src/dateien/dateispeicher';
 import { Dienst } from '../src/dienst/dienst';
 import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
@@ -165,6 +166,19 @@ describe('Verweisfeld aus einem Datum ableiten (#1648)', () => {
     await x.d.mappen.legeMappeAn({ typId: x.steuerjahr.id, werte: { jahr: '2012' } }, x.lena.id);
     assert.deepEqual((await f('2012-07-31')).felder.steuerjahr, { quelle: 'ende', wert: null });
   });
+
+  it('„Bis“ von Hand bei vorhandenem Steuerjahr (#1678): Vorschlag, auch wenn das Jahr als Zahl gespeichert ist', async () => {
+    const x = await aufbau();
+    const f = (ende: string, z = x.A) => x.d.mappenEingaben.folgen({ typId: x.kontoauszug.id, werte: { ende } }, z);
+    // Wie von Hand: nur das Datum, nichts sonst (die Oberfläche fragt nach jeder Eingabe in „Bis“).
+    assert.equal((await f('2012-05-20')).felder.steuerjahr.wert, x.j2012.id);
+    // Ein Jahr, das eine Schnittstelle als Zahl in das Textfeld geschrieben hat, passt ebenso.
+    const j2026 = await x.d.mappen.legeMappeAn({ typId: x.steuerjahr.id, werte: { jahr: '2026' } }, x.lena.id);
+    const roh = await x.d.kern.repo.holeMappe(j2026.id);
+    await x.d.kern.repo.aendereMappe(j2026.id, { ...roh!.werte, jahr: 2026 }, [], null);
+    assert.equal((await f('2026-05-20')).felder.steuerjahr.wert, j2026.id);
+    assert.ok(jahrPasst({ typ: 'text' }, 2026, '2026') && !jahrPasst({ typ: 'text' }, 2025, '2026'));
+  });
 });
 
 describe('Wie sicher ist Ablago? (#1645)', () => {
@@ -208,11 +222,16 @@ describe('Wie sicher ist Ablago? (#1645)', () => {
     assert.deepEqual(s.standard, { paket: null });
     await assert.rejects(x.d.erkennung.setzeStandard({ schwelle: 2 }), /zwischen 5 und 95 Prozent/);
     const brief = await x.post('Rechnung\nRechnungsnummer R-2026-117\nGesamtbetrag 184,20 EUR');
-    const r = await x.d.erkennung.klassifizierung.klassifiziere({ dokumente: [brief] }, x.A);
+    let r = await x.d.erkennung.klassifizierung.klassifiziere({ dokumente: [brief] }, x.A);
     assert.equal(r.typen[0]?.typId, x.rechnung.id);
     assert.equal(r.schwelle, 0.6);
-    assert.equal(r.vorschlag?.typId, x.rechnung.id, 'die Überschrift allein (0,6) reicht genau');
-    await x.d.erkennung.setzeStandard({ schwelle: 0.61 });
+    // Überschrift und „Woran man ihn erkennt“ (#1673); ohne abgelegte Rechnung höchstens „wahrscheinlich“ (0,74).
+    const s0 = r.typen[0].sicherheit;
+    assert.equal(s0, 0.74);
+    await x.d.erkennung.setzeStandard({ schwelle: s0 });
+    r = await x.d.erkennung.klassifizierung.klassifiziere({ dokumente: [brief] }, x.A);
+    assert.equal(r.vorschlag?.typId, x.rechnung.id, 'genau an der Schwelle reicht es');
+    await x.d.erkennung.setzeStandard({ schwelle: s0 + 0.01 });
     assert.equal((await x.d.erkennung.klassifizierung.klassifiziere({ dokumente: [brief] }, x.A)).vorschlag, null, 'darüber nicht mehr');
     await x.d.erkennung.setzeStandard({ schwelle: null });
     const v = await x.d.erkennung.klassifizierung.klassifiziere({ dokumente: [brief] }, x.A);
