@@ -40,7 +40,7 @@ Wer Mappen anlegen oder löschen darf, regeln die [Berechtigungen](berechtigunge
 
 ### Dokument übernehmen
 
-Post landet zuerst unter *Post*. Von dort übernimmt man ein Dokument in eine Mappe. Zwei Angaben sagen Ablago, welche Mappentypen dafür in Frage kommen – die erste steht in den Grunddaten, die zweite seit Version 0.320 im Bereich [Erkennung](#erkennung):
+Post landet zuerst unter *Post*. Von dort übernimmt man ein Dokument in eine Mappe. Zwei Angaben sagen Ablago, welche Mappentypen dafür in Frage kommen – die erste steht in den Grunddaten, die zweite seit Version 0.321 im Bereich [Erkennung](#erkennung):
 
 - **Kann aus Post angelegt werden** – Nur Mappentypen mit diesem Haken stehen unter *Wohin gehört das?* zur Wahl, und nur für Personen, die dort Mappen anlegen dürfen ([Berechtigungen](berechtigungen.md), Recht C). Vorgabe: an bei Mappentypen mit Dokumentenregister, sonst aus. Nimm den Haken weg, wenn Post nie zu diesem Typ gehört, z. B. bei *Ablageort*.
 - **Woran man ihn erkennt** – ein kurzer Satz, der hilft, ein Dokument dem richtigen Mappentyp zuzuordnen, z. B. bei *Rechnung*: „Enthält Rechnungsnummer, Betrag und Zahlungsziel; Absender ist ein Vertragspartner“. Die Beschreibung ist für Menschen gedacht; dieser Satz ist für die Erkennung und darf knapp sein. Ein Paket, das den Mappentyp vorschlägt (etwa der *KI-Assistent*), bekommt ihn zusammen mit Name und Kurzbeschreibung – nur bei Mappentypen, die an [Dienste im Netz](pakete.md#ki-dienste) gehen dürfen (siehe [Wohin gehört das? durch Pakete](pakete.md#wohin-gehoert-das)). Wie Name und Beschreibung lässt er sich in [weiteren Sprachen](#beschriftungen-je-sprache) angeben.
@@ -248,9 +248,9 @@ Hat ein Mappentyp gar kein Feld mit diesem Haken, füllt sie alle Felder, deren 
 
 Geeignet sind Text, Langtext, Zahl, Betrag, Datum, Auswahlliste, Verweis, Zeitraum und Prozent – Passwortfelder nie. Einen Zeitraum sucht die Erkennung zuerst neben der Bezeichnung des Felds („Kündigungsfrist: 3 Monate“), sonst nimmt sie den ersten im Text (mit geringer Sicherheit); ebenso den Prozentsatz („19 % MwSt.“). Ist der Haken an, wählst du optional **Was steht im Feld?** (Name oder Firma, Nummer, IBAN, E-Mail-Adresse, Telefon, Straße, PLZ, Ort …). Ohne Angabe schließt Ablago es aus Feldart, Kennung und Bezeichnung („Kundennummer“ → Nummer, „E-Mail“ → E-Mail-Adresse); was es erkannt hat, steht in der Auswahl hinter *automatisch*. Der **Erkennungshinweis** ist ein freier Text, z. B. „Kundennummer oben rechts, Muster 100-####“ – ein Muster nach dem Wort *Muster* (`#` = Ziffer, `A` = Großbuchstabe) sucht die Erkennung gezielt.
 
-**Nummern** findet die Erkennung an ihrer Beschriftung („Rechnungsnummer: 2026/0815“, „Rechnungs-Nr. R-42“) und seit Version 0.320 auch direkt hinter dem Wort des Felds: „Rechnung R-2026-1120“, „Rechnung Nr. 4711“, „Invoice INV-123“. Das Wort kommt aus Bezeichnung, Kennung und Übersetzungen des Felds („Rechnungsnummer“ → „Rechnung“) und aus den [gleichbedeutenden Wörtern](suche.md) – steht „Rechnung“ in einer Gruppe mit „Beleg“, zählt auch „Beleg-Nr. B-77“. Die Nummer muss in derselben Zeile stehen; ein Datum, eine IBAN oder ein Betrag gilt nie als Nummer.
+**Nummern** findet die Erkennung an ihrer Beschriftung („Rechnungsnummer: 2026/0815“, „Rechnungs-Nr. R-42“) und seit Version 0.321 auch direkt hinter dem Wort des Felds: „Rechnung R-2026-1120“, „Rechnung Nr. 4711“, „Invoice INV-123“. Das Wort kommt aus Bezeichnung, Kennung und Übersetzungen des Felds („Rechnungsnummer“ → „Rechnung“) und aus den [gleichbedeutenden Wörtern](suche.md) – steht „Rechnung“ in einer Gruppe mit „Beleg“, zählt auch „Beleg-Nr. B-77“. Die Nummer muss in derselben Zeile stehen; ein Datum, eine IBAN oder ein Betrag gilt nie als Nummer.
 
-**Zeiträume:** Steht im Dokument ein Zeitraum aus zwei Daten – „vom 01.07.2012 – 31.07.2012“, „01.01.2026 bis 28.02.2026“, „Zeitraum 01.07. - 31.07.2012“, auch über einen Zeilenumbruch –, bekommt das Datumsfeld für den Beginn das erste und das für das Ende das zweite Datum (seit Version 0.320; vorher bekamen beide dasselbe). Welche Datumsfelder ein Paar bilden, schließt Ablago aus Kennung und Bezeichnung: *Beginn*/*Ende*, *Von*/*Bis*, *Start*/*Ende*, *Mietbeginn*/*Mietende*, *Zeitraum von*/*Zeitraum bis*. Passt das nicht, stellst du am Feld für das Ende unter **Ende des Zeitraums ab** das Feld für den Beginn ein; in der Auswahl steht hinter *automatisch*, was Ablago sonst annimmt. In Paketen heißt die Angabe `erkennung: { endeVon: beginn }`.
+**Zeiträume:** Steht im Dokument ein Zeitraum aus zwei Daten – „vom 01.07.2012 – 31.07.2012“, „01.01.2026 bis 28.02.2026“, „Zeitraum 01.07. - 31.07.2012“, auch über einen Zeilenumbruch –, bekommt das Datumsfeld für den Beginn das erste und das für das Ende das zweite Datum (seit Version 0.321; vorher bekamen beide dasselbe). Welche Datumsfelder ein Paar bilden, schließt Ablago aus Kennung und Bezeichnung: *Beginn*/*Ende*, *Von*/*Bis*, *Start*/*Ende*, *Mietbeginn*/*Mietende*, *Zeitraum von*/*Zeitraum bis*. Passt das nicht, stellst du am Feld für das Ende unter **Ende des Zeitraums ab** das Feld für den Beginn ein; in der Auswahl steht hinter *automatisch*, was Ablago sonst annimmt. In Paketen heißt die Angabe `erkennung: { endeVon: beginn }`.
 
 Die Pakete der Registry (z. B. *Basis*) setzen den Haken selbst. Bei einem Update übernimmt Ablago ihn nur an Feldern, an denen du noch nichts eingestellt hast; die Vorschau nennt sie unter „Aus Dokument füllen“.
 
@@ -350,7 +350,7 @@ Manche Verweise ergeben sich aus einem Datum: Ein Kontoauszug vom Juli 2012 geh�
 - **Keine passende Mappe:** Ablago bietet „Steuerjahr mit diesen Angaben anlegen“ an. Angelegt wird erst nach dem Klick und der Rückfrage; dann steht die neue Mappe im Feld. Bei mehreren passenden schlägt Ablago keine vor.
 - **Wann:** beim Anlegen aus Post (*Aus Dokument ausfüllen*, auch auf der Seite *Dokument übernehmen*) und immer, wenn sich das Datum ändert – solange das Verweisfeld leer ist oder noch den Vorschlag zeigt. Was du von Hand gewählt hast, bleibt.
 - **Nur, was man lesen darf**, und „anlegen“ nur, wer im Ziel-Mappentyp anlegen darf. Beim Speichern füllt Ablago nichts von selbst, auch nicht über die [Schnittstelle](api.md).
-- In [Paketen](pakete.md) heißt die Eigenschaft `ausDatum: { datumFeld: ende, zielFeld: jahr }` (ab Ablago 0.320).
+- In [Paketen](pakete.md) heißt die Eigenschaft `ausDatum: { datumFeld: ende, zielFeld: jahr }` (ab Ablago 0.321).
 
 #### Beim Auswählen übernehmen { #vorbelegen }
 
@@ -442,7 +442,7 @@ Hinter einem senkrechten Strich `|` kannst du einen Platzhalter **formatieren**,
 
 `jahr`, `monat` und `datum` gehen bei Datumsfeldern und bei `{angelegt}` und `{geaendert}`, `ohne_waehrung` nur bei Beträgen.
 
-**Leere Teile fallen weg.** Ist ein Feld leer, verschwindet es samt seinem Trenner (` – `, ` · `, ` | `, ` / `, `, `, ` › `). Aus `{bezeichnung} – {vertragsnummer} – {beginn|jahr}` wird bei fehlender Vertragsnummer „Strom – 2026“ statt „Strom –  – 2026“. Seit Version 0.320 auch vor einem Satzzeichen: Aus `{von} {rechnungsnummer}: {datum}` wird ohne Rechnungsnummer „Werkstatt: 20.11.2026“ statt „Werkstatt : 20.11.2026“, und fehlt auch *von*, beginnt der Titel nicht mit „:“.
+**Leere Teile fallen weg.** Ist ein Feld leer, verschwindet es samt seinem Trenner (` – `, ` · `, ` | `, ` / `, `, `, ` › `). Aus `{bezeichnung} – {vertragsnummer} – {beginn|jahr}` wird bei fehlender Vertragsnummer „Strom – 2026“ statt „Strom –  – 2026“. Seit Version 0.321 auch vor einem Satzzeichen: Aus `{von} {rechnungsnummer}: {datum}` wird ohne Rechnungsnummer „Werkstatt: 20.11.2026“ statt „Werkstatt : 20.11.2026“, und fehlt auch *von*, beginnt der Titel nicht mit „:“.
 
 Bewusst gibt es **keine** Bedingungen, Schleifen oder Rechnungen im Titel. Unbekannte Filter oder ein Filter am falschen Feld meldet der Editor sofort, die Vorschau zeigt das Ergebnis.
 
@@ -554,7 +554,7 @@ Den Mappentyp **Ablageort** bringt das Paket **Basis** mit (ab Basis 1.6.0, nebe
 
 Unter **Erkennung** (nicht bei Systemmappentypen) stellst du den Knopf **Aus Dokument ausfüllen** ein, den Benutzer oben in jeder Mappe dieses Typs sehen:
 
-- **Woran man ihn erkennt** – ein kurzer Satz für *Wohin gehört das?*, höchstens 300 Zeichen (nicht bei Teilen anderer Mappen). Bis Version 0.319 stand er in den Grunddaten. Mehr unter [Dokument übernehmen](#dokument-ubernehmen).
+- **Woran man ihn erkennt** – ein kurzer Satz für *Wohin gehört das?*, höchstens 300 Zeichen (nicht bei Teilen anderer Mappen). Bis Version 0.320 stand er in den Grunddaten. Mehr unter [Dokument übernehmen](#dokument-ubernehmen).
 - **Knopf zeigen** (Standard: an) – abwählen blendet ihn aus, z. B. bei Mappentypen ohne Papier.
 - **Beschriftung** – z. B. „Visitenkarte scannen“ beim Mappentyp *Person* oder „Kassenbon fotografieren“; leer heißt er „Aus Dokument ausfüllen“.
 - **Erkennung** – nur, wenn ein Paket mit dem Recht [Felder aus Dokumenten vorschlagen](pakete.md#recht-erkennen) installiert ist: **Standard aus der Werkbank** (Vorgabe), **eingebaut (ohne KI)** oder ein **Paket**, etwa ein KI-Assistent. Ein Paket, das ins Netz darf, steht mit „schickt Text über das Netz“ in der Liste; wählst du es, fragt Ablago nach und du bestätigst den Datenabfluss. Mehr unter [Erkennung durch ein Paket](pakete.md#erkennung-durch-ein-paket).
