@@ -121,6 +121,14 @@ export const SCHEMAS_TYPEN: Record<string, Schema> = {
           'Bei typ=referenz mit genau einem Zieltyp (#1648): aus einem Datumsfeld dieser Mappe ableiten – z. B. Steuerjahr aus „Bis“. datumFeld: Datumsfeld dieser Mappe; zielFeld: Feld des Zieltyps mit dem Jahr (Text oder Zahl wie „2012“, oder ein Datum im selben Jahr). Nur ein Vorschlag in der Oberfläche und bei „Aus Dokument ausfüllen“: genau eine passende Mappe wird vorgeschlagen, sonst „… anlegen“ angeboten. Speichern füllt nichts von selbst.',
         properties: { datumFeld: { type: 'string' }, zielFeld: { type: 'string' } },
       },
+      auswahlReihenfolge: {
+        type: 'object',
+        nullable: true,
+        required: ['feld'],
+        description:
+          'Bei typ=referenz (#1671): Reihenfolge der Auswahl in der Oberfläche – feld: ein Feld des Zieltyps, nach dem sich sortieren lässt (nur bei genau einem Zieltyp), oder _titel, _erstellt, _geaendert; absteigend: true für absteigend. Fehlt = Titel aufsteigend in natürlicher Reihenfolge (Zahlen als Zahlen). Beispiel Steuerjahr: { feld: jahr, absteigend: true }.',
+        properties: { feld: { type: 'string' }, absteigend: { type: 'boolean' } },
+      },
       vorbelegen: {
         type: 'array',
         maxItems: 50,

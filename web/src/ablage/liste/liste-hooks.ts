@@ -88,6 +88,58 @@ export function sortierungVon(p: ListeProps, d: Daten) {
   return { sortierung, setzeSortierung, sortiere };
 }
 
+/**
+ * Zahl der offenen Ansicht, wie sie links steht (#1668): verwaltete Ansicht, Mappentyp, Zu erledigen oder Favoriten.
+ * Nicht bei einer Suche, einem Link oder bevor die Zahlen da sind – dann zählt die Liste selbst.
+ */
+export function zahlLinks(p: ListeProps, d: Daten, suche: string): number | undefined {
+  if (suche || p.link !== undefined || p.sicht === 'suche' || !d.zahlenDa) return undefined;
+  const z = d.zaehler;
+  if (p.sicht === 'eingang') return z.eingang;
+  if (p.sicht === 'favoriten') return z.favoriten;
+  return z.sichten?.[p.sicht] ?? z.typen[p.sicht]?.anzahl;
+}
+
+/** Steht die Spalte (bzw. am Handy die Seite) mit der Liste ganz oben? */
+export function obenInSpalte(el: HTMLElement | null): boolean {
+  for (let x = el?.parentElement; x; x = x.parentElement) {
+    const o = getComputedStyle(x).overflowY;
+    if ((o === 'auto' || o === 'scroll') && x.scrollHeight > x.clientHeight) return x.scrollTop <= 4;
+  }
+  return (document.scrollingElement?.scrollTop ?? 0) <= 4;
+}
+
+/**
+ * Neues in der offenen Ansicht (#1668): Ändert sich die Zahl links (dasselbe Signal wie für die Zahlen links und im Tab,
+ * #919 – kein eigenes Abfragen), lädt die Liste nach. Nicht unter dem Finger: Nur wenn die Liste leer ist oder oben
+ * steht, nichts gewählt und rechts nichts offen ist, sofort; sonst kündigt `angekuendigt` die neue Zahl an, und erst
+ * `anzeigen` lädt. Jede Zahl wird nur einmal verfolgt – zählt die Ansicht dauerhaft anders als die Liste, lädt sie
+ * nicht im Kreis.
+ */
+export function useNeueInAnsicht(zahl: number | undefined, s: Seiten, ruhig: () => boolean) {
+  const [angekuendigt, setAngekuendigt] = useState<number | null>(null);
+  const verfolgt = useRef<number | undefined>(undefined);
+  useEffect(() => {
+    if (zahl === undefined || s.gesamt === null || s.laedt) return;
+    if (zahl === s.gesamt) {
+      verfolgt.current = zahl;
+      setAngekuendigt(null);
+      return;
+    }
+    if (zahl === verfolgt.current) return;
+    verfolgt.current = zahl;
+    if (s.gesamt === 0 || ruhig()) {
+      setAngekuendigt(null);
+      s.auffrischen();
+    } else setAngekuendigt(zahl);
+  }, [zahl, s.gesamt, s.laedt]); // eslint-disable-line react-hooks/exhaustive-deps -- nur bei neuer Zahl oder fertig geladener Liste
+  const anzeigen = () => {
+    setAngekuendigt(null);
+    s.auffrischen();
+  };
+  return { angekuendigt: angekuendigt !== null && angekuendigt === zahl ? angekuendigt : null, anzeigen };
+}
+
 /** Link (#98): die erste Mappe öffnen – einmal, nicht nach „Zur Liste“. */
 export function useZuerstOeffnen(p: ListeProps, s: Seiten, anhang: string) {
   const geoeffnet = useRef(false);

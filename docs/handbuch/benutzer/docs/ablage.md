@@ -39,6 +39,8 @@ Mit **+** und dem Namen des Mappentyps oben rechts, etwa **+ Rechnung**, legst d
 
 Über der Liste steht, wie viele Mappen sie enthält. Haben alle denselben Mappentyp, nennt die Zahl ihn, etwa „12 Verträge“ – oder „12 × Vertrag“, wenn für den Mappentyp keine Mehrzahl eingetragen ist; in Ansichten mit verschiedenen Mappentypen heißt es „12 Mappen“.
 
+Kommt Neues herein, während du eine Ansicht offen hast – etwa Post über den Eingangsordner –, lädt die Liste von selbst nach, sobald sich die Zahl links ändert. Damit dir nichts unter dem Finger wegspringt, geschieht das nur sofort, wenn die Liste leer ist oder du oben stehst, nichts ausgewählt hast und rechts keine Mappe offen ist. Sonst erscheint über der Liste ein ruhiger Hinweis, etwa **14 neue – anzeigen**; erst ein Klick lädt nach, Auswahl und Scrollposition bleiben. Die Zahl über der Liste stimmt dabei immer mit der Zahl links überein. Hängt doch einmal etwas, lädt der Knopf **Neu laden** (der runde Pfeil neben **⋯**) Zahlen und Liste neu.
+
 ### Kompakt oder als Tabelle
 
 Wie die Liste aussieht, hängt von ihrer Breite ab:

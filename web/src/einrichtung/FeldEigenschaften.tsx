@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Mehrfachauswahl } from '../ablage/Mehrfachauswahl';
-import { einzigesZiel, zieleVon, type Feld as FeldDef } from '../../../shared/src/model';
+import { einzigesZiel, jedeMappe, zieleVon, type Feld as FeldDef } from '../../../shared/src/model';
 import type { Mappentyp } from '../../../shared/src/model';
 import { moeglicheQuellen, moeglicheZielFelder } from '../../../shared/src/folgtaus';
 import { FRIST_STANDARD } from '../../../shared/src/fristen';
 import { FELDFORMATE, formatName, HEUTE, type Feldformat } from '../../../shared/src/feldformate';
 import { artenFuer, artVon, datumsPaare, ERKENNUNG_HINWEIS_MAX, ERKENNUNGSARTEN, type Erkennungsart } from '../../../shared/src/erkennung';
 import { moeglicheDatumsfelder, moeglicheJahresfelder } from '../../../shared/src/ausdatum';
+import { moeglicheReihenfolgefelder } from '../../../shared/src/auswahlreihenfolge';
 import { Link } from '../ort';
 import { t } from '../sprache';
 import { DatumEingabe, Feld, HakenFeld } from '../bausteine';
@@ -14,7 +15,7 @@ import type { EntwurfFeld } from './entwurf';
 
 /**
  * Einzelne Eigenschaften eines Felds im Mappentyp-Editor (#1279 aus Einrichtung.tsx gezogen): Format, Datumsgrenzen,
- * Frist, Aus Dokument füllen, Wiederfinden, Zieltypen und „Folgt aus“.
+ * Frist, Aus Dokument füllen, Wiederfinden, Zieltypen, „Folgt aus“ und die Reihenfolge der Auswahl.
  */
 
 /** Format eines Textfelds (#535); bei PLZ das FeldDef mit dem Land. */
@@ -268,6 +269,68 @@ export function AusDatumEditor({
                 {x.label || x.key}
               </option>
             ))}
+          </select>
+        </Feld>
+      )}
+    </div>
+  );
+}
+
+/** Systemspalten für die Reihenfolge der Auswahl (#1671) – auch bei mehreren Zieltypen. */
+const REIHENFOLGE_SYSTEM_TEXT = () => [
+  { key: '_titel', label: t('mappentypen.editor.reihenfolge.titel') },
+  { key: '_erstellt', label: t('mappentypen.editor.reihenfolge.erstellt') },
+  { key: '_geaendert', label: t('mappentypen.editor.reihenfolge.geaendert') },
+];
+
+/**
+ * Reihenfolge der Auswahl (#1671): Nach welchem Feld des Zieltyps (nur bei genau einem) oder nach Titel, Angelegt,
+ * Zuletzt geändert die Auswahl sortiert – auf- oder absteigend. Ohne Einstellung Titel aufsteigend, Zahlen als Zahlen.
+ */
+export function AuswahlReihenfolgeEditor({
+  f,
+  id,
+  setze,
+  felderVon,
+}: {
+  f: EntwurfFeld;
+  id: (x: string) => string;
+  setze(patch: Partial<EntwurfFeld>): void;
+  felderVon(typId: string): FeldDef[] | undefined;
+}) {
+  // Nicht für „jede Mappe“ und ohne Zieltyp; Felder des Zieltyps nur bei genau einem.
+  if (jedeMappe(f) || !zieleVon(f).length) return null;
+  const z = einzigesZiel(f);
+  const zielFelder = (z && felderVon(z)) || [];
+  const r = f.auswahlReihenfolge;
+  const felder = [
+    ...REIHENFOLGE_SYSTEM_TEXT(),
+    ...moeglicheReihenfolgefelder(zielFelder).map((x) => ({ key: x.key, label: x.label || x.key })),
+  ];
+  return (
+    <div className="raster folgtaus">
+      <Feld beschriftung={t('mappentypen.editor.reihenfolge')} hinweis={t('mappentypen.editor.reihenfolge-hilfe')}>
+        <select
+          id={id('reihenfolge')}
+          value={r?.feld ?? ''}
+          onChange={(e) => setze({ auswahlReihenfolge: e.target.value ? { feld: e.target.value, absteigend: r?.absteigend } : undefined })}>
+          <option value="">{t('mappentypen.editor.reihenfolge.vorgabe')}</option>
+          {felder.map((x) => (
+            <option key={x.key} value={x.key}>
+              {x.label}
+            </option>
+          ))}
+          {r && !felder.some((x) => x.key === r.feld) && <option value={r.feld}>{r.feld}</option>}
+        </select>
+      </Feld>
+      {r && (
+        <Feld beschriftung={t('mappentypen.editor.reihenfolge.richtung')}>
+          <select
+            id={id('reihenfolge-richtung')}
+            value={r.absteigend ? 'ab' : 'auf'}
+            onChange={(e) => setze({ auswahlReihenfolge: { feld: r.feld, ...(e.target.value === 'ab' ? { absteigend: true } : {}) } })}>
+            <option value="auf">{t('mappentypen.editor.reihenfolge.aufsteigend')}</option>
+            <option value="ab">{t('mappentypen.editor.reihenfolge.absteigend')}</option>
           </select>
         </Feld>
       )}

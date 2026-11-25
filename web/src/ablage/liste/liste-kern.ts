@@ -8,13 +8,16 @@ import { useSeiten } from '../../seiten';
 import { useAuswahl } from './auswahl';
 import { einheitlicherTyp, ohneTypSpalte } from './hilfen';
 import {
+  obenInSpalte,
   sortierungVon,
   useBreite,
   useGesehen,
   useListenSuche,
   useLoeschProbe,
   useNachladen,
+  useNeueInAnsicht,
   useZuerstOeffnen,
+  zahlLinks,
   type Ergebnis,
   type ListeProps,
 } from './liste-hooks';
@@ -40,6 +43,9 @@ export function useListe(p: ListeProps) {
   const ende = useNachladen(s, tabelle);
   const gesehen = useGesehen(p, s, d);
   const w = useAuswahl(s.mappen, s.gesamt, [p.sicht, suche, volltext, inNotizen, p.link ?? '']);
+  // Neues in der offenen Ansicht (#1668): die Zahl links; sofort nachladen nur, wenn nichts unter dem Finger springt.
+  const zahl = zahlLinks(p, d, suche);
+  const neue = useNeueInAnsicht(zahl, s, () => !p.offen && w.gewaehlt.size === 0 && obenInSpalte(mess.current));
   const [ergebnis, setErgebnis] = useState<Ergebnis>();
   // Exportieren (#1285): alle Treffer über „⋯“ im Kopf oder die Auswahl über die Auswahlleiste.
   const [exportOffen, setExportOffen] = useState<false | 'alle' | 'auswahl'>(false);
@@ -56,6 +62,7 @@ export function useListe(p: ListeProps) {
   const korb = (d.zaehler.papierkorbTage ?? 0) > 0;
   return {
     ...{ p, d, favoritenBenachrichtigung, anhang, suche, ...sort, volltext, inNotizen, s, mess, einTyp, spalten, tabelle, ende },
+    ...{ zahl, neue },
     ...{ ...gesehen, w, wahl: p.auswahl ? w : undefined, ergebnis, setErgebnis, exportOffen, setExportOffen, emailOffen },
     ...{ setEmailOffen, alleWaehlen, ...loesch, korb },
   };

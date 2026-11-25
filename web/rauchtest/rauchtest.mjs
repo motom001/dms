@@ -72,3 +72,4 @@ import './bereiche/werkbank-handy-seiten.mjs';
 import './bereiche/spalten-und-leisten.mjs';
 import './bereiche/datum-und-hinweise.mjs';
 import './bereiche/neue-post-ebenen.mjs';
+import './bereiche/auswahl-und-nachladen.mjs';

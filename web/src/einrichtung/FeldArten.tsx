@@ -9,7 +9,15 @@ import { optionText } from '../../../shared/src/beschriftung';
 import { t } from '../sprache';
 import { DatumEingabe, Feld, FeldGruppe, HakenFeld } from '../bausteine';
 import { standardAnzeige, type EntwurfFeld, type EntwurfRegister, type Zahlprop } from './entwurf';
-import { AusDatumEditor, DatumGrenzen, FolgtAusEditor, FormatEditor, FristEditor, ZielTypenWahl } from './FeldEigenschaften';
+import {
+  AusDatumEditor,
+  AuswahlReihenfolgeEditor,
+  DatumGrenzen,
+  FolgtAusEditor,
+  FormatEditor,
+  FristEditor,
+  ZielTypenWahl,
+} from './FeldEigenschaften';
 import { formate } from '../../../shared/src/region';
 
 /**
@@ -194,7 +202,10 @@ function auswahlEigenschaften(b: Basis) {
   );
 }
 
-/** Verweisfeld: Ziele, Art des Verweises, mehrere, Auswahlfilter (#172), Folgt aus (#886), Vorbelegen (#1037). */
+/**
+ * Verweisfeld: Ziele, Art des Verweises, mehrere, Auswahlfilter (#172), Folgt aus (#886), Aus Datum (#1648),
+ * Reihenfolge der Auswahl (#1671), Vorbelegen (#1037).
+ */
 function ReferenzEigenschaften({ p, id }: Teil) {
   const { f, setze } = p;
   const ziele = zieleVon(f);
@@ -246,6 +257,13 @@ function ReferenzEigenschaften({ p, id }: Teil) {
           felderVon={(x) => (x === p.eigeneId ? p.alleFelder : p.typen.find((y) => y.id === x)?.felder)}
         />
       )}
+      {/* Reihenfolge der Auswahl (#1671): Felder des Zieltyps nur bei genau einem, sonst Titel, Angelegt, Zuletzt geändert. */}
+      <AuswahlReihenfolgeEditor
+        f={f}
+        id={id}
+        setze={setze}
+        felderVon={(x) => (x === p.eigeneId ? p.alleFelder : p.typen.find((y) => y.id === x)?.felder)}
+      />
       {/* Beim Auswählen übernehmen (#1037): auch mit mehreren Zieltypen – je Typ, der das FeldDef hat. */}
       {!jedeMappe(f) && ziele.length > 0 && (
         <VorbelegenEditor

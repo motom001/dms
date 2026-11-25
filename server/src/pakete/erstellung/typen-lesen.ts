@@ -69,6 +69,7 @@ const FELD = [
   'auswahlFilter',
   'folgtAus',
   'ausDatum',
+  'auswahlReihenfolge',
   'vorbelegen',
   'erkennung',
   'wiederfinden',

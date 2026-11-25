@@ -1,0 +1,10 @@
+art: minor
+
+## Neu
+
+- **Reihenfolge der Auswahl an Verweisfeldern** (#1671): Am Verweisfeld lässt sich einstellen, wonach die Auswahl sortiert – ein Feld des Ziel-Mappentyps oder Titel, Angelegt, Zuletzt geändert, auf- oder absteigend (z. B. Steuerjahr nach „Jahr“ absteigend). Ohne Einstellung nach Titel, Zahlen der Größe nach. Pakete können die Reihenfolge vorbelegen (`auswahlReihenfolge`).
+
+## Behoben
+
+- **Auswahl an Verweisfeldern klappt nach oben auf** (#1670): Steht das Feld unten in der Mappe, klappt die Auswahl nach oben auf und bleibt im Fenster, auch am Handy.
+- **Offene Ansicht lädt nach** (#1668): Kommt Neues herein, zeigt die offene Liste es ohne Neuladen – oder, wenn man gerade darin arbeitet, mit dem Hinweis „… neue – anzeigen“. Die Zahl über der Liste stimmt mit der Zahl links überein; neu ist der Knopf „Neu laden“.

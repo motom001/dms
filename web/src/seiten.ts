@@ -90,6 +90,8 @@ export function useSeiten(
     if (stand === ersterStand.current) return;
     void lade(0, Math.min(500, Math.max(SEITE, geladen.current)), true);
   }, [stand]); // eslint-disable-line react-hooks/exhaustive-deps -- nur bei neuem Stand nachladen
+  /** Neues in der Ansicht (#1668): den geladenen Bereich auffrischen wie nach einem neuen Stand – die Liste bleibt stehen. */
+  const auffrischen = useCallback(() => void lade(0, Math.min(500, Math.max(SEITE, geladen.current)), true), [lade]);
 
   const mehr = useCallback(() => {
     if (laedt || gesamt === null || mappen.length >= gesamt) return;
@@ -133,6 +135,7 @@ export function useSeiten(
     laedt,
     fehler,
     mehr,
+    auffrischen,
     alle: gesamt !== null && mappen.length >= gesamt,
   };
 }

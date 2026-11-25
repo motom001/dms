@@ -33,6 +33,9 @@ Hinter Dokumenten- und Verknüpfungsregistern steht, wie viel darin liegt. Ein r
 
     Steht dort **Archiv · aufbewahren, Frist beginnt mit ‹Feld›** (etwa *Beendet am*), läuft die Frist noch nicht: Die Mappe ist gesperrt, solange das Feld leer ist – etwa bei einem laufenden Vertrag. Trägst du das Datum ein, beginnt die Frist; das steht in der Historie.
 
+!!! info "Reihenfolge der Auswahl"
+    Die Auswahl eines Verweisfelds zeigt die Mappen nach Titel, Zahlen der Größe nach („Steuerjahr 9“ vor „Steuerjahr 10“) – oder so, wie ein Administrator es am Feld eingestellt hat, etwa das neueste *Steuerjahr* oben. Steht das Feld weit unten, klappt die Auswahl nach oben auf; ist die Liste länger als der Platz, rollst du in ihr.
+
 !!! info "Nur passende Mappen"
     Manche Verweisfelder bieten nur bestimmte Mappen an, z. B. beim Feld *Arzt* nur Vertragspartner, die Ärzte sind, oder bei einer Person nur die Niederlassungen der gewählten Organisation. Steht neben einer gewählten Mappe gelb, womit sie nicht passt – etwa „passt nicht zu „Organisation““ oder „passt nicht zur Auswahlregel dieses Felds“ –, bleibt sie gültig, und speichern kannst du trotzdem; neu wählen kannst du nur, was passt. Darfst du die Mappe bearbeiten, steht über den Registern außerdem „Achtung: Niederlassung passt nicht zu „Organisation“.“ – ein Klick führt zum Feld.
 

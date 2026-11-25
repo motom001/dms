@@ -13,6 +13,7 @@ import { zielErlaubt, zieleVon, jedeMappe, gemeinsameFelder } from '../verweiszi
 import { vorlageFelder, istIndexplatzhalter, pruefeTitelFilter, INDEXPLATZHALTER, type Indexplatzhalter } from './werte';
 import { folgtAusProbleme, folgtAusKreis } from '../folgtaus';
 import { ausDatumProbleme } from '../ausdatum';
+import { auswahlReihenfolgeProbleme } from '../auswahlreihenfolge';
 import { vorbelegenProbleme } from '../vorbelegen';
 import { tabellenProbleme } from '../tabelle';
 import { zusammengesetztProbleme, teileVon, meldefeld } from '../zusammengesetzt';
@@ -185,6 +186,9 @@ export function pruefeMappentyp(mappentypDaten: MappentypDaten, ctx: TypKontext)
     // Aus Datum ableiten (#1648): Datumsfeld hier, Feld mit dem Jahr im Zieltyp.
     if (f.ausDatum)
       m.push(...ausDatumProbleme(mappentypDaten.felder, f, (id) => (id === ctx.eigeneId ? mappentypDaten.felder : ctx.felderVon?.(id))));
+    // Reihenfolge der Auswahl (#1671): Feld des (einen) Zieltyps, nach dem sich sortieren lässt, oder eine Systemspalte.
+    if (f.auswahlReihenfolge)
+      m.push(...auswahlReihenfolgeProbleme(f, (id) => (id === ctx.eigeneId ? mappentypDaten.felder : ctx.felderVon?.(id))));
     // Beim Auswählen übernehmen (#1037): Felder gibt es und sie passen zusammen; nie aus oder in Passwortfelder.
     if (f.vorbelegen?.length)
       m.push(...vorbelegenProbleme(mappentypDaten.felder, f, (id) => (id === ctx.eigeneId ? mappentypDaten.felder : ctx.felderVon?.(id))));

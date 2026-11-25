@@ -266,6 +266,7 @@ function verweisEingabe(p: FeldEingabeProps, { rahmen, unter, typ }: Rahmen) {
             typFelder={typFelder}
             neuesFormular={p.neuesFormular}
             feldName={feldLabel(f)}
+            reihenfolge={f.auswahlReihenfolge}
           />
           {unter}
         </>

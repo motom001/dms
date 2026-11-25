@@ -32,6 +32,16 @@ const mitTeilen = (sql: Sql, roh: Teil | null, tf: Teil | null, auch: string[]) 
       : sql`AND mappen.id IN (${tf})`,
 });
 
+/**
+ * Sortierung nach Titel – oder in natürlicher Reihenfolge (#1671, Auswahl an Verweisfeldern): jede Ziffernfolge auf 30
+ * Stellen mit Nullen (erst 30 Nullen davor, dann nur die letzten 30 Ziffern behalten). So steht „Steuerjahr 9“ vor
+ * „Steuerjahr 10“; gleich mit `natuerlicherSchluessel` (shared/src/auswahlreihenfolge.ts) im Speicher-Repo.
+ */
+const titelSql = (sql: Sql, natuerlich: boolean) =>
+  natuerlich
+    ? sql`regexp_replace(regexp_replace(lower(titel), '([0-9]+)', '000000000000000000000000000000\\1', 'g'), '0*([0-9]{30})', '\\1', 'g')`
+    : sql`lower(titel)`;
+
 /** Bedingungen einer Seite (#740) zum gemeinsamen Kontext. */
 function seitenTeileVon(k: PgKontext) {
   const { sql, haushaltId, tsAnfrage, SUCHINDEX } = k;
@@ -131,8 +141,8 @@ function seitenTeileVon(k: PgKontext) {
     const so = o.sortierung;
     const k = so?.key ?? '';
     const ausdruck =
-      !so || so.art === 'titel'
-        ? sql`lower(titel)`
+      !so || so.art === 'titel' || so.art === 'titelNatuerlich'
+        ? titelSql(sql, so?.art === 'titelNatuerlich')
         : so.art === 'erstellt'
           ? sql`erstellt`
           : so.art === 'geaendert'
@@ -157,7 +167,7 @@ function seitenTeileVon(k: PgKontext) {
                             : sql`lower(werte ->> ${k}::text)`;
     // Leere Werte zuletzt. erstellt und geaendert sind nie leer (NOT NULL), ohne „NULLS LAST“ liest PostgreSQL ihren
     // Index auch rückwärts (#740). Ebenso Titel absteigend: Ein Titel fehlt nur kurz vor dem ersten Berechnen.
-    const ohneLeere = !so || ['titel', 'erstellt', 'geaendert'].includes(so.art);
+    const ohneLeere = !so || ['titel', 'titelNatuerlich', 'erstellt', 'geaendert'].includes(so.art);
     const richtung = so?.absteigend ? (ohneLeere ? sql`DESC` : sql`DESC NULLS LAST`) : sql`ASC NULLS LAST`;
     return { wo, ohneLesen, treffer, ausdruck, richtung, tf, enthaelt, schreibweisen, anfragen, v, teilSql };
   };

@@ -1,13 +1,17 @@
 import { useEffect, useState } from 'react';
-import type { Mappe, Mappentyp, Werte } from '../../../../shared/src/model';
+import type { AuswahlReihenfolge, Mappe, Mappentyp, Werte } from '../../../../shared/src/model';
+import { auswahlSortierung } from '../../../../shared/src/auswahlreihenfolge';
 import { mappenApi, type Bezuege } from '../../api/mappen';
 import { t } from '../../sprache';
 
-/** Zuletzt geöffnet (#940, #1036): bei mehreren Zieltypen stehen diese Mappen in ihrer Gruppe oben. */
-export function useZuletzt(mehrere: boolean, offen: boolean) {
+/**
+ * Zuletzt geöffnet (#940, #1036): bei mehreren Zieltypen stehen diese Mappen in ihrer Gruppe oben – nicht, wenn am
+ * Verweisfeld eine Reihenfolge der Auswahl eingestellt ist (#1671).
+ */
+export function useZuletzt(mehrere: boolean, offen: boolean, reihenfolge?: AuswahlReihenfolge) {
   const [zuletzt, setZuletzt] = useState<Map<string, number> | null>(null);
   useEffect(() => {
-    if (!mehrere || !offen || zuletzt) return;
+    if (!mehrere || reihenfolge || !offen || zuletzt) return;
     let aktuell = true;
     mappenApi.zuletztGeoeffnet().then(
       (l) => aktuell && setZuletzt(new Map(l.map((x, i) => [x.id, i]))),
@@ -16,8 +20,8 @@ export function useZuletzt(mehrere: boolean, offen: boolean) {
     return () => {
       aktuell = false;
     };
-  }, [mehrere, offen, zuletzt]);
-  return zuletzt;
+  }, [mehrere, reihenfolge, offen, zuletzt]);
+  return reihenfolge ? null : zuletzt;
 }
 
 /** Titel unbekannter Verweise nachladen (z. B. vorbelegt über ?verweis=…). */
@@ -43,28 +47,37 @@ export interface TrefferQuelle {
   quelle?: (suche: string) => Promise<{ mappen: Array<Pick<Mappe, 'id' | 'titel' | 'typId'>>; gesamt: number }>;
   mehrere: boolean;
   alleIds: string;
+  /** Reihenfolge der Auswahl (#1671): Einstellung des Verweisfelds; fehlt = Titel aufsteigend in natürlicher Reihenfolge. */
+  reihenfolge?: AuswahlReihenfolge;
 }
 
-/** Vorschläge zur Eingabe, kurz verzögert; null, solange noch nichts geladen ist. */
-export function useTreffer({ offen, eingabe, ziel, sicht, eigeneText, quelle, mehrere, alleIds }: TrefferQuelle) {
+/**
+ * Vorschläge zur Eingabe, kurz verzögert; null, solange noch nichts geladen ist. Sortiert nach der Reihenfolge des
+ * Verweisfelds (#1671) – der Server liefert die erste Seite schon so, damit z. B. das neueste Steuerjahr nicht fehlt.
+ */
+export function useTreffer({ offen, eingabe, ziel, sicht, eigeneText, quelle, mehrere, alleIds, reihenfolge }: TrefferQuelle) {
   const [treffer, setTreffer] = useState<Mappe[] | null>(null);
   const [gesamt, setGesamt] = useState(0);
+  const { spalte, absteigend } = auswahlSortierung(reihenfolge);
   useEffect(() => {
     if (!offen) return;
     let aktuell = true;
     const timer = setTimeout(() => {
       const eigen = eigeneText ? (JSON.parse(eigeneText) as Werte) : undefined;
+      const sortierung = { spalte, absteigend };
       // Mehrere Zieltypen ohne Feld-Auswahl (#1036, z. B. erweiterte Suche): je Typ eine Seite, zusammen.
       const jeTyp = () =>
-        Promise.all(alleIds.split(',').map((x) => mappenApi.seite(`typ:${x}`, 0, 15, eingabe.trim(), { eigene: eigen }))).then((l) => ({
-          mappen: l.flatMap((x) => x.mappen),
-          gesamt: l.reduce((n, x) => n + x.gesamt, 0),
-        }));
+        Promise.all(alleIds.split(',').map((x) => mappenApi.seite(`typ:${x}`, 0, 15, eingabe.trim(), { eigene: eigen, sortierung }))).then(
+          (l) => ({
+            mappen: l.flatMap((x) => x.mappen),
+            gesamt: l.reduce((n, x) => n + x.gesamt, 0),
+          }),
+        );
       (quelle
         ? (quelle(eingabe.trim()) as Promise<{ mappen: Mappe[]; gesamt: number }>)
         : !sicht && mehrere
           ? jeTyp()
-          : mappenApi.seite(sicht ?? `typ:${ziel.id}`, 0, mehrere ? 30 : 20, eingabe.trim(), { eigene: eigen })
+          : mappenApi.seite(sicht ?? `typ:${ziel.id}`, 0, mehrere ? 30 : 20, eingabe.trim(), { eigene: eigen, sortierung })
       )
         .then((s) => {
           if (aktuell) {
@@ -78,7 +91,7 @@ export function useTreffer({ offen, eingabe, ziel, sicht, eigeneText, quelle, me
       aktuell = false;
       clearTimeout(timer);
     };
-  }, [offen, eingabe, ziel.id, sicht, eigeneText, quelle, mehrere, alleIds]);
+  }, [offen, eingabe, ziel.id, sicht, eigeneText, quelle, mehrere, alleIds, spalte, absteigend]);
   return { treffer, gesamt };
 }
 
