@@ -88,7 +88,13 @@ export function zuordnenRouten(k: RoutenKontext): Route[] {
       methode: 'POST',
       pfad: '/api/mappen/:id/zuordnen',
       zugang: 'angemeldet',
-      handler: async (a) => ok(await dienst.post.ordneZu(a.params.id, b(a), ich(a).id, await zg(a), undefined, quelle(a))),
+      handler: async (a) => {
+        // Aus Korrekturen lernen (#1681): den Absender vor dem Zuordnen lesen – danach ist die Post womöglich aufgelöst.
+        const absender = await dienst.erkennung.gelerntes.absenderVon(a.params.id).catch(() => null);
+        const r = await dienst.post.ordneZu(a.params.id, b(a), ich(a).id, await zg(a), undefined, quelle(a));
+        await dienst.erkennung.gelerntes.lerneAusZuordnen(absender, a.params.id, b(a), ich(a).id).catch(() => undefined);
+        return ok(r);
+      },
     },
     // „Dokument übernehmen“ (#934): Folgedokumente als neue Post abtrennen; Abgleich mit vorhandenen Mappen (Belege, Doppelte, Typ).
     {

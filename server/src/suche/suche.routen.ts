@@ -60,6 +60,25 @@ export function sucheRouten(k: RoutenKontext): Route[] {
       zugang: 'admin',
       handler: async (a) => ok(await dienst.erkennung.setzeStandard(a.body)),
     },
+    // Gelerntes (#1681): aus Korrekturen gelernt – ansehen, je Eintrag löschen, alles für einen Absender vergessen.
+    {
+      methode: 'GET',
+      pfad: '/api/werkbank/erkennung/gelerntes',
+      zugang: 'admin',
+      handler: async (a) => ok(await dienst.erkennung.gelerntes.liste(await zg(a))),
+    },
+    {
+      methode: 'DELETE',
+      pfad: '/api/werkbank/erkennung/gelerntes/:id',
+      zugang: 'admin',
+      handler: async (a) => ok(await dienst.erkennung.gelerntes.loesche(a.params.id, ich(a).email)),
+    },
+    {
+      methode: 'DELETE',
+      pfad: '/api/werkbank/erkennung/gelerntes/absender/:id',
+      zugang: 'admin',
+      handler: async (a) => ok(await dienst.erkennung.gelerntes.vergiss(a.params.id, ich(a).email)),
+    },
     // „Frag deine Ablage“ (#444): Höchstmenge je Frage (Ausschnitte, Zeichen).
     { methode: 'GET', pfad: '/api/werkbank/fragen', zugang: 'admin', handler: async () => ok(await dienst.fragen.stand()) },
     {

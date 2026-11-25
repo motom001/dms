@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { datumText } from '../../../shared/src/archiv';
 import { feldLabel, typName } from '../../../shared/src/beschriftung';
 import { merkmalsfelder } from '../../../shared/src/erkennung';
 import {
@@ -43,13 +44,20 @@ export function belegText(b: Klassbeleg, bezuege: Bezuege): string {
       });
     case 'absender':
     case 'erkennbar':
+    case 'gelernt':
       return belegNeu(b, bezuege);
   }
 }
 
-/** Absender (#1680) und „Woran man ihn erkennt“ (#1673) als Satz. */
+/** Absender (#1680), „Woran man ihn erkennt“ (#1673) und Gelerntes (#1681) als Satz. */
 function belegNeu(b: Klassbeleg, bezuege: Bezuege): string {
   if (b.weg === 'erkennbar') return t('ablage.uebernehmen.beleg-erkennbar', { gefunden: b.gefunden ?? 0, von: b.von ?? 0 });
+  // Gelernt (#1681): immer beschrieben – wann und aus welcher Mappe.
+  if (b.weg === 'gelernt') {
+    const datum = datumText((b.gelernt?.am ?? '').slice(0, 10));
+    const titel = b.mappeId ? bezuege[b.mappeId]?.titel : '';
+    return titel ? t('ablage.uebernehmen.beleg-gelernt', { datum, titel }) : t('ablage.uebernehmen.beleg-gelernt-ohne', { datum });
+  }
   const titel = b.mappeId ? bezuege[b.mappeId]?.titel : '';
   return titel
     ? t('ablage.uebernehmen.beleg-absender', { absender: titel, anzahl: b.anzahl ?? 0 })

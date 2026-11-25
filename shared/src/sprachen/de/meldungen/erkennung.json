@@ -62,5 +62,7 @@
   "erkennung.aussteller-eigen": "Aussteller: {titel}",
   "erkennung.ausgehend-hinweis": "Aussteller ist deine eigene Organisation bzw. jemand aus deinem Haushalt – ausgehend? Bitte prüfen.",
   "erkennung.ausgehend-an": "Gegenseite eines ausgehenden Belegs",
-  "erkennung.schwelle-ungueltig": "Die Schwelle muss zwischen {min} und {max} Prozent liegen."
+  "erkennung.schwelle-ungueltig": "Die Schwelle muss zwischen {min} und {max} Prozent liegen.",
+  "erkennung.gelernt": "gelernt aus einer Korrektur vom {datum}: steht hinter „{kennwort}“",
+  "erkennung.gelernt-gibt-es-nicht": "Diesen gelernten Eintrag gibt es nicht (mehr)."
 }

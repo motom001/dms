@@ -1379,6 +1379,8 @@
   "uebernehmen.beleg-absender": "Post from “{absender}” was filed in this folder type {anzahl} times so far.",
   "uebernehmen.beleg-absender-ohne": "Post from this sender was filed in this folder type {anzahl} times so far.",
   "uebernehmen.beleg-erkennbar": "Fits “How to recognise it”: {gefunden} of {von} words are in the document.",
+  "uebernehmen.beleg-gelernt": "Learned from a correction on {datum} (“{titel}”). See and delete it in the workbench under “Learned”.",
+  "uebernehmen.beleg-gelernt-ohne": "Learned from a correction on {datum}. See and delete it in the workbench under “Learned”.",
   "uebernehmen.sicher.aehnlich-sehr": "Very similar to {sehr} of {anzahl} similar filed folders of type “{typ}”.",
   "uebernehmen.sicher.aehnlich-entfernt": "Only loosely similar to {anzahl} filed folders of type “{typ}”.",
   "uebernehmen.sicher.ohne-beispiele": "There is no folder of type “{typ}” yet – so at most “likely”.",

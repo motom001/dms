@@ -112,8 +112,10 @@ export function Uebernehmen({
       kopieren: false,
       vorschlag: {} as Record<string, Wert>,
       ...(eml ? {} : { originalEmail: false as const }),
+      // Was „Wohin gehört das?“ vorgeschlagen hat (#1681): Daraus lernt die Erkennung, wenn du einen anderen Typ wählst.
+      ...(klass ? { vorgeschlagen: { typId: klass.vorschlag?.typId ?? null, sicherheit: klass.vorschlag?.sicherheit ?? 0 } } : {}),
     };
-  }, [m.id, mitDoks, zielTyp, eml]);
+  }, [m.id, mitDoks, zielTyp, eml, klass]);
   // Original herunterladen, wenn es sich nicht anzeigen lässt (#1211): mit Exportrecht, ohne Pflicht-Stempel.
   const herunterladen = details.exportierbar !== false && typ.stempel?.modus !== 'pflicht';
 

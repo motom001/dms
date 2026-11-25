@@ -49,6 +49,7 @@ import type { Repo } from '../repo';
 import { t } from '../sprache/sprache';
 import { ohneErkennung } from '../../../shared/src/anlagen';
 import { namenVon, perAbsender, perErkennbar } from './klassifizierung-wege';
+import type { Gelerntes } from './gelerntes';
 
 const log = protokoll.modul('ablage');
 
@@ -80,6 +81,8 @@ export class Klassifizierung {
     /** Nur Standard-Weg, Abgleich und Schwelle (#1278, Schritt 5b: statt der ganzen Klasse `Erkennung`). */
     private erkennung: Pick<ErkennungPositionen, 'standard' | 'abgleich' | 'schwelle'>,
     private repo: () => Repo,
+    /** Aus Korrekturen gelernt (#1681). */
+    private gelerntes?: Pick<Gelerntes, 'typBelege'>,
   ) {}
 
   /** Wird gesetzt, sobald der Paket-Läufer läuft (verwaltung.ts bzw. fern.ts). */
@@ -118,16 +121,25 @@ export class Klassifizierung {
     if (!text.trim() || !ziele.length) return { vorschlag: null, typen: [], wege: [], ohneText, bezuege: {} };
 
     const start = Date.now();
-    const [paketWege, abgleich, absender, gruppen] = await Promise.all([
+    const leer = { belege: [], bezuege: {} };
+    const [paketWege, abgleich, absender, gruppen, gelernt] = await Promise.all([
       this.perPaketen(text, ziele, quellTypen, z),
       this.perAbgleich(text, ziele, z),
-      perAbsender(this.d, this.repo(), [...mappen], ziele, z).catch(() => ({ belege: [], bezuege: {} })),
+      perAbsender(this.d, this.repo(), [...mappen], ziele, z).catch(() => leer),
       this.d.suche.gleichbedeutendeWoerter().catch(() => [] as string[][]),
+      // Aus Korrekturen gelernt (#1681): ein starker Beleg je gelerntem Typ dieses Absenders.
+      this.gelerntes?.typBelege([...mappen], ziele, z).catch(() => leer) ?? leer,
     ]);
     // Namen mit Mehrzahl und gleichbedeutenden Wörtern (#1673): „Police“ als Überschrift spricht für „Vertrag“.
     const namen = new Map(ziele.map((x) => [x.id, namenVon(x, gruppen)] as const));
     const erkennbar = perErkennbar(text, ziele);
-    const belege: Array<Klassbeleg & { typId: string }> = [...paketWege.belege, ...abgleich.belege, ...absender.belege, ...erkennbar];
+    const belege: Array<Klassbeleg & { typId: string }> = [
+      ...paketWege.belege,
+      ...abgleich.belege,
+      ...absender.belege,
+      ...erkennbar,
+      ...gelernt.belege,
+    ];
     const kern = typAusText(text, [...namen.values()].flat());
     if (kern) belege.push({ typId: kern.typId, weg: 'kern', sicherheit: KERN_SICHERHEIT, wort: kern.wort, fundstelle: kern.fundstelle });
     const wege: Wegstand[] = [
@@ -136,6 +148,7 @@ export class Klassifizierung {
       { weg: 'abgleich', stand: stand(abgleich.belege.length) },
       { weg: 'absender', stand: stand(absender.belege.length) },
       { weg: 'erkennbar', stand: stand(erkennbar.length) },
+      ...(gelernt.belege.length ? [{ weg: 'gelernt' as const, stand: 'ok' as const }] : []),
     ];
     const schwelle = await this.erkennung.schwelle();
     // Wie sicher ist Ablago? (#1645): je möglichem Typ, was fehlte – nur Kennungen und Zahlen, nichts davon ins Protokoll.
@@ -143,7 +156,9 @@ export class Klassifizierung {
     const typen = verbindeWege(belege, name, gesenkt(gruende, schwelle));
     const vorschlag = typen[0] && typen[0].sicherheit >= schwelle ? typen[0] : null;
     const genutzt = (id: string) => typen.some((x) => x.belege.some((b) => b.mappeId === id));
-    const bezuege = Object.fromEntries(Object.entries({ ...abgleich.bezuege, ...absender.bezuege }).filter(([id]) => genutzt(id)));
+    const bezuege = Object.fromEntries(
+      Object.entries({ ...abgleich.bezuege, ...absender.bezuege, ...gelernt.bezuege }).filter(([id]) => genutzt(id)),
+    );
     log.info('Klassifizieren', {
       zeichen: text.length,
       kandidaten: ziele.length,

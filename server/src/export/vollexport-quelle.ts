@@ -129,6 +129,8 @@ export interface ExportQuelle {
   notfallkontakte?(): Promise<unknown[]>;
   /** Eigene Rundgänge und Tipps, Anpassungen und An/aus aus der Werkbank (#941, #942); fehlt bei Auskunft und persönlichem Export. */
   entdecken?(): Promise<unknown>;
+  /** Aus Korrekturen Gelerntes (#1681) als struktur/gelerntes.json; fehlt bei Auskunft und persönlichem Export. */
+  gelerntes?(): Promise<unknown[]>;
   /** Fassungen der Werkbank (#1006) samt Löschvermerken; fehlt bei Auskunft und persönlichem Export. */
   fassungen?(): Promise<unknown[]>;
   mappen(typId: string): Promise<Mappe[]>;

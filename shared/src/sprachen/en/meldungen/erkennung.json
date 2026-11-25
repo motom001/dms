@@ -62,5 +62,7 @@
   "erkennung.aussteller-eigen": "Issuer: {titel}",
   "erkennung.ausgehend-hinweis": "The issuer is your own organisation or someone in your household – outgoing? Please check.",
   "erkennung.ausgehend-an": "Other party of an outgoing document",
-  "erkennung.schwelle-ungueltig": "The threshold must be between {min} and {max} per cent."
+  "erkennung.schwelle-ungueltig": "The threshold must be between {min} and {max} per cent.",
+  "erkennung.gelernt": "learned from a correction on {datum}: follows “{kennwort}”",
+  "erkennung.gelernt-gibt-es-nicht": "This learned entry does not exist (any more)."
 }

@@ -123,6 +123,7 @@ const REGELN: Regel[] = [
   R('*', '/api/werkbank/vektoren*', 'texterkennung'),
   R('*', '/api/werkbank/verkleinern*', 'texterkennung'),
   R('*', '/api/werkbank/erkennung', 'texterkennung', 'pakete'),
+  R('*', '/api/werkbank/erkennung/gelerntes*', 'texterkennung', 'pakete'),
   R('*', '/api/werkbank/fragen', 'texterkennung', 'pakete'),
 
   // Papierkorb und Export (#1196, #1197): dauerhafte Einstellungen unter Einstellungen – vor den Regeln der Seiten,

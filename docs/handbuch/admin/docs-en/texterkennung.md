@@ -136,6 +136,17 @@ If a package reads the texts, the limits of the [package runner](pakete.md) appl
 
 At the very bottom of the page, **Expert mode** opens the **Threshold for the suggestion**: from this certainty on, Ablago preselects a folder type under *Where does this belong?* (default 30 %, allowed 5 to 95 %). Below it, Ablago only lists the best types to choose from. **Back to the default** restores 30 %. How sure Ablago was for a document is shown there under **How sure is Ablago?** ([Post](https://help.ablago.app/benutzer/aktuell/en/post/)). Usually a better sentence under *How to recognise it* on the folder type helps more than another threshold.
 
+## Learned { #gelerntes }
+
+Ablago learns from corrections (#1681) – always, without a switch, but traceable and deletable:
+
+- **Folder type:** If someone picks a different folder type than suggested under *Where does this belong?* (or one Ablago was not *sure* about), Ablago remembers this type for the sender of the post. For the next letter from this sender it is a strong hint.
+- **Fields:** If someone corrects a value from *Fill from document* or takes it from the document (drag, click, mark), Ablago remembers the word in front of it, such as "Vertragskonto:". For the next letter from this sender Ablago looks behind it first.
+- **Always explained:** Wherever something learned counts, it says so – for the folder type "Learned from a correction on …", at the field "learned from a correction on …: follows “Vertragskonto:”".
+- **Unlearns by itself:** If something learned is not taken twice in a row, Ablago withdraws it.
+
+**Learned** on this page lists everything per sender: what was learned, when, by whom and from which folder, withdrawn entries with their date. A filter searches by sender, folder type or word. **Delete** removes one entry, **Forget everything for this sender** all entries of a sender. Learned entries contain nothing from documents except the word in front of a value. They are in the [backup](sicherung.md) and in the [full export](export.md) (`struktur/gelerntes.json`).
+
 ## Jobs {#auftrage}
 
 Under **Jobs** you see, in a list of fixed height, the documents per status (*error*, *waiting*, *running*, *waiting for text recognition*, *skipped*, *ready*) – with folder (as a link), size, time and the **reason** for errors or skipped documents.

@@ -158,5 +158,21 @@
   "webdav.nur-im-arbeitsspeicher-nach": "Only in memory; after a restart the list is empty.",
   "texterkennung.abbrechen.frage": "Cancel text recognition for {anzahl} documents?",
   "texterkennung.abbrechen.text": "The selected documents leave the queue. You can restart them later.",
-  "texterkennung.reiter": "Jobs by status"
+  "texterkennung.reiter": "Jobs by status",
+  "texterkennung.gelerntes.titel": "Learned",
+  "texterkennung.gelerntes.kurz": "What Ablago learned from corrections",
+  "texterkennung.gelerntes.text": "If someone picks a different folder type than suggested under “Where does this belong?” or corrects a value from the document, Ablago remembers it for post from the same sender: the folder type and the word in front of the value. If something learned is not taken twice in a row, Ablago withdraws it by itself. Deleted entries are only learned again at the next correction.",
+  "texterkennung.gelerntes.filter": "Filter by sender, folder type or word",
+  "texterkennung.gelerntes.leer": "Nothing learned yet.",
+  "texterkennung.gelerntes.absender-verborgen": "A sender you may not see",
+  "texterkennung.gelerntes.was-typ": "Folder type “{typ}”",
+  "texterkennung.gelerntes.was-feld": "“{feld}” in “{typ}” follows “{kennwort}”",
+  "texterkennung.gelerntes.wann": "learned on {datum} by {von}",
+  "texterkennung.gelerntes.zurueck": "withdrawn on {datum}",
+  "texterkennung.gelerntes.loeschen": "Delete",
+  "texterkennung.gelerntes.geloescht": "Deleted.",
+  "texterkennung.gelerntes.vergessen": "Forget everything for this sender",
+  "texterkennung.gelerntes.vergessen-frage": "Forget everything for “{absender}”?",
+  "texterkennung.gelerntes.vergessen-text": "Ablago deletes everything it learned for this sender. It learns again at the next correction.",
+  "texterkennung.gelerntes.vergessen-fertig": "Forgotten: {anzahl} entries."
 }

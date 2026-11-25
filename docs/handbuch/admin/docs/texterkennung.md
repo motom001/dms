@@ -136,6 +136,17 @@ Liest ein Paket die Texte, gelten zusätzlich die Grenzen des [Paket-Läufers](p
 
 Ganz unten auf der Seite klappt **Expertenmodus** die **Schwelle für den Vorschlag** auf: Ab dieser Sicherheit wählt Ablago unter *Wohin gehört das?* einen Mappentyp vor (Vorgabe 30 %, erlaubt 5 bis 95 %). Darunter zeigt Ablago die besten Typen nur zur Auswahl. **Zurück zur Vorgabe** stellt 30 % wieder her. Wie sicher Ablago bei einem Dokument war, sieht man dort unter **Wie sicher ist Ablago?** ([Post](https://help.ablago.app/benutzer/aktuell/post/)). Meist hilft ein besserer Satz unter *Woran man ihn erkennt* am Mappentyp mehr als eine andere Schwelle.
 
+## Gelerntes { #gelerntes }
+
+Ablago lernt aus Korrekturen (#1681) – immer, ohne Schalter, aber nachvollziehbar und löschbar:
+
+- **Mappentyp:** Wählt jemand unter *Wohin gehört das?* einen anderen Mappentyp als vorgeschlagen (oder einen, bei dem Ablago nicht *sicher* war), merkt sich Ablago diesen Typ für den Absender der Post. Beim nächsten Brief dieses Absenders ist das ein starker Hinweis.
+- **Felder:** Korrigiert jemand einen Wert aus *Aus Dokument ausfüllen* oder holt ihn vom Dokument (ziehen, anklicken, markieren), merkt sich Ablago das Wort davor, etwa „Vertragskonto:“. Beim nächsten Brief dieses Absenders sucht Ablago zuerst dahinter.
+- **Immer beschrieben:** Wo Gelerntes mitzählt, steht es dabei – beim Mappentyp „Gelernt aus einer Korrektur vom …“, am Feld „gelernt aus einer Korrektur vom …: steht hinter „Vertragskonto:““.
+- **Verlernt von selbst:** Wird etwas Gelerntes zweimal in Folge nicht genommen, nimmt Ablago es zurück.
+
+Unter **Gelerntes** auf dieser Seite steht alles je Absender: was gelernt wurde, wann, von wem und aus welcher Mappe, Zurückgenommenes mit Datum. Ein Filter sucht nach Absender, Mappentyp oder Wort. **Löschen** entfernt einen Eintrag, **Alles für diesen Absender vergessen** alle eines Absenders. Gelerntes enthält keine Inhalte aus Dokumenten außer dem Wort vor einem Wert. Es ist in der [Sicherung](sicherung.md) und im [Vollexport](export.md) (`struktur/gelerntes.json`).
+
 ## Aufträge
 
 Unter **Aufträge** siehst du in einer Liste mit fester Höhe die Dokumente je Stand (*Fehler*, *wartet*, *läuft*, *wartet auf Texterkennung*, *ausgelassen*, *fertig*) – mit Mappe (als Link), Größe, Zeitpunkt und dem **Grund** bei Fehlern oder ausgelassenen Dokumenten.

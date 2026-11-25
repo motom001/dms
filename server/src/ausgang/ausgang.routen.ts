@@ -105,6 +105,8 @@ function vollexportStartenRouten(k: RoutenKontext): Route[] {
           merkmale: () => dienst.werkbank.merkmale(),
           // Eigene Organisation (#995): Verweis, Rollen und Notizen als struktur/organisation.json (die Angaben stehen in der Mappe).
           organisation: () => dienst.organisation.einstellung(),
+          // Aus Korrekturen Gelerntes (#1681) als struktur/gelerntes.json.
+          gelerntes: () => dienst.erkennung.gelerntes.alle(),
           // Rundgänge und Tipps der Werkbank (#941, #942) als struktur/entdecken.json.
           entdecken: async () => (await dienst.kern.einstellungen?.lies(WERKBANK_EINSTELLUNG)) ?? null,
         });

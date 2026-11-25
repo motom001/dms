@@ -15,6 +15,7 @@ import type { ErkennungDienst } from './erkennung-basis';
 import type { Repo } from '../repo';
 import type { Einstellungen } from '../einstellungen/einstellungen';
 import { Klassifizierung } from './klassifizierung';
+import { Gelerntes } from './gelerntes';
 import {
   type ErkennAnbieter,
   type PostErkennung,
@@ -53,11 +54,14 @@ export class Erkennung extends ErkennungPost {
     protected einst: () => Einstellungen | undefined = () => undefined,
   ) {
     super();
-    this.klassifizierung = new Klassifizierung(d, this, repo);
+    this.gelerntes = new Gelerntes(einst, repo, d);
+    this.klassifizierung = new Klassifizierung(d, this, repo, this.gelerntes);
   }
 
   /** „Wohin gehört das?“ mehrstufig (#939): Pakete mit dms:klassifizieren, Kern-Erkennung und Abgleich. */
   readonly klassifizierung: Klassifizierung;
+  /** Aus Korrekturen gelernt (#1681): Typ je Absender, Kennwort je Absender und Feld. */
+  readonly gelerntes: Gelerntes;
 
   /** Wird gesetzt, sobald der Paket-Läufer läuft (index.ts). */
   anbieter?: ErkennAnbieter;
@@ -155,12 +159,14 @@ export class Erkennung extends ErkennungPost {
     if (typeof e.text === 'string' && e.text.trim()) teile.push(e.text.slice(0, TEXT_MAX));
     // Mappentypen, aus denen der Text stammt (#796): Gesperrte gehen an kein KI-Paket.
     const quellTypen = new Set<string>([typ.id]);
+    const quellMappen = new Set<string>();
     // E-Rechnung (#1043): aus der Datei (Route) oder aus einem der Dokumente – XML direkt, PDF über den Anhang.
     let er = zusatz?.erechnung ?? null;
     for (const id of (Array.isArray(e.dokumente) ? e.dokumente : []).filter((x): x is string => typeof x === 'string').slice(0, 10)) {
       const d = await this.repo().holeDokument(id);
       if (!d) throw new Fachfehler(404, t('meldungen.erkennung.dieses-dokument-gibt-es'));
       quellTypen.add((await this.d.rechtepruefung.pruefeRecht(z, d.mappeId, 'R')).typId);
+      quellMappen.add(d.mappeId);
       // Anlagen (#998) und Original-E-Mail (#999): Erkennung und KI nutzen nur Hauptdokumente.
       if (ohneErkennung(d)) continue;
       if (!er && (istXmlDatei(d.name, d.mime) || d.mime === 'application/pdf'))
@@ -257,6 +263,12 @@ export class Erkennung extends ErkennungPost {
       hinweise.delete('an');
     }
     if (aussteller && !roh.von) hinweis = [hinweis, t('meldungen.erkennung.ausgehend-allgemein')].filter(Boolean).join(' ');
+    // Gelernt aus Korrekturen (#1681): der Wert hinter dem Kennwort dieses Absenders geht vor – mit Hinweis.
+    for (const [k, v] of Object.entries(await this.gelerntes.feldVorschlaege([...quellMappen], typ, text)))
+      if (!ausER[k]) {
+        roh[k] = { wert: v.wert, sicherheit: 'hoch', fundstelle: v.fundstelle };
+        hinweise.set(k, v.hinweis);
+      }
     // Jede Antwort – eingebaut oder vom Paket – geht durch die Prüfung gegen die Feldtypen; verworfen wird mit Grund protokolliert (ohne Werte).
     const { vorschlaege, verworfen } = pruefeVorschlaege(typ, roh, erlaubt);
     for (const [k, v] of Object.entries(vorschlaege)) {

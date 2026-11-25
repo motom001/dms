@@ -1,6 +1,7 @@
 /**
  * Rauchtests: Erkennung beim Sortieren der Post (KW49) – Rechnungsnummer direkt hinter „Rechnung“ (#1657), Zeitraum
- * aus zwei Daten (#1646), Steuerjahr aus „Bis“ (#1648, von Hand #1678) und „Wie sicher ist Ablago?“ samt Schwelle (#1645).
+ * aus zwei Daten (#1646), Steuerjahr aus „Bis“ (#1648, von Hand #1678), „Wie sicher ist Ablago?“ samt Schwelle (#1645) und
+ * die Übersicht „Gelerntes“ (#1681).
  * Allein starten (frisch gestartetes Ablago, siehe rauchtest.mjs): node web/rauchtest/bereiche/erkennung-vorschlaege.mjs [fehlerordner]
  */
 import assert from 'node:assert/strict';
@@ -195,4 +196,19 @@ rauchtest('Werkbank: „Woran man ihn erkennt“ unter Erkennung, Schwelle im Ex
   await s.getByText('Gespeichert – Ablago schlägt ab 40 % einen Mappentyp vor.').waitFor();
   await s.getByRole('button', { name: 'Zurück zur Vorgabe' }).click();
   await s.getByText('Gespeichert – Ablago schlägt ab 30 % einen Mappentyp vor.').waitFor();
+});
+
+rauchtest('Werkbank: Übersicht „Gelerntes“ aufklappen, mit Filter, ohne axe-Funde (#1681)', { als: LENA }, async (s) => {
+  await s.goto(BASIS + '/ablage/start');
+  await verwalten(s);
+  await s.goto(BASIS + '/werkbank/pakete/ablago.text');
+  await s.getByRole('button', { name: /^Gelerntes Was Ablago aus Korrekturen gelernt hat/ }).click();
+  const inhalt = s.locator('#gelerntes-inhalt');
+  // Im Gesamtlauf kann ein früherer Bereich schon etwas gelernt haben (Post in eine neue Mappe übernommen).
+  await inhalt
+    .getByText(/^Noch nichts gelernt\.$|gelernt am/)
+    .first()
+    .waitFor();
+  await inhalt.getByLabel('Filtern nach Absender, Mappentyp oder Wort').fill('Stadtwerke');
+  assert.deepEqual(await axePruefen(s, ['#gelerntes']), []);
 });

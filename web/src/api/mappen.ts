@@ -335,6 +335,12 @@ export const mappenApi = {
       aufloesen?: boolean;
       leerseiten?: LeerseitenWahl;
       originalEmail?: boolean;
+      /** Aus Korrekturen lernen (#1681). */
+      lernen?: {
+        vorgeschlagen: { typId: string | null; sicherheit: number } | null;
+        felder: Array<{ feld: string; wert: Wert }>;
+        bestaetigt: string[];
+      };
     },
   ) =>
     anfrage<{

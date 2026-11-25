@@ -10,6 +10,7 @@
  * - **Abgleich** – vorhandene Mappen, die sich über „Zum Wiederfinden nutzen“ im Text finden (#938) und auf deren Typ
  *   ein Verweisfeld des Kandidaten zeigt (Rechnung → Vertrag).
  * - **Absender** (#1680) – in welchen Mappentypen die Post des erkannten Absenders bisher lag.
+ * - **Gelernt** (#1681) – aus einer Korrektur bei Post desselben Absenders (shared/src/gelerntes.ts).
  * - **Woran man ihn erkennt** (#1673) – viele Wörter daraus im Dokument; so kommt auch ein Typ ohne abgelegte Mappen in
  *   die Vorschläge.
  *
@@ -119,7 +120,7 @@ export interface Typvorschlag {
 }
 
 /** Woher ein Beleg kommt. */
-export type Weg = 'aehnlichkeit' | 'ki' | 'kern' | 'abgleich' | 'absender' | 'erkennbar';
+export type Weg = 'aehnlichkeit' | 'ki' | 'kern' | 'abgleich' | 'absender' | 'erkennbar' | 'gelernt';
 
 /** Ein Beleg für einen Typ, wie die Oberfläche ihn zeigt. */
 export interface Klassbeleg {
@@ -144,6 +145,8 @@ export interface Klassbeleg {
   /** Woran man ihn erkennt (#1673): so viele der Wörter stehen im Dokument. */
   gefunden?: number;
   von?: number;
+  /** Gelernt aus einer Korrektur (#1681): wann und von wem; `mappeId` ist die Mappe, aus der gelernt wurde (nur lesbar). */
+  gelernt?: { am: string; von: string | null };
 }
 
 /** Ein Typ im Ergebnis: verbundene Sicherheit und alle Belege. */

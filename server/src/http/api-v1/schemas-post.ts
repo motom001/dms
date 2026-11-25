@@ -177,7 +177,7 @@ export const SCHEMAS_POST: Record<string, Schema> = {
         items: {
           type: 'object',
           properties: {
-            weg: { type: 'string', enum: ['ki', 'aehnlichkeit', 'kern', 'abgleich', 'absender', 'erkennbar'] },
+            weg: { type: 'string', enum: ['ki', 'aehnlichkeit', 'kern', 'abgleich', 'absender', 'erkennbar', 'gelernt'] },
             stand: {
               type: 'string',
               enum: ['ok', 'leer', 'fehler', 'gesperrt', 'aus'],
@@ -238,7 +238,7 @@ export const SCHEMAS_POST: Record<string, Schema> = {
         items: {
           type: 'object',
           properties: {
-            weg: { type: 'string', enum: ['ki', 'aehnlichkeit', 'kern', 'abgleich', 'absender', 'erkennbar'] },
+            weg: { type: 'string', enum: ['ki', 'aehnlichkeit', 'kern', 'abgleich', 'absender', 'erkennbar', 'gelernt'] },
             sicherheit: { type: 'number' },
             paket: { type: 'object', properties: { id: { type: 'string' }, name: { type: 'string' } } },
             begruendung: { type: 'string', description: 'Kurze Begründung des Pakets (reiner Text)' },
@@ -251,6 +251,11 @@ export const SCHEMAS_POST: Record<string, Schema> = {
             anzahl: { type: 'integer', description: 'absender: so oft lag Post des Absenders bisher in diesem Typ (#1680)' },
             gefunden: { type: 'integer', description: 'erkennbar: Wörter aus „Woran man ihn erkennt“ im Dokument (#1673)' },
             von: { type: 'integer', description: 'erkennbar: Wörter in „Woran man ihn erkennt“' },
+            gelernt: {
+              type: 'object',
+              description: 'gelernt (#1681): aus einer Korrektur am (ISO) von (Benutzer-Id); mappeId ist die Mappe, aus der gelernt wurde',
+              properties: { am: { type: 'string' }, von: { type: 'string', nullable: true } },
+            },
           },
         },
       },

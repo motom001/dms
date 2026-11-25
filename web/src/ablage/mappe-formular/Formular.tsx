@@ -275,6 +275,7 @@ function useBrueckeAnschluss(z: Kern, ein: ReturnType<typeof eingabeWege>) {
           const roh =
             f.mehrfach && Array.isArray(alt) && Array.isArray(neu) ? [...new Set([...(alt as string[]), ...(neu as string[])])] : neu;
           z.setRoh((r) => ({ ...r, [k]: roh }));
+          z.vomDokument.current.add(k);
           a.setFehler((x) =>
             x && x.felder[k] ? { ...x, felder: Object.fromEntries(Object.entries(x.felder).filter(([y]) => y !== k)) } : x,
           );
@@ -328,6 +329,7 @@ function vorschlagenIn(
   const vorherRoh = Object.fromEntries(keys.map((k) => [k, a.roh[k]]));
   const vorherV = Object.fromEntries(keys.map((k) => [k, a.vorschlaege[k]]));
   z.setRoh((r) => ({ ...r, ...Object.fromEntries(felder.map(({ f, wert }) => [f.key, zuRoh(f, wert)])) }));
+  for (const k of keys) z.vomDokument.current.add(k);
   z.setVorschlaege((v) => ({
     ...v,
     ...Object.fromEntries(

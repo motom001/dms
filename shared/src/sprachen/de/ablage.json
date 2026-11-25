@@ -1379,6 +1379,8 @@
   "uebernehmen.beleg-absender": "Post von „{absender}“ lag bisher {anzahl}-mal in diesem Mappentyp.",
   "uebernehmen.beleg-absender-ohne": "Post dieses Absenders lag bisher {anzahl}-mal in diesem Mappentyp.",
   "uebernehmen.beleg-erkennbar": "Passt zu „Woran man ihn erkennt“: {gefunden} von {von} Wörtern stehen im Dokument.",
+  "uebernehmen.beleg-gelernt": "Gelernt aus einer Korrektur vom {datum} („{titel}“). Ansehen und löschen: Werkbank, „Gelerntes“.",
+  "uebernehmen.beleg-gelernt-ohne": "Gelernt aus einer Korrektur vom {datum}. Ansehen und löschen: Werkbank, „Gelerntes“.",
   "uebernehmen.sicher.aehnlich-sehr": "Sehr ähnlich zu {sehr} von {anzahl} ähnlichen abgelegten Mappen vom Typ „{typ}“.",
   "uebernehmen.sicher.aehnlich-entfernt": "Nur entfernt ähnlich zu {anzahl} abgelegten Mappen vom Typ „{typ}“.",
   "uebernehmen.sicher.ohne-beispiele": "Es gibt noch keine Mappe vom Typ „{typ}“ – deshalb höchstens „wahrscheinlich“.",

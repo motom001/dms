@@ -70,6 +70,7 @@ export class VollexportQuellen {
     merkmale?: ExportQuelle['merkmale'];
     organisation?: ExportQuelle['organisation'];
     entdecken?: ExportQuelle['entdecken'];
+    gelerntes?: ExportQuelle['gelerntes'];
     z?: Zugriff;
   }): ExportQuelle {
     const r = this.repo;
