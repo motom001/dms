@@ -133,10 +133,18 @@ rauchtest('Werkbank → Aufgaben: Auswahl in Knopfhöhe, keine Auswahl je Zeile 
     const rechts = s.locator('.spalte.mappe');
     const wahl = rechts.getByRole('combobox', { name: /weitergeben an/ });
     await wahl.waitFor();
+    // Erst messen, wenn die Mappe geladen ist (#1666): Bis dahin steht die Zeile unter „Lade …“, danach rückt sie unter
+    // die Eigenschaften der Mappe – im vollen Lauf kam das zwischen den Messungen von Auswahl und Knopf (y 264 / 512).
+    await rechts.locator('section.blatt').waitFor();
+    await s.evaluate(() => document.fonts.ready);
     // Eine Zeile: Text, Auswahl und Knopf auf einer Linie, die Auswahl so hoch wie der Knopf.
     const knopf = rechts.getByRole('button', { name: 'Weitergeben', exact: true });
     const zeilePruefen = async (wann) => {
-      const [w, k] = [await wahl.boundingBox(), await knopf.boundingBox()];
+      // Beide Lagen im selben Augenblick lesen, nicht nacheinander.
+      const [w, k] = await s.evaluate(
+        (els) => els.map((e) => e.getBoundingClientRect().toJSON()),
+        [await wahl.elementHandle(), await knopf.elementHandle()],
+      );
       const lage = `${wann}: Auswahl y ${w.y} h ${w.height} b ${w.width}, Knopf y ${k.y} h ${k.height}`;
       assert.ok(w.height <= 44, `Auswahl einzeilig (${lage})`);
       assert.ok(Math.abs(w.height - k.height) < 1, `so hoch wie der Knopf (${lage})`);
