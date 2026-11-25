@@ -9,6 +9,12 @@
  * - **Kern-Erkennung** – der Name eines Typs als Überschrift im Text (`typAusText`, #934).
  * - **Abgleich** – vorhandene Mappen, die sich über „Zum Wiederfinden nutzen“ im Text finden (#938) und auf deren Typ
  *   ein Verweisfeld des Kandidaten zeigt (Rechnung → Vertrag).
+ * - **Absender** (#1680) – in welchen Mappentypen die Post des erkannten Absenders bisher lag.
+ * - **Woran man ihn erkennt** (#1673) – viele Wörter daraus im Dokument; so kommt auch ein Typ ohne abgelegte Mappen in
+ *   die Vorschläge.
+ *
+ * Was gegen einen Typ spricht (#1672: fehlende Überschrift, kein bekanntes Pflicht-Merkmal, kaum Wörter aus „Woran man
+ * ihn erkennt“), senkt seine Sicherheit (`daempfe`); die Ähnlichkeit zählt nach Nähe, nicht nach Menge (`aehnlichkeitJeTyp`).
  *
  * Ergebnis ist **ein** Vorschlag mit den Belegen aller Wege. Hier stehen die reinen Teile: das feste Antwortformat
  * (JSON Schema), die strenge Prüfung einer Antwort und das Verbinden der Wege. Den Ablauf macht der Server
@@ -25,12 +31,14 @@ export const KANDIDATEN_MAX = 60;
 /** Länge der Begründung und des Zitats in einer Antwort (Zeichen). */
 export const BEGRUENDUNG_MAX = 300;
 export const ZITAT_MAX = 300;
-/** Kurzbeschreibung und „Woran man ihn erkennt“ je Kandidat (Zeichen). */
+/** Kurzbeschreibung je Kandidat (Zeichen); „Woran man ihn erkennt“ geht ganz mit (ERKENNBAR_AN_MAX, #1652). */
 export const KURZ_MAX = 200;
 /** Kein Weg sagt „ganz sicher“: Ein einzelner Weg zählt höchstens so viel. */
 export const WEG_HOECHSTENS = 0.95;
 /** Ab dieser verbundenen Sicherheit wird ein Typ vorgeschlagen (die Überschrift im Text allein reicht) – Vorgabe. */
 export const SCHWELLE_STANDARD = 0.3;
+/** Ab dieser Sicherheit heißt ein Typ „sicher“ (darunter bis zur Schwelle „wahrscheinlich“, darunter „unsicher“). */
+export const SICHER_AB = 0.75;
 /** Die Schwelle lässt sich im Expertenmodus der Werkbank einstellen (#1645) – nur zwischen diesen Grenzen. */
 export const SCHWELLE_MIN = 0.05;
 export const SCHWELLE_MAX = 0.95;
@@ -45,17 +53,22 @@ export function liesSchwelle(v: unknown): number {
  * Zahlen, keine Inhalte aus dem Dokument; die Oberfläche macht Sätze daraus.
  * - `ueberschrift-fehlt`: Der Name des Typs steht nicht als Überschrift im Dokument.
  * - `merkmal-fehlt`: Der Typ verweist über `feld` auf Mappen vom Typ `typId` (z. B. Konto), aber keine bekannte davon
- *   steht im Dokument (gesucht über „Zum Wiederfinden nutzen“, z. B. IBAN).
+ *   steht im Dokument (gesucht über „Zum Wiederfinden nutzen“, z. B. IBAN). `pflicht`: Das Feld ist ein Pflichtfeld.
  * - `erkennbar`: Von den Wörtern aus „Woran man ihn erkennt“ stehen `gefunden` von `von` im Dokument.
  * - `erkennbar-leer`: „Woran man ihn erkennt“ ist leer.
- * - `aehnlich`: ähnlich zu `anzahl` abgelegten Mappen dieses Typs (nur mit einem Paket für Ähnlichkeit).
+ * - `aehnlich`: ähnlich zu `anzahl` abgelegten Mappen dieses Typs (nur mit einem Paket für Ähnlichkeit), davon `sehr`
+ *   sehr ähnlich (#1672); `beste` ist die größte Ähnlichkeit (0–1).
+ * - `ohne-beispiele` (#1673): Es gibt noch keine Mappe dieses Typs – höchstens „wahrscheinlich“.
+ * - `gesenkt` (#1672): `gegen` Gegenanzeichen haben die Sicherheit gesenkt.
  */
 export type Typgrund =
   | { art: 'ueberschrift-fehlt' }
-  | { art: 'merkmal-fehlt'; feld: string; typId: string }
+  | { art: 'merkmal-fehlt'; feld: string; typId: string; pflicht?: boolean }
   | { art: 'erkennbar'; gefunden: number; von: number }
   | { art: 'erkennbar-leer' }
-  | { art: 'aehnlich'; anzahl: number };
+  | { art: 'aehnlich'; anzahl: number; sehr?: number; beste?: number }
+  | { art: 'ohne-beispiele' }
+  | { art: 'gesenkt'; gegen: number };
 
 /** Wörter, die in „Woran man ihn erkennt“ nichts unterscheiden. */
 const FUELLWOERTER = new Set(
@@ -80,12 +93,21 @@ export function erkennbarImText(erkennbarAn: string | undefined, text: string): 
   return { gefunden: woerter.filter((w) => t.includes(w)).length, von: woerter.length };
 }
 
+/** Wie gut passt „Woran man ihn erkennt“? Ab der Hälfte der Wörter gut, unter 30 % kaum (#1645, #1672). */
+export function erkennbarStufe(gefunden: number, von: number): 'gut' | 'teils' | 'kaum' | null {
+  if (!von) return null;
+  const anteil = gefunden / von;
+  return anteil >= 0.5 ? 'gut' : anteil >= 0.3 ? 'teils' : 'kaum';
+}
+
 /** Ein Mappentyp, der in Frage kommt – so geht er an ein Paket. */
 export interface Kandidat {
   id: string;
   name: string;
   beschreibung: string;
   erkennbarAn: string;
+  /** Nur für ein Paket mit Vektoren (#1682): so viele Mappen dieses Typs darf das Paket lesen. */
+  anzahl?: number;
 }
 
 /** Ein Typ aus einer Antwort, geprüft. */
@@ -97,7 +119,7 @@ export interface Typvorschlag {
 }
 
 /** Woher ein Beleg kommt. */
-export type Weg = 'aehnlichkeit' | 'ki' | 'kern' | 'abgleich';
+export type Weg = 'aehnlichkeit' | 'ki' | 'kern' | 'abgleich' | 'absender' | 'erkennbar';
 
 /** Ein Beleg für einen Typ, wie die Oberfläche ihn zeigt. */
 export interface Klassbeleg {
@@ -117,6 +139,11 @@ export interface Klassbeleg {
   mappeId?: string;
   feld?: string;
   merkmal?: string;
+  /** Absender (#1680): so oft lag Post des Absenders (`mappeId`) bisher in diesem Typ. */
+  anzahl?: number;
+  /** Woran man ihn erkennt (#1673): so viele der Wörter stehen im Dokument. */
+  gefunden?: number;
+  von?: number;
 }
 
 /** Ein Typ im Ergebnis: verbundene Sicherheit und alle Belege. */
@@ -294,10 +321,14 @@ export function einzeilig(s: string): string {
 
 /**
  * Wege verbinden: je Typ die Belege sammeln und die Sicherheit zusammenrechnen – unabhängige Hinweise stärken sich
- * (1 − Π(1 − s)), jeder Weg zählt höchstens `WEG_HOECHSTENS`. Bester Typ zuerst, höchstens `KLASSIFIZIEREN_MAX`.
- * Bei Gleichstand gewinnt der Typ mit mehr Wegen, dann der Name (über `name`).
+ * (1 − Π(1 − s)), jeder Weg zählt höchstens `WEG_HOECHSTENS`. `anpassen` senkt danach je Typ (Gegenanzeichen, #1672).
+ * Bester Typ zuerst, höchstens `KLASSIFIZIEREN_MAX`. Bei Gleichstand gewinnt der Typ mit mehr Wegen, dann der Name.
  */
-export function verbindeWege(belege: Array<Klassbeleg & { typId: string }>, name: (typId: string) => string = (x) => x): Einschaetzung[] {
+export function verbindeWege(
+  belege: Array<Klassbeleg & { typId: string }>,
+  name: (typId: string) => string = (x) => x,
+  anpassen: (typId: string, s: number) => number = (_, s) => s,
+): Einschaetzung[] {
   const je = new Map<string, Klassbeleg[]>();
   for (const { typId, ...b } of belege) {
     if (!(b.sicherheit > 0)) continue;
@@ -308,7 +339,7 @@ export function verbindeWege(belege: Array<Klassbeleg & { typId: string }>, name
     // Je Weg zählt der stärkste Beleg (zwei Belege desselben Abgleichs sind kein zweiter Weg).
     const jeWeg = new Map<Weg, number>();
     for (const b of liste) jeWeg.set(b.weg, Math.max(jeWeg.get(b.weg) ?? 0, b.sicherheit));
-    const s = 1 - [...jeWeg.values()].reduce((p, x) => p * (1 - x), 1);
+    const s = anpassen(typId, 1 - [...jeWeg.values()].reduce((p, x) => p * (1 - x), 1));
     erg.push({ typId, sicherheit: Math.round(s * 100) / 100, belege: [...liste].sort((a, b) => b.sicherheit - a.sicherheit) });
   }
   const wege = (e: Einschaetzung) => new Set(e.belege.map((b) => b.weg)).size;
@@ -321,4 +352,101 @@ export function verbindeWege(belege: Array<Klassbeleg & { typId: string }>, name
 export function kurzText(s: string | undefined, max = KURZ_MAX): string {
   const x = einzeilig(s ?? '');
   return x.length > max ? `${x.slice(0, max - 1).trimEnd()}…` : x;
+}
+
+/* ---------- Gewichtung (#1672, #1673, #1680) ---------- */
+
+/** Ähnlichkeit (#1672): Darunter zählt eine ähnliche Mappe nicht; ab `AEHNLICH_SEHR` heißt sie „sehr ähnlich“. */
+const AEHNLICH_MIN = 0.5;
+const AEHNLICH_SEHR = 0.8;
+/** Je Typ zählen höchstens so viele ähnliche Mappen (die nächsten) – ein häufiger Typ gewinnt nicht durch Menge. */
+const AEHNLICH_STIMMEN = 3;
+
+/** Wie nah das Dokument einem Typ ist (#1672): ähnliche Mappen, davon sehr ähnliche, die beste Ähnlichkeit und der Wert. */
+export interface Naehe {
+  anzahl: number;
+  sehr: number;
+  beste: number;
+  /** Höchstens so sicher darf die Ähnlichkeit für diesen Typ sein (0–0,95). */
+  wert: number;
+}
+
+/**
+ * Nähe je Typ aus den ähnlichsten Mappen (#1672, Kern-Seite): Jede Mappe zählt mit ihrer Ähnlichkeit, unter
+ * `AEHNLICH_MIN` gar nicht, je Typ höchstens die `AEHNLICH_STIMMEN` nächsten. Der Wert ist der Anteil an diesen Stimmen
+ * (zur Hälfte) und wie nah die beste Mappe ist – zehn mäßig ähnliche Mappen machen einen Typ nicht „sicher“.
+ */
+export function aehnlichkeitJeTyp(liste: ReadonlyArray<{ typ: string; aehnlichkeit: number }>): Map<string, Naehe> {
+  const je = new Map<string, number[]>();
+  for (const x of liste) je.set(x.typ, [...(je.get(x.typ) ?? []), x.aehnlichkeit]);
+  const stimmen = new Map(
+    [...je].map(([typ, l]) => [
+      typ,
+      l
+        .filter((s) => s >= AEHNLICH_MIN)
+        .sort((a, b) => b - a)
+        .slice(0, AEHNLICH_STIMMEN),
+    ]),
+  );
+  const summe = [...stimmen.values()].flat().reduce((a, b) => a + b, 0);
+  const erg = new Map<string, Naehe>();
+  for (const [typ, l] of je) {
+    const st = stimmen.get(typ)!;
+    const beste = Math.max(...l);
+    const anteil = summe ? st.reduce((a, b) => a + b, 0) / summe : 0;
+    const wert = st.length ? WEG_HOECHSTENS * Math.min(1, beste / AEHNLICH_SEHR) * (0.5 + 0.5 * anteil) : 0;
+    erg.set(typ, { anzahl: l.length, sehr: l.filter((s) => s >= AEHNLICH_SEHR).length, beste, wert: Math.round(wert * 100) / 100 });
+  }
+  return erg;
+}
+
+/** Woran man ihn erkennt (#1673): ab so vielen Wörtern und diesem Anteil ein eigener Beleg, höchstens so sicher. */
+const ERKENNBAR_WOERTER = 2;
+const ERKENNBAR_ANTEIL = 0.4;
+const ERKENNBAR_HOECHSTENS = 0.5;
+
+/** Sicherheit des Belegs „Woran man ihn erkennt“ (#1673); 0 = kein Beleg. */
+export function erkennbarSicherheit(gefunden: number, von: number): number {
+  if (!von || gefunden < ERKENNBAR_WOERTER || gefunden / von < ERKENNBAR_ANTEIL) return 0;
+  return Math.round(Math.min(ERKENNBAR_HOECHSTENS, 0.1 + 0.5 * (gefunden / von)) * 100) / 100;
+}
+
+/** Absender (#1680): Post desselben Absenders zählt höchstens so viel – ein Hinweis, kein Beweis. */
+const ABSENDER_HOECHSTENS = 0.7;
+
+/**
+ * Sicherheit je Typ aus der bisherigen Post eines Absenders (#1680): nach Anteil (lag sie in mehreren Typen, teilt sich
+ * das Gewicht) und Anzahl (einmal zählt halb, ab drei fast voll).
+ */
+export function absenderSicherheit(zaehler: ReadonlyMap<string, number>): Map<string, number> {
+  const gesamt = [...zaehler.values()].reduce((a, b) => a + b, 0);
+  const erg = new Map<string, number>();
+  for (const [typ, n] of zaehler) if (n > 0) erg.set(typ, Math.round(ABSENDER_HOECHSTENS * (n / gesamt) * (1 - 0.5 ** n) * 100) / 100);
+  return erg;
+}
+
+/** Ein Gegenanzeichen senkt die Sicherheit um diesen Faktor (#1672). */
+const GEGEN_FAKTOR = 0.8;
+
+/**
+ * Was gegen einen Typ spricht (#1672): Sein Name steht nicht als Überschrift im Dokument, ein Pflicht-Verweis findet
+ * keine bekannte Mappe (Kontoauszug ohne bekanntes Konto), kaum Wörter aus „Woran man ihn erkennt“ (ab drei Wörtern).
+ */
+export function gegenanzeichen(g: readonly Typgrund[]): { zahl: number; pflicht: boolean } {
+  const pflicht = g.some((x) => x.art === 'merkmal-fehlt' && x.pflicht);
+  const ueberschrift = g.some((x) => x.art === 'ueberschrift-fehlt');
+  const kaum = g.some((x) => x.art === 'erkennbar' && x.von >= 3 && erkennbarStufe(x.gefunden, x.von) === 'kaum');
+  return { zahl: [pflicht, ueberschrift, kaum].filter(Boolean).length, pflicht };
+}
+
+/**
+ * Sicherheit nach den Gegenanzeichen (#1672) und ohne Beispiele (#1673): Ein Gegenanzeichen senkt sie, mehrere machen
+ * den Typ „unsicher“ (unter der Schwelle, die Reihenfolge bleibt). Fehlt ein Pflicht-Merkmal oder gibt es noch keine
+ * Mappe dieses Typs, ist er nie „sicher“.
+ */
+export function daempfe(s: number, g: readonly Typgrund[], schwelle: number, ohneBeispiele = false): number {
+  const { zahl, pflicht } = gegenanzeichen(g);
+  let x = zahl >= 2 ? s * Math.max(0, schwelle - 0.01) : zahl === 1 ? s * GEGEN_FAKTOR : s;
+  if (pflicht || ohneBeispiele) x = Math.min(x, SICHER_AB - 0.01);
+  return Math.round(x * 100) / 100;
 }

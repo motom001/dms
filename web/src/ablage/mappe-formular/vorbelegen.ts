@@ -172,5 +172,5 @@ export function eingabeWege(z: Kern) {
     void vorbelege(k, v);
     void leiteAb(k, v);
   };
-  return { vorbelege, vorbelegungZuruecknehmen, folge, setze };
+  return { vorbelege, vorbelegungZuruecknehmen, folge, leiteAb, setze };
 }

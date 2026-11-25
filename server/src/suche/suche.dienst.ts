@@ -562,6 +562,26 @@ export class SucheDienst {
     return jeMappe(ok, anzahl).map((x) => ({ typ: bezuege.get(x.mappeId)!.typId, aehnlichkeit: Math.round(x.aehnlichkeit * 100) / 100 }));
   }
 
+  /**
+   * Typgrößen für „Wohin gehört das?“ (#1682): je Mappentyp aus `typen`, wie viele Mappen das Dienstkonto des Pakets
+   * lesen darf – nur Zahlen. So gleicht das Ähnlichkeits-Paket große Typen aus.
+   */
+  async typAnzahlen(paket: string, typen: ReadonlySet<string>): Promise<Record<string, number>> {
+    const konto = (await this.konten?.dienstkonten?.())?.find((b) => b.paketId === paket);
+    const zp = await this.zugriff({ id: konto?.id ?? `paket:${paket}`, rolle: 'mitglied', art: 'dienst', paketId: paket });
+    const erg: Record<string, number> = {};
+    for (const typ of typen) {
+      const je = zp.lesen?.je.find((x) => x.typId === typ);
+      erg[typ] =
+        !zp.lesen || zp.lesen.offen.includes(typ)
+          ? await this.repo.zaehleMappen(typ)
+          : je
+            ? await this.repo.zaehleAusdruck(typ, je.ausdruck)
+            : 0;
+    }
+    return erg;
+  }
+
   /** Für die Werkbank: Vektoren je Modell, Dokumente mit Volltext, Einstellung. */
   async vektorStand(): Promise<{
     paket: string | null;

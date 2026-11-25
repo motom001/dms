@@ -1,0 +1,14 @@
+art: minor
+
+## Neu
+
+- **„Wohin gehört das?“ nach Nähe statt Menge** (#1672): Was gegen einen Mappentyp spricht – keine Überschrift, kein bekanntes Pflicht-Merkmal (etwa kein bekanntes Konto), kaum Wörter aus „Woran man ihn erkennt“ –, senkt jetzt die Sicherheit und steht in „Wie sicher ist Ablago?“. Mehrere Gegenanzeichen ergeben „unsicher“, ein fehlendes Pflicht-Merkmal nie „sicher“. Ähnliche Mappen zählen nach ihrer Ähnlichkeit, höchstens drei je Typ – viele mäßig ähnliche Kontoauszüge machen einen Versicherungsschein nicht mehr zu „Kontoauszug – sicher“.
+- **Mappentypen ohne abgelegte Mappen** (#1673): Passen viele Wörter aus „Woran man ihn erkennt“ oder steht der Name, die Mehrzahl oder ein gleichbedeutendes Wort als Überschrift im Dokument, schlägt Ablago den Typ auch in einer leeren Ablage vor – höchstens als „wahrscheinlich“.
+- **Absender als Beleg** (#1680): Ist der Absender einer Post bekannt, zählt, in welchen Mappentypen seine Post bisher lag („Post von „…“ lag bisher 11-mal in diesem Mappentyp“) – nur Mappen, die man sehen darf.
+- **Typgrößen für das Ähnlichkeits-Paket** (#1682): Pakete mit `dms:klassifizieren` und `dms:vektoren` bekommen je Kandidat `anzahl`, die Zahl der Mappen, die sie lesen dürfen.
+- **„Woran man ihn erkennt“ ganz** (#1652): Pakete bekommen den ganzen Satz (bis 300 Zeichen) statt der ersten 200.
+
+## Behoben
+
+- **Zeitraum „vom … bis einschl. …“** (#1669): „einschl.“, „einschließlich“, „inkl.“, „inklusive“ und „incl.“ nach „bis“ werden erkannt, auch über einen Zeilenumbruch. Kann Ablago einen Zeitraum nicht lesen („bis ausschließlich“), bleiben „Von“ und „Bis“ leer statt das Enddatum in „Von“ zu bekommen.
+- **Steuerjahr aus „Bis“** (#1678): Auch ein aus dem Dokument gezogenes, angeklicktes oder markiertes „Bis“ schlägt das passende Steuerjahr vor; ein als Zahl gespeichertes Jahr passt ebenso.

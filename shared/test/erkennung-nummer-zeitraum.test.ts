@@ -167,3 +167,35 @@ Kontostand 1.234,56 EUR`,
     assert.equal(b.eingang?.wert, '2026-03-12');
   });
 });
+
+describe('Zeitraum „vom … bis einschl. …“ (#1669)', () => {
+  const z = (text: string) => findeZeitraeume(text).map((x) => `${x.von}/${x.bis}`);
+
+  it('der Satz aus dem Kartenauszug: Von und Bis, Fundstelle am ganzen Zeitraum', () => {
+    const v = vorschlaegeAus(
+      KONTOAUSZUG,
+      'Musterbank Kartenabrechnung\nLena Muster\nDiese Abrechnung enthält alle Umsätze vom 20.11.2026 bis einschl. 19.12.2026.',
+    );
+    assert.equal(v.beginn?.wert, '2026-11-20');
+    assert.equal(v.ende?.wert, '2026-12-19');
+    assert.match(v.beginn!.fundstelle, /20\.11\.2026 bis einschl\. 19\.12\.2026/);
+    assert.equal(v.beginn?.fundstelle, v.ende?.fundstelle);
+  });
+
+  it('einschließlich, inkl., inklusive, incl., „bis zum … einschließlich“ und über einen Zeilenumbruch', () => {
+    for (const zusatz of ['einschl.', 'einschließlich', 'inkl.', 'inklusive', 'incl.', 'zum'])
+      assert.deepEqual(z(`vom 01.01.2026 bis ${zusatz} 31.03.2026`), ['2026-01-01/2026-03-31'], zusatz);
+    assert.deepEqual(z('vom 01.01.2026 bis zum einschl. 31.03.2026'), ['2026-01-01/2026-03-31']);
+    assert.deepEqual(z('vom 01.01.2026 bis zum 31.03.2026 einschließlich'), ['2026-01-01/2026-03-31']);
+    assert.deepEqual(z('Umsätze vom 20.11.2026 bis einschl.\n19.12.2026'), ['2026-11-20/2026-12-19']);
+    assert.deepEqual(z('Umsätze vom 20.11.2026 bis\neinschließlich 19.12.2026'), ['2026-11-20/2026-12-19']);
+  });
+
+  it('„bis ausschließlich“ ist kein Zeitraum und füllt kein falsches Datum – „Von“ bleibt leer', () => {
+    assert.deepEqual(z('vom 01.01.2026 bis ausschließlich 31.03.2026'), []);
+    assert.deepEqual(z('vom 01.01.2026 bis ausschl. 31.03.2026'), []);
+    const v = vorschlaegeAus(KONTOAUSZUG, 'Musterbank\nAlle Umsätze vom 01.01.2026 bis ausschl. 31.03.2026.');
+    assert.equal(v.beginn, undefined, 'kein Enddatum in „Von“');
+    assert.equal(v.ende, undefined);
+  });
+});

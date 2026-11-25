@@ -55,7 +55,8 @@ export function jahrPasst(zf: Pick<Feld, 'typ'>, wert: unknown, jahr: string): b
   if (wert == null || wert === '') return false;
   if (zf.typ === 'zahl') return Number(wert) === Number(jahr);
   if (zf.typ === 'datum') return jahrAus(wert) === jahr;
-  return typeof wert === 'string' && wert.trim() === jahr;
+  // Auch eine Zahl im Textfeld (z. B. aus einer Schnittstelle oder einem Paket, #1678) passt.
+  return (typeof wert === 'string' || typeof wert === 'number') && String(wert).trim() === jahr;
 }
 
 /** Werte einer neuen Mappe des Zieltyps für das Jahr – nur bei Text und Zahl (ein Datum wäre geraten). */

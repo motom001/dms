@@ -1,6 +1,6 @@
 /**
  * Rauchtests: Erkennung beim Sortieren der Post (KW49) – Rechnungsnummer direkt hinter „Rechnung“ (#1657), Zeitraum
- * aus zwei Daten (#1646), Steuerjahr aus „Bis“ (#1648) und „Wie sicher ist Ablago?“ samt Schwelle (#1645).
+ * aus zwei Daten (#1646), Steuerjahr aus „Bis“ (#1648, von Hand #1678) und „Wie sicher ist Ablago?“ samt Schwelle (#1645).
  * Allein starten (frisch gestartetes Ablago, siehe rauchtest.mjs): node web/rauchtest/bereiche/erkennung-vorschlaege.mjs [fehlerordner]
  */
 import assert from 'node:assert/strict';
@@ -102,6 +102,82 @@ rauchtest('Neue Post: Zeitraum an Von und Bis, Steuerjahr aus „Bis“ – sons
   ).daten;
   assert.equal(jahre.mappen.length, 1, 'nichts ohne Klick angelegt');
 });
+
+rauchtest(
+  'Neue Post: „Bis“ von Hand – getippt, nach „Zurücknehmen“ und im Kalender – schlägt das Steuerjahr vor (#1678)',
+  { als: LENA },
+  async (s) => {
+    const verwaltung = await sitzung(LENA);
+    await api('POST', '/api/konto/verwaltung', { cookie: verwaltung, body: { passwort: LENA.passwort } });
+    const steuer = (
+      await api('POST', '/api/typen', {
+        cookie: verwaltung,
+        body: {
+          name: 'Steuerjahr Hand',
+          schluessel: 'steuerjahr_hand',
+          titelVorlage: 'Steuerjahr {jahr}',
+          felder: [{ key: 'jahr', label: 'Jahr', typ: 'text', pflicht: true }],
+        },
+      })
+    ).daten;
+    await api('POST', '/api/typen', {
+      cookie: verwaltung,
+      body: {
+        name: 'Beleg Hand',
+        schluessel: 'beleg_hand',
+        felder: [
+          { key: 'ende', label: 'Bis', typ: 'datum' },
+          {
+            key: 'steuerjahr',
+            label: 'Steuerjahr',
+            typ: 'referenz',
+            zielTypen: [steuer.id],
+            ausDatum: { datumFeld: 'ende', zielFeld: 'jahr' },
+          },
+        ],
+        register: [
+          { key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['ende', 'steuerjahr'] },
+          { key: 'dokumente', name: 'Dokumente', art: 'dokumente' },
+        ],
+      },
+    });
+    for (const jahr of ['2025', '2026'])
+      await api('POST', '/api/mappen', { cookie: verwaltung, body: { typId: steuer.id, werte: { jahr } } });
+    const brief = await eigenePost('Beleg Hand', ['Beleg Hand\nOhne Datum im Text']);
+    await s.goto(BASIS + `/ablage/eingang/${brief.id}/uebernehmen`);
+    const mappe = s.getByRole('region', { name: 'Mappe' });
+    await mappe.getByRole('group', { name: 'Vorschläge' }).getByRole('button', { name: 'Beleg Hand', pressed: true }).waitFor();
+    const feld = mappe.locator('[data-anker="mappe.feld:steuerjahr"]');
+    // „Zurücknehmen“ am Vorschlag des Steuerjahrs („aus „Bis“: Jahr …“).
+    const zuruecknehmen = () => mappe.locator('.ad-hinweis').filter({ hasText: 'aus „Bis“' }).getByRole('button', { name: 'Zurücknehmen' });
+    const bis = mappe.locator('#feld-ende');
+    // Getippt: Beim Jahr meldet das Datumsfeld jede Stelle einzeln (0002, 0020, 0202, 2026) – so wie hier nacheinander.
+    await bis.fill('');
+    for (const jahr of ['0002', '0020', '0202', '2026']) await bis.fill(`${jahr}-05-20`);
+    await feld.getByText('Steuerjahr 2026').first().waitFor();
+    // Zurückgenommen: leer – ein neues Datum schlägt es wieder vor.
+    await zuruecknehmen().click();
+    await feld.getByText('Steuerjahr 2026').waitFor({ state: 'detached' });
+    await bis.fill('2026-06-30');
+    await feld.getByText('Steuerjahr 2026').first().waitFor();
+    // Im Kalender gewählt: vom 30.12.2024 (kein Steuerjahr) zwei Tage weiter ins Jahr 2025.
+    await zuruecknehmen().click();
+    await feld.getByText('Steuerjahr 2026').waitFor({ state: 'detached' });
+    await bis.fill('2024-12-30');
+    await mappe.getByText('Für „Steuerjahr“ gibt es noch keine passende Mappe: 2024').waitFor();
+    await bis.focus();
+    await s.keyboard.press('Alt+ArrowDown');
+    const kalender = mappe.getByRole('dialog', { name: 'Kalender' });
+    await kalender.waitFor();
+    await s.waitForFunction(() => document.activeElement?.getAttribute('data-tag') === '2024-12-30');
+    await s.keyboard.press('ArrowRight');
+    await s.keyboard.press('ArrowRight');
+    await s.keyboard.press('Enter');
+    await kalender.waitFor({ state: 'detached' });
+    assert.equal(await bis.inputValue(), '2025-01-01');
+    await feld.getByText('Steuerjahr 2025').first().waitFor();
+  },
+);
 
 rauchtest('Werkbank: „Woran man ihn erkennt“ unter Erkennung, Schwelle im Expertenmodus (#1645)', { als: LENA }, async (s) => {
   const typ = (await api('GET', '/api/typen', { cookie: await sitzung(LENA) })).daten.find((x) => x.name === 'Rechnung');

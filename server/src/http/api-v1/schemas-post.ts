@@ -177,7 +177,7 @@ export const SCHEMAS_POST: Record<string, Schema> = {
         items: {
           type: 'object',
           properties: {
-            weg: { type: 'string', enum: ['ki', 'aehnlichkeit', 'kern', 'abgleich'] },
+            weg: { type: 'string', enum: ['ki', 'aehnlichkeit', 'kern', 'abgleich', 'absender', 'erkennbar'] },
             stand: {
               type: 'string',
               enum: ['ok', 'leer', 'fehler', 'gesperrt', 'aus'],
@@ -193,7 +193,7 @@ export const SCHEMAS_POST: Record<string, Schema> = {
       bezuege: {
         type: 'object',
         additionalProperties: { type: 'object', properties: { titel: { type: 'string' }, typId: uuid } },
-        description: 'Titel der Mappen aus Belegen des Abgleichs (nur lesbare)',
+        description: 'Titel der Mappen aus Belegen des Abgleichs und des Absenders (nur lesbare)',
       },
       schwelle: {
         type: 'number',
@@ -202,19 +202,26 @@ export const SCHEMAS_POST: Record<string, Schema> = {
       gruende: {
         type: 'object',
         description:
-          'Wie sicher ist Ablago? (#1645) Je möglichem Mappentyp (Id), was fehlte bzw. dafür sprach – nur Kennungen und Zahlen, keine Inhalte aus dem Dokument: ueberschrift-fehlt (Name nicht als Überschrift), merkmal-fehlt (feld: Verweisfeld, typId: Typ, von dem keine bekannte Mappe im Dokument steht, z. B. kein bekanntes Konto), erkennbar (gefunden von von Wörtern aus „Woran man ihn erkennt“ stehen im Dokument), erkennbar-leer, aehnlich (anzahl ähnliche abgelegte Mappen, nur mit einem Paket für Ähnlichkeit).',
+          'Wie sicher ist Ablago? (#1645) Je möglichem Mappentyp (Id), was fehlte bzw. dafür sprach – nur Kennungen und Zahlen, keine Inhalte aus dem Dokument: ueberschrift-fehlt (Name nicht als Überschrift), merkmal-fehlt (feld: Verweisfeld, typId: Typ, von dem keine bekannte Mappe im Dokument steht, z. B. kein bekanntes Konto), erkennbar (gefunden von von Wörtern aus „Woran man ihn erkennt“ stehen im Dokument), erkennbar-leer, aehnlich (anzahl ähnliche abgelegte Mappen, davon sehr sehr ähnliche, beste Ähnlichkeit; nur mit einem Paket für Ähnlichkeit), ohne-beispiele (noch keine Mappe dieses Typs: höchstens „wahrscheinlich“, #1673), gesenkt (gegen Gegenanzeichen haben die Sicherheit gesenkt, #1672). merkmal-fehlt hat pflicht: true, wenn das Verweisfeld ein Pflichtfeld ist.',
         additionalProperties: {
           type: 'array',
           items: {
             type: 'object',
             required: ['art'],
             properties: {
-              art: { type: 'string', enum: ['ueberschrift-fehlt', 'merkmal-fehlt', 'erkennbar', 'erkennbar-leer', 'aehnlich'] },
+              art: {
+                type: 'string',
+                enum: ['ueberschrift-fehlt', 'merkmal-fehlt', 'erkennbar', 'erkennbar-leer', 'aehnlich', 'ohne-beispiele', 'gesenkt'],
+              },
               feld: { type: 'string' },
               typId: uuid,
               gefunden: { type: 'integer' },
               von: { type: 'integer' },
               anzahl: { type: 'integer' },
+              pflicht: { type: 'boolean' },
+              sehr: { type: 'integer' },
+              beste: { type: 'number' },
+              gegen: { type: 'integer' },
             },
           },
         },
@@ -231,16 +238,19 @@ export const SCHEMAS_POST: Record<string, Schema> = {
         items: {
           type: 'object',
           properties: {
-            weg: { type: 'string', enum: ['ki', 'aehnlichkeit', 'kern', 'abgleich'] },
+            weg: { type: 'string', enum: ['ki', 'aehnlichkeit', 'kern', 'abgleich', 'absender', 'erkennbar'] },
             sicherheit: { type: 'number' },
             paket: { type: 'object', properties: { id: { type: 'string' }, name: { type: 'string' } } },
             begruendung: { type: 'string', description: 'Kurze Begründung des Pakets (reiner Text)' },
             zitat: { type: 'string', description: 'Wörtlich aus dem Dokument (geprüft)' },
             wort: { type: 'string', description: 'kern: Name des Typs im Text' },
             fundstelle: { type: 'string' },
-            mappeId: { ...uuid, description: 'abgleich: wiedergefundene Mappe' },
+            mappeId: { ...uuid, description: 'abgleich: wiedergefundene Mappe; absender: der Absender (nur, wenn lesbar)' },
             feld: { type: 'string', description: 'abgleich: Verweisfeld des Typs, das auf sie zeigt' },
             merkmal: { type: 'string', description: 'abgleich: Feld und Wert, an dem sie erkannt wurde' },
+            anzahl: { type: 'integer', description: 'absender: so oft lag Post des Absenders bisher in diesem Typ (#1680)' },
+            gefunden: { type: 'integer', description: 'erkennbar: Wörter aus „Woran man ihn erkennt“ im Dokument (#1673)' },
+            von: { type: 'integer', description: 'erkennbar: Wörter in „Woran man ihn erkennt“' },
           },
         },
       },

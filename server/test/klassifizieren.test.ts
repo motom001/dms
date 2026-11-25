@@ -288,7 +288,8 @@ describe('Klassifizieren (#939): Ablauf im Kern', () => {
     const x = await aufbau();
     const r = await x.d.erkennung.klassifizierung.klassifiziere({ dokumente: [x.brief] }, x.A);
     assert.equal(r.vorschlag?.typId, x.rechnung.id);
-    assert.deepEqual(new Set(r.vorschlag!.belege.map((b) => b.weg)), new Set(['ki', 'aehnlichkeit', 'kern', 'abgleich']));
+    // Dazu „Woran man ihn erkennt“ (#1673): Rechnungsnummer und Betrag stehen im Brief.
+    assert.deepEqual(new Set(r.vorschlag!.belege.map((b) => b.weg)), new Set(['ki', 'aehnlichkeit', 'kern', 'abgleich', 'erkennbar']));
     const ki = r.vorschlag!.belege.find((b) => b.weg === 'ki')!;
     assert.equal(ki.zitat, 'Rechnungsnummer R-2026-117');
     assert.deepEqual(ki.paket, { id: 'ki_assistent', name: 'KI-Assistent' });
@@ -466,7 +467,7 @@ describe('Klassifizieren (#939): Ablauf im Kern', () => {
     );
     assert.match(String(r.wege[0].hinweis), /nicht geantwortet/);
     assert.equal(r.vorschlag?.typId, x.rechnung.id);
-    assert.deepEqual(new Set(r.vorschlag!.belege.map((b) => b.weg)), new Set(['kern', 'abgleich']));
+    assert.deepEqual(new Set(r.vorschlag!.belege.map((b) => b.weg)), new Set(['kern', 'abgleich', 'erkennbar']));
   });
 
   it('Paket mit Netz nur als gewählter Standard mit bestätigtem Abfluss; Dokument aus gesperrtem Typ geht an kein Paket mit Netz, an ein lokales schon', async () => {

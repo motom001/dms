@@ -26,8 +26,13 @@ const datum = (n: number, jahrPflicht: boolean) =>
   String.raw`|(?<ij${n}>\d{4})-(?<im${n}>\d{2})-(?<it${n}>\d{2})`;
 /** Wörter vor dem Zeitraum – sie machen ihn sicher. */
 const VOR = String.raw`(?:f[üu]r[ \t]+den[ \t]+)?(?:vom|von|Zeitraum|Abrechnungszeitraum|Leistungszeitraum|Versicherungszeitraum|Abrechnungsjahr|Laufzeit|Periode|period|from)`;
-/** Zwischen den Daten: Bindestrich, Strich, „bis“, „bis zum“, „to“, „until“ – Leerraum auch mit Zeilenumbruch. */
-const ZWISCHEN = String.raw`\s*(?:[-–—]|bis(?:[ \t]+zum)?|to|until)\s*`;
+/**
+ * Zusatz nach „bis“ (#1669): „bis einschl. 19.12.2026“. Ablago zählt „Bis“ ohnehin als letzten Tag mit; „bis
+ * ausschließlich“ ist kein Zeitraum (lieber kein Vorschlag als ein falscher Tag).
+ */
+const EINSCHL = String.raw`(?:\s+(?:einschl\.|einschließlich|einschliesslich|inkl\.|inklusive|incl\.|including|inclusive))?`;
+/** Zwischen den Daten: Bindestrich, Strich, „bis“, „bis zum“ (auch mit „einschl.“), „to“, „until“ – Leerraum auch mit Zeilenumbruch. */
+const ZWISCHEN = String.raw`\s*(?:[-–—]|bis(?:[ \t]+zum)?${EINSCHL}|to|until)\s*`;
 const ZEITRAUM = new RegExp(
   String.raw`(?<![\p{L}\p{N}.])(?:(?<vor>${VOR})[ \t]*:?\s*)?(?:${datum(1, false)})${ZWISCHEN}(?:${datum(2, true)})(?![\p{N}])`,
   'giu',
@@ -145,6 +150,13 @@ export function zeitraumVorschlaege(
   }
   return erg;
 }
+
+/**
+ * Steht in der Fundstelle ein Zeitraum „vom … bis …“ mit zwei Daten, den Ablago nicht als Paar erkannt hat (#1669, z. B.
+ * „bis ausschließlich“)? Dann bekommt kein Feld eines Datumspaars ein einzelnes Datum daraus.
+ */
+export const ungeklaerterZeitraum = (s: string) =>
+  datenIn(s) >= 2 && /(?:^|[^\p{L}])(?:vom|von|from)[^\p{L}][\s\S]*(?:^|[^\p{L}])(?:bis|to|until)(?:[^\p{L}]|$)/iu.test(s);
 
 /** Wie viele Daten stehen in einer Fundstelle? (Zwei Felder sollen nicht denselben Wert aus einem Zeitraum bekommen.) */
 export const datenIn = (s: string) => (s.match(/\d{1,2}\.\s?\d{1,2}\.\s?\d{2,4}|\d{4}-\d{2}-\d{2}/g) ?? []).length;
