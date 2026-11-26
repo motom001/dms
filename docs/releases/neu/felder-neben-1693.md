@@ -1,0 +1,5 @@
+art: minor
+
+## Verbessert
+
+- **„Aus Dokument ausfüllen“ liest Werte neben ihrer Bezeichnung** (#1693): Ein Datumsfeld wie „Fällig am“ bekommt das Datum aus der Zeile mit „Fällig“ oder „zahlbar bis“, ein Betragsfeld wie „Netto gesamt“ den Betrag aus der Zeile mit „Netto“ – statt Briefdatum und Gesamtbetrag. Den Gesamtbetrag bekommt ein Feld wie „Netto“ nicht mehr. Heißt ein Feld nur „Nummer“, findet Ablago die Nummer hinter dem Namen des Mappentyps („Kontoauszug 1/2021“).

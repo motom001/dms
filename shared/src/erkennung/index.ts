@@ -24,3 +24,4 @@ export * from './schema';
 export * from './nummern';
 export * from './zeitraum';
 export * from './auswahlliste';
+export { feldWoerter } from './beschriftet';

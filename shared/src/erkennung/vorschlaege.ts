@@ -1,4 +1,5 @@
 /** Erkennung (#1278 aus erkennung.ts): Vorschläge für die Felder eines Mappentyps, eigene Organisation und Haushalt. */
+import { betragNeben, datumNeben, feldWoerter } from './beschriftet';
 import type { Wert, Mappentyp, Betrag, Feld } from '../model';
 import { type Sicherheit, type Fund, ausschnitt, type Angaben, findeAngaben } from './angaben';
 import { t } from '../texte';
@@ -154,6 +155,10 @@ interface VorschlagLauf {
   gruppen: readonly (readonly string[])[];
   /** Datumspaare (#1646): je Feld das andere Feld des Paars. */
   partner: Map<string, string>;
+  /** Je Art das erste Feld (#1693): Nur dieses bekommt das Briefdatum bzw. den Gesamtbetrag ohne eigene Bezeichnung. */
+  erstes: Map<Erkennungsart, string>;
+  /** Name des Typs (#1693): Nummer hinter ihm, wenn das Feld nur „Nummer“ heißt („Kontoauszug 1/2021“). */
+  typName?: string;
   vorschlag: (k: string) => Vorschlag | undefined;
 }
 
@@ -167,7 +172,7 @@ export interface VorschlagOptionen {
  * mit vorhandenen Mappen ab). Werte sind schon im Format der Feldart (Datum ISO, Betrag mit Währung).
  */
 export function vorschlaegeAus(
-  t: Pick<Mappentyp, 'felder'>,
+  t: Pick<Mappentyp, 'felder'> & { name?: string },
   text: string,
   a: Angaben = findeAngaben(text),
   opt: VorschlagOptionen = {},
@@ -198,6 +203,8 @@ export function vorschlaegeAus(
       ]),
     ),
     vorschlag: (k) => v[k],
+    erstes: new Map([...felder].reverse().map((x) => [x.art, x.feld.key] as const)),
+    typName: t.name,
   };
   // Zeitraum (#1646): Datumspaare („vom 01.07.2012 – 31.07.2012“) gehen an Beginn und Ende – vor dem einzelnen Datum.
   // Ein Erkennungshinweis mit Muster (#391) gewinnt auch hier.
@@ -275,21 +282,12 @@ function vorschlagKontakt(f: Feld, art: (typeof KONTAKT_ARTEN)[number], l: Vorsc
 
 /** Datum und Betrag aus den Angaben; Zeitraum und Prozent (#1035) am liebsten neben der Bezeichnung des Felds. */
 function vorschlagWert(f: Feld, art: (typeof WERT_ARTEN)[number], l: VorschlagLauf) {
-  const { a, text } = l;
+  const { text } = l;
   switch (art) {
-    case 'datum': {
-      // Zwei Felder eines Paars (#1646) nicht mit demselben Wert aus einer Fundstelle, in der zwei Daten stehen.
-      const p = l.partner.get(f.key);
-      const andere = p ? l.vorschlag(p) : undefined;
-      if (a.datum && andere?.wert === a.datum.wert && andere.fundstelle === a.datum.fundstelle && datenIn(a.datum.fundstelle) >= 2) return;
-      // Zeitraum, den Ablago nicht als Paar lesen konnte (#1669): lieber leer als das Ende in „Von“.
-      if (a.datum && p && !andere && ungeklaerterZeitraum(a.datum.fundstelle)) return;
-      if (a.datum) l.setze(f, a.datum.wert, a.datum);
-      return;
-    }
+    case 'datum':
+      return vorschlagDatum(f, l);
     case 'betrag':
-      if (a.betrag) l.setze(f, f.typ === 'zahl' ? a.betrag.wert.betrag : a.betrag.wert, a.betrag);
-      return;
+      return vorschlagBetrag(f, l);
     // Zeitraum und Prozent (#1035): am liebsten neben der Bezeichnung des Felds („Kündigungsfrist: 3 Monate“).
     case 'zeitraum': {
       const z = naheBeschriftung(text, f, ZEITRAUM_IM_TEXT, (m) => leseZeitraum(`${m[1]} ${m[2]}`) ?? null);
@@ -304,6 +302,33 @@ function vorschlagWert(f: Feld, art: (typeof WERT_ARTEN)[number], l: VorschlagLa
       if (x) l.setze(f, x.wert, x);
     }
   }
+}
+
+/** Datum (#1693): neben der eigenen Bezeichnung, sonst das Briefdatum – für weitere Datumsfelder nur unsicher. */
+function vorschlagDatum(f: Feld, l: VorschlagLauf) {
+  const { a, text } = l;
+  // Neben der eigenen Bezeichnung („Fällig am“, „zahlbar bis“); ist es das Briefdatum, mit dessen Sicherheit.
+  const nah = datumNeben(text, feldWoerter(f, l.gruppen));
+  if (nah) return l.setze(f, nah.wert, nah.wert === a.datum?.wert ? a.datum : nah);
+  if (!a.datum) return;
+  // Zwei Felder eines Paars (#1646) nicht mit demselben Wert aus einer Fundstelle, in der zwei Daten stehen.
+  const p = l.partner.get(f.key);
+  const andere = p ? l.vorschlag(p) : undefined;
+  if (andere?.wert === a.datum.wert && andere.fundstelle === a.datum.fundstelle && datenIn(a.datum.fundstelle) >= 2) return;
+  // Zeitraum, den Ablago nicht als Paar lesen konnte (#1669): lieber leer als das Ende in „Von“.
+  if (p && !andere && ungeklaerterZeitraum(a.datum.fundstelle)) return;
+  l.setze(f, a.datum.wert, l.erstes.get('datum') === f.key ? a.datum : { ...a.datum, sicherheit: 'niedrig' });
+}
+
+/**
+ * Betrag (#1693): neben der eigenen Bezeichnung („Netto“, „Skonto“). Den Gesamtbetrag bekommt nur das erste Betragsfeld
+ * und eines ohne eigene Wörter („Summe“, „Betrag“) – „Netto gesamt“ ist nie der Bruttobetrag.
+ */
+function vorschlagBetrag(f: Feld, l: VorschlagLauf) {
+  const woerter = feldWoerter(f, l.gruppen);
+  const allgemein = l.erstes.get('betrag') === f.key || !woerter.length;
+  const b = allgemein ? l.a.betrag : betragNeben(l.text, woerter);
+  if (b) l.setze(f, f.typ === 'zahl' ? b.wert.betrag : b.wert, b);
 }
 
 /** Fund aus Person oder Briefkopf übernehmen, wenn es Wert und Quelle gibt. */
@@ -356,8 +381,10 @@ function vorschlagNummer(f: Feld, l: VorschlagLauf) {
       const s = stamm(x.label);
       return !!s && (s === stamm(f.label) || s === stamm(f.key));
     }) ??
-    // Ohne feste Beschriftung (#1657): direkt hinter dem Wort des Felds („Rechnung R-2026-1120“).
-    nummerHinterWort(l.text, nummernWoerter(f, l.gruppen));
+    // Ohne feste Beschriftung (#1657): direkt hinter dem Wort des Felds („Rechnung R-2026-1120“); heißt das Feld nur
+    // „Nummer“, hinter dem Namen des Typs (#1693: „Kontoauszug 1/2021“).
+    nummerHinterWort(l.text, nummernWoerter(f, l.gruppen)) ??
+    (nummernWoerter(f).length || !l.typName ? null : nummerHinterWort(l.text, nummernWoerter({ key: '', label: l.typName }, l.gruppen)));
   if (n) l.setze(f, f.typ === 'zahl' ? Number(n.wert.replace(/\D/g, '')) || '' : n.wert, n);
 }
 
