@@ -19,7 +19,11 @@ export function erkennungRouten(k: RoutenKontext): Route[] {
       pfad: '/api/klassifizieren',
       zugang: 'angemeldet',
       lesend: true,
-      handler: async (a) => ok(await dienst.erkennung.klassifizierung.klassifiziere(b(a), await zg(a))),
+      handler: async (a) => {
+        const z = await zg(a);
+        // Vorberechnet (#1567): nur lesen, sonst wie bisher rechnen.
+        return ok((await dienst.erkennung.vorberechnung.klass(b(a), z)) ?? (await dienst.erkennung.klassifizierung.klassifiziere(b(a), z)));
+      },
     },
     // „Aus Dokument ausfüllen“ (#391): Vorschläge für die Felder eines Mappentyps aus Text, Dokumenten oder einer Datei.
     {
@@ -27,7 +31,12 @@ export function erkennungRouten(k: RoutenKontext): Route[] {
       pfad: '/api/typen/:id/vorschlaege',
       zugang: 'angemeldet',
       lesend: true,
-      handler: async (a) => ok(await dienst.erkennung.fuerTyp(a.params.id, b(a), await zg(a))),
+      handler: async (a) => {
+        const z = await zg(a);
+        // Vorberechnet (#1567) für die drei wahrscheinlichsten Typen; Rechte prüft fuerTyp beim Rechnen, hier die Post.
+        const v = await dienst.erkennung.vorberechnung.felder(a.params.id, b(a), z);
+        return ok(v ?? (await dienst.erkennung.fuerTyp(a.params.id, b(a), z)));
+      },
     },
     {
       methode: 'POST',
@@ -77,6 +86,8 @@ export function erkennungRouten(k: RoutenKontext): Route[] {
         const z = await zg(a);
         await dienst.rechtepruefung.pruefeRecht(z, a.params.id, 'R');
         await dienst.erkennung.fuerPost(a.params.id);
+        // „Erkennung neu starten“ (#1567): auch die Vorberechnung, selbst bei „Nichts von sich aus“ – die Person hat es verlangt.
+        await dienst.erkennung.vorberechnung.rechne(a.params.id, { auchWennAus: true });
         return ok(await dienst.erkennung.fuerBenutzer(a.params.id, z));
       },
     },

@@ -26,6 +26,7 @@ import { V1_TABELLE } from '../src/http/api-v1';
 import { speicherDateien } from '../src/dateien/dateispeicher';
 import { Dienst } from '../src/dienst/dienst';
 import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
+import { DARF_EINSTELLUNG } from '../../shared/src/darf';
 import { Konten } from '../src/konten';
 import { speicherKontoRepo } from '../src/konten/konto-repo';
 import { speicherRepo } from '../src/repo/speicher';
@@ -76,7 +77,10 @@ ${'Allgemeine Geschäftsbedingungen und Hinweise zur Zahlung. '.repeat(200)}
 GEHEIMES ENDE`;
 
 async function aufbau() {
-  const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
+  // Diese Tests zählen die Aufrufe der Pakete beim Öffnen: ohne Vorberechnung im Hintergrund (#1567, eigene Tests).
+  const einstellungen = speicherEinstellungen();
+  await einstellungen.schreibe(DARF_EINSTELLUNG, { pakete: 'netz', selbst: 'nichts', hoechstens: {}, herkunft: 'neu' });
+  const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen });
   const konten = new Konten(speicherKontoRepo(), null, 'http://nas', d.systemtypen.benutzerspiegel());
   d.verbindeKonten(konten.papierkorbHaken());
   const { benutzer: lena } = await konten.einrichten({ email: 'lena@example.org', name: 'Lena', passwort: 'ein-langes-passwort' });

@@ -43,6 +43,7 @@ import {
 } from '../../../shared/src/erkennung';
 import { type ERechnung, erechnungText, vorschlaegeAusERechnung } from '../../../shared/src/erechnung';
 import { ohneErkennung } from '../../../shared/src/anlagen';
+import { Vorberechnung } from './vorberechnung';
 import { istXmlDatei } from './erechnung';
 
 export { sichereZuordnung, type PostErkennung } from './erkennung-hilfen';
@@ -56,12 +57,23 @@ export class Erkennung extends ErkennungPost {
     super();
     this.gelerntes = new Gelerntes(einst, repo, d);
     this.klassifizierung = new Klassifizierung(d, this, repo, this.gelerntes);
+    this.vorberechnung = new Vorberechnung(
+      {
+        klassifiziere: (e, z) => this.klassifizierung.klassifiziere(e, z),
+        fuerTyp: (typId, e, z) => this.fuerTyp(typId, e, z),
+        abgleichDokumente: (e, z) => this.abgleichDokumente(e, z),
+      },
+      repo,
+      einst,
+    );
   }
 
   /** „Wohin gehört das?“ mehrstufig (#939): Pakete mit dms:klassifizieren, Kern-Erkennung und Abgleich. */
   readonly klassifizierung: Klassifizierung;
   /** Aus Korrekturen gelernt (#1681): Typ je Absender, Kennwort je Absender und Feld. */
   readonly gelerntes: Gelerntes;
+  /** Erkennung im Hintergrund vorberechnen (#1567): Beim Öffnen der Post wird nur gelesen. */
+  readonly vorberechnung: Vorberechnung;
 
   /** Wird gesetzt, sobald der Paket-Läufer läuft (index.ts). */
   anbieter?: ErkennAnbieter;
@@ -77,6 +89,8 @@ export class Erkennung extends ErkennungPost {
     if (ergebnis) await this.d.post.automatischZuordnen(m.id, ergebnis);
     // Ereigniskatalog (#670): eigene Schritte lassen sich hinten an die Erkennung hängen.
     if (ergebnis) await this.d.kern.ereignis('erkennung.fertig', { mappe: m.id, typ: m.typId, dokument: e.dokument });
+    // Vorberechnen (#1567): erst, wenn alle Dokumente der Post ihren Volltext haben und die Post noch nicht zugeordnet ist.
+    if (ergebnis && !ergebnis.auto) this.vorberechnung.anstossen(m.id);
     return ergebnis;
   }
 
