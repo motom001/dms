@@ -7,6 +7,7 @@ import { BEREICH, PAKET_ID, VERSION, liesErgaenzt, liesErsetzt, punktIdFehler } 
 import { istHerausgeber } from '../../../../shared/src/kennungen';
 import { Fachfehler } from '../../grundlagen/fehler';
 import { t } from '../../sprache/sprache';
+import { KB } from '../../grundlagen/grenzen';
 import { istObjekt, str } from './format';
 
 /** Stand eines Lesens: Dateien, gesammelte Fehler, Manifest, Id, Abhängigkeiten und Inhaltsangaben. */
@@ -118,7 +119,7 @@ export function objekt(l: LeseLauf, art: string, max: number): Record<string, un
   if (!inhalt[art]) return undefined;
   const name = str(inhalt[art]).replace(/^\.\//, '');
   if ((l.dateien.get(name)?.length ?? 0) > max) {
-    fehler.push(t('meldungen.pakete.datei-zu-gross', { name, kb: Math.round(max / 1024) }));
+    fehler.push(t('meldungen.pakete.datei-zu-gross', { name, kb: Math.round(max / KB) }));
     return undefined;
   }
   const v = liesYaml(l.dateien, fehler, name);
