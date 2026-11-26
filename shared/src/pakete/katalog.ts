@@ -332,6 +332,11 @@ export interface InstalliertesPaket {
    * `texte`: Sprachdateien des Pakets je Sprache (#1307, `entdecken-paket.ts`).
    */
   entdecken?: { rundgaenge?: unknown[]; tipps?: unknown[]; texte?: Record<string, Record<string, string>>; vorher?: string | null };
+  /**
+   * Regionspaket (#1696, `inhalt.region`): Feiertage und Regionen eines Landes als Regeln, geprüft beim Installieren.
+   * Der Kern nimmt sie statt seines eingebauten Rechners (`shared/src/feiertagsquelle.ts`).
+   */
+  region?: import('../regionspaket').Regionsregeln;
 }
 
 /**

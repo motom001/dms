@@ -237,6 +237,8 @@ export abstract class PaketAnlegen extends PaketAnlegenSchritte {
       ...(paket.kurzanleitung ? { kurzanleitung: paket.kurzanleitung } : {}),
       // Rundgänge und Tipps (#831, #832): wie diese Version sie mitbringt; vorher = Version vor diesem Update.
       ...(paket.entdecken ? { entdecken: { ...paket.entdecken, vorher: alt?.version ?? null } } : {}),
+      // Regionspaket (#1696): Regeln dieser Version; ein Update ohne die Datei nimmt sie weg (Kern rechnet wieder selbst).
+      ...(paket.region ? { region: paket.region } : {}),
       typStand,
       // Angehalten (#1563) bleibt angehalten, auch nach einem Update.
       ...(alt?.angehalten ? { angehalten: alt.angehalten } : {}),

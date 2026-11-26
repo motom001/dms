@@ -16,6 +16,8 @@
   "region.feiertage.jahr": "Feiertage {jahr}",
   "region.feiertage.gespeichert": "Die Vorschau zeigt den gespeicherten Stand – erst speichern, dann erscheinen die Feiertage des neuen Bundeslands.",
   "region.feiertage.ohne": "Ohne Bundesland berücksichtigt Ablago keine Feiertage.",
+  "region.feiertage.quelle.paket": "Die Feiertage kommen aus dem Paket „{paket}“; das Bundesland wählst du oben.",
+  "region.feiertage.quelle.ablago": "Ablago berechnet die Feiertage selbst; das Bundesland wählst du oben.",
   "region.feiertage.wofuer": "An Feiertagen kommt keine Tägliche Zusammenfassung (wer das in Mein Konto so eingestellt hat), und der Kalender zeigt sie an.",
   "region.formate": "Formate",
   "region.formate.einleitung": "So zeigt Ablago Datum, Uhrzeit, Zahlen, Beträge und Telefonnummern. „Wie die Sprache“ richtet sich nach der Sprache der Oberfläche; eine eigene Wahl gilt für alle. Gespeicherte Werte ändern sich dabei nicht – nur, wie sie erscheinen.",

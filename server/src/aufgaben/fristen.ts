@@ -11,7 +11,7 @@ import type { FristKandidat, Repo } from '../repo';
 import { t } from '../sprache/sprache';
 import { fingerabdruck, type Haushaltsstand, mitFavoriten, Zaehlerspeicher } from '../zwischenspeicher/zaehlerspeicher';
 import type { ZugriffDienst } from '../zugriff';
-import { type Bundesland, feiertageZwischen } from '../../../shared/src/feiertage';
+import type { Feiertagsquelle } from '../../../shared/src/feiertagsquelle';
 import {
   datumDe,
   folgetermine,
@@ -206,7 +206,7 @@ export class Fristen {
   async termine(
     z: Zugriff,
     q: { von?: unknown; bis?: unknown; favoriten?: unknown } = {},
-    land?: Bundesland | null,
+    feiertage?: Pick<Feiertagsquelle, 'zwischen'> | null,
   ): Promise<TermineAntwort> {
     const heute = heuteIn();
     const problem = zeitraumProblem(q.von, q.bis);
@@ -227,7 +227,7 @@ export class Fristen {
     );
     const k = kontext.getStore();
     if (k) k.zwischenspeicher = { art: r.art, ms: performance.now() - beginn };
-    return { heute, von, bis, eintraege: r.wert, feiertage: feiertageZwischen(von, bis, land) };
+    return { heute, von, bis, eintraege: r.wert, feiertage: feiertage?.zwischen(von, bis) ?? {} };
   }
 
   /**

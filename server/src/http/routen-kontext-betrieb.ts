@@ -22,8 +22,8 @@ import { notfallblatt } from '../notfall/notfallblatt';
 import { MAIL_STANDARD, STANDARD_TAGE, wirksameZeit, type MailZeit } from '../aufgaben/aufgabenmail';
 import { LAENDER, tagIn, ZEITZONEN, zeitzone, type Region } from '../../../shared/src/region';
 import { istMaschinell, liesSpracheinstellung, spracheAusKopf, wirksameSprache } from '../../../shared/src/sprachwahl';
-import { BUNDESLAENDER } from '../../../shared/src/feiertage';
 import { RegionDienst } from '../einstellungen/region';
+import { feiertagsquelle } from '../../../shared/src/feiertagsquelle';
 import { GB } from '../grundlagen/grenzen';
 import { L } from './routen-hilfen';
 import type { Anfrage, Antwort } from './routen-typen';
@@ -44,13 +44,19 @@ export function einstellungsHilfen(dienst: Dienst, konten: Konten, x: RoutenExtr
       maschinell: e.erlaubt.filter(istMaschinell),
     };
   };
-  const regionStand = async (r: Region) => ({
-    region: r,
-    laender: LAENDER,
-    bundeslaender: BUNDESLAENDER,
-    zeitzonen: ZEITZONEN,
-    feiertage: RegionDienst.feiertageIm(r),
-  });
+  // Regionen und Feiertage aus der Feiertagsquelle (#1696): aus einem Regionspaket, sonst wie bisher aus dem Kern.
+  const regionStand = async (r: Region) => {
+    const q = feiertagsquelle(await dienst.kern.repo.listePakete(), r);
+    return {
+      region: r,
+      laender: LAENDER,
+      bundeslaender: q.regionen,
+      zeitzonen: ZEITZONEN,
+      feiertage: RegionDienst.feiertageIm(r, undefined, q),
+      // Woher die Feiertage kommen (Werkbank → Region): Paketname oder null (Ablago rechnet selbst).
+      feiertagsquelle: q.paket,
+    };
+  };
   /** Eigene Einstellung der täglichen Zusammenfassung mit den Standards der Werkbank (#92, #94). */
   const zusammenfassung = async (i: Benutzer) => {
     // Standard seit #1001 aus der eingeschalteten Automatisierung (Uhrzeit ihrer Wenn-Karte), Feiertage aus der Region.

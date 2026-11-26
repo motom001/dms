@@ -24,6 +24,8 @@
   "pakete.die-pakete-der-sammeldatei": "Die Pakete der Sammeldatei sind entpackt zusammen zu groß.",
   "pakete.kompression-wird-nicht-unterstuetzt": "Kompression {methode} wird nicht unterstützt.",
   "pakete.fehlt-im-paket": "{name} fehlt im Paket.",
+  "pakete.datei-zu-gross": "{name} ist größer als {kb} KB.",
+  "pakete.erwartet-objekt": "{name}: erwartet ein Objekt.",
   "pakete.das-paket-ist-ungueltig": "Das Paket ist ungültig.",
   "pakete.manifest-yaml-ist-leer": "manifest.yaml ist leer.",
   "pakete.manifest-yaml-format-kennt": "manifest.yaml: Format {wert} kennt diese Ablago-Version nicht.",

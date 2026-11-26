@@ -108,3 +108,24 @@ export function liste(l: LeseLauf, art: string): Record<string, unknown>[] {
   }
   return v;
 }
+
+/**
+ * Eine Inhaltsangabe, die ein einzelnes Objekt ist (`inhalt.region`, #1696); fehlt die Angabe, undefined. Zu große
+ * Dateien und alles außer einem Objekt sind Fehler.
+ */
+export function objekt(l: LeseLauf, art: string, max: number): Record<string, unknown> | undefined {
+  const { inhalt, fehler } = l;
+  if (!inhalt[art]) return undefined;
+  const name = str(inhalt[art]).replace(/^\.\//, '');
+  if ((l.dateien.get(name)?.length ?? 0) > max) {
+    fehler.push(t('meldungen.pakete.datei-zu-gross', { name, kb: Math.round(max / 1024) }));
+    return undefined;
+  }
+  const v = liesYaml(l.dateien, fehler, name);
+  if (v == null) return undefined;
+  if (!istObjekt(v)) {
+    fehler.push(t('meldungen.pakete.erwartet-objekt', { name }));
+    return undefined;
+  }
+  return v;
+}

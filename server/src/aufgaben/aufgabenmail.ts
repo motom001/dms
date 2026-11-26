@@ -1,4 +1,3 @@
-import type { Bundesland } from '../../../shared/src/feiertage';
 import { abwesenheitWirkt, type Aufgabe, type Benutzer } from '../../../shared/src/model';
 import { heuteIn } from '../../../shared/src/sichten';
 import { Fachfehler } from '../grundlagen/fehler';
@@ -17,7 +16,8 @@ import { mitSpracheVon, t } from '../sprache/sprache';
 export interface MailEinstellung {
   aktiv: boolean;
   uhrzeit: string;
-  bundesland: Bundesland | null;
+  /** Region der Feiertage (#726; Kennung seit #1696, siehe Region). */
+  bundesland: string | null;
 }
 export const MAIL_STANDARD: MailEinstellung = { aktiv: true, uhrzeit: '07:00', bundesland: null };
 /** Je Benutzer (#92, #94): eigene Uhrzeit (null = Standard), Wochentage 1 = Mo … 7 = So, „nicht an Feiertagen“. */

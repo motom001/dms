@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { BUNDESLAENDER } from '../../../shared/src/feiertage';
+import { REGION_STANDARD } from '../../../shared/src/region';
+import { regionenAusRegeln, regionspaketFuer } from '../../../shared/src/regionspaket';
 import { PAKETE_JE_NUTZUNG } from '../../../shared/src/einrichtungsplan';
 import { BEISPIEL_NOETIG } from '../../../shared/src/beispielablage';
 import { DARF_VORGABE, type PaketeGrenze } from '../../../shared/src/darf';
@@ -237,8 +239,31 @@ function NotfallSammeln({ liste, setze }: { liste: NotfallkontaktEingabe[]; setz
   );
 }
 
+/**
+ * Wählbare Regionen (#1696): aus einem schon installierten Regionspaket für das Land, sonst die Bundesländer des Kerns
+ * wie bisher (bei einer frischen Einrichtung ist noch nichts installiert).
+ */
+function useRegionen(): Record<string, string> {
+  const [regionen, setRegionen] = useState<Record<string, string>>(BUNDESLAENDER);
+  useEffect(() => {
+    let aktiv = true;
+    einrichtungApi
+      .einrichtungPakete()
+      .then(({ installiert }) => {
+        const p = regionspaketFuer(installiert, REGION_STANDARD.land);
+        if (aktiv && p) setRegionen(regionenAusRegeln(p.region));
+      })
+      .catch(() => {});
+    return () => {
+      aktiv = false;
+    };
+  }, []);
+  return regionen;
+}
+
 export function OptionalSchritt({ s, zurWahl, leiste }: { s: Sammlung; zurWahl: () => void; leiste: Leiste }) {
   const [o, setO] = useState(s.optional);
+  const regionen = useRegionen();
   const [probleme, setProbleme] = useState<string[] | undefined>(s.probleme.optional);
   const x = useSenden();
   // E-Mail-Versand mit demselben Formular wie in der Werkbank (#813); es sammelt nur, gespeichert wird bei „Jetzt einrichten“.
@@ -288,7 +313,7 @@ export function OptionalSchritt({ s, zurWahl, leiste }: { s: Sammlung; zurWahl: 
           <Feld beschriftung={t('einrichtung.optional.bundesland')}>
             <select value={o.bundesland} onChange={(e) => setO({ ...o, bundesland: e.target.value })}>
               <option value="">{t('einrichtung.optional.bundesland.keins')}</option>
-              {Object.entries(BUNDESLAENDER).map(([k, v]) => (
+              {Object.entries(regionen).map(([k, v]) => (
                 <option key={k} value={k}>
                   {v}
                 </option>
