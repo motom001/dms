@@ -8,7 +8,7 @@
  *   dazu die Typen der ähnlichsten Dokumente, die die Person und das Paket lesen dürfen (nur Typ und Maß).
  * - Kern-Erkennung: der Name eines Typs als Überschrift im Text (#934) – auch Mehrzahl und gleichbedeutende Wörter (#1673).
  * - Abgleich über „Zum Wiederfinden nutzen“ (#938): wiedergefundene Mappen stärken Typen, deren Verweisfelder auf sie zeigen.
- * - Absender (#1680) und „Woran man ihn erkennt“ (#1673), siehe klassifizierung-wege.ts.
+ * - Absender (#1680), „Woran man ihn erkennt“ (#1673) und Einträge von Auswahllisten (#1689), siehe klassifizierung-wege.ts.
  * Gegenanzeichen (#1672) senken danach die Sicherheit je Typ; ohne abgelegte Mappe ist ein Typ nie „sicher“ (#1673).
  *
  * Kandidaten für Pakete: Typen mit „Kann aus Post angelegt werden“, in denen die Person anlegen darf (#937). Für Pakete mit
@@ -48,7 +48,7 @@ import { protokoll } from '../protokoll/protokoll';
 import type { Repo } from '../repo';
 import { t } from '../sprache/sprache';
 import { ohneErkennung } from '../../../shared/src/anlagen';
-import { namenVon, perAbsender, perErkennbar } from './klassifizierung-wege';
+import { namenVon, perAbsender, perAuswahl, perErkennbar, type Kurzform } from './klassifizierung-wege';
 import type { Gelerntes } from './gelerntes';
 
 const log = protokoll.modul('ablage');
@@ -122,8 +122,10 @@ export class Klassifizierung {
 
     const start = Date.now();
     const leer = { belege: [], bezuege: {} };
+    // Vor den Paketen: Die Einträge der Auswahllisten gehen in Kurzform mit den Kandidaten an ein Sprachmodell (#1689).
+    const auswahl = await perAuswahl(this.d, this.repo(), text, ziele, z);
     const [paketWege, abgleich, absender, gruppen, gelernt] = await Promise.all([
-      this.perPaketen(text, ziele, quellTypen, z),
+      this.perPaketen(text, ziele, quellTypen, z, auswahl.kurz),
       this.perAbgleich(text, ziele, z),
       perAbsender(this.d, this.repo(), [...mappen], ziele, z).catch(() => leer),
       this.d.suche.gleichbedeutendeWoerter().catch(() => [] as string[][]),
@@ -139,6 +141,7 @@ export class Klassifizierung {
       ...absender.belege,
       ...erkennbar,
       ...gelernt.belege,
+      ...auswahl.belege,
     ];
     const kern = typAusText(text, [...namen.values()].flat());
     if (kern) belege.push({ typId: kern.typId, weg: 'kern', sicherheit: KERN_SICHERHEIT, wort: kern.wort, fundstelle: kern.fundstelle });
@@ -148,7 +151,7 @@ export class Klassifizierung {
       { weg: 'abgleich', stand: stand(abgleich.belege.length) },
       { weg: 'absender', stand: stand(absender.belege.length) },
       { weg: 'erkennbar', stand: stand(erkennbar.length) },
-      ...(gelernt.belege.length ? [{ weg: 'gelernt' as const, stand: 'ok' as const }] : []),
+      ...nurMitBelegen({ gelernt: gelernt.belege.length, auswahl: auswahl.belege.length }),
     ];
     const schwelle = await this.erkennung.schwelle();
     // Wie sicher ist Ablago? (#1645): je möglichem Typ, was fehlte – nur Kennungen und Zahlen, nichts davon ins Protokoll.
@@ -157,7 +160,7 @@ export class Klassifizierung {
     const vorschlag = typen[0] && typen[0].sicherheit >= schwelle ? typen[0] : null;
     const genutzt = (id: string) => typen.some((x) => x.belege.some((b) => b.mappeId === id));
     const bezuege = Object.fromEntries(
-      Object.entries({ ...abgleich.bezuege, ...absender.bezuege, ...gelernt.bezuege }).filter(([id]) => genutzt(id)),
+      Object.entries({ ...abgleich.bezuege, ...absender.bezuege, ...gelernt.bezuege, ...auswahl.bezuege }).filter(([id]) => genutzt(id)),
     );
     log.info('Klassifizieren', {
       zeichen: text.length,
@@ -216,6 +219,8 @@ export class Klassifizierung {
     ziele: Mappentyp[],
     quellTypen: Set<string>,
     z?: Zugriff,
+    /** Einträge der Auswahllisten je Kandidat in Kurzform (#1689); gesperrte Listen gehen wie gesperrte Typen nicht hinaus. */
+    kurz?: ReadonlyMap<string, Kurzform[]>,
   ): Promise<{ belege: Array<Klassbeleg & { typId: string }>; wege: Wegstand[]; naehe: Map<string, Naehe> }> {
     let naehe = new Map<string, Naehe>();
     const pakete = this.anbieter?.pakete() ?? [];
@@ -238,7 +243,7 @@ export class Klassifizierung {
         const kandidaten: Kandidat[] = ziele
           .filter((x) => !gesperrt(x.id))
           .slice(0, KANDIDATEN_MAX)
-          .map(alsKandidat);
+          .map((x) => alsKandidat(x, kurzFuer(kurz?.get(x.id), gesperrt)));
         const ids = new Set(kandidaten.map((x) => x.id));
         if (!kandidaten.length) {
           wege.push({ weg, paket, stand: 'gesperrt', hinweis: t('meldungen.klassifizierung.keine-zugelassenen', { name: p.name }) });
@@ -403,10 +408,27 @@ function gesenkt(gruende: Record<string, Typgrund[]>, schwelle: number) {
   };
 }
 
+/** Wege, die nur mit Belegen erscheinen (Gelerntes #1681, Auswahllisten #1689) – ohne bleiben sie unsichtbar. */
+const nurMitBelegen = (n: Partial<Record<'gelernt' | 'auswahl', number>>): Wegstand[] =>
+  (['gelernt', 'auswahl'] as const).filter((w) => n[w]).map((weg) => ({ weg, stand: 'ok' as const }));
+
 /** Stand eines eingebauten Wegs: etwas gefunden oder leer. */
 const stand = (x: unknown): Wegstand['stand'] => (x ? 'ok' : 'leer');
 
+/** Kurzform der Auswahllisten eines Kandidaten (#1689) ohne die für dieses Paket gesperrten Listen. */
+const kurzFuer = (liste: readonly Kurzform[] | undefined, gesperrt: (typId: string) => boolean): string =>
+  (liste ?? [])
+    .filter((k) => !gesperrt(k.liste))
+    .map((k) => k.text)
+    .join(' · ');
+
 /** Ein Typ als Kandidat für ein Paket – „Woran man ihn erkennt“ ganz, so wie gespeichert (#1652), nicht nur 200 Zeichen. */
-function alsKandidat(x: Mappentyp): Kandidat {
-  return { id: x.id, name: x.name, beschreibung: kurzText(x.beschreibung), erkennbarAn: kurzText(x.erkennbarAn, ERKENNBAR_AN_MAX) };
+function alsKandidat(x: Mappentyp, auswahl?: string): Kandidat {
+  return {
+    id: x.id,
+    name: x.name,
+    beschreibung: kurzText(x.beschreibung),
+    erkennbarAn: kurzText(x.erkennbarAn, ERKENNBAR_AN_MAX),
+    ...(auswahl ? { auswahl } : {}),
+  };
 }

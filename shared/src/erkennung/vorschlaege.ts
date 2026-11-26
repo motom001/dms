@@ -77,7 +77,8 @@ export function fuellfelder(
   const markiert = geeignet.filter((f) => f.erkennung);
   return (markiert.length ? markiert : geeignet)
     .map((f) => ({ feld: f, art: artVon(f) }))
-    .filter((x): x is { feld: Feld; art: Erkennungsart } => !!x.art);
+    // Erkennungswörter (#1689) beschreiben die Mappe, sie stehen nicht im Dokument – nie aus dem Dokument füllen.
+    .filter((x): x is { feld: Feld; art: Erkennungsart } => !!x.art && x.art !== 'woerter');
 }
 
 /** Muster aus dem Erkennungshinweis („Muster 100-####“, # = Ziffer, A = Buchstabe) als regulärer Ausdruck. */

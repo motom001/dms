@@ -109,7 +109,17 @@ export interface Kandidat {
   erkennbarAn: string;
   /** Nur für ein Paket mit Vektoren (#1682): so viele Mappen dieses Typs darf das Paket lesen. */
   anzahl?: number;
+  /** Einträge seiner Auswahllisten in Kurzform (#1689), z. B. „Vertragsart: Strom, Gas, Versicherung …“. */
+  auswahl?: string;
 }
+
+/**
+ * Ein Eintrag einer Auswahlliste im Text (#1689) ist ein schwacher Beleg für den verweisenden Typ: allein höchstens
+ * „wahrscheinlich“, nie „sicher“; geteilt durch die Zahl der Kandidaten, die auf dieselbe Liste verweisen.
+ */
+export const AUSWAHL_SICHERHEIT = 0.5;
+/** Länge der Kurzform je Kandidat (Zeichen), wie `kurzText`. */
+export const AUSWAHL_KURZ_MAX = 200;
 
 /** Ein Typ aus einer Antwort, geprüft. */
 export interface Typvorschlag {
@@ -120,7 +130,7 @@ export interface Typvorschlag {
 }
 
 /** Woher ein Beleg kommt. */
-export type Weg = 'aehnlichkeit' | 'ki' | 'kern' | 'abgleich' | 'absender' | 'erkennbar' | 'gelernt';
+export type Weg = 'aehnlichkeit' | 'ki' | 'kern' | 'abgleich' | 'absender' | 'erkennbar' | 'gelernt' | 'auswahl';
 
 /** Ein Beleg für einen Typ, wie die Oberfläche ihn zeigt. */
 export interface Klassbeleg {

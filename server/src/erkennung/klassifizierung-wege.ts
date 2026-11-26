@@ -1,10 +1,18 @@
 /**
- * Weitere Wege für „Wohin gehört das?“ (#939): Absender (#1680), „Woran man ihn erkennt“ (#1673) und die Namen eines Typs
- * mit Mehrzahl und gleichbedeutenden Wörtern (#1673). Nur Kennungen und Zahlen verlassen diese Teile – keine Inhalte.
+ * Weitere Wege für „Wohin gehört das?“ (#939): Absender (#1680), „Woran man ihn erkennt“ (#1673), die Namen eines Typs
+ * mit Mehrzahl und gleichbedeutenden Wörtern (#1673) und Einträge von Auswahllisten (#1689). Nur Kennungen und Zahlen verlassen diese Teile – keine Inhalte.
  */
-import { istAbsenderTyp } from '../../../shared/src/erkennung';
-import { absenderSicherheit, erkennbarImText, erkennbarSicherheit, type Klassbeleg } from '../../../shared/src/klassifizierung';
-import type { MappenBezug, Mappentyp } from '../../../shared/src/model';
+import { AUSWAHL_EINTRAEGE_MAX, findeWort, istAbsenderTyp, istAuswahlliste, woerterVon } from '../../../shared/src/erkennung';
+import {
+  absenderSicherheit,
+  AUSWAHL_KURZ_MAX,
+  AUSWAHL_SICHERHEIT,
+  erkennbarImText,
+  erkennbarSicherheit,
+  kurzText,
+  type Klassbeleg,
+} from '../../../shared/src/klassifizierung';
+import { zieleVon, type MappenBezug, type Mappentyp } from '../../../shared/src/model';
 import type { Zugriff } from '../kern';
 import type { Repo } from '../repo';
 import type { ErkennungDienst } from './erkennung-basis';
@@ -86,4 +94,95 @@ export async function perAbsender(
   }));
   const b = sichtbar ? await repo.bezuege([absender]) : new Map<string, MappenBezug>();
   return { belege, bezuege: Object.fromEntries(b) };
+}
+
+/** Einträge einer Auswahlliste in Kurzform für ein Paket; `liste` = ihr Typ (für die Sperre `kiSperre`, #1635). */
+export interface Kurzform {
+  liste: string;
+  text: string;
+}
+
+/**
+ * Einträge von Auswahllisten im Text (#1689): Zeigt ein Verweisfeld eines Kandidaten auf eine Auswahlliste (z. B. Vertrag →
+ * Vertragsart) und steht ein Eintrag mit Namen oder Erkennungswort im Text („Versicherungsschein“ bei Vertragsart
+ * Versicherung), ist das ein schwacher Beleg für den Kandidaten – nicht für die Liste. Nur Einträge, die die Person lesen
+ * darf. Dazu je Kandidat die Einträge in Kurzform für Pakete mit Sprachmodell („Vertragsart: Strom, Gas …“).
+ */
+export async function perAuswahl(
+  d: Pick<ErkennungDienst, 'rechtepruefung'>,
+  repo: Repo,
+  text: string,
+  ziele: Mappentyp[],
+  z?: Zugriff,
+): Promise<{ belege: Beleg[]; bezuege: Record<string, MappenBezug>; kurz: Map<string, Kurzform[]> }> {
+  // Ein Fehler hier nimmt nur diesen Weg weg, nie das ganze Klassifizieren.
+  return auswahlWeg(d, repo, text, ziele, z).catch(() => ({ belege: [], bezuege: {}, kurz: new Map<string, Kurzform[]>() }));
+}
+
+async function auswahlWeg(
+  d: Pick<ErkennungDienst, 'rechtepruefung'>,
+  repo: Repo,
+  text: string,
+  ziele: Mappentyp[],
+  z?: Zugriff,
+): Promise<{ belege: Beleg[]; bezuege: Record<string, MappenBezug>; kurz: Map<string, Kurzform[]> }> {
+  const listen = new Map((await repo.listeTypen()).filter(istAuswahlliste).map((x) => [x.id, x] as const));
+  // Je Kandidat die Verweisfelder auf eine Auswahlliste (das erste je Liste).
+  const verweise = new Map<string, Array<{ feld: string; liste: string }>>();
+  for (const zt of ziele)
+    for (const f of zt.felder.filter((x) => x.typ === 'referenz' && !x.ausgeblendet))
+      for (const id of zieleVon(f))
+        if (listen.has(id) && id !== zt.id && !verweise.get(zt.id)?.some((v) => v.liste === id))
+          verweise.set(zt.id, [...(verweise.get(zt.id) ?? []), { feld: f.label || f.key, liste: id }]);
+  const genutzt = new Set([...verweise.values()].flat().map((v) => v.liste));
+  // Einträge je Liste (lesbar), was davon im Text steht, und die Kurzform.
+  const funde = new Map<string, Array<{ mappeId: string; wort: string }>>();
+  const namen = new Map<string, string>();
+  for (const id of genutzt) {
+    const liste = listen.get(id)!;
+    const alle = (await repo.listeMappen(id)).slice(0, AUSWAHL_EINTRAEGE_MAX);
+    const lesbar = await d.rechtepruefung.lesbare(
+      z,
+      alle.map((m) => m.id),
+    );
+    const eintraege = alle.filter((m) => lesbar.has(m.id));
+    namen.set(
+      id,
+      kurzText(
+        `${liste.name}: ${eintraege
+          .map((m) => m.titel ?? '')
+          .filter(Boolean)
+          .join(', ')}`,
+        AUSWAHL_KURZ_MAX,
+      ),
+    );
+    const f: Array<{ mappeId: string; wort: string }> = [];
+    for (const m of eintraege) {
+      const wort = findeWort(text, woerterVon(liste, m));
+      if (wort) f.push({ mappeId: m.id, wort });
+    }
+    if (f.length) funde.set(id, f);
+  }
+  // Geteilt durch die Zahl der Kandidaten, die auf dieselbe Liste zeigen (wie beim Abgleich).
+  const zeigen = (liste: string) => [...verweise.values()].filter((v) => v.some((x) => x.liste === liste)).length;
+  const belege: Beleg[] = [];
+  const kurz = new Map<string, Kurzform[]>();
+  for (const [typId, vs] of verweise) {
+    kurz.set(
+      typId,
+      vs.map((v) => ({ liste: v.liste, text: namen.get(v.liste) ?? '' })),
+    );
+    for (const v of vs)
+      for (const x of funde.get(v.liste) ?? [])
+        belege.push({
+          typId,
+          weg: 'auswahl',
+          sicherheit: Math.round((AUSWAHL_SICHERHEIT / zeigen(v.liste)) * 100) / 100,
+          mappeId: x.mappeId,
+          feld: v.feld,
+          wort: x.wort,
+        });
+  }
+  const b = belege.length ? await repo.bezuege([...new Set(belege.map((x) => x.mappeId!))]) : new Map<string, MappenBezug>();
+  return { belege, bezuege: Object.fromEntries(b), kurz };
 }

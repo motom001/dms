@@ -14,6 +14,10 @@ import {
   type TypFund,
   typAusText,
   type Briefkopf,
+  AUSWAHL_EINTRAEGE_MAX,
+  findeWort,
+  istAuswahlliste,
+  woerterVon,
 } from '../../../shared/src/erkennung';
 import type { Zugriff } from '../kern';
 import { type EigeneLage, type TypVorschlaege, TEXT_MAX, type ErkennungAntwort } from './erkennung-hilfen';
@@ -24,6 +28,32 @@ import { istXmlDatei } from './erechnung';
 import { erechnungText } from '../../../shared/src/erechnung';
 
 export abstract class ErkennungAbgleich extends ErkennungPositionen {
+  /**
+   * Verweisfeld auf eine Auswahlliste (#1689): der Eintrag, dessen Name oder Erkennungswort als ganzes Wort im Text steht –
+   * nur lesbare Einträge, Sicherheit mittel. Passen zwei verschiedene Einträge, bleibt das Feld leer. Nie „neu anlegen“:
+   * Was in einer Auswahlliste steht, legt der Administrator an, nicht ein Briefkopf.
+   */
+  private async auswahlFuer(
+    ziele: Mappentyp[],
+    text: string,
+    z: Zugriff | undefined,
+  ): Promise<{ mappe: Mappe; sicherheit: 'mittel'; fundstelle: string } | null> {
+    const treffer: Array<{ mappe: Mappe; wort: string }> = [];
+    for (const ziel of ziele) {
+      const alle = (await this.repo().listeMappen(ziel.id)).slice(0, AUSWAHL_EINTRAEGE_MAX);
+      const lesbar = await this.d.rechtepruefung.lesbare(
+        z,
+        alle.map((m) => m.id),
+      );
+      for (const m of alle.filter((x) => lesbar.has(x.id))) {
+        const wort = findeWort(text, woerterVon(ziel, m));
+        if (wort) treffer.push({ mappe: m, wort });
+      }
+    }
+    if (treffer.length !== 1) return null;
+    return { mappe: treffer[0].mappe, sicherheit: 'mittel', fundstelle: `gefunden: ${treffer[0].wort}` };
+  }
+
   /**
    * Verweisfeld: Mappe eines Zieltyps, die im Text steht (markierte Felder, sonst der Titel); sonst „neu anlegen“ – das
    * nur bei genau einem Zieltyp (#1036: bei mehreren stünde nicht fest, welcher gemeint ist).
@@ -51,6 +81,8 @@ export abstract class ErkennungAbgleich extends ErkennungPositionen {
       if (x && (!z || z.typen.has(x.id))) ziele.push(x);
     }
     if (!ziele.length) return null;
+    // Auswahlliste (#1689, z. B. Vertragsart): Eintrag über Name oder Erkennungswort, nie „neu anlegen“.
+    if (ziele.every(istAuswahlliste)) return this.auswahlFuer(ziele, text, z);
     const von = f.key === 'von';
     const an = f.key === 'an';
     const aus = ctx.aussteller;

@@ -23,3 +23,4 @@ export * from './vorschlaege';
 export * from './schema';
 export * from './nummern';
 export * from './zeitraum';
+export * from './auswahlliste';

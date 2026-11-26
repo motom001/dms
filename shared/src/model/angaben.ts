@@ -79,6 +79,8 @@ export const ERKENNUNGSARTEN = {
   prozent: 'Prozent',
   verweis: t('gemeinsam.erkennung.passende-mappe-verweis'),
   auswahl: t('gemeinsam.erkennung.auswahlwert-der-im-text'),
+  // Erkennungswörter einer Auswahlliste (#1689): schwaches Merkmal für den verweisenden Typ, nie selbst gefüllt.
+  woerter: t('gemeinsam.erkennung.erkennungswoerter'),
 } as const;
 export type Erkennungsart = keyof typeof ERKENNUNGSARTEN;
 

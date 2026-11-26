@@ -97,6 +97,8 @@ export function artVon(
   if (hat(/ (strasse|str|anschrift|adresse) /)) return 'strasse';
   if (hat(/ (plz|postleitzahl) /)) return 'plz';
   if (hat(/ (ort|stadt|wohnort) /)) return 'ort';
+  // Erkennungswörter einer Auswahlliste (#1689), z. B. das Feld „Erkennungswörter“ der Vertragsart.
+  if (hat(/ erkennungswoerter /)) return 'woerter';
   if (hat(/ vorname /)) return 'vorname';
   if (hat(/ (nachname|familienname) /)) return 'nachname';
   if (hat(/ (funktion|position|stelle) /)) return 'funktion';

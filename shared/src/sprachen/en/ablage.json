@@ -1364,6 +1364,7 @@
   "uebernehmen.beleg-aehnlich": "Similar documents ({paket}): {begruendung}",
   "uebernehmen.ohne-begruendung": "no reason given",
   "uebernehmen.beleg-abgleich": "Reference “{feld}” to “{titel}”, recognised by {merkmal}",
+  "uebernehmen.beleg-auswahl": "{feld} “{titel}”, recognised by “{wort}”",
   "uebernehmen.beleg-zitat": "– in the document: “{zitat}”",
   "uebernehmen.sicher.titel": "How sure is Ablago?",
   "uebernehmen.sicher.als-zahl": "Show as a number",
