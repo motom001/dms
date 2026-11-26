@@ -48,7 +48,7 @@ Then fill in:
 | `inhalt/rundgaenge.yaml` | optional (dms #831): [tours](entdecken.md#paket-rundgaenge) through a task |
 | `texte/<sprache>/entdecken.json` | optional (dms #1307): texts of the tours and tips per language, German as the base language ([Languages](entdecken.md#paket-rundgaenge-sprachen)); older packages write them directly into the YAML files |
 | `inhalt/tipps.yaml` | optional (dms #832): [tips](entdecken.md#paket-tipps), at most 20, also “new in version …” |
-| `inhalt/region.yaml` | optional (from Ablago 0.332.0, `DMS_REGIONSPAKETE_AB`, dms #1696): [region package](#regionspakete) – public holidays and regions of a country as rules |
+| `inhalt/region.yaml` | optional (from Ablago 0.333.0, `DMS_REGIONSPAKETE_AB`, dms #1696): [region package](#regionspakete) – public holidays and regions of a country as rules |
 | `README.md`, `LICENSE`, `CHANGELOG.md` | description, licence text, changes per version |
 | `tests/erwartung.yaml` | what must be there after installation |
 
@@ -476,7 +476,7 @@ Sample without guarantee, not legal advice – have it checked by an expert if i
 
 ## Region packages { #regionspakete }
 
-Data that each country needs and that can change belongs in a **region package** rather than in the core (dms #1696, package “Region Deutschland”: dms-registry #244). From **Ablago 0.332.0** (`DMS_REGIONSPAKETE_AB` in `shared/src/regionspaket.ts`) a package brings one file for this – purely descriptive, without code, so the package stays at the `vorlagen` level. Older Ablago skip `inhalt.region`; packages using it require `dms: ">=0.332.0"`. Date, time and numbers stay in the core (`Intl`).
+Data that each country needs and that can change belongs in a **region package** rather than in the core (dms #1696, package “Region Deutschland”: dms-registry #244). From **Ablago 0.333.0** (`DMS_REGIONSPAKETE_AB` in `shared/src/regionspaket.ts`) a package brings one file for this – purely descriptive, without code, so the package stays at the `vorlagen` level. Older Ablago skip `inhalt.region`; packages using it require `dms: ">=0.333.0"`. Date, time and numbers stay in the core (`Intl`).
 
 ```yaml
 # manifest.yaml

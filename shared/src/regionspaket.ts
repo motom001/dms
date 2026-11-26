@@ -12,8 +12,8 @@ import { t } from './texte';
  * des Kerns (Werkbank → Region): Das Paket liefert nur Regeln und die Liste der Regionen.
  */
 
-/** Ab dieser Ablago-Version wirkt `inhalt.region`; ältere übergehen die Angabe (Paket: `dms: ">=0.332.0"`). */
-export const DMS_REGIONSPAKETE_AB = '0.332.0';
+/** Ab dieser Ablago-Version wirkt `inhalt.region`; ältere übergehen die Angabe (Paket: `dms: ">=0.333.0"`). */
+export const DMS_REGIONSPAKETE_AB = '0.333.0';
 
 /** Größe von `inhalt/region.yaml` (#1696). */
 export const REGION_DATEI_MAX = 64 * 1024;

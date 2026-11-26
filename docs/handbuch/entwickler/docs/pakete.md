@@ -48,7 +48,7 @@ Dann ausfüllen:
 | `inhalt/rundgaenge.yaml` | optional (dms #831): [Rundgänge](entdecken.md#paket-rundgaenge) durch eine Aufgabe |
 | `texte/<sprache>/entdecken.json` | optional (dms #1307): Texte der Rundgänge und Tipps je Sprache, Deutsch als Grundsprache ([Sprachen](entdecken.md#paket-rundgaenge-sprachen)); ältere Pakete schreiben sie direkt in die YAML-Dateien |
 | `inhalt/tipps.yaml` | optional (dms #832): [Tipps](entdecken.md#paket-tipps), höchstens 20, auch „Neu in Version …“ |
-| `inhalt/region.yaml` | optional (ab Ablago 0.332.0, `DMS_REGIONSPAKETE_AB`, dms #1696): [Regionspaket](#regionspakete) – Feiertage und Regionen eines Landes als Regeln |
+| `inhalt/region.yaml` | optional (ab Ablago 0.333.0, `DMS_REGIONSPAKETE_AB`, dms #1696): [Regionspaket](#regionspakete) – Feiertage und Regionen eines Landes als Regeln |
 | `README.md`, `LICENSE`, `CHANGELOG.md` | Beschreibung, Lizenztext, Änderungen je Version |
 | `tests/erwartung.yaml` | was nach der Installation da sein muss |
 
@@ -541,7 +541,7 @@ Die CI der Registry prüft Schlüssel, Platzhalter und HTML wie Ablago und melde
 
 ## Regionspakete { #regionspakete }
 
-Was je Land Daten braucht und sich ändern kann, gehört in ein **Regionspaket** statt in den Kern (dms #1696, Paket „Region Deutschland“: dms-registry #244). Ab **Ablago 0.332.0** (`DMS_REGIONSPAKETE_AB` in `shared/src/regionspaket.ts`) bringt ein Paket dafür eine Datei mit – rein beschreibend, ohne Code, das Paket bleibt auf der Stufe `vorlagen`. Ältere Ablago übergehen `inhalt.region`; Pakete damit verlangen `dms: ">=0.332.0"`. Datum, Uhrzeit und Zahlen bleiben im Kern (`Intl`).
+Was je Land Daten braucht und sich ändern kann, gehört in ein **Regionspaket** statt in den Kern (dms #1696, Paket „Region Deutschland“: dms-registry #244). Ab **Ablago 0.333.0** (`DMS_REGIONSPAKETE_AB` in `shared/src/regionspaket.ts`) bringt ein Paket dafür eine Datei mit – rein beschreibend, ohne Code, das Paket bleibt auf der Stufe `vorlagen`. Ältere Ablago übergehen `inhalt.region`; Pakete damit verlangen `dms: ">=0.333.0"`. Datum, Uhrzeit und Zahlen bleiben im Kern (`Intl`).
 
 ```yaml
 # manifest.yaml
