@@ -1,0 +1,45 @@
+# Feiertage und Regionen für Deutschland als Regeln (#1696) – Inhalt von inhalt/region.yaml im Paket
+# „Region Deutschland“ (dms-registry #244). Entspricht genau dem eingebauten Rechner shared/src/feiertage.ts
+# (Test: server/test/regionspaket.test.ts, alle 16 Bundesländer, 1990–2100). Nur landesweite Feiertage;
+# Feiertage einzelner Gemeinden und einmalige Feiertage fehlen bewusst. Bei gleichem Tag gewinnt die spätere Regel.
+land: DE
+regionen:
+  - { id: BW, name: { de: Baden-Württemberg, en: Baden-Württemberg } }
+  - { id: BY, name: { de: Bayern, en: Bavaria } }
+  - { id: BE, name: { de: Berlin, en: Berlin } }
+  - { id: BB, name: { de: Brandenburg, en: Brandenburg } }
+  - { id: HB, name: { de: Bremen, en: Bremen } }
+  - { id: HH, name: { de: Hamburg, en: Hamburg } }
+  - { id: HE, name: { de: Hessen, en: Hesse } }
+  - { id: MV, name: { de: Mecklenburg-Vorpommern, en: Mecklenburg-Western Pomerania } }
+  - { id: NI, name: { de: Niedersachsen, en: Lower Saxony } }
+  - { id: NW, name: { de: Nordrhein-Westfalen, en: North Rhine-Westphalia } }
+  - { id: RP, name: { de: Rheinland-Pfalz, en: Rhineland-Palatinate } }
+  - { id: SL, name: { de: Saarland, en: Saarland } }
+  - { id: SN, name: { de: Sachsen, en: Saxony } }
+  - { id: ST, name: { de: Sachsen-Anhalt, en: Saxony-Anhalt } }
+  - { id: SH, name: { de: Schleswig-Holstein, en: Schleswig-Holstein } }
+  - { id: TH, name: { de: Thüringen, en: Thuringia } }
+feiertage:
+  - { name: { de: Neujahr, en: New Year’s Day }, datum: '01-01' }
+  - { name: { de: Heilige Drei Könige, en: Epiphany }, datum: '01-06', regionen: [BW, BY, ST] }
+  - { name: { de: Internationaler Frauentag, en: International Women’s Day }, datum: '03-08', regionen: [BE], ab: 2019 }
+  - { name: { de: Internationaler Frauentag, en: International Women’s Day }, datum: '03-08', regionen: [MV], ab: 2023 }
+  - { name: { de: Karfreitag, en: Good Friday }, ostern: -2 }
+  - { name: { de: Ostersonntag, en: Easter Sunday }, ostern: 0, regionen: [BB] }
+  - { name: { de: Ostermontag, en: Easter Monday }, ostern: 1 }
+  - { name: { de: Tag der Arbeit, en: Labour Day }, datum: '05-01' }
+  - { name: { de: Christi Himmelfahrt, en: Ascension Day }, ostern: 39 }
+  - { name: { de: Pfingstsonntag, en: Whit Sunday }, ostern: 49, regionen: [BB] }
+  - { name: { de: Pfingstmontag, en: Whit Monday }, ostern: 50 }
+  - { name: { de: Fronleichnam, en: Corpus Christi }, ostern: 60, regionen: [BW, BY, HE, NW, RP, SL] }
+  - { name: { de: Mariä Himmelfahrt, en: Assumption Day }, datum: '08-15', regionen: [SL] }
+  - { name: { de: Weltkindertag, en: World Children’s Day }, datum: '09-20', regionen: [TH], ab: 2019 }
+  - { name: { de: Tag der Deutschen Einheit, en: Day of German Unity }, datum: '10-03' }
+  - { name: { de: Reformationstag, en: Reformation Day }, datum: '10-31', regionen: [BB, MV, SN, ST, TH] }
+  - { name: { de: Reformationstag, en: Reformation Day }, datum: '10-31', regionen: [HB, HH, NI, SH], ab: 2018 }
+  - { name: { de: Reformationstag, en: Reformation Day }, datum: '10-31', jahre: [2017] }
+  - { name: { de: Allerheiligen, en: All Saints’ Day }, datum: '11-01', regionen: [BW, BY, NW, RP, SL] }
+  - { name: { de: Buß- und Bettag, en: Day of Repentance and Prayer }, vorDatum: { wochentag: 3, datum: '11-23' }, regionen: [SN] }
+  - { name: { de: 1. Weihnachtstag, en: Christmas Day }, datum: '12-25' }
+  - { name: { de: 2. Weihnachtstag, en: Second Day of Christmas }, datum: '12-26' }
