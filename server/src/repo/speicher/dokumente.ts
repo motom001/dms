@@ -31,6 +31,9 @@ export function speicherDokumente(sp: SpeicherKontext) {
       const d = dokumente.get(id);
       return d && { ...kopie(d), aeltere: versionen.get(d.id)?.length ?? 0 };
     },
+    async mappenVonDokumenten(ids) {
+      return new Map(ids.filter((id) => dokumente.has(id)).map((id) => [id, dokumente.get(id)!.mappeId] as const));
+    },
     async setzeDokumentErstellt(id, erstellt) {
       const d = dokumente.get(id);
       if (d) d.erstellt = erstellt;

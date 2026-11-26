@@ -122,6 +122,12 @@ export class Vektorindex {
     this.massstab[i] = max > 0 ? max / 127 / (norm(v) || 1) : 0;
   }
 
+  /** Mappe eines Dokuments nachtragen (#1688: nach Zuordnen oder Verschieben), ohne den Vektor anzufassen. */
+  setzeMappe(dokumentId: string, mappeId: string) {
+    const i = this.platz.get(dokumentId);
+    if (i !== undefined) this.mappe[i] = mappeId;
+  }
+
   entferne(dokumentId: string) {
     const i = this.platz.get(dokumentId);
     if (i === undefined) return;

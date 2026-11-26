@@ -11,6 +11,11 @@ export interface RepoDokumente {
   /** Anzahl (lebender) Dokumente je Mappe (#396); Mappen ohne fehlen. */
   zaehleDokumente(mappeIds: string[]): Promise<Map<string, number>>;
   holeDokument(id: string): Promise<Dokument | undefined>;
+  /**
+   * Aktuelle Mappe je Dokument (#1688): für den Vektor-Index, der nach Zuordnen oder Verschieben sonst die alte Mappe
+   * kennt. Gelöschte und unbekannte Dokumente fehlen.
+   */
+  mappenVonDokumenten(ids: string[]): Promise<Map<string, string>>;
   legeDokumentAn(d: Dokument): Promise<Dokument>;
   /** „Hochgeladen am“ eines Dokuments setzen (#878: Beispiel-Dokumente mit Datum aus dem Paket). */
   setzeDokumentErstellt(id: string, erstellt: string): Promise<void>;

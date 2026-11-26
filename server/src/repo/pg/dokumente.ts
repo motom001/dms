@@ -35,6 +35,12 @@ export function pgDokumente(k: PgKontext) {
         FROM dokumente d WHERE d.haushalt_id = ${haushaltId} AND d.id = ${id}`;
       return r ? alsDokument(r) : undefined;
     },
+    async mappenVonDokumenten(ids) {
+      const gueltig = [...new Set(ids.filter(istUuid))];
+      if (!gueltig.length) return new Map();
+      const r = await sql`SELECT id, mappe_id FROM dokumente WHERE haushalt_id = ${haushaltId} AND id = ANY(${gueltig}::uuid[])`;
+      return new Map(r.map((z) => [z.id as string, z.mappe_id as string]));
+    },
     async setzeDokumentErstellt(id, erstellt) {
       if (istUuid(id)) await sql`UPDATE dokumente SET erstellt = ${erstellt} WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
     },
