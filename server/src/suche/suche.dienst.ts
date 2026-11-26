@@ -96,7 +96,12 @@ export class SucheDienst {
    */
   vektorAnbieter?: {
     paket(): string | null;
-    vektorFuer(text: string, ms: number): Promise<{ paket: string; modell: string; vektor: Float32Array; schwelle: number } | null>;
+    /** `art` (#1706): Suchbegriff bzw. Frage oder Text eines Dokuments; fehlt = Suchbegriff. */
+    vektorFuer(
+      text: string,
+      ms: number,
+      art?: 'suche' | 'dokument',
+    ): Promise<{ paket: string; modell: string; vektor: Float32Array; schwelle: number } | null>;
   };
   /** Zwischenspeicher je Modell (beim ersten Bedarf aus der Datenbank geladen). */
   private vektorIndizes = new Map<string, Promise<Vektorindex | null>>();
@@ -593,7 +598,8 @@ export class SucheDienst {
   ): Promise<Array<{ typ: string; aehnlichkeit: number }> | null> {
     if (this.vektorAnbieter?.paket() !== paket || text.trim().length < 3 || !typen.size) return null;
     const start = Date.now();
-    const q = await this.vektorAnbieter.vektorFuer(text, ms).catch(() => null);
+    // Der Text eines Dokuments, kein Suchbegriff (#1706).
+    const q = await this.vektorAnbieter.vektorFuer(text, ms, 'dokument').catch(() => null);
     if (!q || q.paket !== paket) return null;
     await this.merkeVektorModell(q.paket, q.modell);
     if (!this.vektorGeladen.has(q.modell)) {

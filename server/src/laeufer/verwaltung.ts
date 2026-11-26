@@ -28,7 +28,7 @@ export class Paketlaeufer extends PaketlaeuferPakete implements PaketLaeufer {
     this.grenzen = { ...STANDARD_GRENZEN, ...o.grenzen };
     o.dienst.ereignisWecker = () => void this.stelleZu();
     // Vektoren (#442): Der Kern fragt das Paket mit dms:vektoren nach dem Vektor eines Suchbegriffs.
-    o.dienst.suche.vektorAnbieter = { paket: () => this.vektorPaket(), vektorFuer: (t, ms) => this.vektorFuer(t, ms) };
+    o.dienst.suche.vektorAnbieter = { paket: () => this.vektorPaket(), vektorFuer: (t, ms, art) => this.vektorFuer(t, ms, art) };
     // „Frag deine Ablage“ (#444): Das Paket mit dms:antworten beantwortet Fragen aus den Ausschnitten des Kerns.
     o.dienst.fragen.anbieter = {
       paket: () => this.paketMit('dms:antworten'),

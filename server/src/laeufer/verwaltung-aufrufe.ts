@@ -17,6 +17,9 @@ import {
 } from './verwaltung-hilfen';
 import type { NetzEintrag } from './prozess';
 
+/** Was `dms:vektor` rechnet (#1706): einen Suchbegriff bzw. eine Frage oder den Text eines Dokuments. */
+export type VektorArt = 'suche' | 'dokument';
+
 export abstract class PaketlaeuferAufrufe extends PaketlaeuferBasis {
   /* ---------- Vektoren (#442) ---------- */
 
@@ -86,12 +89,16 @@ export abstract class PaketlaeuferAufrufe extends PaketlaeuferBasis {
    * Fragt das Paket nach dem Vektor eines Textes: Aktion „dms:vektor“ mit { text }; Antwort (Ergebnis) als JSON
    * { modell, vektor, schwelle? }. Leerer Text: nur das Modell. null = kein Paket, keine Antwort in ms, Fehler.
    */
-  async vektorFuer(text: string, ms: number): Promise<{ paket: string; modell: string; vektor: Float32Array; schwelle: number } | null> {
-    // Die Suche fragt beim Tippen oft nach demselben Begriff: die letzten Antworten merken.
-    const k = text.trim().toLowerCase();
+  async vektorFuer(
+    text: string,
+    ms: number,
+    art: VektorArt = 'suche',
+  ): Promise<{ paket: string; modell: string; vektor: Float32Array; schwelle: number } | null> {
+    // Die Suche fragt beim Tippen oft nach demselben Begriff: die letzten Antworten merken (je Art getrennt).
+    const k = `${art}:${text.trim().toLowerCase()}`;
     const alt = this.suchvektoren.get(k);
     if (alt && alt.paket === this.vektorPaket()) return alt;
-    const r = await this.vektorAnfrage(text, ms);
+    const r = await this.vektorAnfrage(text, ms, art);
     if (!r?.vektor) return null;
     const erg = { paket: r.paket, modell: r.modell, vektor: r.vektor, schwelle: r.schwelle };
     this.suchvektoren.set(k, erg);
@@ -102,6 +109,7 @@ export abstract class PaketlaeuferAufrufe extends PaketlaeuferBasis {
   private async vektorAnfrage(
     text: string,
     ms: number,
+    art?: VektorArt,
   ): Promise<{ paket: string; modell: string; vektor: Float32Array | null; schwelle: number } | null> {
     // Leerer Text fragt nur das Modell – das braucht der Nachlauf, und der gilt dem gewählten Paket (#1707).
     const paket = text ? this.vektorPaket() : this.vektorZiel();
@@ -111,7 +119,8 @@ export abstract class PaketlaeuferAufrufe extends PaketlaeuferBasis {
     const r = await this.rufe(
       paket,
       'aktion',
-      { aktion: 'dms:vektor', text: text.slice(0, 2000) },
+      // `art` (#1706): Suchbegriff oder Dokument – genauere Modelle rechnen beides unterschiedlich („query:“/„passage:“).
+      { aktion: 'dms:vektor', text: text.slice(0, 2000), ...(text && art ? { art } : {}) },
       {
         ms,
         vorrang: true,
