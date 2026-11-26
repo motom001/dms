@@ -92,6 +92,12 @@ export interface VektorStand {
   modelle: Array<{ paket: string; modell: string; anzahl: number }>;
   suche: boolean;
   zwischenspeicherMB: number | null;
+  /** Installierte Pakete mit dms:vektoren (#1707); msJeDokument: gemessen, nur bei mehreren. */
+  pakete: Array<{ id: string; name: string; msJeDokument: number | null }>;
+  /** „Vektoren von“ (#1707): gewähltes Paket; null = wie bisher das erste nach Id. */
+  gewaehlt: string | null;
+  /** Laufender Wechsel (#1707): bis der Nachlauf fertig ist, sucht Ablago mit `von`. */
+  wechsel: { von: string; nach: string; modell: string | null; mitVektor: number } | null;
 }
 /** Volltext und Texterkennung (#45, #459): Stand, Werkzeuge und Einstellungen für die Werkbank. */
 export interface OcrEinstellungen {
@@ -158,6 +164,7 @@ export const sucheApi = {
   vektorStand: () => anfrage<VektorStand>('GET', '/api/werkbank/vektoren'),
   vektorSuche: (suche: boolean) => anfrage<VektorStand>('PUT', '/api/werkbank/vektoren', { suche }),
   vektorenNeu: () => anfrage<{ entfernt: number }>('POST', '/api/werkbank/vektoren/neu'),
+  vektorPaketWaehlen: (paket: string) => anfrage<VektorStand>('PUT', '/api/werkbank/vektoren/paket', { paket }),
   /* Suche (#356) */
   sucheStand: () => anfrage<SucheStand>('GET', '/api/werkbank/suche'),
   sucheSetze: (e: { unscharf?: boolean; meintest?: Meintest }) => anfrage<SucheStand>('PUT', '/api/werkbank/suche', e),

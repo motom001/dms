@@ -57,6 +57,7 @@
   "routen.es-gibt-noch-keinen-2": "There is no export yet.",
   "routen.dein-export-ist-groesser": "Your export is larger than 4 GB. Ask the person who administers Ablago to give it to you from the folder.",
   "routen.pakete-mit-code-laufen": "Packages with code don’t run in this installation.",
+  "routen.vektor-paket-fehlt": "Which package should supply the vectors? Please name a package.",
   "routen.bitte-den-wechsel-bestaetigen": "Please confirm the change.",
   "routen.gerade-laeuft-eine-sicherung": "A backup is running right now. Please wait until it has finished.",
   "routen.diese-adresse-ist-nicht": "This address isn’t locked.",

@@ -49,6 +49,11 @@ export abstract class PaketlaeuferBasis {
   protected nachlauf = new Map<string, { modell: string; nach: string | null; pauseBis: number }>();
   protected nachlaufUhr: ReturnType<typeof setInterval> | null = null;
   protected nachlaufLaeuft = false;
+  /**
+   * Wahl „Vektoren von“ (#1707), gelesen beim Abgleich der Pakete: `von` rechnet, `bisher` liefert die Vektoren der
+   * Suche, bis der Nachlauf von `von` durch ist. Beides null = wie vor #1707 (das erste Paket nach Id).
+   */
+  protected vektorWahl: { von: string | null; bisher: string | null } = { von: null, bisher: null };
   /** Laufende Aufrufe von Paket-Aktionen (#1039): Aufruf-Nummer → Paket, eingeschränkter Zugriff, abgelegte Dateien. */
   protected zugaenge = new Map<number, AktionsZugang>();
   /** Gescheiterte Schreibversuche eines Aufrufs an die API (#1491): Aufruf-Nummer → „PUT /mappen/… → 409 …“. */

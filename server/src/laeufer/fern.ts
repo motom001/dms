@@ -46,6 +46,8 @@ export interface LaeuferSicht {
   start(): Promise<void>;
   uebersicht(): ReturnType<Paketlaeufer['uebersicht']>;
   vektorenNeu(): Promise<{ entfernt: number }>;
+  /** „Vektoren von“ (#1707). */
+  waehleVektorPaket(paket: string): Promise<void>;
 }
 
 export function schnappschuss(l: Paketlaeufer, d: Dienst): LaeuferSchnappschuss {
@@ -88,6 +90,7 @@ export function bedieneLaeufer(v: Verbund, l: Paketlaeufer, d: Dienst): void {
   );
   v.bediene('laeufer.uebersicht', () => l.uebersicht());
   v.bediene('laeufer.vektorenNeu', () => l.vektorenNeu());
+  v.bediene('laeufer.waehleVektorPaket', ([paket]) => l.waehleVektorPaket(String(paket)));
   v.hoere('laeufer.stelleZu', () => void l.stelleZu());
   if (!v.mehrere) return;
   let zuletzt = '';
@@ -188,5 +191,8 @@ export class Fernlaeufer implements PaketLaeufer, LaeuferSicht {
   }
   vektorenNeu() {
     return this.v.rufe<{ entfernt: number }>('laeufer.vektorenNeu');
+  }
+  async waehleVektorPaket(paket: string) {
+    await this.v.rufe('laeufer.waehleVektorPaket', [paket]);
   }
 }

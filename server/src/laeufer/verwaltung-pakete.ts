@@ -31,6 +31,8 @@ export abstract class PaketlaeuferPakete extends PaketlaeuferZustellen {
     // Angehalten (#1563): startet nicht, bekommt nichts, sein Dienstkonto ist aus – bis „Fortsetzen“.
     this.pakete = alle.filter((p) => p.laeufer?.modul && !p.angehalten);
     this.angehalten = alle.filter((p) => p.angehalten).map((p) => p.id);
+    // Wahl „Vektoren von“ (#1707): nach einem Neustart weiter wie gewählt, auch mitten in einem Wechsel.
+    this.vektorWahl = await this.o.dienst.suche.vektorWahl().catch(() => this.vektorWahl);
     // Dienstkonten: je Paket mit Code eins; für entfernte ausschalten.
     for (const p of this.pakete) {
       const b = await this.o.konten.dienstkonto(p.id, p.name);
@@ -197,7 +199,7 @@ export abstract class PaketlaeuferPakete extends PaketlaeuferZustellen {
           if (p.fehler) log.warn('Paket-Läufer: Modul abgelehnt', { paket: p.id, fehler: p.fehler });
         }
         // Vektoren (#442): gleich das Modell erfragen und den Zwischenspeicher laden, nicht erst nach 30 s.
-        if (this.vektorPaket() && !this.nachlauf.has(this.vektorPaket()!))
+        if (this.vektorZiel() && !this.nachlauf.has(this.vektorZiel()!))
           setTimeout(() => void this.nachberechnen(), this.o.nachlaufErstMs ?? 1000).unref?.();
         return;
       case 'log':

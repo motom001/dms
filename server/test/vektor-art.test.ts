@@ -29,6 +29,7 @@ describe('dms:vektor mit Art (#1706)', () => {
     const gesendet: unknown[] = [];
     const x = l as unknown as Record<string, unknown>;
     x.vektorPaket = () => 'ki_genau';
+    x.vektorZiel = () => 'ki_genau'; // Modellabfrage geht an das gewählte Paket (#1707)
     x.laeuft = () => true;
     x.rufe = async (_p: string, _w: string, daten: unknown) => {
       gesendet.push(daten);

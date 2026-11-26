@@ -238,7 +238,7 @@ function Zusaetze({ x }: { x: DetailZustand }) {
 function CodeZusaetze({ id, l, r }: { id: string; l: NonNullable<InstalliertesPaket['laeufer']>; r: DetailZustand['r'] }) {
   return (
     <>
-      {hatSchnittstelle(l, 'dms:vektoren') && <VektorStandBlock />}
+      {hatSchnittstelle(l, 'dms:vektoren') && <VektorStandBlock paket={id} />}
       {hatSchnittstelle(l, 'dms:klassifizieren') && <KlassifizierenBlock netz={hatNetz(l)} />}
       {/* KI-Dienste (#796, #996): nur, aus wie vielen Mappentypen das Paket Inhalte bekommt – zulassen in den Einstellungen. */}
       {istKiPaket(l) && (

@@ -779,6 +779,16 @@ Everyone only sees folders they may read. The package supplies the vector of the
 | **Cache** | how much memory the vectors occupy in Ablago |
 | **Similar results in the search** | switch, default: on. Off: the search no longer asks the package; "Similar documents" on the folder remain. |
 | **Recalculate** | deletes all vectors; the package recalculates them in the background |
+| **Vectors from** | only when several packages with this permission are installed: which package supplies the vectors |
+| **Switching to …** | only during a switch: for how many documents the new package has already computed ("x of y documents") |
+
+**Several packages with vectors** (for instance **Local AI – similarity** and **Local AI – similarity, accurate**): only one of them supplies the vectors. Without a choice it is, as before, the first by its identifier. You choose on the other package's page with **Vectors from this package**. Ablago asks first and says roughly how long recalculating takes – from the number of documents and the time the package has needed per document so far. If it hasn't computed any documents yet, it only says that this can take hours on small devices (such as a Raspberry Pi). During the switch:
+
+- the new package recalculates the existing stock in the background, throttled as described below; the line **Switching to …** shows the progress;
+- Ablago keeps searching with the previous package's vectors – "Similar documents" and similar results stay complete;
+- both packages get new documents, so neither has gaps.
+
+Once the stock is done, Ablago searches with the new package and removes the previous package's vectors. From then on only the chosen package computes. If you choose the previous package again during a switch, Ablago cancels the switch and removes the vectors the new one has computed so far. If the chosen package is removed or paused, the first by identifier supplies the vectors again.
 
 **Existing stock and change of model:** after installation the package first only computes new documents. Ablago catches up the existing stock at a throttled pace: when the package has nothing open any more, it gets up to 50 documents without a vector every 30 seconds (event [Full text ready](#ereignis-volltext-fertig)). If the package reports **another model** after an update, the old vectors are invalid: Ablago deletes them and has them recalculated in the same way. Until then, similar documents are missing for the documents still open.
 

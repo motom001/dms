@@ -3,6 +3,7 @@
  */
 import { PassThrough } from 'node:stream';
 import { Fachfehler } from '../grundlagen/fehler';
+import { protokoll } from '../protokoll/protokoll';
 import { t } from '../sprache/sprache';
 import { ok, ich } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
@@ -135,6 +136,24 @@ export function sucheRouten(k: RoutenKontext): Route[] {
       zugang: 'admin',
       handler: async (a) => {
         await dienst.suche.setzeVektorEinstellung(a.body);
+        return ok(await dienst.suche.vektorStand());
+      },
+    },
+    // „Vektoren von“ (#1707): nur auf ausdrücklichen Wunsch; der Paket-Läufer rechnet nach, die Suche bleibt beim bisherigen.
+    {
+      methode: 'PUT',
+      pfad: '/api/werkbank/vektoren/paket',
+      zugang: 'admin',
+      handler: async (a) => {
+        const paket = (a.body as { paket?: unknown } | null)?.paket;
+        if (typeof paket !== 'string' || !paket) throw new Fachfehler(422, t('meldungen.routen.vektor-paket-fehlt'));
+        if (!x.paketlaeufer) throw new Fachfehler(404, t('meldungen.routen.pakete-mit-code-laufen'));
+        try {
+          await x.paketlaeufer.waehleVektorPaket(paket);
+        } catch (e) {
+          throw e instanceof Fachfehler ? e : new Fachfehler(409, (e as Error).message);
+        }
+        protokoll.modul('werkbank').info('Vektoren von', { von: ich(a).email, paket });
         return ok(await dienst.suche.vektorStand());
       },
     },
