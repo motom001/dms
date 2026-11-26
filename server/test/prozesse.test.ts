@@ -637,6 +637,9 @@ describe('Weitere Prozesse geben Arbeit an den Leiter (#745)', () => {
       },
       uebersicht: async () => ({ laeuft: true }),
       vektorenNeu: async () => ({ entfernt: 3 }),
+      waehleVektorPaket: async (p: string) => {
+        aufrufe.push(`vektoren von ${p}`);
+      },
       stelleZu: async () => {
         aufrufe.push('zustellen');
       },
@@ -678,9 +681,11 @@ describe('Weitere Prozesse geben Arbeit an den Leiter (#745)', () => {
     assert.equal(Buffer.from(schritt.dateien[0].inhalt).toString(), 'A');
     await f.codeGeaendert();
     assert.deepEqual(await f.vektorenNeu(), { entfernt: 3 });
+    // „Vektoren von“ (#1707) wählt der Leiter.
+    await f.waehleVektorPaket('paket.v2');
     d.ereignisWecker!();
     await new Promise((r) => setTimeout(r, 5));
-    assert.deepEqual(aufrufe, ['aktion paket.a testen', 'mappenaktion paket.a m1', 'code', 'zustellen']);
+    assert.deepEqual(aufrufe, ['aktion paket.a testen', 'mappenaktion paket.a m1', 'code', 'vektoren von paket.v2', 'zustellen']);
   });
 });
 

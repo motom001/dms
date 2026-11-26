@@ -779,6 +779,16 @@ Jeder sieht dabei nur Mappen, die er lesen darf. Den Vektor des Suchbegriffs lie
 | **Zwischenspeicher** | wie viel Arbeitsspeicher die Vektoren in Ablago belegen |
 | **Ähnliche Treffer in der Suche** | Schalter, Standard: an. Aus: Die Suche fragt das Paket nicht mehr; „Ähnliche Dokumente“ an der Mappe bleiben. |
 | **Neu berechnen** | löscht alle Vektoren; das Paket rechnet sie im Hintergrund neu |
+| **Vektoren von** | nur, wenn mehrere Pakete mit diesem Recht installiert sind: welches Paket die Vektoren liefert |
+| **Wechsel zu …** | nur während eines Wechsels: für wie viele Dokumente das neue Paket schon gerechnet hat („x von y Dokumenten“) |
+
+**Mehrere Pakete mit Vektoren** (etwa **KI lokal – Ähnlichkeit** und **KI lokal – Ähnlichkeit genau**): Die Vektoren liefert immer nur eins. Ohne Wahl ist es wie bisher das erste nach seiner Kennung. Wählen kannst du auf der Seite des anderen Pakets mit **Vektoren von diesem Paket**. Vorher fragt Ablago nach und nennt, wie lange das Nachrechnen ungefähr dauert – aus der Zahl der Dokumente und der Zeit, die das Paket bisher je Dokument gebraucht hat. Hat es noch keine Dokumente gerechnet, steht dort nur, dass es auf kleinen Geräten (etwa einem Raspberry Pi) Stunden dauern kann. Während des Wechsels:
+
+- rechnet das neue Paket den Bestand im Hintergrund nach, gedrosselt wie unten beschrieben; den Fortschritt zeigt die Zeile **Wechsel zu …**;
+- sucht Ablago weiter mit den Vektoren des bisherigen Pakets – „Ähnliche Dokumente“ und ähnliche Treffer bleiben also vollständig;
+- bekommen beide Pakete neue Dokumente, damit keines Lücken hat.
+
+Ist der Bestand durch, sucht Ablago mit dem neuen Paket und entfernt die Vektoren des bisherigen. Ab dann rechnet nur noch das gewählte Paket. Wählst du während eines Wechsels wieder das bisherige Paket, bricht Ablago den Wechsel ab und entfernt die schon gerechneten Vektoren des neuen. Ist das gewählte Paket entfernt oder angehalten, liefert wieder das erste nach Kennung die Vektoren.
 
 **Bestand und Modellwechsel:** Nach der Installation rechnet das Paket zuerst nur neue Dokumente. Den Bestand holt Ablago gedrosselt nach: Hat das Paket nichts mehr offen, bekommt es alle 30 Sekunden bis zu 50 Dokumente ohne Vektor (Ereignis [Volltext ist da](#ereignis-volltext-fertig)). Meldet das Paket nach einem Update ein **anderes Modell**, sind die alten Vektoren ungültig: Ablago löscht sie und lässt sie auf dieselbe Weise neu berechnen. Bis dahin fehlen ähnliche Dokumente für die noch offenen Dokumente.
 

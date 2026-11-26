@@ -16,6 +16,7 @@ import {
   type Meintest,
   type Varianten,
 } from '../../../shared/src/suche';
+import { hatSchnittstelle } from '../../../shared/src/pakete';
 import { Fachfehler } from '../grundlagen/fehler';
 import { MB } from '../grundlagen/grenzen';
 import type { Kern, Zugreifender, Zugriff } from '../kern';
@@ -33,6 +34,16 @@ const AEHNLICH_MERKEN_MAX = 2000;
 const SYNONYM_GRUPPEN_MAX = 2000;
 /** So lange wartet die Suche höchstens auf den Vektor des Suchbegriffs (#442); danach ohne Ähnlichkeit. */
 export const SUCHE_VEKTOR_MS = 1500;
+/** Gemessene Zeit je Dokument (#1707): aus so vielen der letzten Einträge im Verlauf des Pakets, ab so vielen Messungen. */
+const MESSUNG_EINTRAEGE = 200;
+const MESSUNG_MIN = 3;
+
+/** Wahl „Vektoren von“ (#1707): `von` rechnet; `bisher` liefert die Vektoren der Suche, bis der Nachlauf von `von` durch ist. */
+export interface VektorWahl {
+  von: string | null;
+  bisher: string | null;
+}
+
 const liesModellOder422 = (x: unknown) => {
   try {
     return liesModell(x);
@@ -307,8 +318,23 @@ export class SucheDienst {
     if (!this.einstellungen) throw new Fachfehler(404, t('meldungen.dienst.einstellungen-sind-nicht'));
     const x = (e ?? {}) as { suche?: unknown };
     if (typeof x.suche !== 'boolean') throw new Fachfehler(422, t('meldungen.dienst.suche-true-oder-false'));
-    await this.einstellungen.schreibe('vektoren', x.suche ? null : { suche: false });
+    await this.schreibeVektoren({ suche: x.suche, ...(await this.vektorWahl()) });
     return this.vektorEinstellung();
+  }
+  /** „Vektoren von“ (#1707) – in derselben Einstellung wie `suche`; ohne Wahl beides null. */
+  async vektorWahl(): Promise<VektorWahl> {
+    const v = (await this.einstellungen?.lies('vektoren')) as { von?: unknown; bisher?: unknown } | null;
+    return { von: typeof v?.von === 'string' ? v.von : null, bisher: typeof v?.bisher === 'string' ? v.bisher : null };
+  }
+  /** Schreibt der Paket-Läufer (Wahl in der Werkbank, Wechsel fertig). */
+  async setzeVektorWahl(w: VektorWahl): Promise<void> {
+    if (!this.einstellungen) throw new Fachfehler(404, t('meldungen.dienst.einstellungen-sind-nicht'));
+    await this.schreibeVektoren({ ...(await this.vektorEinstellung()), ...w });
+  }
+  /** Gespeichert sind nur Abweichungen von der Vorgabe; ohne sie bleibt die Einstellung leer (wie vor #1707). */
+  private async schreibeVektoren(e: { suche: boolean } & VektorWahl): Promise<void> {
+    const x = { ...(e.suche ? {} : { suche: false }), ...(e.von ? { von: e.von } : {}), ...(e.bisher ? { bisher: e.bisher } : {}) };
+    await this.einstellungen!.schreibe('vektoren', Object.keys(x).length ? x : null);
   }
 
   /**
@@ -609,7 +635,10 @@ export class SucheDienst {
     return erg;
   }
 
-  /** Für die Werkbank: Vektoren je Modell, Dokumente mit Volltext, Einstellung. */
+  /**
+   * Für die Werkbank: Vektoren je Modell, Dokumente mit Volltext, Einstellung. Seit #1707 auch die installierten Pakete
+   * mit dms:vektoren (die Wahl zeigt die Werkbank erst ab zweien), die Wahl und ein laufender Wechsel mit Fortschritt.
+   */
   async vektorStand(): Promise<{
     paket: string | null;
     modell: string | null;
@@ -618,20 +647,54 @@ export class SucheDienst {
     modelle: Array<{ paket: string; modell: string; anzahl: number }>;
     suche: boolean;
     zwischenspeicherMB: number | null;
+    pakete: Array<{ id: string; name: string; msJeDokument: number | null }>;
+    gewaehlt: string | null;
+    wechsel: { von: string; nach: string; modell: string | null; mitVektor: number } | null;
   }> {
     const paket = this.vektorAnbieter?.paket() ?? null;
     const modell = paket ? (this.vektorModelle.get(paket) ?? null) : this.aktuellesVektorModell();
     const modelle = await this.repo.vektorStand();
     const index = modell && this.vektorIndizes.has(modell) ? await this.vektorIndex(modell) : null;
+    const wahl = await this.vektorWahl();
     return {
       paket,
       modell,
       modelle,
-      mitVektor: modelle.filter((m) => m.paket === paket && m.modell === modell).reduce((n, m) => n + m.anzahl, 0),
+      mitVektor: anzahlVon(modelle, paket, modell),
       mitVolltext: await this.repo.mitVolltext(),
       suche: (await this.vektorEinstellung()).suche,
       zwischenspeicherMB: index ? Math.round(index.bytes / 104857.6) / 10 : null,
+      pakete: await this.vektorPakete(),
+      gewaehlt: wahl.von,
+      wechsel: wahl.von && wahl.bisher && wahl.von !== wahl.bisher ? this.vektorWechsel(wahl.bisher, wahl.von, modelle) : null,
     };
+  }
+
+  /** Fortschritt eines Wechsels (#1707): Vektoren des neuen Pakets zu seinem Modell (ohne gemeldetes Modell das häufigste). */
+  private vektorWechsel(von: string, nach: string, modelle: Array<{ paket: string; modell: string; anzahl: number }>) {
+    const modell =
+      this.vektorModelle.get(nach) ?? modelle.filter((m) => m.paket === nach).sort((a, b) => b.anzahl - a.anzahl)[0]?.modell ?? null;
+    return { von, nach, modell, mitVektor: anzahlVon(modelle, nach, modell) };
+  }
+
+  /**
+   * Installierte, nicht angehaltene Pakete mit dms:vektoren (#1707). Bei mehreren je Paket die gemessene Zeit je
+   * Dokument – der Median der letzten erfolgreichen „Volltext ist da“ im Verlauf – für die geschätzte Dauer eines Wechsels.
+   */
+  private async vektorPakete(): Promise<Array<{ id: string; name: string; msJeDokument: number | null }>> {
+    const alle = (await this.repo.listePakete()).filter((p) => !p.angehalten && hatSchnittstelle(p.laeufer, 'dms:vektoren'));
+    const mehrere = alle.length > 1;
+    const erg = [];
+    for (const p of alle.sort((a, b) => a.id.localeCompare(b.id)))
+      erg.push({ id: p.id, name: p.name, msJeDokument: mehrere ? await this.msJeDokument(p.id) : null });
+    return erg;
+  }
+  private async msJeDokument(paket: string): Promise<number | null> {
+    const ms = (await this.repo.paketVerlauf(paket, { anzahl: MESSUNG_EINTRAEGE }).catch(() => []))
+      .filter((e) => e.art === 'ereignis' && e.was === 'volltext.fertig' && e.ergebnis === 'ok' && typeof e.ms === 'number')
+      .map((e) => e.ms!)
+      .sort((a, b) => a - b);
+    return ms.length >= MESSUNG_MIN ? ms[Math.floor(ms.length / 2)] : null;
   }
 
   /** „Neu berechnen“ in der Werkbank: alle Vektoren des Pakets weg, die Nachberechnung beginnt von vorn. */
@@ -641,4 +704,9 @@ export class SucheDienst {
     this.vektorGeladen.clear();
     return { entfernt: n };
   }
+}
+
+/** Vektoren eines Pakets zu einem Modell. */
+function anzahlVon(modelle: Array<{ paket: string; modell: string; anzahl: number }>, paket: string | null, modell: string | null): number {
+  return modelle.filter((m) => m.paket === paket && m.modell === modell).reduce((n, m) => n + m.anzahl, 0);
 }

@@ -21,5 +21,14 @@
   "werkbank.neu.frage": "Recalculate all vectors?",
   "werkbank.neu.text": "The existing vectors are deleted; the package recalculates them in the background. Until then, similar documents are missing.",
   "werkbank.neu.fertig": "{anzahl} vectors removed – the package recalculates them in the background.",
+  "werkbank.von": "Vectors from",
+  "werkbank.wechsel": "Switching to “{name}”",
+  "werkbank.waehlen": "Vectors from this package",
+  "werkbank.waehlen.frage": "Use vectors from “{name}”?",
+  "werkbank.waehlen.dauer": "“{name}” then recalculates the vectors for {anzahl} documents – based on measurements so far about {dauer}.",
+  "werkbank.waehlen.ohne-dauer": "“{name}” then recalculates the vectors for {anzahl} documents. On small devices this can take hours.",
+  "werkbank.waehlen.text": "{dauer} Until then Ablago keeps searching with the vectors from “{bisher}”; afterwards they are removed.",
+  "werkbank.zurueck.text": "The switch to “{nach}” is cancelled and its vectors calculated so far are removed. “{name}” keeps supplying the vectors.",
+  "werkbank.waehlen.fertig": "“{name}” is selected. You can follow the progress here; “Refresh” shows the latest state.",
   "werkbank.aktualisieren": "Refresh"
 }

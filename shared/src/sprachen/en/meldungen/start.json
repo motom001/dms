@@ -86,6 +86,7 @@
   "verwaltung.der-paket-laeufer-ist": "The package runner crashed ({wert}){wert2}.",
   "verwaltung.der-paket-laeufer-wurde-2": "The package runner has been stopped (no more packages with code).",
   "verwaltung.vektor-eines-suchbegriffs": "Vector of a search term",
+  "verwaltung.vektor-paket-unbekannt": "This package can’t supply vectors: it lacks the permission “dms:vektoren” or isn’t loaded right now.",
   "verwaltung.modell-abfragen": "Query model",
   "verwaltung.antwort-auf-dms-vektor": "Response to “dms:vektor” unusable: {message}",
   "verwaltung.der-paket-laeufer-laeuft": "The package runner isn’t running right now.",

@@ -4,6 +4,8 @@ import { sucheApi, type VektorStand } from '../api/suche';
 import { Hilfe } from '../Hilfe';
 import { Etikett, Knopf, Schalter } from '../bausteine';
 import { Link } from '../ort';
+import { rueckfrage } from '../rueckfrage';
+import { dauerText } from '../wartung';
 import { titelOder } from '../seiten';
 import { t } from '../sprache';
 import { gebietsschema } from '../../../shared/src/sprache';
@@ -101,7 +103,7 @@ export function AehnlicheDokumente({ mappeId }: { mappeId: string }) {
 }
 
 /** Werkbank → Pakete → Paket mit dms:vektoren: Fortschritt, Einstellung für die Suche, neu berechnen. */
-export function VektorStandBlock() {
+export function VektorStandBlock({ paket }: { paket: string }) {
   const [s, setS] = useState<VektorStand | null>(null);
   const [meldung, setMeldung] = useState<{ art: 'gut' | 'schlecht'; text: string }>();
   const [laeuft, setLaeuft] = useState(false);
@@ -151,18 +153,9 @@ export function VektorStandBlock() {
         <dd>{s.modell ?? t('aehnlich.werkbank.modell.unbekannt')}</dd>
         <dt>{t('ablage.aehnlich.stand')}</dt>
         <dd>
-          {s.mitVolltext ? (
-            <>
-              <progress className="aehnl-fortschritt" max={s.mitVolltext} value={Math.min(s.mitVektor, s.mitVolltext)} />{' '}
-              {t('aehnlich.werkbank.stand', {
-                mit: s.mitVektor.toLocaleString(gebietsschema()),
-                gesamt: s.mitVolltext.toLocaleString(gebietsschema()),
-              })}
-            </>
-          ) : (
-            t('aehnlich.werkbank.stand.leer')
-          )}
+          <Fortschritt mit={s.mitVektor} gesamt={s.mitVolltext} />
         </dd>
+        <VektorVonZeilen s={s} />
         {s.zwischenspeicherMB !== null && (
           <>
             <dt>{t('aehnlich.werkbank.speicher')}</dt>
@@ -189,7 +182,76 @@ export function VektorStandBlock() {
           {t('aehnlich.werkbank.neu')}
         </Knopf>
         <Knopf onClick={laden}>{t('aehnlich.werkbank.aktualisieren')}</Knopf>
+        <VektorVonKnopf
+          s={s}
+          paket={paket}
+          gewaehlt={(neu, text) => {
+            setS(neu);
+            setMeldung({ art: 'gut', text });
+          }}
+        />
       </div>
     </>
   );
+}
+
+/** „x von y Dokumenten“ mit Balken (#442; seit #1707 auch für einen Wechsel). */
+function Fortschritt({ mit, gesamt }: { mit: number; gesamt: number }) {
+  if (!gesamt) return <>{t('aehnlich.werkbank.stand.leer')}</>;
+  return (
+    <>
+      <progress className="aehnl-fortschritt" max={gesamt} value={Math.min(mit, gesamt)} />{' '}
+      {t('aehnlich.werkbank.stand', { mit: mit.toLocaleString(gebietsschema()), gesamt: gesamt.toLocaleString(gebietsschema()) })}
+    </>
+  );
+}
+
+const paketName = (s: VektorStand, id: string | null) => s.pakete.find((p) => p.id === id)?.name ?? id ?? '';
+
+/** „Vektoren von“ (#1707): nur mit mehreren Paketen mit dms:vektoren – wer liefert, ein laufender Wechsel mit Fortschritt. */
+function VektorVonZeilen({ s }: { s: VektorStand }) {
+  if (s.pakete.length < 2) return null;
+  return (
+    <>
+      <dt>{t('aehnlich.werkbank.von')}</dt>
+      <dd>{paketName(s, s.paket)}</dd>
+      {s.wechsel && (
+        <>
+          <dt>{t('aehnlich.werkbank.wechsel', { name: paketName(s, s.wechsel.nach) })}</dt>
+          <dd>
+            <Fortschritt mit={s.wechsel.mitVektor} gesamt={s.mitVolltext} />
+          </dd>
+        </>
+      )}
+    </>
+  );
+}
+
+/** Folgen eines Wechsels für die Rückfrage (#1707): geschätzte Dauer aus der gemessenen Zeit je Dokument, sonst ohne Zahl. */
+function wechselText(s: VektorStand, ich: VektorStand['pakete'][number]): string {
+  if (ich.id === s.paket && s.wechsel) return t('aehnlich.werkbank.zurueck.text', { name: ich.name, nach: paketName(s, s.wechsel.nach) });
+  const anzahl = s.mitVolltext.toLocaleString(gebietsschema());
+  const dauer = ich.msJeDokument
+    ? t('aehnlich.werkbank.waehlen.dauer', {
+        name: ich.name,
+        anzahl,
+        dauer: dauerText(Math.max(1, Math.ceil((s.mitVolltext * ich.msJeDokument) / 1000))),
+      })
+    : t('aehnlich.werkbank.waehlen.ohne-dauer', { name: ich.name, anzahl });
+  return t('aehnlich.werkbank.waehlen.text', { dauer, bisher: paketName(s, s.paket) });
+}
+
+/** Knopf „Vektoren von diesem Paket“ (#1707) – nur an einem Paket, das gerade nicht rechnet; erst nach der Rückfrage. */
+function VektorVonKnopf({ s, paket, gewaehlt }: { s: VektorStand; paket: string; gewaehlt: (s: VektorStand, text: string) => void }) {
+  const ich = s.pakete.find((p) => p.id === paket);
+  if (s.pakete.length < 2 || !ich || (s.wechsel?.nach ?? s.paket) === paket) return null;
+  async function waehlen() {
+    const ja = await rueckfrage({
+      titel: t('aehnlich.werkbank.waehlen.frage', { name: ich!.name }),
+      text: wechselText(s, ich!),
+      ja: t('aehnlich.werkbank.waehlen'),
+    });
+    if (ja) gewaehlt(await sucheApi.vektorPaketWaehlen(paket), t('aehnlich.werkbank.waehlen.fertig', { name: ich!.name }));
+  }
+  return <Knopf onClick={waehlen}>{t('aehnlich.werkbank.waehlen')}</Knopf>;
 }

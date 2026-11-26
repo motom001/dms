@@ -20,12 +20,66 @@ import type { NetzEintrag } from './prozess';
 export abstract class PaketlaeuferAufrufe extends PaketlaeuferBasis {
   /* ---------- Vektoren (#442) ---------- */
 
-  /** Das Paket mit dem Recht dms:vektoren (bei mehreren das erste nach Id), sofern der Läufer es geladen hat. */
-  vektorPaket(): string | null {
-    const p = this.pakete
+  /** Pakete mit dem Recht dms:vektoren, die der Läufer geladen hat, nach Id. */
+  private vektorPakete(): string[] {
+    return this.pakete
       .filter((x) => hatSchnittstelle(x.laeufer, 'dms:vektoren') && !this.ladefehler.get(x.id))
-      .sort((a, b) => a.id.localeCompare(b.id))[0];
-    return p?.id ?? null;
+      .map((x) => x.id)
+      .sort((a, b) => a.localeCompare(b));
+  }
+
+  /**
+   * Das Paket, das die Vektoren rechnen soll (#1707): das unter „Vektoren von“ gewählte, sofern geladen – sonst wie
+   * vor #1707 das erste nach Id. Ohne Wahl ändert sich für bestehende Installationen nichts.
+   */
+  vektorZiel(): string | null {
+    const alle = this.vektorPakete();
+    const von = this.vektorWahl.von;
+    return von && alle.includes(von) ? von : (alle[0] ?? null);
+  }
+
+  /**
+   * Das Paket, mit dessen Vektoren die Suche und „Ähnliche Dokumente“ arbeiten (#442). Während eines Wechsels (#1707)
+   * das bisherige, bis der Nachlauf des neuen den Bestand durch hat – sonst wirkte die Suche über Stunden nur auf die
+   * schon gerechneten Dokumente.
+   */
+  vektorPaket(): string | null {
+    const ziel = this.vektorZiel();
+    const bisher = this.vektorWahl.bisher;
+    return bisher && bisher !== ziel && this.vektorPakete().includes(bisher) ? bisher : ziel;
+  }
+
+  /**
+   * „Vektoren von“ wählen (#1707, Werkbank). Das neue Paket rechnet den Bestand im Hintergrund nach; bis dahin bleibt
+   * das bisherige für die Suche zuständig. Ein abgebrochener Wechsel (ein drittes Paket oder zurück) verwirft die
+   * halb gerechneten Vektoren des verlassenen Ziels.
+   */
+  async waehleVektorPaket(paket: string): Promise<void> {
+    if (!this.vektorPakete().includes(paket)) throw new Error(t('meldungen.verwaltung.vektor-paket-unbekannt'));
+    const sucht = this.vektorPaket();
+    const verlassen = this.vektorWahl.bisher ? this.vektorZiel() : null;
+    this.vektorWahl = { von: paket, bisher: sucht && sucht !== paket ? sucht : null };
+    await this.o.dienst.suche.setzeVektorWahl(this.vektorWahl);
+    if (verlassen && verlassen !== paket && verlassen !== this.vektorWahl.bisher) {
+      await this.o.dienst.suche.vektorenNeu(verlassen);
+      this.nachlauf.delete(verlassen);
+    }
+    log.info('Vektoren: Paket gewählt', { paket, bisher: this.vektorWahl.bisher });
+    this.nachlauf.delete(paket);
+    this.suchvektoren.clear();
+    void this.nachberechnen();
+  }
+
+  /** Der Nachlauf des neuen Pakets ist durch (#1707): ab jetzt sucht Ablago mit ihm; die Vektoren des bisherigen fallen weg. */
+  private async vektorWechselFertig(ziel: string): Promise<void> {
+    const alt = this.vektorWahl.bisher;
+    if (!alt || alt === ziel || this.vektorWahl.von !== ziel) return;
+    this.vektorWahl = { von: ziel, bisher: null };
+    await this.o.dienst.suche.setzeVektorWahl(this.vektorWahl);
+    const r = await this.o.dienst.suche.vektorenNeu(alt);
+    this.nachlauf.delete(alt);
+    this.suchvektoren.clear();
+    log.info('Vektoren: Wechsel fertig, Vektoren des bisherigen Pakets entfernt', { paket: ziel, bisher: alt, entfernt: r.entfernt });
   }
 
   /**
@@ -49,7 +103,8 @@ export abstract class PaketlaeuferAufrufe extends PaketlaeuferBasis {
     text: string,
     ms: number,
   ): Promise<{ paket: string; modell: string; vektor: Float32Array | null; schwelle: number } | null> {
-    const paket = this.vektorPaket();
+    // Leerer Text fragt nur das Modell – das braucht der Nachlauf, und der gilt dem gewählten Paket (#1707).
+    const paket = text ? this.vektorPaket() : this.vektorZiel();
     if (!paket || !this.laeuft()) return null;
     // Harte Grenze des Monatsbudgets (#565): ohne Vektor sucht die Suche wie ohne Paket.
     if (extern.pausiertBis(paket)) return null;
@@ -86,7 +141,7 @@ export abstract class PaketlaeuferAufrufe extends PaketlaeuferBasis {
    * den Bestand nach (nach der Installation, nach einem Modellwechsel, nach „Neu berechnen“).
    */
   async nachberechnen(): Promise<void> {
-    const paket = this.vektorPaket();
+    const paket = this.vektorZiel();
     if (!paket || this.nachlaufLaeuft || !this.laeuft()) return;
     const p = this.pakete.find((x) => x.id === paket)!;
     if (!p.laeufer?.ereignisse.includes('volltext.fertig')) return;
@@ -107,6 +162,8 @@ export abstract class PaketlaeuferAufrufe extends PaketlaeuferBasis {
       else {
         n.nach = null;
         n.pauseBis = Date.now() + NACHLAUF_PAUSE_MS;
+        // Ein vollständiger Durchgang, und das Paket hat nichts mehr offen: ein Wechsel (#1707) ist fertig.
+        await this.vektorWechselFertig(paket);
       }
     } catch (e) {
       log.warn('Paket-Läufer: Nachberechnung der Vektoren unterbrochen', { paket, fehler: (e as Error).message });
@@ -117,7 +174,7 @@ export abstract class PaketlaeuferAufrufe extends PaketlaeuferBasis {
 
   /** „Neu berechnen“ (Werkbank): Vektoren weg, Nachberechnung sofort von vorn. */
   async vektorenNeu(): Promise<{ entfernt: number }> {
-    const paket = this.vektorPaket();
+    const paket = this.vektorZiel();
     if (!paket) throw new Error('Es ist kein Paket mit dem Recht „dms:vektoren“ installiert.');
     const r = await this.o.dienst.suche.vektorenNeu(paket);
     this.nachlauf.delete(paket);

@@ -135,6 +135,21 @@ export class EreignisseDienst {
   }
 
   /**
+   * „Vektoren von“ (#1707): Ist ein Paket gewählt (und installiert), rechnet ein weiteres Paket mit dms:vektoren nicht
+   * nebenher für jedes neue Dokument – „Volltext ist da“ bekommen nur das gewählte und, während eines Wechsels, das
+   * bisherige. Sonst stünden nach dem Aufräumen gleich wieder Vektoren des alten Pakets da (und ein Raspberry Pi
+   * rechnete doppelt). Ohne Wahl wie bisher: alle.
+   */
+  private async nichtGewaehlteVektorPakete(pakete: InstalliertesPaket[]): Promise<Set<string> | null> {
+    const w = (await this.kern.einstellungen?.lies('vektoren').catch(() => null)) as { von?: unknown; bisher?: unknown } | null;
+    const von = typeof w?.von === 'string' ? w.von : null;
+    if (!von || !pakete.some((p) => p.id === von && !p.angehalten && p.laeufer)) return null;
+    return new Set(
+      pakete.filter((p) => p.id !== von && p.id !== w?.bisher && hatSchnittstelle(p.laeufer, 'dms:vektoren')).map((p) => p.id),
+    );
+  }
+
+  /**
    * Abnehmer „pakete“ (#670, #724): jedes Ereignis des Katalogs an die Pakete, die es abonniert haben – derselbe
    * Ausgangskorb wie für Automatisierungen, die Zustellung samt Wiederholung macht der Paket-Läufer.
    * - Ein Paket bekommt seine eigenen Änderungen nicht gemeldet (sonst Schleifen).
@@ -156,10 +171,12 @@ export class EreignisseDienst {
     const zustellungen: Array<{ paket: InstalliertesPaket; art: EreignisArt }> = [];
     const pakete = await this.kern.repoOhneTransaktion.listePakete();
     const typen = k.mappentyp ? await this.kern.repoOhneTransaktion.listeTypen() : [];
+    const nichtGewaehlt = e.art === 'volltext.fertig' ? await this.nichtGewaehlteVektorPakete(pakete) : null;
     for (const p of pakete) {
       const l = p.laeufer;
       // Angehalten (#1563): bekommt keine Ereignisse.
       if (!l || p.angehalten || (e.ausloeser.art === 'paket' && e.ausloeser.id === p.id)) continue;
+      if (nichtGewaehlt?.has(p.id)) continue;
       if (e.art === 'sicherung.fertig' && !hatSchnittstelle(l, 'dms:sicherung-lesen')) continue;
       if (k.mappentyp) {
         const abonniert = l.ereignisse.includes(e.art as EreignisArt);

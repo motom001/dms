@@ -21,5 +21,14 @@
   "werkbank.neu.frage": "Alle Vektoren neu berechnen?",
   "werkbank.neu.text": "Die vorhandenen Vektoren werden gelöscht; das Paket rechnet sie im Hintergrund neu. Bis dahin fehlen ähnliche Dokumente.",
   "werkbank.neu.fertig": "{anzahl} Vektoren entfernt – das Paket rechnet sie im Hintergrund neu.",
+  "werkbank.von": "Vektoren von",
+  "werkbank.wechsel": "Wechsel zu „{name}“",
+  "werkbank.waehlen": "Vektoren von diesem Paket",
+  "werkbank.waehlen.frage": "Vektoren von „{name}“ nehmen?",
+  "werkbank.waehlen.dauer": "„{name}“ rechnet dann die Vektoren für {anzahl} Dokumente neu – nach bisheriger Messung etwa {dauer}.",
+  "werkbank.waehlen.ohne-dauer": "„{name}“ rechnet dann die Vektoren für {anzahl} Dokumente neu. Das kann auf kleinen Geräten Stunden dauern.",
+  "werkbank.waehlen.text": "{dauer} Bis dahin sucht Ablago weiter mit den Vektoren von „{bisher}“; danach werden diese entfernt.",
+  "werkbank.zurueck.text": "Der Wechsel zu „{nach}“ wird abgebrochen und dessen schon gerechnete Vektoren werden entfernt. „{name}“ liefert die Vektoren weiter.",
+  "werkbank.waehlen.fertig": "„{name}“ ist gewählt. Den Fortschritt siehst du hier, „Aktualisieren“ zeigt den neuesten Stand.",
   "werkbank.aktualisieren": "Aktualisieren"
 }

@@ -57,6 +57,7 @@
   "routen.es-gibt-noch-keinen-2": "Es gibt noch keinen Export.",
   "routen.dein-export-ist-groesser": "Dein Export ist größer als 4 GB. Bitte die Person, die Ablago verwaltet, ihn dir aus dem Ordner zu geben.",
   "routen.pakete-mit-code-laufen": "Pakete mit Code laufen in dieser Installation nicht.",
+  "routen.vektor-paket-fehlt": "Welches Paket soll die Vektoren liefern? Bitte ein Paket angeben.",
   "routen.bitte-den-wechsel-bestaetigen": "Bitte den Wechsel bestätigen.",
   "routen.gerade-laeuft-eine-sicherung": "Gerade läuft eine Sicherung. Bitte warten, bis sie fertig ist.",
   "routen.diese-adresse-ist-nicht": "Diese Adresse ist nicht gesperrt.",

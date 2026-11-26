@@ -86,6 +86,7 @@
   "verwaltung.der-paket-laeufer-ist": "Der Paket-Läufer ist abgestürzt ({wert}){wert2}.",
   "verwaltung.der-paket-laeufer-wurde-2": "Der Paket-Läufer wurde beendet (keine Pakete mit Code mehr).",
   "verwaltung.vektor-eines-suchbegriffs": "Vektor eines Suchbegriffs",
+  "verwaltung.vektor-paket-unbekannt": "Dieses Paket kann keine Vektoren liefern: Es hat das Recht „dms:vektoren“ nicht oder ist gerade nicht geladen.",
   "verwaltung.modell-abfragen": "Modell abfragen",
   "verwaltung.antwort-auf-dms-vektor": "Antwort auf „dms:vektor“ unbrauchbar: {message}",
   "verwaltung.der-paket-laeufer-laeuft": "Der Paket-Läufer läuft gerade nicht.",
