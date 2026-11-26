@@ -198,14 +198,6 @@
       "sicherheit": "hoch",
       "fundstelle": "Gesamtbetrag 1.234,56 EUR"
     },
-    "netto": {
-      "wert": {
-        "betrag": 1234.56,
-        "waehrung": "EUR"
-      },
-      "sicherheit": "hoch",
-      "fundstelle": "Gesamtbetrag 1.234,56 EUR"
-    },
     "steuer": {
       "wert": 19,
       "sicherheit": "mittel",
@@ -259,14 +251,6 @@
       "sicherheit": "niedrig",
       "fundstelle": "Erstattung 49,90 EUR",
       "hinweis": "„Gutschrift“ auf dem Beleg – als negativer Betrag übernommen"
-    },
-    "netto": {
-      "wert": {
-        "betrag": 49.9,
-        "waehrung": "EUR"
-      },
-      "sicherheit": "niedrig",
-      "fundstelle": "Erstattung 49,90 EUR"
     },
     "kein": {
       "wert": "Musterwerke GmbH",
@@ -459,14 +443,6 @@
       "sicherheit": "hoch",
       "fundstelle": "12,50",
       "hinweis": "„Erstattung“ auf dem Beleg – als negativer Betrag übernommen"
-    },
-    "netto": {
-      "wert": {
-        "betrag": 12.5,
-        "waehrung": "EUR"
-      },
-      "sicherheit": "hoch",
-      "fundstelle": "12,50"
     }
   }
 }

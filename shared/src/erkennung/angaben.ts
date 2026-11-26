@@ -349,21 +349,30 @@ function beschriftung(roh: string): string {
 }
 
 /** Datum des Schreibens: beschriftet („Datum:“), in der Ortszeile („Dresden, 12.03.2026“) oder das erste im Kopf. */
-function findeDatum(text: string): Fund | null {
-  const kandidaten: Array<{ wert: string; punkte: number; i: number; laenge: number }> = [];
-  const RE =
-    /(\d{1,2})\.\s?(\d{1,2})\.\s?(\d{4}|\d{2})\b|(\d{1,2})\.\s?(Januar|Februar|März|Maerz|April|Mai|Juni|Juli|August|September|Oktober|November|Dezember|Jan|Feb|Mär|Apr|Jun|Jul|Aug|Sep|Sept|Okt|Nov|Dez)\.?\s+(\d{4})\b|\b(\d{4})-(\d{2})-(\d{2})\b/gi;
-  for (const m of text.matchAll(RE)) {
+const DATUM_RE =
+  /(\d{1,2})\.\s?(\d{1,2})\.\s?(\d{4}|\d{2})\b|(\d{1,2})\.\s?(Januar|Februar|März|Maerz|April|Mai|Juni|Juli|August|September|Oktober|November|Dezember|Jan|Feb|Mär|Apr|Jun|Jul|Aug|Sep|Sept|Okt|Nov|Dez)\.?\s+(\d{4})\b|\b(\d{4})-(\d{2})-(\d{2})\b/gi;
+
+/** Alle Daten im Text mit Stelle (#1693: das Datum neben der Bezeichnung eines Felds), ISO. */
+export function alleDaten(text: string): Array<{ wert: string; i: number; laenge: number }> {
+  const erg: Array<{ wert: string; i: number; laenge: number }> = [];
+  for (const m of text.matchAll(new RegExp(DATUM_RE.source, DATUM_RE.flags))) {
     let iso: string | null = null;
     if (m[1]) iso = datumIso(Number(m[1]), Number(m[2]), Number(m[3]));
     else if (m[4]) {
       const mon = MONATE.findIndex((x) => x.startsWith(klein(m[5]).slice(0, 3)));
       iso = mon >= 0 ? datumIso(Number(m[4]), mon + 1, Number(m[6])) : null;
     } else iso = datumIso(Number(m[9]), Number(m[8]), Number(m[7]));
-    if (!iso) continue;
-    const vorher = text.slice(Math.max(0, m.index! - 40), m.index!);
-    const zeile = text.slice(text.lastIndexOf('\n', m.index!) + 1, m.index!);
-    let punkte = 1 - m.index! / Math.max(1, text.length);
+    if (iso) erg.push({ wert: iso, i: m.index!, laenge: m[0].length });
+  }
+  return erg;
+}
+
+function findeDatum(text: string): Fund | null {
+  const kandidaten: Array<{ wert: string; punkte: number; i: number; laenge: number }> = [];
+  for (const { wert: iso, i, laenge } of alleDaten(text)) {
+    const vorher = text.slice(Math.max(0, i - 40), i);
+    const zeile = text.slice(text.lastIndexOf('\n', i) + 1, i);
+    let punkte = 1 - i / Math.max(1, text.length);
     if (/(Datum|Date|Rechnungsdatum|Briefdatum)\s*[:.]?\s*$/i.test(vorher)) punkte += 3;
     else if (/^[A-ZÄÖÜ][\wäöüß. \-()]{1,40},\s*(den)?$/.test(zeile.trim())) punkte += 3;
     else if (/\bden\s*$/i.test(vorher)) punkte += 1.5;
@@ -373,7 +382,7 @@ function findeDatum(text: string): Fund | null {
       )
     )
       punkte -= 2;
-    kandidaten.push({ wert: iso, punkte, i: m.index!, laenge: m[0].length });
+    kandidaten.push({ wert: iso, punkte, i: i, laenge: laenge });
   }
   // Nur Daten, die nicht offensichtlich etwas anderes meinen („zum 1. Januar“, „fällig am“, „gültig bis“).
   const best = kandidaten.filter((k) => k.punkte >= 0).sort((x, y) => y.punkte - x.punkte)[0];
@@ -386,9 +395,24 @@ function findeDatum(text: string): Fund | null {
 }
 
 /** Gesamtbetrag: beschriftet („Gesamtbetrag“, „zu zahlen“ …), sonst der größte Betrag mit Währung. */
+const BETRAG_RE =
+  /(?:(EUR|€|CHF|USD|\$)\s*)?(?<![\d.,])(-?\d{1,3}(?:[.\s]\d{3})*,\d{2}|-?\d+,\d{2}|-?\d{1,3}(?:,\d{3})*\.\d{2})(?![\d.,]?\d)(?:\s*(EUR|€|CHF|USD|\$|Euro))?/g;
+
+/** Alle Beträge im Text mit Stelle (#1693: der Betrag neben der Bezeichnung eines Felds). */
+export function alleBetraege(text: string): Array<{ wert: Betrag; i: number; laenge: number }> {
+  const erg: Array<{ wert: Betrag; i: number; laenge: number }> = [];
+  for (const m of text.matchAll(new RegExp(BETRAG_RE.source, BETRAG_RE.flags))) {
+    const zahl = zahlAus(m[2]);
+    if (zahl == null || Math.abs(zahl) < 0.01 || Math.abs(zahl) > 10_000_000) continue;
+    const zeichen = m[1] ?? m[3];
+    const waehrung = !zeichen || /€|EUR|Euro/i.test(zeichen) ? 'EUR' : zeichen === '$' ? 'USD' : zeichen.toUpperCase();
+    erg.push({ wert: { betrag: zahl, waehrung }, i: m.index!, laenge: m[0].length });
+  }
+  return erg;
+}
+
 function findeBetrag(text: string): Fund<Betrag> | null {
-  const RE =
-    /(?:(EUR|€|CHF|USD|\$)\s*)?(?<![\d.,])(-?\d{1,3}(?:[.\s]\d{3})*,\d{2}|-?\d+,\d{2}|-?\d{1,3}(?:,\d{3})*\.\d{2})(?![\d.,]?\d)(?:\s*(EUR|€|CHF|USD|\$|Euro))?/g;
+  const RE = new RegExp(BETRAG_RE.source, BETRAG_RE.flags);
   const STUFEN: Array<[RegExp, number]> = [
     [
       /(Gesamtbetrag|Rechnungsbetrag|Endbetrag|Zahlbetrag|zu zahlen|Gesamtsumme|Summe brutto|Bruttobetrag|Brutto gesamt|Gesamt brutto|Total|Rechnungssumme|Zahlungsbetrag|offener Betrag|Forderung)/i,
