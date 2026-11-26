@@ -117,6 +117,40 @@ describe('Prüfstand: Werte vergleichen und werten', () => {
   });
 });
 
+describe('Prüfstand: Felder je Feldart (#1693)', () => {
+  const { feldart, feldarten } = ps.wertung;
+  it('Feldart: eingestellte Erkennungsart, Feldart, Format, Nummern an der Bezeichnung, sonst die Feldart', () => {
+    assert.equal(feldart({ key: 'x', label: 'X', typ: 'text', erkennung: { art: 'name' } }), 'name');
+    assert.equal(feldart({ key: 'faellig_am', label: 'Fällig am', typ: 'datum' }), 'datum');
+    assert.equal(feldart({ key: 'von', label: 'Von', typ: 'referenz' }), 'verweis');
+    assert.equal(feldart({ key: 'konto', label: 'Konto', typ: 'text', format: 'iban' }), 'iban');
+    assert.equal(feldart({ key: 'vertragsnummer', label: 'Vertragsnummer', typ: 'text' }), 'nummer');
+    assert.equal(feldart({ key: 'rg', label: 'Rechnungs-Nr.', typ: 'text' }), 'nummer');
+    assert.equal(feldart({ key: 'bemerkung', label: 'Bemerkung', typ: 'langtext' }), 'langtext');
+    assert.equal(feldart(undefined), '–');
+  });
+  it('zählt richtig, falsch, fehlt und „sicher“, aber falsch je Feldart; ältere Ergebnisse unter „–“', () => {
+    const e = [
+      ergebnis('a', {
+        felder: { 'm.nr': 'richtig', 'm.datum': 'falsch', 'm.betrag': 'falsch', 'm.netto': 'fehlt' },
+        feldInfo: {
+          'm.nr': { art: 'nummer', sicherheit: 'hoch' },
+          'm.datum': { art: 'datum', sicherheit: 'hoch' },
+          'm.betrag': { art: 'betrag', sicherheit: 'niedrig' },
+          'm.netto': { art: 'betrag', sicherheit: null },
+        },
+      }),
+      ergebnis('alt'),
+    ];
+    assert.deepEqual(feldarten(e), {
+      nummer: { richtig: 1, falsch: 0, fehlt: 0, sicherFalsch: 0 },
+      datum: { richtig: 0, falsch: 1, fehlt: 0, sicherFalsch: 1 },
+      betrag: { richtig: 0, falsch: 1, fehlt: 1, sicherFalsch: 0 },
+      '–': { richtig: 1, falsch: 0, fehlt: 0, sicherFalsch: 0 },
+    });
+  });
+});
+
 describe('Prüfstand: Bericht mit Vergleich zum letzten', () => {
   const lauf = (name: string, e: Ergebnis[]) => ({
     name,
@@ -145,6 +179,8 @@ describe('Prüfstand: Bericht mit Vergleich zum letzten', () => {
     assert.match(md1, /Commit `abc` · 2 Dokumente/);
     assert.match(md1, /## Bei Ungleichgewicht/);
     assert.match(md1, /Kein früherer Bericht/);
+    assert.match(md1, /## Felder je Feldart/);
+    assert.match(md1, /\| – \| richtig 100\.0 % \(2\/2\) · falsch 0 · fehlt 0 · „sicher“, aber falsch 0 \|/);
     // Zweiter Lauf: „b“ verliert Platz 1, „neu“ kommt dazu und zählt im Vergleich nicht.
     const schlecht = ergebnis('b', { typen: [{ typ: 'aemter:bescheid', sicherheit: 0.9, belege: [] }] });
     const l2 = datei('l2.json', lauf('messen', [ergebnis('a'), schlecht, ergebnis('neu')]));

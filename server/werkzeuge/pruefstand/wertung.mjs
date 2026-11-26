@@ -121,3 +121,45 @@ export function auswerten(ergebnisse) {
 
 /** Anteil in Prozent mit einer Nachkommastelle; null ohne Messung. */
 export const anteil = (k) => (k && k.von ? Math.round((1000 * k.ja) / k.von) / 10 : null);
+
+/** Erkennungsart nach der Feldart (wie artVon im Kern; das Werkzeug läuft ohne den Quellcode von Ablago). */
+const ART_NACH_TYP = {
+  datum: 'datum',
+  betrag: 'betrag',
+  zeitraum: 'zeitraum',
+  prozent: 'prozent',
+  referenz: 'verweis',
+  auswahl: 'auswahl',
+};
+const ART_NACH_FORMAT = { email: 'email', telefon: 'telefon', internetseite: 'internet', iban: 'iban', plz: 'plz' };
+
+/**
+ * Feldart eines Felds für „Felder je Feldart“ (#1693): die eingestellte Erkennungsart, sonst aus Feldart und Format,
+ * Nummern an Kennung bzw. Bezeichnung („…nummer“, „…-Nr.“, „Kennzeichen“); sonst die Feldart (text, zahl …).
+ */
+export function feldart(f) {
+  if (!f) return '–';
+  if (f.erkennung?.art) return f.erkennung.art;
+  if (ART_NACH_TYP[f.typ]) return ART_NACH_TYP[f.typ];
+  if (f.format && ART_NACH_FORMAT[f.format]) return ART_NACH_FORMAT[f.format];
+  const s = ` ${`${f.key ?? ''} ${f.label ?? ''}`.toLowerCase().replace(/[^a-zäöüß0-9]+/g, ' ')} `;
+  if (/ iban /.test(s)) return 'iban';
+  if (/ (\S*nummer|\S*nr|kennzeichen|aktenzeichen|zeichen) /.test(s)) return 'nummer';
+  return f.typ ?? '–';
+}
+
+/**
+ * Felder je Feldart (#1693): richtig, falsch, fehlt und „sicher“ (hoch), aber falsch. Ergebnisse ohne `feldInfo`
+ * (ältere Berichte) zählen unter „–“.
+ */
+export function feldarten(ergebnisse) {
+  const erg = {};
+  for (const e of ergebnisse)
+    for (const [k, stand] of Object.entries(e.felder ?? {})) {
+      const info = e.feldInfo?.[k];
+      const z = (erg[info?.art ?? '–'] ??= { richtig: 0, falsch: 0, fehlt: 0, sicherFalsch: 0 });
+      if (stand in z) z[stand]++;
+      if (stand === 'falsch' && info?.sicherheit === 'hoch') z.sicherFalsch++;
+    }
+  return erg;
+}

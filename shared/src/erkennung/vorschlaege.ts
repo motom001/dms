@@ -11,6 +11,7 @@ import { leseZeitraum, leseProzent } from '../feldarten';
 import { optionTexte } from '../beschriftung';
 import { nummerHinterWort, nummernWoerter } from './nummern';
 import { datenIn, datumsPaare, ungeklaerterZeitraum, zeitraumVorschlaege } from './zeitraum';
+import { pruefePlausibel } from './plausibel';
 
 /* ---------- Vorschläge für die Felder eines Mappentyps ---------- */
 
@@ -165,6 +166,8 @@ interface VorschlagLauf {
 /** Was die Erkennung zusätzlich zum Text nutzt (#1657): Gruppen gleichbedeutender Wörter aus Werkbank und Paketen. */
 export interface VorschlagOptionen {
   gruppen?: readonly (readonly string[])[];
+  /** Heute (#1693, „Datum weit in der Zukunft“); fehlt = jetzt. Für Tests. */
+  heute?: Date;
 }
 
 /**
@@ -182,6 +185,10 @@ export function vorschlaegeAus(
   const hatArt = (x: Erkennungsart) => felder.some((f) => f.art === x);
   // Nur Werte, die zum Format bzw. zu den Grenzen des Felds passen (#535) – so landet z. B. keine Faxnummer mit Buchstaben im Feld.
   const passt = (f: Feld, wert: Wert) => !formatFehler(f, wert, { felder: t.felder, werte: {} });
+  const paare = datumsPaare(
+    t,
+    felder.map((x) => x.feld),
+  );
   const lauf: VorschlagLauf = {
     text,
     a,
@@ -194,10 +201,7 @@ export function vorschlaegeAus(
     },
     gruppen: opt.gruppen ?? [],
     partner: new Map(
-      datumsPaare(
-        t,
-        felder.map((x) => x.feld),
-      ).flatMap((p) => [
+      paare.flatMap((p) => [
         [p.beginn.key, p.ende.key],
         [p.ende.key, p.beginn.key],
       ]),
@@ -217,6 +221,16 @@ export function vorschlaegeAus(
     if (nachMuster(f, lauf)) continue;
     vorschlagFuer(f, art, lauf);
   }
+  // Plausibilität (#1693, Teil 2): Passen die Werte zusammen? Hebt oder senkt die Sicherheit – vor der Gutschrift, die
+  // das Vorzeichen nur in manchen Feldern dreht.
+  pruefePlausibel(v, {
+    text,
+    felder,
+    erstesBetrag: lauf.erstes.get('betrag'),
+    paare,
+    gruppen: lauf.gruppen,
+    heute: opt.heute ?? new Date(),
+  });
   return wendeGutschriftAn(t, v, a.gutschrift);
 }
 

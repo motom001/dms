@@ -3,7 +3,7 @@
  * je Lauf, nach Seltenheit, Form und Absender, je Weg, Ungleichgewicht) mit Vergleich zum letzten Bericht. Verglichen
  * wird je Lauf nur über die Dokument-Ids, die beide Berichte haben; schlechtere Zahlen stehen als Hinweis da.
  */
-import { anteil, auswerten, bewerte, WEGE } from './wertung.mjs';
+import { anteil, auswerten, bewerte, feldarten, WEGE } from './wertung.mjs';
 
 const NAMEN = {
   typ1: 'Mappentyp Platz 1',
@@ -79,6 +79,31 @@ function gruppenTabelle(laeufe, gruppe) {
   );
 }
 
+/** Felder je Feldart (#1693): je Lauf richtig (Anteil), falsch, fehlt und „sicher“, aber falsch. */
+function feldartTabelle(laeufe) {
+  const je = laeufe.map(([, l]) => feldarten(l.ergebnisse));
+  const arten = [...new Set(je.flatMap((x) => Object.keys(x)))].sort();
+  if (!arten.length) return [];
+  return [
+    '## Felder je Feldart',
+    '',
+    ...tabelle(
+      ['Feldart', ...laeufe.map(([n]) => n)],
+      arten.map((a) => [
+        a,
+        ...je.map((x) => {
+          const k = x[a];
+          if (!k) return '–';
+          const von = k.richtig + k.falsch + k.fehlt;
+          return `richtig ${zelle({ ja: k.richtig, von })} · falsch ${k.falsch} · fehlt ${k.fehlt} · „sicher“, aber falsch ${k.sicherFalsch}`;
+        }),
+      ]),
+    ),
+    '',
+    '„sicher“ heißt bei Feldern: Sicherheit „hoch“. Die Feldart ist die eingestellte Erkennungsart, sonst die aus Feldart, Format und Bezeichnung.',
+  ];
+}
+
 /** Markdown des Berichts. */
 export function markdown(bericht, vergleich) {
   const laeufe = Object.entries(bericht.laeufe).map(([n, l]) => [n, { ...l, k: auswerten(l.ergebnisse) }]);
@@ -139,6 +164,7 @@ export function markdown(bericht, vergleich) {
       ]),
     ),
   );
+  z.push('', ...feldartTabelle(laeufe));
   z.push('', '## Vergleich zum letzten Bericht', '');
   if (!vergleich?.zeilen.length) z.push('Kein früherer Bericht mit denselben Läufen.');
   else {

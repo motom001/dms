@@ -70,6 +70,7 @@ ungleichgewicht: { typ: finanzen:kontoauszug }
 ## Bericht
 
 JSON (alles, auch je Dokument) und Markdown: Kennzahlen je Lauf, nach Seltenheit, Form und Absender (erstes Dokument
-oder bekannt), je Weg, „Bei Ungleichgewicht“ und „Hinweise beim Aufbau“. Der Bericht nennt Commit und Zahl der Dokumente
+oder bekannt), je Weg, „Bei Ungleichgewicht“, „Felder je Feldart“ (#1693: richtig, falsch, fehlt und „sicher“, aber
+falsch je Erkennungsart wie datum, betrag, nummer) und „Hinweise beim Aufbau“. Der Bericht nennt Commit und Zahl der Dokumente
 des Satzes. Verglichen wird mit dem letzten Bericht im Ordner, je Lauf nur über die Dokument-Ids, die beide haben;
 schlechtere Zahlen (mehr als 0,5 Prozentpunkte) stehen als Hinweis da, im Workflow auch als Warnung.

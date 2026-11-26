@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 import { basename } from 'node:path';
 import { warte } from './ablago.mjs';
 import { absenderMappe, typKennung } from './satz.mjs';
-import { gleich } from './wertung.mjs';
+import { feldart, gleich } from './wertung.mjs';
 
 const MIME = { pdf: 'application/pdf', xml: 'application/xml', eml: 'message/rfc822', png: 'image/png', jpg: 'image/jpeg' };
 const FERTIG = new Set(['fertig', 'fehler', 'ausgelassen', 'keiner']);
@@ -41,20 +41,27 @@ export async function warteAufVektor(api, dokId, sekunden = 30) {
   return false;
 }
 
-/** Vorschläge je erwartetem Feld vergleichen: richtig, falsch oder fehlt. */
-async function felderMessen(api, bau, d, dokId, mitText) {
+/**
+ * Vorschläge je erwartetem Feld vergleichen: richtig, falsch oder fehlt. In `info` je Feld die Feldart und die
+ * Sicherheit des Vorschlags (#1693: Felder je Feldart, „sicher“, aber falsch).
+ */
+async function felderMessen(api, bau, d, dokId, mitText, info = {}) {
   const erg = {};
   for (const [schluessel, felder] of Object.entries(d.erwartung.felder ?? {})) {
     const typ = bau.typVon(schluessel);
     if (!typ) continue;
     if (!mitText) {
-      for (const feld of Object.keys(felder ?? {})) erg[`${schluessel}.${feld}`] = 'fehlt';
+      for (const feld of Object.keys(felder ?? {})) {
+        erg[`${schluessel}.${feld}`] = 'fehlt';
+        info[`${schluessel}.${feld}`] = { art: feldart(typ.felder?.find((f) => f.key === feld)), sicherheit: null };
+      }
       continue;
     }
     const mappe = bau.ids.get(schluessel);
     const r = await api.json('POST', `/api/typen/${typ.id}/vorschlaege`, { body: { dokumente: [dokId], ...(mappe ? { mappe } : {}) } });
     for (const [feld, wert] of Object.entries(felder ?? {})) {
       const v = r?.vorschlaege?.[feld];
+      info[`${schluessel}.${feld}`] = { art: feldart(typ.felder?.find((f) => f.key === feld)), sicherheit: v?.sicherheit ?? null };
       const ueber = (w) => (typeof w === 'string' ? (bau.namen.get(w) ?? w) : Array.isArray(w) ? w.map(ueber) : w);
       erg[`${schluessel}.${feld}`] = !v ? 'fehlt' : gleich(wert, ueber(v.wert)) ? 'richtig' : 'falsch';
     }
@@ -125,7 +132,8 @@ export async function messeDokument(api, bau, satz, d, o) {
       e.wegeStand = (r.wege ?? []).map((w) => ({ weg: w.weg, stand: w.stand, paket: w.paket?.id }));
     })
     .catch((x) => fehler.push(`klassifizieren: ${x.message}`));
-  e.felder = await felderMessen(api, bau, d, dokId, e.text.zeichen > 0).catch((x) => (fehler.push(`felder: ${x.message}`), {}));
+  e.feldInfo = {};
+  e.felder = await felderMessen(api, bau, d, dokId, e.text.zeichen > 0, e.feldInfo).catch((x) => (fehler.push(`felder: ${x.message}`), {}));
   e.ms = Date.now() - start;
   await nachDemMessen(api, bau, d, { post: post.id, dokId, e, o });
   return e;

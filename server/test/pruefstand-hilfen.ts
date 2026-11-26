@@ -90,6 +90,8 @@ export interface Ergebnis {
   absender?: string[];
   ziele?: string[];
   felder?: Record<string, string>;
+  /** Je Feld Feldart und Sicherheit des Vorschlags (#1693). */
+  feldInfo?: Record<string, { art: string; sicherheit: string | null }>;
   text?: { zeichen: number };
   fuellTyp?: string;
   fehler?: string[];
@@ -124,6 +126,8 @@ export interface Pruefstand {
     auswerten(e: Ergebnis[]): Auswertung;
     bewerte(e: Ergebnis): Record<string, unknown>;
     anteil(k: Kennzahl): number | null;
+    feldart(f: Record<string, unknown> | undefined): string;
+    feldarten(e: Ergebnis[]): Record<string, { richtig: number; falsch: number; fehlt: number; sicherFalsch: number }>;
   };
   bericht: object;
   fuellen: {
