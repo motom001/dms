@@ -217,9 +217,7 @@
       "fundstelle": "Zahlungsart: Lastschrift; auch PayPal möglich."
     },
     "arten": {
-      "wert": [
-        "pp"
-      ],
+      "wert": ["pp"],
       "sicherheit": "niedrig",
       "fundstelle": "Zahlungsart: Lastschrift; auch PayPal möglich."
     },
