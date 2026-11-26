@@ -13,7 +13,9 @@ import {
   erkennbarSicherheit,
   SCHWELLE_STANDARD,
   SICHER_AB,
+  verbindeWege,
   type Kandidat,
+  type Weg,
 } from '../../shared/src/klassifizierung';
 import { liesCode, type InstalliertesPaket } from '../../shared/src/pakete';
 import type { Register } from '../../shared/src/model';
@@ -308,5 +310,49 @@ describe('Absender als Beleg (#1680)', () => {
     assert.ok(re.sicherheit < b.sicherheit && re.anzahl === 1, 'Gewicht verteilt');
     assert.equal(r.typen[0].typId, x.kontoauszug.id);
     assert.equal(r.wege.find((w) => w.weg === 'absender')?.stand, 'ok');
+  });
+});
+
+describe('Textwege zählen zusammen wie einer (Prüfstand 26.11.)', () => {
+  const s = (belege: Array<{ weg: Weg; sicherheit: number }>) => verbindeWege(belege.map((b) => ({ typId: 't', ...b })))[0].sicherheit;
+
+  it('Überschrift im Kern und „Woran man ihn erkennt“ machen zusammen nicht „sicher“, auch nicht mit schwachem Abgleich', () => {
+    assert.ok(
+      s([
+        { weg: 'kern', sicherheit: 0.6 },
+        { weg: 'erkennbar', sicherheit: 0.48 },
+      ]) < SICHER_AB,
+    );
+    assert.ok(
+      s([
+        { weg: 'kern', sicherheit: 0.6 },
+        { weg: 'erkennbar', sicherheit: 0.4 },
+        { weg: 'auswahl', sicherheit: 0.5 },
+        { weg: 'abgleich', sicherheit: 0.15 },
+      ]) < SICHER_AB,
+    );
+    // Mehr als der stärkste allein, damit die Reihenfolge der Typen weiter etwas davon hat.
+    assert.ok(
+      s([
+        { weg: 'kern', sicherheit: 0.6 },
+        { weg: 'erkennbar', sicherheit: 0.48 },
+      ]) > 0.6,
+    );
+  });
+
+  it('ein unabhängiger Weg (Absender, Ähnlichkeit, Gelerntes) zählt weiter voll', () => {
+    assert.ok(
+      s([
+        { weg: 'kern', sicherheit: 0.6 },
+        { weg: 'absender', sicherheit: 0.5 },
+      ]) >= SICHER_AB,
+    );
+    assert.equal(
+      s([
+        { weg: 'kern', sicherheit: 0.6 },
+        { weg: 'gelernt', sicherheit: 0.5 },
+      ]),
+      0.8,
+    );
   });
 });

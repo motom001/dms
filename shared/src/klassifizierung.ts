@@ -333,8 +333,29 @@ export function einzeilig(s: string): string {
 }
 
 /**
+ * Wege, die alle nur Wörter im Text lesen (Überschrift im Kern, „Woran man ihn erkennt“, Einträge von Auswahllisten). Sie
+ * sind nicht unabhängig: Ein Brief mit „Rechnung“ in der Überschrift trifft oft auch „Woran man ihn erkennt“. Zusammen
+ * zählen sie deshalb wie ein Weg, der stärkste ganz, jeder weitere nur zu `TEXT_WEITERE` – zwei Textwege allein machen
+ * keinen Typ „sicher“ (Prüfstand 26.11.: 10 Dokumente „sicher, aber falsch“ aus Kern 0,6 + „Woran man ihn erkennt“).
+ */
+const TEXTWEGE: ReadonlySet<Weg> = new Set<Weg>(['kern', 'erkennbar', 'auswahl']);
+const TEXT_WEITERE = 0.25;
+
+/** Werte je Weg für die Verbindung: Textwege vorher zu einem zusammengefasst. */
+function werte(jeWeg: ReadonlyMap<Weg, number>): number[] {
+  const text = [...jeWeg]
+    .filter(([w]) => TEXTWEGE.has(w))
+    .map(([, x]) => x)
+    .sort((a, b) => b - a);
+  const andere = [...jeWeg].filter(([w]) => !TEXTWEGE.has(w)).map(([, x]) => x);
+  if (!text.length) return andere;
+  return [text.slice(1).reduce((v, x) => v + TEXT_WEITERE * x * (1 - v), text[0]), ...andere];
+}
+
+/**
  * Wege verbinden: je Typ die Belege sammeln und die Sicherheit zusammenrechnen – unabhängige Hinweise stärken sich
- * (1 − Π(1 − s)), jeder Weg zählt höchstens `WEG_HOECHSTENS`. `anpassen` senkt danach je Typ (Gegenanzeichen, #1672).
+ * (1 − Π(1 − s)), jeder Weg zählt höchstens `WEG_HOECHSTENS`, die Textwege zusammen wie einer (`werte`). `anpassen` senkt
+ * danach je Typ (Gegenanzeichen, #1672).
  * Bester Typ zuerst, höchstens `KLASSIFIZIEREN_MAX`. Bei Gleichstand gewinnt der Typ mit mehr Wegen, dann der Name.
  */
 export function verbindeWege(
@@ -352,7 +373,7 @@ export function verbindeWege(
     // Je Weg zählt der stärkste Beleg (zwei Belege desselben Abgleichs sind kein zweiter Weg).
     const jeWeg = new Map<Weg, number>();
     for (const b of liste) jeWeg.set(b.weg, Math.max(jeWeg.get(b.weg) ?? 0, b.sicherheit));
-    const s = anpassen(typId, 1 - [...jeWeg.values()].reduce((p, x) => p * (1 - x), 1));
+    const s = anpassen(typId, 1 - werte(jeWeg).reduce((p, x) => p * (1 - x), 1));
     erg.push({ typId, sicherheit: Math.round(s * 100) / 100, belege: [...liste].sort((a, b) => b.sicherheit - a.sicherheit) });
   }
   const wege = (e: Einschaetzung) => new Set(e.belege.map((b) => b.weg)).size;

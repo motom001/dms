@@ -225,9 +225,10 @@ describe('Wie sicher ist Ablago? (#1645)', () => {
     let r = await x.d.erkennung.klassifizierung.klassifiziere({ dokumente: [brief] }, x.A);
     assert.equal(r.typen[0]?.typId, x.rechnung.id);
     assert.equal(r.schwelle, 0.6);
-    // Überschrift und „Woran man ihn erkennt“ (#1673); ohne abgelegte Rechnung höchstens „wahrscheinlich“ (0,74).
+    // Überschrift und „Woran man ihn erkennt“ (#1673) zählen als Textwege zusammen wie einer (0,64, vorher 0,74);
+    // ohne abgelegte Rechnung höchstens „wahrscheinlich“.
     const s0 = r.typen[0].sicherheit;
-    assert.equal(s0, 0.74);
+    assert.equal(s0, 0.64);
     await x.d.erkennung.setzeStandard({ schwelle: s0 });
     r = await x.d.erkennung.klassifizierung.klassifiziere({ dokumente: [brief] }, x.A);
     assert.equal(r.vorschlag?.typId, x.rechnung.id, 'genau an der Schwelle reicht es');
