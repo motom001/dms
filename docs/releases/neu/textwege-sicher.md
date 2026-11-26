@@ -1,0 +1,5 @@
+art: patch
+
+## Behoben
+
+- **„Sicher“ heißt wieder sicher** (#1703): Erkennt Ablago einen Mappentyp nur an Wörtern im Text – Überschrift, „Woran man ihn erkennt“, Einträge einer Auswahlliste –, zählen diese Hinweise zusammen wie einer. Allein ergeben sie höchstens „wahrscheinlich“; „sicher“ braucht einen unabhängigen Hinweis wie den Absender, ähnliche abgelegte Dokumente oder Gelerntes. Vorher wurden so z. B. Fahrzeugpapiere als „Rechnung – sicher“ vorgeschlagen.
