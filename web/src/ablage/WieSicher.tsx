@@ -42,15 +42,21 @@ export function belegText(b: Klassbeleg, bezuege: Bezuege): string {
         titel: titelOder(b.mappeId ? bezuege[b.mappeId]?.titel : ''),
         merkmal: b.merkmal ?? '',
       });
-    case 'absender':
-    case 'erkennbar':
-    case 'gelernt':
+    default:
+      // Absender, „Woran man ihn erkennt“, Gelerntes, Auswahlliste.
       return belegNeu(b, bezuege);
   }
 }
 
-/** Absender (#1680), „Woran man ihn erkennt“ (#1673) und Gelerntes (#1681) als Satz. */
+/** Absender (#1680), „Woran man ihn erkennt“ (#1673), Gelerntes (#1681) und Auswahllisten (#1689) als Satz. */
 function belegNeu(b: Klassbeleg, bezuege: Bezuege): string {
+  // Eintrag einer Auswahlliste im Text (#1689), z. B. Vertragsart „Versicherung“, erkannt an „Versicherungsschein“.
+  if (b.weg === 'auswahl')
+    return t('ablage.uebernehmen.beleg-auswahl', {
+      feld: b.feld ?? '',
+      titel: titelOder(b.mappeId ? bezuege[b.mappeId]?.titel : ''),
+      wort: b.wort ?? '',
+    });
   if (b.weg === 'erkennbar') return t('ablage.uebernehmen.beleg-erkennbar', { gefunden: b.gefunden ?? 0, von: b.von ?? 0 });
   // Gelernt (#1681): immer beschrieben – wann und aus welcher Mappe.
   if (b.weg === 'gelernt') {

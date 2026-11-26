@@ -75,9 +75,12 @@ export function fuellfelder(
     (f) => f.typ !== 'passwort' && ERKENNUNG_FELDTYPEN.includes(f.typ) && !aus.has(f.key) && vonAussenFuellbar(f),
   );
   const markiert = geeignet.filter((f) => f.erkennung);
-  return (markiert.length ? markiert : geeignet)
-    .map((f) => ({ feld: f, art: artVon(f) }))
-    .filter((x): x is { feld: Feld; art: Erkennungsart } => !!x.art);
+  return (
+    (markiert.length ? markiert : geeignet)
+      .map((f) => ({ feld: f, art: artVon(f) }))
+      // Erkennungswörter (#1689) beschreiben die Mappe, sie stehen nicht im Dokument – nie aus dem Dokument füllen.
+      .filter((x): x is { feld: Feld; art: Erkennungsart } => !!x.art && x.art !== 'woerter')
+  );
 }
 
 /** Muster aus dem Erkennungshinweis („Muster 100-####“, # = Ziffer, A = Buchstabe) als regulärer Ausdruck. */

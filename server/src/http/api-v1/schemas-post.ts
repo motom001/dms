@@ -177,7 +177,7 @@ export const SCHEMAS_POST: Record<string, Schema> = {
         items: {
           type: 'object',
           properties: {
-            weg: { type: 'string', enum: ['ki', 'aehnlichkeit', 'kern', 'abgleich', 'absender', 'erkennbar', 'gelernt'] },
+            weg: { type: 'string', enum: ['ki', 'aehnlichkeit', 'kern', 'abgleich', 'absender', 'erkennbar', 'gelernt', 'auswahl'] },
             stand: {
               type: 'string',
               enum: ['ok', 'leer', 'fehler', 'gesperrt', 'aus'],
@@ -238,7 +238,7 @@ export const SCHEMAS_POST: Record<string, Schema> = {
         items: {
           type: 'object',
           properties: {
-            weg: { type: 'string', enum: ['ki', 'aehnlichkeit', 'kern', 'abgleich', 'absender', 'erkennbar', 'gelernt'] },
+            weg: { type: 'string', enum: ['ki', 'aehnlichkeit', 'kern', 'abgleich', 'absender', 'erkennbar', 'gelernt', 'auswahl'] },
             sicherheit: { type: 'number' },
             paket: { type: 'object', properties: { id: { type: 'string' }, name: { type: 'string' } } },
             begruendung: { type: 'string', description: 'Kurze Begründung des Pakets (reiner Text)' },

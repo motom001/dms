@@ -1364,6 +1364,7 @@
   "uebernehmen.beleg-aehnlich": "Ähnliche Dokumente ({paket}): {begruendung}",
   "uebernehmen.ohne-begruendung": "ohne Begründung",
   "uebernehmen.beleg-abgleich": "Verweis „{feld}“ auf „{titel}“, erkannt an {merkmal}",
+  "uebernehmen.beleg-auswahl": "{feld} „{titel}“, erkannt an „{wort}“",
   "uebernehmen.beleg-zitat": "– im Dokument: „{zitat}“",
   "uebernehmen.sicher.titel": "Wie sicher ist Ablago?",
   "uebernehmen.sicher.als-zahl": "Als Zahl zeigen",
