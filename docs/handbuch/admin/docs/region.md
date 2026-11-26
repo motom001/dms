@@ -14,6 +14,8 @@
 
 Unter den Einstellungen siehst du die **Feiertage des laufenden Jahres**, wie sie gespeichert sind.
 
+**Feiertage aus einem Paket** (#1696): Ist ein Regionspaket für das Land installiert (etwa „Region Deutschland“), nimmt Ablago dessen Feiertage und dessen Liste der Bundesländer; unter der Vorschau steht dann *Die Feiertage kommen aus dem Paket „…“*. Sonst steht dort, dass Ablago sie selbst berechnet. Das gewählte Bundesland bleibt beim Installieren erhalten – du musst nichts neu einstellen.
+
 ## Formate
 
 Unter **Formate** stellst du ein, wie Ablago Daten zeigt (ab der Version, die das Änderungsprotokoll unter #1610 nennt). *Wie die Sprache* richtet sich nach der Sprache der Oberfläche; eine eigene Wahl gilt für alle. **Gespeicherte Werte ändern sich dabei nicht** – nur, wie sie erscheinen.

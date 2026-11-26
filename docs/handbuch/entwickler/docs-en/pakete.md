@@ -48,6 +48,7 @@ Then fill in:
 | `inhalt/rundgaenge.yaml` | optional (dms #831): [tours](entdecken.md#paket-rundgaenge) through a task |
 | `texte/<sprache>/entdecken.json` | optional (dms #1307): texts of the tours and tips per language, German as the base language ([Languages](entdecken.md#paket-rundgaenge-sprachen)); older packages write them directly into the YAML files |
 | `inhalt/tipps.yaml` | optional (dms #832): [tips](entdecken.md#paket-tipps), at most 20, also “new in version …” |
+| `inhalt/region.yaml` | optional (from Ablago 0.332.0, `DMS_REGIONSPAKETE_AB`, dms #1696): [region package](#regionspakete) – public holidays and regions of a country as rules |
 | `README.md`, `LICENSE`, `CHANGELOG.md` | description, licence text, changes per version |
 | `tests/erwartung.yaml` | what must be there after installation |
 
@@ -472,6 +473,55 @@ Sample without guarantee, not legal advice – have it checked by an expert if i
 - **Limits** (`server/src/grundlagen/grenzen.ts`): filled-in text at most 512 KB (`TEXTSATZ_TEXT_MAX`), PDF at most 30 pages and 4 MB (`TEXTSATZ_SEITEN`, `TEXTSATZ_PDF_MAX`), typesetting at most 30 seconds in the worker (`TEXTSATZ_ZEIT_MS`). Beyond that: 413.
 
 **For packages (API):** `GET /api/v1/mappen/{id}/vorlagen` lists a folder's templates (on the folder itself and on folders it refers to) with the state of their placeholders; `POST /api/v1/mappen/{id}/vorlagen/{dokument}/setzen` with `{ "ziel": "ablegen", "register": "dokumente" }` files the PDF and the filled-in text as new documents (response: both documents and the gaps); with `{ "ziel": "herunterladen" }` the PDF is the response. The service account needs read access to the folder, `dokumente: lesen` for the list, `dokumente: schreiben` and edit rights on the folder for setting. The PDF names package and template in its metadata (subject). Minimum version: `dms: ">=0.242.0"` (`DMS_TEXTSATZ_AB` in `shared/src/textsatz.ts`).
+
+## Region packages { #regionspakete }
+
+Data that each country needs and that can change belongs in a **region package** rather than in the core (dms #1696, package “Region Deutschland”: dms-registry #244). From **Ablago 0.332.0** (`DMS_REGIONSPAKETE_AB` in `shared/src/regionspaket.ts`) a package brings one file for this – purely descriptive, without code, so the package stays at the `vorlagen` level. Older Ablago skip `inhalt.region`; packages using it require `dms: ">=0.332.0"`. Date, time and numbers stay in the core (`Intl`).
+
+```yaml
+# manifest.yaml
+inhalt:
+  region: inhalt/region.yaml
+```
+
+| Entry | Meaning |
+| --- | --- |
+| `land` | country according to ISO 3166-1, two capital letters (`DE`) – matches Workbench → Region → Country |
+| `regionen` | list of `{ id, name }`: `id` 1–3 capital letters or digits (ISO 3166-2 without the country, e.g. `SN`), unique; at most 60 |
+| `feiertage` | list of rules, at most 80; on the same day the later rule wins |
+| `feiertage[].name` | name per language, `de` required (`en` recommended), at most 80 characters each; Ablago shows the person’s language, otherwise English, otherwise German |
+| `datum` | fixed day `MM-DD` (not `02-29`) |
+| `ostern` | days relative to Easter Sunday (`-2` Good Friday, `50` Whit Monday), -80 to 250; the Easter formula (Gregorian) stays in the core |
+| `vorDatum` | `{ wochentag: 0–6, datum: MM-DD }`: the last weekday **before** that day (0 = Sunday; Day of Repentance and Prayer = Wednesday before 23 November) |
+| `regionen` | only in these regions (each listed under `regionen`); missing: the whole country |
+| `ab`, `bis` | applies from or until this year (inclusive), 1583–9999 |
+| `jahre` | applies only in these years (at most 30), e.g. Reformation Day 2017 nationwide |
+
+Each rule has exactly one of `datum`, `ostern` and `vorDatum`; the conditions apply together. Unknown entries, wrong days, regions without an entry and lists that are too long are rejected when installing and updating – with file name, position and reason (de/en), e.g. `inhalt/region.yaml: feiertage[5]: exactly one of datum, ostern and vorDatum.` The file may be at most 64 KB. The same check runs in [`pakete-pruefen`](#pakete-mit-ablago-pruefen) (real installer).
+
+Excerpt of the German rules (complete: `shared/regionen/de.yaml`; for all 16 federal states 1990–2100 it yields exactly the same as the built-in calculator `shared/src/feiertage.ts` – test `server/test/regionspaket.test.ts`):
+
+```yaml
+land: DE
+regionen:
+  - { id: BY, name: { de: Bayern, en: Bavaria } }
+  - { id: SN, name: { de: Sachsen, en: Saxony } }
+  # … all 16 federal states
+feiertage:
+  - { name: { de: Neujahr, en: New Year’s Day }, datum: '01-01' }
+  - { name: { de: Internationaler Frauentag, en: International Women’s Day }, datum: '03-08', regionen: [BE], ab: 2019 }
+  - { name: { de: Karfreitag, en: Good Friday }, ostern: -2 }
+  - { name: { de: Fronleichnam, en: Corpus Christi }, ostern: 60, regionen: [BW, BY, HE, NW, RP, SL] }
+  - { name: { de: Reformationstag, en: Reformation Day }, datum: '10-31', regionen: [HB, HH, NI, SH], ab: 2018 }
+  - { name: { de: Reformationstag, en: Reformation Day }, datum: '10-31', jahre: [2017] }
+  - { name: { de: Buß- und Bettag, en: Day of Repentance and Prayer }, vorDatum: { wochentag: 3, datum: '11-23' }, regionen: [SN] }
+```
+
+**In the core:** `liesPaket()` reads and checks the file (`pruefeRegionsregeln`), package management stores it on the installed package (`daten.region` in `pakete`); an update without the file removes it. `shared/src/feiertagsquelle.ts` is the only source of public holidays – calendar in “To do”, schedules “not on public holidays” (daily summary), preview in Workbench → Region: if there is a region package for the country of the archive that knows the chosen region, its rules apply (`feiertageAusRegeln`); otherwise the core calculates as before. Without a chosen region there are no public holidays. With several region packages for the same country, the first by id applies. Workbench → Region names the package the public holidays come from; the list of regions (there and in the setup assistant) comes from the package.
+
+**The chosen region stays a setting of the core** (Workbench → Region, setting `region`, field `bundesland`). The package only supplies rules and regions. If it uses the same identifiers as before (DE: `BW` … `TH`), the choice is kept on installation, without a migration.
+
+**Outlook:** patterns for field values (postcode, phone, IBAN, address), working days and dialling codes are not yet part of the format – they follow once the core uses them (plausibility of fields, dms #1693). Until then Ablago rejects `muster` as an unknown entry. The built-in holiday calculator stays until “Region Deutschland” is published and existing installations get it on update.
 
 ## Checking { #prufen }
 

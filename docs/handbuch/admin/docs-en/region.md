@@ -14,6 +14,8 @@
 
 Below the settings you see the **public holidays of the current year** as they are stored.
 
+**Public holidays from a package** (#1696): if a region package for the country is installed (such as “Region Deutschland”), Ablago takes its public holidays and its list of states; below the preview it then says *The public holidays come from the package “…”*. Otherwise it says that Ablago calculates them itself. The chosen state is kept on installation – you don’t need to set anything again.
+
 ## Formats {#formate}
 
 Under **Formats** you set how Ablago shows data (from the version the changelog names under #1610). *Like the language* follows the language of the interface; your own choice applies to everyone. **Stored values do not change** – only how they appear.
