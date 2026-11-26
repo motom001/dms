@@ -69,7 +69,7 @@ export function bedieneLaeufer(v: Verbund, l: Paketlaeufer, d: Dienst): void {
   );
   v.bediene('laeufer.codeGeaendert', () => l.codeGeaendert());
   v.bediene('laeufer.ereignis', ([paket, felder]) => l.ereignis(String(paket), 'paket.einstellungen_geaendert', felder as string[]));
-  v.bediene('laeufer.vektorFuer', ([text, ms]) => l.vektorFuer(String(text), Number(ms)));
+  v.bediene('laeufer.vektorFuer', ([text, ms, art]) => l.vektorFuer(String(text), Number(ms), art === 'dokument' ? 'dokument' : 'suche'));
   v.bediene('laeufer.schnittstelle', ([paket, aktion, eingang, opt], teil) => {
     const o = opt as { bezeichnung: string; ms?: number; mitTeil?: boolean };
     return l.schnittstelle(String(paket), String(aktion), eingang as Record<string, unknown>, {
@@ -112,7 +112,7 @@ export class Fernlaeufer implements PaketLaeufer, LaeuferSicht {
     dienst.ereignisWecker = () => v.melde('laeufer.stelleZu');
     dienst.suche.vektorAnbieter = {
       paket: () => this.z.vektorPaket,
-      vektorFuer: (text, ms) => v.rufe('laeufer.vektorFuer', [text, ms], { ms: ms + 5000 }),
+      vektorFuer: (text, ms, art) => v.rufe('laeufer.vektorFuer', [text, ms, art], { ms: ms + 5000 }),
     };
     dienst.fragen.anbieter = {
       paket: () => this.z.antworten,
