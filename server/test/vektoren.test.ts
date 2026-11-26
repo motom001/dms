@@ -158,6 +158,27 @@ for (const pg of [false, true]) {
             for (const x of t) alle.push([x.dokumentId, x.mappeId]);
           });
           assert.deepEqual(alle, [[ids[0], post.id]]);
+          // #1688: Nach dem Zuordnen bzw. Verschieben zählt der Treffer für die neue Mappe – auch wenn der Zwischenspeicher
+          // des Modells schon mit der alten geladen ist.
+          const q = { modell: 'm/8', vektor: Array.from(v) };
+          assert.deepEqual(
+            (await d.suche.aehnlicheDokumente(undefined, q)).treffer.map((t) => [t.dokumentId, t.mappeId]),
+            [[ids[0], post.id]],
+          );
+          const ziel = await d.post.legePostAn({ betreff: 'Ziel' }, { id: null, name: 'Test' });
+          assert.deepEqual(
+            await db.repo.mappenVonDokumenten([ids[0], ids[1], 'unbekannt']),
+            new Map([
+              [ids[0], post.id],
+              [ids[1], post.id],
+            ]),
+          );
+          await db.repo.verschiebeDokument(ids[0], ziel.id, reg);
+          assert.deepEqual(await db.repo.mappenVonDokumenten([ids[0]]), new Map([[ids[0], ziel.id]]));
+          assert.deepEqual(
+            (await d.suche.aehnlicheDokumente(undefined, q)).treffer.map((t) => [t.dokumentId, t.mappeId]),
+            [[ids[0], ziel.id]],
+          );
           // Nur Dokumente mit Volltext, ohne Vektor dieses Modells; ab einer Id weiter.
           assert.deepEqual(
             (await db.repo.ohneVektor('m/8', 10)).map((x) => x.id),

@@ -399,6 +399,29 @@ export class SucheDienst {
     return { modell, treffer: await this.lesbareTreffer(z, index, v, anzahl, { schwelle, ohne }) };
   }
 
+  /**
+   * Treffer auf die aktuelle Mappe ihres Dokuments bringen (#1688). Der Zwischenspeicher merkt sich die Mappe beim Laden
+   * und beim Setzen des Vektors; wird das Dokument danach zugeordnet oder verschoben (Post auflösen, Anlagen, Umbau),
+   * stünde der Treffer sonst weiter bei der alten Mappe – frisch abgelegte Dokumente zählten nicht für ihren Typ.
+   * Ein Zugriff über die Treffer statt eines Hörers an jeder Stelle, die verschiebt: So kann keine Stelle es vergessen.
+   * Gelöschte Dokumente fallen dabei aus dem Zwischenspeicher.
+   */
+  private async aktuelleMappen(index: Vektorindex, roh: Treffer[]): Promise<Treffer[]> {
+    if (!roh.length) return roh;
+    const jetzt = await this.repo.mappenVonDokumenten(roh.map((t) => t.dokumentId));
+    const aus: Treffer[] = [];
+    for (const t of roh) {
+      const m = jetzt.get(t.dokumentId);
+      if (!m) {
+        index.entferne(t.dokumentId);
+        continue;
+      }
+      if (m !== t.mappeId) index.setzeMappe(t.dokumentId, m);
+      aus.push(m === t.mappeId ? t : { ...t, mappeId: m });
+    }
+    return aus;
+  }
+
   /** Die besten lesbaren Treffer: erst mehr Kandidaten holen, dann nach Rechten filtern (bei Bedarf mehr). */
   private async lesbareTreffer(
     z: Zugriff | undefined,
@@ -408,11 +431,12 @@ export class SucheDienst {
     opt: { schwelle: number; ohne?: Set<string>; jeMappe?: boolean; ohneMappen?: Set<string> },
   ): Promise<Treffer[]> {
     for (let k = Math.max(50, anzahl * 5); ; k *= 4) {
-      const roh = index.suche(v, k, { schwelle: opt.schwelle, ohne: opt.ohne });
+      const alle = index.suche(v, k, { schwelle: opt.schwelle, ohne: opt.ohne });
+      const roh = await this.aktuelleMappen(index, alle);
       const ok = await this.lesbare(z, [...new Set(roh.map((t) => t.mappeId))]);
       const lesbar = roh.filter((t) => ok.has(t.mappeId) && !opt.ohneMappen?.has(t.mappeId));
       const erg = opt.jeMappe ? jeMappe(lesbar, anzahl) : lesbar.slice(0, anzahl);
-      if (erg.length >= anzahl || roh.length < k || k >= index.anzahl) return erg;
+      if (erg.length >= anzahl || alle.length < k || k >= index.anzahl) return erg;
     }
   }
 
@@ -555,7 +579,10 @@ export class SucheDienst {
     if (!index || index.dimension !== q.vektor.length) return null;
     const konto = (await this.konten?.dienstkonten?.())?.find((b) => b.paketId === paket);
     const zp = await this.zugriff({ id: konto?.id ?? `paket:${paket}`, rolle: 'mitglied', art: 'dienst', paketId: paket });
-    const roh = index.suche(q.vektor, Math.min(index.anzahl, Math.max(200, anzahl * 20)), { schwelle: q.schwelle });
+    const roh = await this.aktuelleMappen(
+      index,
+      index.suche(q.vektor, Math.min(index.anzahl, Math.max(200, anzahl * 20)), { schwelle: q.schwelle }),
+    );
     const ids = [...new Set(roh.map((x) => x.mappeId))];
     const [person, paketDarf, bezuege] = await Promise.all([this.lesbare(z, ids), this.lesbare(zp, ids), this.repo.bezuege(ids)]);
     const ok = roh.filter((x) => person.has(x.mappeId) && paketDarf.has(x.mappeId) && typen.has(bezuege.get(x.mappeId)?.typId ?? ''));

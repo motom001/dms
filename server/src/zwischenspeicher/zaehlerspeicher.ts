@@ -275,6 +275,7 @@ export const OHNE_FOLGEN = new Set<string>([
   'vektorenLaden',
   'vektorVon',
   'vektorStand',
+  'mappenVonDokumenten',
   'ohneVektor',
   'mitVolltext',
   'seitensprachen',
