@@ -197,6 +197,9 @@ describe('Prüfstand: Lauf gegen Ablago (#1679)', () => {
     assert.deepEqual(e1.absender, ['org_strom']);
     assert.deepEqual(e1.felder, { 'vertrag_strom.vertragsnummer': 'richtig', 'vertrag_strom.beginn': 'falsch' });
     assert.deepEqual(e2.felder, { 're_wasser.rechnungsnummer': 'richtig', 're_wasser.betrag': 'richtig' });
+    // Felder je Feldart (#1693): Feldart und Sicherheit je Feld.
+    assert.equal(e2.feldInfo?.['re_wasser.betrag']?.art, 'betrag');
+    assert.equal(e2.feldInfo?.['re_wasser.rechnungsnummer']?.art, 'nummer');
     assert.equal(e3.erwartet.mappeDa, true);
     assert.deepEqual(e3.ziele, ['vertrag_strom']);
     assert.deepEqual(e3.typen?.[0].typ, 'vertraege:vertrag');
