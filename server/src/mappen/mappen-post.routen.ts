@@ -108,7 +108,11 @@ export function zuordnenRouten(k: RoutenKontext): Route[] {
       pfad: '/api/abgleich',
       zugang: 'angemeldet',
       lesend: true,
-      handler: async (a) => ok(await dienst.erkennung.abgleichDokumente(b(a), await zg(a))),
+      handler: async (a) => {
+        const z = await zg(a);
+        // Vorberechnet (#1567) für die drei wahrscheinlichsten Typen, sonst wie bisher.
+        return ok((await dienst.erkennung.vorberechnung.abgleich(b(a), z)) ?? (await dienst.erkennung.abgleichDokumente(b(a), z)));
+      },
     },
   ];
 }
