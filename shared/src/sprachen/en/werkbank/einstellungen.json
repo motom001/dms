@@ -16,6 +16,8 @@
   "region.feiertage.jahr": "Public holidays {jahr}",
   "region.feiertage.gespeichert": "The preview shows the saved state – save first, then the public holidays of the new federal state appear.",
   "region.feiertage.ohne": "Without a federal state, Ablago doesn’t consider public holidays.",
+  "region.feiertage.quelle.paket": "The public holidays come from the package “{paket}”; choose the federal state above.",
+  "region.feiertage.quelle.ablago": "Ablago calculates the public holidays itself; choose the federal state above.",
   "region.feiertage.wofuer": "On public holidays no daily summary comes (for whoever has set this in My account), and the calendar shows them.",
   "region.formate": "Formats",
   "region.formate.einleitung": "How Ablago shows dates, times, numbers, amounts and phone numbers. “Like the language” follows the language of the interface; your own choice applies to everyone. Stored values do not change – only how they appear.",

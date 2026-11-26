@@ -7,6 +7,7 @@ import { BEREICH, PAKET_ID, VERSION, liesErgaenzt, liesErsetzt, punktIdFehler } 
 import { istHerausgeber } from '../../../../shared/src/kennungen';
 import { Fachfehler } from '../../grundlagen/fehler';
 import { t } from '../../sprache/sprache';
+import { KB } from '../../grundlagen/grenzen';
 import { istObjekt, str } from './format';
 
 /** Stand eines Lesens: Dateien, gesammelte Fehler, Manifest, Id, Abhängigkeiten und Inhaltsangaben. */
@@ -105,6 +106,27 @@ export function liste(l: LeseLauf, art: string): Record<string, unknown>[] {
   if (!Array.isArray(v) || !v.every(istObjekt)) {
     fehler.push(`${str(inhalt[art])}: erwartet eine Liste.`);
     return [];
+  }
+  return v;
+}
+
+/**
+ * Eine Inhaltsangabe, die ein einzelnes Objekt ist (`inhalt.region`, #1696); fehlt die Angabe, undefined. Zu große
+ * Dateien und alles außer einem Objekt sind Fehler.
+ */
+export function objekt(l: LeseLauf, art: string, max: number): Record<string, unknown> | undefined {
+  const { inhalt, fehler } = l;
+  if (!inhalt[art]) return undefined;
+  const name = str(inhalt[art]).replace(/^\.\//, '');
+  if ((l.dateien.get(name)?.length ?? 0) > max) {
+    fehler.push(t('meldungen.pakete.datei-zu-gross', { name, kb: Math.round(max / KB) }));
+    return undefined;
+  }
+  const v = liesYaml(l.dateien, fehler, name);
+  if (v == null) return undefined;
+  if (!istObjekt(v)) {
+    fehler.push(t('meldungen.pakete.erwartet-objekt', { name }));
+    return undefined;
   }
   return v;
 }

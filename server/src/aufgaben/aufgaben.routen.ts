@@ -4,6 +4,7 @@
 import { Fachfehler } from '../grundlagen/fehler';
 import { t } from '../sprache/sprache';
 import { pruefeZeit } from './aufgabenmail';
+import { feiertagsquelle } from '../../../shared/src/feiertagsquelle';
 import { L, ok, leer, b, ich } from '../http/routen-hilfen';
 import type { RoutenKontext } from '../http/routen-kontext';
 import type { Route } from '../http/routen-typen';
@@ -158,7 +159,8 @@ function fristenRouten(k: RoutenKontext): Route[] {
           await dienst.fristen.termine(
             await zg(a),
             { von: a.query.von, bis: a.query.bis, favoriten: a.query.favoriten },
-            x.region ? (await x.region.lies()).bundesland : null,
+            // Feiertage über die Feiertagsquelle (#1696): Regionspaket, sonst der eingebaute Rechner.
+            x.region ? feiertagsquelle(await dienst.kern.repo.listePakete(), await x.region.lies()) : null,
           ),
         ),
     },

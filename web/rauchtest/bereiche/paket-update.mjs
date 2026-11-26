@@ -3,6 +3,8 @@
  * Finanzen 2.2.0 → 3.1.0: „Zeitraum“ entfällt (zwei Mappen haben einen Wert), neue Titel-Vorlage. Die Vorschau sagt es
  * in einem Satz, „Feld behalten“ gibt es nur aufgeklappt; nach dem Update stehen die Werte in der Notiz der Mappen. Danach
  * ist das Paket wieder weg.
+ * Dazu ein Regionspaket (#1696): Regionen und Feiertage kommen aus dem Paket, Werkbank → Region nennt es; danach wieder
+ * ohne Bundesland und ohne Paket.
  * Allein starten (frisch gestartetes Ablago, siehe rauchtest.mjs): node web/rauchtest/bereiche/paket-update.mjs [fehlerordner]
  */
 import assert from 'node:assert/strict';
@@ -137,3 +139,53 @@ rauchtest(
     }
   },
 );
+
+/* ---------- Regionspaket (#1696) ---------- */
+
+const REGION_ID = 'regionsprobe';
+const regionspaket = () =>
+  zip({
+    'manifest.yaml': [
+      'schema: 1',
+      `id: ${REGION_ID}`,
+      'name: Regionsprobe',
+      'version: 1.0.0',
+      'beschreibung: Rauchtest für Regionspakete.',
+      'autor: { name: Rauchtest, github: "" }',
+      'lizenz: MIT',
+      'dms: ">=0.124.0"',
+      'inhalt:',
+      '  region: inhalt/region.yaml',
+      '',
+    ].join('\n'),
+    'inhalt/region.yaml': [
+      'land: DE',
+      'regionen:',
+      '  - { id: SN, name: { de: Sachsen (Probe), en: Saxony (test) } }',
+      'feiertage:',
+      "  - { name: { de: Probetag, en: Test day }, datum: '01-02', regionen: [SN] }",
+      '',
+    ].join('\n'),
+  });
+
+rauchtest('Regionspaket: Bundesländer und Feiertage aus dem Paket, Werkbank → Region nennt es (#1696)', { als: LENA }, async (s) => {
+  const cookie = await sitzung(LENA);
+  await api('POST', '/api/konto/verwaltung', { cookie, body: { passwort: LENA.passwort } });
+  try {
+    const upload = (await api('POST', '/api/werkbank/pakete/hochladen', { cookie, body: regionspaket(), roh: true })).daten.upload;
+    await api('POST', '/api/werkbank/pakete/installieren', { cookie, body: { upload, bestaetigt: true } });
+    await s.goto(BASIS + '/ablage/start');
+    await verwalten(s);
+    await s.goto(BASIS + '/werkbank/region');
+    const wahl = s.locator('#region-bundesland');
+    await wahl.locator('option', { hasText: 'Sachsen (Probe)' }).waitFor({ state: 'attached' });
+    assert.equal(await wahl.locator('option').count(), 2, 'keins und die Region aus dem Paket');
+    await wahl.selectOption('SN');
+    await s.getByRole('button', { name: 'Region speichern' }).click();
+    await s.getByText('Die Feiertage kommen aus dem Paket „Regionsprobe“; das Bundesland wählst du oben.').waitFor();
+    await s.getByText('Probetag').waitFor();
+  } finally {
+    await api('PUT', '/api/werkbank/region', { cookie, body: { bundesland: null } }).catch(() => {});
+    await api('DELETE', `/api/werkbank/pakete/${REGION_ID}`, { cookie }).catch(() => {});
+  }
+});

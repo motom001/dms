@@ -24,6 +24,8 @@
   "pakete.die-pakete-der-sammeldatei": "The packages of the bundle file are too large together when unpacked.",
   "pakete.kompression-wird-nicht-unterstuetzt": "Compression {methode} isn’t supported.",
   "pakete.fehlt-im-paket": "{name} is missing in the package.",
+  "pakete.datei-zu-gross": "{name} is larger than {kb} KB.",
+  "pakete.erwartet-objekt": "{name}: expects an object.",
   "pakete.das-paket-ist-ungueltig": "The package is invalid.",
   "pakete.manifest-yaml-ist-leer": "manifest.yaml is empty.",
   "pakete.manifest-yaml-format-kennt": "manifest.yaml: this Ablago version doesn’t know format {wert}.",

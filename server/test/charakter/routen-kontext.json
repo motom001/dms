@@ -223,7 +223,7 @@
     "ok": false
   },
   "regionStand": {
-    "schluessel": ["region", "laender", "bundeslaender", "zeitzonen", "feiertage"],
+    "schluessel": ["region", "laender", "bundeslaender", "zeitzonen", "feiertage", "feiertagsquelle"],
     "region": {
       "land": "DE",
       "bundesland": "SN",

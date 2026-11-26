@@ -688,7 +688,7 @@ export function werkbankEinstellungenRouten(k: RoutenKontext): Route[] {
       methode: 'PUT',
       pfad: '/api/werkbank/region',
       zugang: 'admin',
-      handler: async (a) => ok(await regionStand(await region().speichere(a.body))),
+      handler: async (a) => ok(await regionStand(await region().speichere(a.body, await dienst.kern.repo.listePakete()))),
     },
     { methode: 'GET', pfad: '/api/region', zugang: 'angemeldet', handler: async () => ok(await region().lies()) },
     // Merkmale der Ablage (#1032) für alle Angemeldeten (Apps mit Formularen, GET /api/v1/merkmale).

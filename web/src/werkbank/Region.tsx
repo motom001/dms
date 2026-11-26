@@ -33,6 +33,15 @@ export type RegionZustand = ReturnType<typeof useRegion>;
 const datum = (iso: string) =>
   new Date(`${iso}T12:00:00Z`).toLocaleDateString(gebietsschema(), { weekday: 'short', day: '2-digit', month: '2-digit', timeZone: 'UTC' });
 
+/** Woher die Feiertage kommen (#1696): aus einem Regionspaket oder von Ablago selbst. */
+function Feiertagsquelle({ paket }: { paket: RegionStand['feiertagsquelle'] }) {
+  return (
+    <p className="leise klein">
+      {paket ? t('werkbank.region.feiertage.quelle.paket', { paket: paket.name }) : t('werkbank.region.feiertage.quelle.ablago')}
+    </p>
+  );
+}
+
 export function RegionPanel({ z }: { z: RegionZustand }) {
   const s = z.stand;
   const [e, setE] = useState<Region | null>(null);
@@ -139,6 +148,7 @@ export function RegionPanel({ z }: { z: RegionZustand }) {
             ))}
           </ul>
         )}
+        {s.region.bundesland && <Feiertagsquelle paket={s.feiertagsquelle} />}
         <p className="leise klein">{t('werkbank.region.feiertage.wofuer')}</p>
       </section>
     </div>

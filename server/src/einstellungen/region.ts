@@ -1,4 +1,4 @@
-import { feiertage, istBundesland } from '../../../shared/src/feiertage';
+import type { InstalliertesPaket } from '../../../shared/src/pakete';
 import {
   DATUMSFORMATE,
   istLand,
@@ -19,6 +19,7 @@ import {
   type Region,
 } from '../../../shared/src/region';
 import type { Einstellungen } from './einstellungen';
+import { feiertagsquelle, type Feiertagsquelle } from '../../../shared/src/feiertagsquelle';
 // Telefonnummern (#1609): meldet die Anzeige an (formatiere, tel:-Link) – im Server, nicht im Paket-Läufer.
 import '../../../shared/src/telefon';
 import { Fachfehler } from '../grundlagen/fehler';
@@ -63,17 +64,23 @@ export class RegionDienst {
     this.uhr = null;
   }
 
-  async speichere(e: unknown): Promise<Region> {
+  /**
+   * Speichert die Region. `pakete`: die installierten Pakete – die wählbaren Regionen kommen seit #1696 aus einem
+   * Regionspaket für das Land, sonst sind es die Bundesländer des Kerns wie bisher.
+   */
+  async speichere(e: unknown, pakete: readonly InstalliertesPaket[] = []): Promise<Region> {
     const x = (e ?? {}) as Record<string, unknown>;
     const alt = await this.lies();
     if (x.land !== undefined && !istLand(x.land)) throw new Fachfehler(422, t('meldungen.region.unbekanntes-land'));
-    if (x.bundesland !== undefined && x.bundesland !== null && x.bundesland !== '' && !istBundesland(x.bundesland))
+    const regionen = feiertagsquelle(pakete, { land: (x.land as string | undefined) ?? alt.land, bundesland: null }).regionen;
+    const istRegion = (v: unknown): v is string => typeof v === 'string' && Object.hasOwn(regionen, v);
+    if (x.bundesland !== undefined && x.bundesland !== null && x.bundesland !== '' && !istRegion(x.bundesland))
       throw new Fachfehler(422, t('meldungen.region.unbekanntes-bundesland'));
     if (x.zeitzone !== undefined && !istZeitzone(x.zeitzone))
       throw new Fachfehler(422, t('meldungen.region.unbekannte-zeitzone-bitte-eine'));
     const neu: Region = {
       land: x.land === undefined ? alt.land : (x.land as Region['land']),
-      bundesland: x.bundesland === undefined ? alt.bundesland : istBundesland(x.bundesland) ? x.bundesland : null,
+      bundesland: x.bundesland === undefined ? alt.bundesland : istRegion(x.bundesland) ? x.bundesland : null,
       zeitzone: x.zeitzone === undefined ? alt.zeitzone : (x.zeitzone as string),
       formate: x.formate === undefined ? alt.formate : pruefeFormate(x.formate, alt.formate),
     };
@@ -84,10 +91,14 @@ export class RegionDienst {
     return neu;
   }
 
-  /** Feiertage eines Jahres (Vorschau in der Werkbank), aus Land und Bundesland. */
-  static feiertageIm(r: Region, jahr = Number(tagIn().slice(0, 4))): Array<{ datum: string; name: string }> {
+  /** Feiertage eines Jahres (Vorschau in der Werkbank), aus Land und Bundesland – über die Feiertagsquelle (#1696). */
+  static feiertageIm(
+    r: Region,
+    jahr = Number(tagIn().slice(0, 4)),
+    quelle: Feiertagsquelle = feiertagsquelle([], r),
+  ): Array<{ datum: string; name: string }> {
     if (!r.bundesland) return [];
-    return [...feiertage(jahr, r.bundesland)].map(([datum, name]) => ({ datum, name })).sort((a, b) => a.datum.localeCompare(b.datum));
+    return [...quelle.jahr(jahr)].map(([datum, name]) => ({ datum, name })).sort((a, b) => a.datum.localeCompare(b.datum));
   }
 }
 

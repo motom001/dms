@@ -32,7 +32,9 @@ describe('Region (#726)', () => {
   it('Vorgabe: Deutschland, ohne Bundesland, Europe/Berlin', async () => {
     assert.deepEqual(REGION_STANDARD, { land: 'DE', bundesland: null, zeitzone: 'Europe/Berlin', formate: FORMATE_STANDARD });
     assert.deepEqual(await new RegionDienst(speicherEinstellungen()).lies(), REGION_STANDARD);
-    assert.deepEqual(liesRegion({ land: 'XX', bundesland: 'XX', zeitzone: 'Mond/Krater' }), REGION_STANDARD);
+    // Seit #1696 ist das Bundesland eine Kennung der Feiertagsquelle (auch aus einem Regionspaket): Was keine Kennung ist, fällt weg.
+    assert.deepEqual(liesRegion({ land: 'XX', bundesland: 'Sachsen', zeitzone: 'Mond/Krater' }), REGION_STANDARD);
+    assert.equal(liesRegion({ bundesland: 'X1' }).bundesland, 'X1');
   });
 
   it('übernimmt das Bundesland der Täglichen Zusammenfassung, solange es keine Region gibt (Update ändert nichts)', async () => {

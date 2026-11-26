@@ -100,6 +100,8 @@ export interface RegionStand {
   bundeslaender: Record<string, string>;
   zeitzonen: string[];
   feiertage: Array<{ datum: string; name: string }>;
+  /** Woher die Feiertage kommen (#1696): Regionspaket oder null (Ablago rechnet selbst). */
+  feiertagsquelle: { id: string; name: string } | null;
 }
 /** Katalogquelle (#189): der offizielle Katalog oder eine weitere Adresse. */
 export interface WerkbankAnsichtStand {

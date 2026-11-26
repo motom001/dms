@@ -48,6 +48,7 @@ Dann ausfüllen:
 | `inhalt/rundgaenge.yaml` | optional (dms #831): [Rundgänge](entdecken.md#paket-rundgaenge) durch eine Aufgabe |
 | `texte/<sprache>/entdecken.json` | optional (dms #1307): Texte der Rundgänge und Tipps je Sprache, Deutsch als Grundsprache ([Sprachen](entdecken.md#paket-rundgaenge-sprachen)); ältere Pakete schreiben sie direkt in die YAML-Dateien |
 | `inhalt/tipps.yaml` | optional (dms #832): [Tipps](entdecken.md#paket-tipps), höchstens 20, auch „Neu in Version …“ |
+| `inhalt/region.yaml` | optional (ab Ablago 0.333.0, `DMS_REGIONSPAKETE_AB`, dms #1696): [Regionspaket](#regionspakete) – Feiertage und Regionen eines Landes als Regeln |
 | `README.md`, `LICENSE`, `CHANGELOG.md` | Beschreibung, Lizenztext, Änderungen je Version |
 | `tests/erwartung.yaml` | was nach der Installation da sein muss |
 
@@ -537,6 +538,55 @@ Sprachpakete liegen wie alle Pakete in [motom001/dms-registry](https://github.co
 3. Neue Texte einer neuen Ablago-Version: `python3 werkzeuge/sprachen.py` in der Registry nennt je Sprache, was fehlt; `sprache.ablago` auf die neue Version setzen, wenn alles übersetzt ist.
 
 Die CI der Registry prüft Schlüssel, Platzhalter und HTML wie Ablago und meldet je Sprache die Abdeckung gegen die neueste Ablago-Version.
+
+## Regionspakete { #regionspakete }
+
+Was je Land Daten braucht und sich ändern kann, gehört in ein **Regionspaket** statt in den Kern (dms #1696, Paket „Region Deutschland“: dms-registry #244). Ab **Ablago 0.333.0** (`DMS_REGIONSPAKETE_AB` in `shared/src/regionspaket.ts`) bringt ein Paket dafür eine Datei mit – rein beschreibend, ohne Code, das Paket bleibt auf der Stufe `vorlagen`. Ältere Ablago übergehen `inhalt.region`; Pakete damit verlangen `dms: ">=0.333.0"`. Datum, Uhrzeit und Zahlen bleiben im Kern (`Intl`).
+
+```yaml
+# manifest.yaml
+inhalt:
+  region: inhalt/region.yaml
+```
+
+| Angabe | Bedeutung |
+| --- | --- |
+| `land` | Land nach ISO 3166-1, zwei Großbuchstaben (`DE`) – passt zu Werkbank → Region → Land |
+| `regionen` | Liste `{ id, name }`: `id` 1–3 Großbuchstaben oder Ziffern (ISO 3166-2 ohne Land, z. B. `SN`), eindeutig; höchstens 60 |
+| `feiertage` | Liste von Regeln, höchstens 80; bei gleichem Tag gewinnt die spätere Regel |
+| `feiertage[].name` | Name je Sprache, `de` Pflicht (`en` empfohlen), je höchstens 80 Zeichen; Ablago zeigt die Sprache der Person, sonst Englisch, sonst Deutsch |
+| `datum` | fester Tag `MM-TT` (kein `02-29`) |
+| `ostern` | Tage relativ zu Ostersonntag (`-2` Karfreitag, `50` Pfingstmontag), -80 bis 250; die Osterformel (gregorianisch) bleibt im Kern |
+| `vorDatum` | `{ wochentag: 0–6, datum: MM-TT }`: der letzte Wochentag **vor** dem Tag (0 = Sonntag; Buß- und Bettag = Mittwoch vor dem 23.11.) |
+| `regionen` | nur in diesen Regionen (jede steht unter `regionen`); fehlt: im ganzen Land |
+| `ab`, `bis` | gilt ab bzw. bis zu diesem Jahr (einschließlich), 1583–9999 |
+| `jahre` | gilt nur in diesen Jahren (höchstens 30), z. B. Reformationstag 2017 bundesweit |
+
+Je Regel genau eine Angabe aus `datum`, `ostern` und `vorDatum`; die Bedingungen gelten zusammen. Unbekannte Angaben, falsche Tage, Regionen ohne Eintrag und zu lange Listen lehnt Ablago beim Installieren und Aktualisieren ab – mit Dateiname, Stelle und Grund (de/en), z. B. `inhalt/region.yaml: feiertage[5]: genau eine Angabe aus datum, ostern und vorDatum.` Die Datei darf höchstens 64 KB groß sein. Dieselbe Prüfung macht [`pakete-pruefen`](#pakete-mit-ablago-pruefen) (echter Installer).
+
+Auszug der deutschen Regeln (vollständig: `shared/regionen/de.yaml`, liefert für alle 16 Bundesländer 1990–2100 genau dasselbe wie der eingebaute Rechner `shared/src/feiertage.ts` – Test `server/test/regionspaket.test.ts`):
+
+```yaml
+land: DE
+regionen:
+  - { id: BY, name: { de: Bayern, en: Bavaria } }
+  - { id: SN, name: { de: Sachsen, en: Saxony } }
+  # … alle 16 Bundesländer
+feiertage:
+  - { name: { de: Neujahr, en: New Year’s Day }, datum: '01-01' }
+  - { name: { de: Internationaler Frauentag, en: International Women’s Day }, datum: '03-08', regionen: [BE], ab: 2019 }
+  - { name: { de: Karfreitag, en: Good Friday }, ostern: -2 }
+  - { name: { de: Fronleichnam, en: Corpus Christi }, ostern: 60, regionen: [BW, BY, HE, NW, RP, SL] }
+  - { name: { de: Reformationstag, en: Reformation Day }, datum: '10-31', regionen: [HB, HH, NI, SH], ab: 2018 }
+  - { name: { de: Reformationstag, en: Reformation Day }, datum: '10-31', jahre: [2017] }
+  - { name: { de: Buß- und Bettag, en: Day of Repentance and Prayer }, vorDatum: { wochentag: 3, datum: '11-23' }, regionen: [SN] }
+```
+
+**Im Kern:** `liesPaket()` liest und prüft die Datei (`pruefeRegionsregeln`), die Paketverwaltung speichert sie am installierten Paket (`daten.region` in `pakete`); ein Update ohne die Datei nimmt sie weg. `shared/src/feiertagsquelle.ts` ist die einzige Quelle der Feiertage – Kalender in „Zu erledigen“, Zeitpläne „nicht an Feiertagen“ (Tägliche Zusammenfassung), Vorschau in Werkbank → Region: Gibt es ein Regionspaket für das Land der Ablage, das die gewählte Region kennt, gelten seine Regeln (`feiertageAusRegeln`); sonst rechnet der Kern wie bisher. Ohne gewählte Region gibt es keine Feiertage. Bei mehreren Regionspaketen für dasselbe Land gilt das erste nach Id. Werkbank → Region nennt das Paket, aus dem die Feiertage kommen; die Liste der Regionen (dort und im Einrichtungsassistenten) kommt aus dem Paket.
+
+**Die gewählte Region bleibt eine Einstellung des Kerns** (Werkbank → Region, Einstellung `region`, Feld `bundesland`). Das Paket liefert nur Regeln und Regionen. Nutzt es dieselben Kennungen wie bisher (DE: `BW` … `TH`), bleibt die Wahl beim Installieren erhalten, ohne Umzug.
+
+**Ausblick:** Muster für Feldwerte (PLZ, Telefon, IBAN, Anschrift), Werktage und Vorwahlen kennt das Format noch nicht – sie folgen, wenn der Kern sie nutzt (Plausibilität der Felder, dms #1693). Bis dahin lehnt Ablago `muster` als unbekannte Angabe ab. Der eingebaute Feiertagsrechner bleibt, bis „Region Deutschland“ veröffentlicht ist und bestehende Installationen es beim Update bekommen.
 
 ## Prüfen
 

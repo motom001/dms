@@ -48,7 +48,8 @@ import {
 } from './format';
 import { eingeschaltetVon, postUndRollenFehler, pruefeZeitplanKarten, werkbankKartenFehler } from './inhalt-pruefen';
 import { verknuepftFehler } from './automatisierungen';
-import { liste, type LeseLauf } from './lesen-lauf';
+import { liste, objekt, type LeseLauf } from './lesen-lauf';
+import { pruefeRegionsregeln, REGION_DATEI_MAX, type Regionsregeln } from '../../../../shared/src/regionspaket';
 
 /** Beispiele mit ihren Dokumenten; danach Dokumentenregister und Verweise zwischen den Beispielen. */
 export function liesBeispiele(l: LeseLauf, typen: PaketTyp[]) {
@@ -372,4 +373,16 @@ export function pruefeKennungen(l: LeseLauf, typen: PaketTyp[], sichten: PaketSi
         }),
       );
   }
+}
+
+/**
+ * Regionspaket (#1696, `inhalt.region`): Feiertage und Regionen eines Landes als Regeln, streng geprüft – Fehler stehen
+ * mit dem Dateinamen davor in der Liste der Gründe.
+ */
+export function liesRegionsregeln(l: LeseLauf): { region?: Regionsregeln } {
+  const roh = objekt(l, 'region', REGION_DATEI_MAX);
+  if (roh === undefined) return {};
+  const { regeln, fehler } = pruefeRegionsregeln(roh);
+  l.fehler.push(...fehler.map((f) => `${str(l.inhalt.region)}: ${f}`));
+  return regeln ? { region: regeln } : {};
 }

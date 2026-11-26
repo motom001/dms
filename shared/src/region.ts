@@ -1,4 +1,5 @@
-import { BUNDESLAENDER, istBundesland, type Bundesland } from './feiertage';
+import { BUNDESLAENDER, istBundesland } from './feiertage';
+import { REGION_KENNUNG } from './regionspaket';
 import { gebietsschema } from './sprache';
 
 /**
@@ -135,7 +136,11 @@ export function liesFormate(v: unknown): Formate {
 
 export interface Region {
   land: Land;
-  bundesland: Bundesland | null;
+  /**
+   * Gewählte Region für die Feiertage, z. B. SN. Seit #1696 eine Kennung der Feiertagsquelle: ein Bundesland des Kerns
+   * oder eine Region aus einem Regionspaket (gleiche Kennungen bei „Region Deutschland“, darum ohne Umzug).
+   */
+  bundesland: string | null;
   zeitzone: string;
   /** Formate (#1610); fehlen sie in einer älteren Einstellung, gelten die Vorgaben. */
   formate: Formate;
@@ -143,13 +148,16 @@ export interface Region {
 /** Neue Installation: Deutschland, ohne Bundesland, Europe/Berlin (Lena muss nichts tun). */
 export const REGION_STANDARD: Region = { land: 'DE', bundesland: null, zeitzone: STANDARD_ZEITZONE, formate: FORMATE_STANDARD };
 
+/** Sieht aus wie die Kennung einer Region (#1696); ob es sie gibt, prüft der Server gegen die Feiertagsquelle. */
+const istRegionKennung = (v: unknown): v is string => typeof v === 'string' && REGION_KENNUNG.test(v);
+
 /** Liest einen gespeicherten Wert; Unbekanntes fällt auf die Vorgabe zurück. */
 export function liesRegion(v: unknown, bundeslandAlt: unknown = null): Region {
   const o = (v && typeof v === 'object' ? v : {}) as Record<string, unknown>;
   return {
     land: istLand(o.land) ? o.land : REGION_STANDARD.land,
     // Bis #726 stand das Bundesland bei der Täglichen Zusammenfassung – es zieht ohne Zutun mit um.
-    bundesland: istBundesland(o.bundesland) ? o.bundesland : v ? null : istBundesland(bundeslandAlt) ? bundeslandAlt : null,
+    bundesland: istRegionKennung(o.bundesland) ? o.bundesland : v ? null : istBundesland(bundeslandAlt) ? bundeslandAlt : null,
     zeitzone: istZeitzone(o.zeitzone) ? o.zeitzone : STANDARD_ZEITZONE,
     formate: liesFormate(o.formate),
   };

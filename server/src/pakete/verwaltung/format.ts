@@ -204,6 +204,8 @@ export interface Paket {
   kurzanleitung?: Record<string, string[]>;
   /** Rundgänge und Tipps (#831, #832; `inhalt.rundgaenge`, `inhalt.tipps`), roh und geprüft; Texte je Sprache (#1307). */
   entdecken?: { rundgaenge?: unknown[]; tipps?: unknown[]; texte?: PaketTexte };
+  /** Regionspaket (#1696, `inhalt.region`): Feiertage und Regionen eines Landes, geprüft. */
+  region?: import('../../../../shared/src/regionspaket').Regionsregeln;
 }
 
 /** Inhalt eines Sprachpakets (#731), geprüft gegen das Deutsche dieser Version. */

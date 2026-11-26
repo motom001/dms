@@ -15,6 +15,7 @@ import {
   liesAutomatisierungen,
   liesBeispiele,
   liesEntdecken,
+  liesRegionsregeln,
   liesVorgabenUndUmbau,
   liesWortlisten,
   pruefeKennungen,
@@ -42,6 +43,7 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
   const wortlisten = liesWortlisten(l);
   pruefeTabellen(l, typen);
   const entdecken = liesEntdecken(l, typen);
+  const region = liesRegionsregeln(l);
   pruefeKennungen(l, typen, sichten);
   const { einst, ma, code } = liesCodeTeil(l, typen, zeitplanKarten);
   if (fehler.length) throw new Fachfehler(422, t('meldungen.pakete.das-paket-ist-ungueltig'), { gruende: fehler });
@@ -84,5 +86,7 @@ export function liesPaket(roh: Map<string, Buffer>): Paket {
       return k ? { kurzanleitung: k } : {};
     })(),
     ...(Object.keys(entdecken).length ? { entdecken } : {}),
+    // Regionspaket (#1696): Feiertage und Regionen als Regeln.
+    ...region,
   };
 }

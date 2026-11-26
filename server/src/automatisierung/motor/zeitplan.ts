@@ -16,7 +16,8 @@ import { log, HAENGT_MIN } from './gemeinsam';
 import { faelligeTage, type Merker, laufeFaellige, wochentagVon, zeitpunktIn } from '../../zeitplan/zeitplan';
 import { eigeneVersion } from '../../system/system';
 import { liesRegion } from '../../../../shared/src/region';
-import { istBundesland, feiertagAm } from '../../../../shared/src/feiertage';
+import { istBundesland } from '../../../../shared/src/feiertage';
+import { feiertagsquelle } from '../../../../shared/src/feiertagsquelle';
 import { wirksameZeit } from '../../aufgaben/aufgabenmail';
 
 /** Zeitplan und Merker. */
@@ -144,10 +145,12 @@ export abstract class AutomatisierungZeitplan extends AutomatisierungWiederholen
     const roh = ((await einst?.lies('aufgaben_mail')) ?? {}) as { bundesland?: unknown };
     const region = einst ? liesRegion(await einst.lies('region'), roh.bundesland) : null;
     const bundesland = region ? region.bundesland : istBundesland(roh.bundesland) ? roh.bundesland : null;
+    // Feiertagsquelle (#1696): Regeln eines Regionspakets, sonst der eingebaute Rechner wie bisher.
+    const quelle = feiertagsquelle(await this.d.dienst.kern.repo.listePakete(), { land: region?.land ?? 'DE', bundesland });
     const merker = (schluessel: string) => this.merker(schluessel);
     const takt = (uhrzeit: string, tage: number[], feiertage: boolean) => ({
       uhrzeit,
-      an: (tag: string) => tage.includes(wochentagVon(tag)) && !(feiertage && feiertagAm(tag, bundesland)),
+      an: (tag: string) => tage.includes(wochentagVon(tag)) && !(feiertage && quelle.am(tag)),
     });
     // Gleiche Auslöser gemeinsam (Reihenfolge, „Danach keine weiteren …“) – je Benutzer bzw. je Tag ein Ereignis.
     const gruppen = new Map<string, Automatisierung[]>();
