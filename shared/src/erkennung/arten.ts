@@ -11,6 +11,7 @@ import {
   type Mappentyp,
 } from '../model/basis';
 import { PAKET_ID_TEIL, SCHLUESSEL } from '../kennungen';
+import { liesCodeAngaben } from '../codes';
 /** Die Form der Angaben „Aus Dokument füllen“ steht im Fachmodell (#1278, Schritt 5); hier weiter erreichbar. */
 export { ERKENNUNGSARTEN, type AusDokument, type Erkennungsart, type FeldErkennung } from '../model/basis';
 
@@ -56,6 +57,8 @@ export function liesFeldErkennung(v: unknown, typ: Feldtyp): FeldErkennung | nul
   if (h) e.hinweis = h;
   // Ende eines Zeitraums (#1646): Kennung des Datumsfelds für den Beginn; ob es das gibt, zählt erst bei der Erkennung.
   if (typ === 'datum' && typeof o.endeVon === 'string' && SCHLUESSEL.test(o.endeVon)) e.endeVon = o.endeVon;
+  // Code auf dem Dokument (#1723): Muster und Codeart gibt es nur mit dieser Art.
+  if (e.art === 'code') Object.assign(e, liesCodeAngaben(o));
   return e;
 }
 

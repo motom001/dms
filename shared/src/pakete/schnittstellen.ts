@@ -78,6 +78,8 @@ export const SCHNITTSTELLEN = {
   'dms:hinweise': t('gemeinsam.pakete.hinweise-setzen'),
   'dms:leerseiten': t('gemeinsam.pakete.leerseiten-markieren'),
   'dms:anlagen': t('gemeinsam.pakete.anlagen-anlegen'),
+  // Codes lesen (#1723): QR-Codes und Barcodes auf Dokumenten, Antwort wie dokument.lesen.barcode@1.
+  'dms:codes': t('gemeinsam.pakete.codes-lesen'),
 } as const;
 export type Schnittstelle = keyof typeof SCHNITTSTELLEN;
 /** Ab dieser Version kennt das DMS `code.rechte.schnittstellen` und das Ereignis `volltext.fertig` (#442). */
@@ -104,6 +106,7 @@ export const SCHNITTSTELLE_HILFE: Record<Schnittstelle, Hilfeort> = {
   'dms:hinweise': 'pakete.recht.hinweise',
   'dms:leerseiten': 'pakete.recht.leerseiten',
   'dms:anlagen': 'pakete.recht.anlagen',
+  'dms:codes': 'pakete.recht.codes',
 };
 /**
  * Ab dieser Version (#585) kennt das DMS das Ereignis `sicherung.fertig` und die Schnittstelle `dms:sicherung-lesen`:
@@ -151,6 +154,7 @@ export const INHALT_SCHNITTSTELLEN: readonly Schnittstelle[] = [
   'dms:volltext',
   'dms:umwandeln',
   'dms:archivfassung',
+  'dms:codes',
 ];
 /**
  * KI-Paket bzw. „KI-Dienst“ (#796): ein Paket, das Inhalte lesen oder bekommen kann (Mappen, Dokumente, Volltext,

@@ -199,7 +199,7 @@
   "schnittstelleUnbekannt": {
     "code": null,
     "fehler": [
-      "code.rechte.schnittstellen: „dms:gibtsnicht“ gibt es nicht. Möglich: dms:vektoren, dms:antworten, dms:erkennen, dms:texterkennung, dms:umwandeln, dms:sicherung-lesen, dms:sicherung-holen, dms:volltext, dms:archivfassung, dms:uebersetzen, dms:klassifizieren, dms:hinweise, dms:leerseiten, dms:anlagen."
+      "code.rechte.schnittstellen: „dms:gibtsnicht“ gibt es nicht. Möglich: dms:vektoren, dms:antworten, dms:erkennen, dms:texterkennung, dms:umwandeln, dms:sicherung-lesen, dms:sicherung-holen, dms:volltext, dms:archivfassung, dms:uebersetzen, dms:klassifizieren, dms:hinweise, dms:leerseiten, dms:anlagen, dms:codes."
     ]
   },
   "schnittstellenKeineListe": {
@@ -742,7 +742,7 @@
       "code.ereignisse: „x“ gibt es nicht. Möglich: post.angelegt, dokument.hochgeladen, texterkennung.fertig, volltext.fertig, paket.einstellungen_geaendert, datei.umwandeln, sicherung.fertig, datei.volltext, datei.archivfassung, mappe.angelegt, mappe.geaendert, mappe.geloescht, mappe.wiederhergestellt, frist.erreicht, zeitplan.ausgefuehrt.",
       "code.rechte: dms:benutzer ist für Pakete nicht erlaubt – Pakete sehen keine Benutzer.",
       "code.rechte.dokumente: keine, lesen oder schreiben.",
-      "code.rechte.schnittstellen: „y“ gibt es nicht. Möglich: dms:vektoren, dms:antworten, dms:erkennen, dms:texterkennung, dms:umwandeln, dms:sicherung-lesen, dms:sicherung-holen, dms:volltext, dms:archivfassung, dms:uebersetzen, dms:klassifizieren, dms:hinweise, dms:leerseiten, dms:anlagen.",
+      "code.rechte.schnittstellen: „y“ gibt es nicht. Möglich: dms:vektoren, dms:antworten, dms:erkennen, dms:texterkennung, dms:umwandeln, dms:sicherung-lesen, dms:sicherung-holen, dms:volltext, dms:archivfassung, dms:uebersetzen, dms:klassifizieren, dms:hinweise, dms:leerseiten, dms:anlagen, dms:codes.",
       "code.rechte.schnittstellen: dms:hinweise braucht code.rechte.schreiben – Hinweise gibt es nur an Mappen, die das Paket schreiben darf.",
       "code.rechte.schnittstellen: dms:leerseiten braucht code.rechte.lesen mit dms:post (oder „*“) und code.rechte.dokumente – markiert wird nur in Post, die das Paket lesen darf.",
       "code.rechte.schnittstellen: dms:anlagen braucht code.rechte.lesen und code.rechte.schreiben mit dms:post (oder „*“) und code.rechte.dokumente: schreiben – Anlagen entstehen nur beim Teilen einer Post.",

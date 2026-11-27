@@ -44,6 +44,7 @@ export function genutzteFunktionen(x: {
   if (paketTypen.some((t) => (t.felder as Felder).some((f) => f.typ === 'zeitraum' || f.typ === 'prozent' || f.negativ === true)))
     genutzt.push('feldarten');
   if (paketTypen.some((t) => (t.felder as Felder).some((f) => f.typ === 'tabelle'))) genutzt.push('tabelle');
+  if (JSON.stringify(paketTypen).includes('"art":"code"')) genutzt.push('codes');
   if (paketTypen.some((t) => (t.felder as Felder).some((f) => Array.isArray(f.vorbelegen) && f.vorbelegen.length)))
     genutzt.push('vorbelegen');
   if (paketTypen.some((t) => 'gehoertZu' in t)) genutzt.push('teile');

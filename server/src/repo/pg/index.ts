@@ -10,7 +10,7 @@ import { pgAblaeufe, pgAblaufvorlagen } from './ablaeufe';
 import { pgAufgaben, pgFaelle } from './aufgaben';
 import { pgAuskunft } from './auskunft';
 import { pgDemo } from './demo';
-import { pgDateien, pgDokumente, pgVersionen } from './dokumente';
+import { pgDateien, pgDokumentCodes, pgDokumente, pgVersionen } from './dokumente';
 import { pgErkennung } from './erkennung';
 import { pgEreignisse, pgKatalog } from './ereignisse';
 import { pgFassungen } from './fassungen';
@@ -76,6 +76,7 @@ export function pgRepo(sql: Sql, haushaltId: string, imTx = false): Repo {
     ...pgKatalog(k),
     ...pgNummern(k),
     ...pgDokumente(k),
+    ...pgDokumentCodes(k),
     ...pgVersionen(k),
     ...pgDateien(k),
     ...pgFavoriten(k),

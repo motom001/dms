@@ -109,6 +109,7 @@ export const HILFE = {
   'pakete.recht.hinweise': admin('pakete/', 'dem Recht „Hinweise an Mappen setzen“', 'recht-hinweise'),
   'pakete.recht.leerseiten': admin('pakete/', 'dem Recht „Leere Seiten in neuer Post markieren“', 'recht-leerseiten'),
   'pakete.recht.anlagen': admin('pakete/', 'dem Recht „Anlagen beim Teilen einer Post anlegen“', 'recht-anlagen'),
+  'pakete.recht.codes': admin('pakete/', 'dem Recht „Codes auf Dokumenten lesen“', 'recht-codes'),
   'pakete.recht.einrichtung': admin('pakete/', 'dem Recht „Einrichtung lesen“', 'recht-einrichtung'),
   'pakete.recht.nachweise': admin('pakete/', 'dem Recht „Nachweise lesen“', 'recht-nachweise'),
   'pakete.recht.berechnet': admin('pakete/', 'berechneten Feldern', 'recht-berechnet'),

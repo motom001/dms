@@ -4,6 +4,7 @@ import { SCHLUESSEL, TYP_KENNUNG } from '../../../../shared/src/kennungen';
 import { FELDTYPEN, ZIELTYPEN_MAX, REGISTERARTEN, ABSCHNITT_TITEL_MAX, HISTORIENGRUPPEN } from '../../../../shared/src/model';
 import { FELDART_BESCHREIBUNG, uuid, beschriftungen, ref, liste, zeit } from './schema-hilfen';
 import { ERKENNUNGSARTEN } from '../../../../shared/src/erkennung';
+import { CODE_MUSTER_MAX } from '../../../../shared/src/codes';
 import { FELDFORMATE } from '../../../../shared/src/feldformate';
 import { VORLAGE_MAX } from '../../../../shared/src/zusammengesetzt';
 import { ANZEIGE_BEDINGUNGEN_MAX } from '../../../../shared/src/anzeige';
@@ -140,7 +141,7 @@ export const SCHEMAS_TYPEN: Record<string, Schema> = {
         type: 'object',
         nullable: true,
         description:
-          'Aus Dokument füllen (#336, #391; bis #938 „Für die Erkennung nutzen“); vorhanden = an. Nur bei Text, Langtext, Zahl, Betrag, Datum, Auswahl, Verweis, Zeitraum und Prozent. art: was im Feld steht (fehlt = aus Feldart und Bezeichnung), hinweis: Erkennungshinweis, z. B. „Muster 100-####“ (# = Ziffer).',
+          'Aus Dokument füllen (#336, #391; bis #938 „Für die Erkennung nutzen“); vorhanden = an. Nur bei Text, Langtext, Zahl, Betrag, Datum, Auswahl, Verweis, Zeitraum und Prozent. art: was im Feld steht (fehlt = aus Feldart und Bezeichnung), hinweis: Erkennungshinweis, z. B. „Muster 100-####“ (# = Ziffer). art=code (#1723, Text und Langtext): der Inhalt eines QR-Codes oder Barcodes, den ein Paket mit dms:codes auf dem Dokument gelesen hat – nie aus dem Text.',
         properties: {
           art: { type: 'string', enum: Object.keys(ERKENNUNGSARTEN) },
           hinweis: { type: 'string', maxLength: 300 },
@@ -148,6 +149,18 @@ export const SCHEMAS_TYPEN: Record<string, Schema> = {
             type: 'string',
             description:
               'Nur am Datumsfeld für das Ende eines Zeitraums (#1646): Kennung des Datumsfelds für den Beginn. Steht im Dokument ein Zeitraum („vom 01.07.2012 – 31.07.2012“), bekommt der Beginn das erste und dieses Feld das zweite Datum. Fehlt = aus Kennung und Bezeichnung (Beginn/Ende, Von/Bis, Mietbeginn/Mietende …).',
+          },
+          muster: {
+            type: 'string',
+            maxLength: CODE_MUSTER_MAX,
+            description:
+              'Nur mit art=code (#1723): Anfang des Inhalts, ohne Groß- und Kleinschreibung, z. B. „https://www.kba-online.de/dub/#/zugriffsdaten/“. Passen mehrere Codes, gewinnt der auf der früheren Seite; passt keiner, bleibt das Feld leer. Fehlt = jeder Code.',
+          },
+          codeart: {
+            type: 'string',
+            pattern: '^[a-z0-9][a-z0-9_-]{0,39}$',
+            description:
+              'Nur mit art=code (#1723): Art des Codes, z. B. qr, ean13 oder code128 – passt auf jede Art, die so beginnt. Fehlt = jede.',
           },
         },
       },

@@ -3,6 +3,7 @@ import type { Dokument } from '../../../../shared/src/model';
 import type { RepoTeil } from '..';
 import { jetzt, kopie } from './hilfen';
 import type { SpeicherKontext } from './kontext';
+import type { GelesenerCode } from '../../../../shared/src/codes';
 
 /** Dokumente lesen, anlegen, verschieben, löschen; Anlagen (#998). */
 export function speicherDokumente(sp: SpeicherKontext) {
@@ -115,6 +116,7 @@ export function speicherDokumente(sp: SpeicherKontext) {
 /** Umbenennen (#1594) und der Hinweis „Scan verkleinert“ (#1600). */
 export function speicherDokumentAngaben(sp: SpeicherKontext) {
   const { dokumente } = sp;
+  const codes = new Map<string, { sha256: string; codes: GelesenerCode[] }>();
   return {
     async benenneDokument(id, name) {
       const d = dokumente.get(id);
@@ -126,6 +128,14 @@ export function speicherDokumentAngaben(sp: SpeicherKontext) {
     async setzeVerkleinert(id, sha256, dpi) {
       const d = dokumente.get(id);
       if (d && d.sha256 === sha256) d.verkleinertDpi = dpi;
+    },
+    // Codes auf dem Dokument (#1723): neben dem Dokument, nicht daran – sie gehören nicht zum Dokument der API.
+    async liesCodes(id) {
+      const c = codes.get(id);
+      return c ? structuredClone(c) : null;
+    },
+    async merkeCodes(id, sha256, liste) {
+      if (dokumente.get(id)?.sha256 === sha256) codes.set(id, structuredClone({ sha256, codes: liste }));
     },
   } satisfies RepoTeil;
 }

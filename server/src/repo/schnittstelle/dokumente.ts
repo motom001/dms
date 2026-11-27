@@ -2,6 +2,7 @@
 import type { Dokument, DokumentVersion } from '../../../../shared/src/model';
 import type { NeueVersion } from './typen';
 import type { FassungArt, GespeicherteFassung, Loeschvermerk } from '../../../../shared/src/fassungen';
+import type { GelesenerCode } from '../../../../shared/src/codes';
 
 /** Dokumente und ihre Versionen (#194), Demo-Daten, Fassungen (#1006). */
 export interface RepoDokumente {
@@ -55,6 +56,10 @@ export interface RepoDokumente {
   benenneDokument(id: string, name: string): Promise<boolean>;
   /** Scan verkleinert (#1600): Auflösung des Originals (dpi) für die Datei mit diesem Prüfwert merken. */
   setzeVerkleinert(id: string, sha256: string, dpi: number): Promise<void>;
+  /** Codes auf dem Dokument (#1723): gemerkt für die Datei mit Prüfwert `sha256`; null = noch nie gelesen. */
+  liesCodes(id: string): Promise<{ sha256: string; codes: GelesenerCode[] } | null>;
+  /** Codes merken (#1723) – nur, solange das Dokument noch die Datei mit diesem Prüfwert hat. */
+  merkeCodes(id: string, sha256: string, codes: GelesenerCode[]): Promise<void>;
   /**
    * E-Mail-Postfach (#999): Platz in der Eingangsreihenfolge der Post (`nr`, null = keiner) und Kennzeichen
    * „Original-E-Mail“ setzen – was fehlt, bleibt. Auch beim Ersetzen ohne Versionierung (das neue Dokument übernimmt es).

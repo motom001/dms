@@ -2,6 +2,7 @@
 import { istUuid, type RepoTeil } from '..';
 import type { PgKontext } from './kontext';
 import { alsDokument, alsVersion } from './zeilen';
+import type { GelesenerCode } from '../../../../shared/src/codes';
 
 /** Dokumente lesen, anlegen, verschieben, löschen; Anlagen (#998). */
 export function pgDokumente(k: PgKontext) {
@@ -99,6 +100,24 @@ export function pgDokumente(k: PgKontext) {
         SELECT d.register_key, count(*)::int AS n FROM dokumente d JOIN mappen m ON m.id = d.mappe_id
         WHERE m.typ_id = ${typId} AND d.haushalt_id = ${haushaltId} GROUP BY d.register_key`;
       return new Map(r.map((z) => [z.register_key as string, z.n as number]));
+    },
+  } satisfies RepoTeil;
+}
+
+/** Codes auf dem Dokument (#1723): eigene Abfrage, nicht in DOKUMENT_SPALTEN – sie gehören nicht zum Dokument der API. */
+export function pgDokumentCodes(k: PgKontext) {
+  const { sql, haushaltId } = k;
+  return {
+    async liesCodes(id) {
+      if (!istUuid(id)) return null;
+      const [r] = await sql`SELECT codes FROM dokumente WHERE haushalt_id = ${haushaltId} AND id = ${id}`;
+      const c = r?.codes as { sha256?: unknown; codes?: unknown } | null | undefined;
+      return c && typeof c.sha256 === 'string' && Array.isArray(c.codes) ? { sha256: c.sha256, codes: c.codes as GelesenerCode[] } : null;
+    },
+    async merkeCodes(id, sha256, codes) {
+      if (!istUuid(id)) return;
+      await sql`UPDATE dokumente SET codes = ${sql.json({ sha256, codes } as never)}
+        WHERE haushalt_id = ${haushaltId} AND id = ${id} AND sha256 = ${sha256}`;
     },
   } satisfies RepoTeil;
 }

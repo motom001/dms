@@ -16,6 +16,8 @@ export interface LaeuferSchnappschuss {
   vektorPaket: string | null;
   antworten: { id: string; name: string } | null;
   erkennen: Array<{ id: string; name: string; netz: boolean }>;
+  /** Codes auf Dokumenten (#1723): geladene Pakete mit dms:codes. */
+  codes?: Array<{ id: string; name: string; netz: boolean }>;
   /** „Wohin gehört das?“ (#939): geladene Pakete mit dms:klassifizieren. */
   klassifizieren?: Array<{ id: string; name: string; netz: boolean; vektoren: boolean }>;
   /** Inhalte übersetzen (#732): geladene Pakete mit dms:uebersetzen. */
@@ -31,6 +33,7 @@ const LEER: LaeuferSchnappschuss = {
   vektorPaket: null,
   antworten: null,
   erkennen: [],
+  codes: [],
   klassifizieren: [],
   uebersetzen: [],
   aktionen: [],
@@ -55,6 +58,7 @@ export function schnappschuss(l: Paketlaeufer, d: Dienst): LaeuferSchnappschuss 
     vektorPaket: l.vektorPaket(),
     antworten: l.paketMit('dms:antworten'),
     erkennen: d.erkennung.anbieter?.pakete() ?? [],
+    codes: d.erkennung.codes.anbieter?.pakete() ?? [],
     klassifizieren: d.erkennung.klassifizierung.anbieter?.pakete() ?? [],
     uebersetzen: d.uebersetzung.anbieter?.pakete() ?? [],
     aktionen: l.aktionPakete(),
@@ -128,6 +132,11 @@ export class Fernlaeufer implements PaketLaeufer, LaeuferSicht {
       pakete: () => this.z.erkennen,
       erkenne: (paket, eingang, ms) =>
         v.rufe('laeufer.schnittstelle', [paket, 'dms:erkennen', eingang, { bezeichnung: 'Felder erkannt', ms }], { ms: ms + 5000 }),
+    };
+    dienst.erkennung.codes.anbieter = {
+      pakete: () => this.z.codes ?? [],
+      lies: (paket, eingang, ms) =>
+        v.rufe('laeufer.schnittstelle', [paket, 'dms:codes', eingang, { bezeichnung: 'Codes gelesen', ms }], { ms: ms + 5000 }),
     };
     dienst.erkennung.klassifizierung.anbieter = {
       pakete: () => this.z.klassifizieren ?? [],

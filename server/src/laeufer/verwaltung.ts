@@ -44,6 +44,15 @@ export class Paketlaeufer extends PaketlaeuferPakete implements PaketLaeufer {
       erkenne: (paket, eingang, ms) =>
         this.schnittstelle(paket, 'dms:erkennen', eingang, { bezeichnung: t('meldungen.verwaltung.felder-erkannt'), ms }),
     };
+    // Codes auf Dokumenten (#1723): Pakete mit dms:codes, mit Zeitlimit; kein Inhalt in der Werkbank.
+    o.dienst.erkennung.codes.anbieter = {
+      pakete: () =>
+        this.pakete
+          .filter((x) => hatSchnittstelle(x.laeufer, 'dms:codes') && this.ladefehler.has(x.id) && !this.ladefehler.get(x.id))
+          .map((x) => ({ id: x.id, name: x.name, netz: hatNetz(x.laeufer) })),
+      lies: (paket, eingang, ms) =>
+        this.schnittstelle(paket, 'dms:codes', eingang, { bezeichnung: t('meldungen.verwaltung.codes-gelesen'), ms }),
+    };
     // „Wohin gehört das?“ (#939): Pakete mit dms:klassifizieren, mit Zeitlimit; kein Inhalt in der Werkbank.
     o.dienst.erkennung.klassifizierung.anbieter = {
       pakete: () => this.klassifizierPakete(),

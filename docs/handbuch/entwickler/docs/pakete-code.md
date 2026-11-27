@@ -23,6 +23,7 @@ Neben Ereignissen und der [API v1](#nutzliche-endpunkte-der-api-v1) bietet der K
 | `dms:hinweise` | 0.231.0 | Hinweise an Mappen setzen und entfernen, die das Paket schreiben darf (z. B. „Die Positionen ergeben 118,40 €“) – nur Text, mit Paketnamen, Speichern hindern sie nie | **[Berechnete Felder und Hinweise](#berechnet-und-hinweise)** |
 | `dms:leerseiten` | 0.255.0 | Leere Seiten an Dokumenten in neuer Post markieren – nur markieren, nie löschen; braucht `lesen: [dms:post]` und `dokumente: lesen` | **[Leerseiten markieren](#leerseiten)** |
 | `dms:anlagen` | 0.264.0 | Beim Teilen einer Post Anlagen anlegen (Trennblatt mit zweitem Barcode) – nur in den Posts, die dabei entstehen; braucht `lesen` und `schreiben` mit `dms:post` und `dokumente: schreiben` | **[Anlagen beim Teilen](#anlagen)** |
+| `dms:codes` | 0.335.0 | QR-Codes und Barcodes auf Dokumenten lesen – Antwort wie die Leistung `dokument.lesen.barcode@1`; Ablago merkt sie sich für Felder mit der Erkennungsart `code`; braucht `lesen` und `dokumente: lesen` | **[Codes lesen](#codes)** |
 | `dms:uebersetzen` | 0.204.0 | Einen Text (Feld, Notiz, Volltext) auf Knopfdruck übersetzen – der Kern liest ihn mit den Rechten der Person | **[Inhalte übersetzen](#inhalte-ubersetzen)** – Aufruf, Abschnitte, Antwort, Zwischenspeicher |
 
 ## So läuft Code in Ablago { #so-lauft-code-im-dms }
@@ -61,7 +62,7 @@ code:
   ```
 
 - **Dokumente:** `lesen` erlaubt Dokumente zu lesen (Datei, Volltext, Seiten als Bild), `schreiben` zusätzlich hochzuladen, zu ersetzen und den Volltext zu setzen. Dokumente gibt es nur in Mappen, die das Paket lesen darf.
-- **Schnittstellen des Kerns (`schnittstellen`):** zusätzliche Rechte für Schnittstellen, bei denen der Kern nur speichert, vergleicht oder weitergibt (Übersicht: [Schnittstellen des Kerns](#schnittstellen)). Es gibt `dms:vektoren` (seit 0.120.0, braucht `dokumente: lesen`) – siehe [Vektoren und Ähnlichkeit](#vektoren-und-ahnlichkeit) –, `dms:antworten` (seit 0.124.0) – siehe [Fragen beantworten](#fragen-beantworten) – `dms:erkennen` (seit 0.125.0) – siehe [Erkennung: Feldbeschreibung und Antwort](#erkennung-feldbeschreibung-und-antwort) –, `dms:texterkennung` (seit 0.133.0, braucht `dokumente: schreiben`) – siehe [Texterkennung übernehmen](#texterkennung) – `dms:umwandeln` (seit 0.137.0, braucht `dokumente: lesen`, `code.umwandeln` und das Ereignis `datei.umwandeln`) – siehe [Dateien umwandeln](#dateien-umwandeln) – `dms:sicherung-lesen` (seit 0.142.0, braucht das Ereignis `sicherung.fertig`) – siehe [Sicherung außer Haus](#sicherung-ausser-haus) – `dms:volltext` (seit 0.145.0, braucht `dokumente: lesen`, `code.volltext` und das Ereignis `datei.volltext`) – siehe [Volltext liefern](#volltext-liefern) – `dms:uebersetzen` (seit 0.204.0, braucht sonst nichts) – siehe [Inhalte übersetzen](#inhalte-ubersetzen) – `dms:klassifizieren` (seit 0.226.0, braucht sonst nichts) – siehe [Mappentyp vorschlagen](#klassifizieren) – `dms:hinweise` (seit 0.231.0, braucht `schreiben`) – siehe [Berechnete Felder und Hinweise](#berechnet-und-hinweise) –, `dms:leerseiten` (seit 0.255.0, braucht `lesen` mit `dms:post` und `dokumente: lesen`) – siehe [Leerseiten markieren](#leerseiten) – und `dms:anlagen` (seit 0.264.0, braucht `lesen` und `schreiben` mit `dms:post` und `dokumente: schreiben`) – siehe [Anlagen beim Teilen](#anlagen).
+- **Schnittstellen des Kerns (`schnittstellen`):** zusätzliche Rechte für Schnittstellen, bei denen der Kern nur speichert, vergleicht oder weitergibt (Übersicht: [Schnittstellen des Kerns](#schnittstellen)). Es gibt `dms:vektoren` (seit 0.120.0, braucht `dokumente: lesen`) – siehe [Vektoren und Ähnlichkeit](#vektoren-und-ahnlichkeit) –, `dms:antworten` (seit 0.124.0) – siehe [Fragen beantworten](#fragen-beantworten) – `dms:erkennen` (seit 0.125.0) – siehe [Erkennung: Feldbeschreibung und Antwort](#erkennung-feldbeschreibung-und-antwort) –, `dms:texterkennung` (seit 0.133.0, braucht `dokumente: schreiben`) – siehe [Texterkennung übernehmen](#texterkennung) – `dms:umwandeln` (seit 0.137.0, braucht `dokumente: lesen`, `code.umwandeln` und das Ereignis `datei.umwandeln`) – siehe [Dateien umwandeln](#dateien-umwandeln) – `dms:sicherung-lesen` (seit 0.142.0, braucht das Ereignis `sicherung.fertig`) – siehe [Sicherung außer Haus](#sicherung-ausser-haus) – `dms:volltext` (seit 0.145.0, braucht `dokumente: lesen`, `code.volltext` und das Ereignis `datei.volltext`) – siehe [Volltext liefern](#volltext-liefern) – `dms:uebersetzen` (seit 0.204.0, braucht sonst nichts) – siehe [Inhalte übersetzen](#inhalte-ubersetzen) – `dms:klassifizieren` (seit 0.226.0, braucht sonst nichts) – siehe [Mappentyp vorschlagen](#klassifizieren) – `dms:hinweise` (seit 0.231.0, braucht `schreiben`) – siehe [Berechnete Felder und Hinweise](#berechnet-und-hinweise) –, `dms:leerseiten` (seit 0.255.0, braucht `lesen` mit `dms:post` und `dokumente: lesen`) – siehe [Leerseiten markieren](#leerseiten) –, `dms:anlagen` (seit 0.264.0, braucht `lesen` und `schreiben` mit `dms:post` und `dokumente: schreiben`) – siehe [Anlagen beim Teilen](#anlagen) – und `dms:codes` (seit 0.335.0, braucht `lesen` und `dokumente: lesen`) – siehe [Codes lesen](#codes).
 - **Dateitypen zum Umwandeln (`code.umwandeln`, seit 0.137.0):** nur mit `dms:umwandeln` – die MIME-Typen, für die das Paket zuständig ist, z. B. `[image/tiff, image/webp]`. PDF, JPEG und PNG liest der Kern selbst; die sind hier nicht erlaubt. Höchstens 20.
 - **Dateitypen für den Volltext (`code.volltext`, seit 0.145.0):** nur mit `dms:volltext` – die MIME-Typen, für die das Paket den Volltext liefert, z. B. `[message/rfc822, text/plain]`. PDF, JPEG und PNG sind nicht erlaubt. Höchstens 40.
 - **Mappentypen für Ereignisse (`code.mappentypen`, seit 0.153.0):** Pflicht, sobald das Paket eines der Mappen-Ereignisse `mappe.angelegt`, `mappe.geaendert`, `mappe.geloescht`, `mappe.wiederhergestellt` oder `frist.erreicht` abonniert – und nur dann erlaubt. Darin stehen die Kennungen **eigener** Mappentypen (ohne Präfix, z. B. `[vertrag]`) und – seit 0.166.0 – Verweise auf **fremde** Mappentypen wie in `code.rechte` (`basis:organisation`, `dms:post`) oder `*` für alle, die das Paket lesen darf (nur mit `code.rechte.lesen: ["*"]`). Das Paket muss jeden genannten Typ lesen dürfen. Ein Paket damit gibt `dms: ">=0.153.0"` an, mit fremden Typen oder `*` `dms: ">=0.166.0"`.
@@ -393,6 +394,33 @@ POST /dokumente/{id}/seiten   { "seiten": [{"nr":1}, …, {"nr":5}], "teile": [0
 - **Höchstens 99 Anlagen je Teil.** Die Seiten lädt das Paket wie bisher über `GET /dokumente/{id}/seiten/{nr}/scan`.
 - Von Hand (`POST/PUT/DELETE /dokumente/{id}/anlagen…`) darf ein Paket Anlagen nur mit `dms:anlagen` und nur in Post ändern. Erkennung, Klassifizieren und KI-Pakete bekommen nie den Text von Anlagen.
 - **Nie Post aus dem E-Mail-Postfach** (seit 0.265.0, dms #999): Eine E-Mail ist genau eine Post. Post mit Kanal *E-Mail* teilt der Kern für kein Paket (`teile` oder `anlagen`: 409) – Trennblätter gelten im Postfach nicht. Lass den Kanal in der Auswahl „Nur Post aus diesen Kanälen“ weg. Die abgeholte E-Mail selbst trägt `originalEmail: true` (letzte Anlage am letzten Anhang, ohne Anhänge das Hauptdokument), `eingangNr` die Reihenfolge der Anhänge; Erkennung, Klassifizieren und KI-Pakete bekommen ihren Text nie.
+
+## Codes lesen { #codes }
+
+Seit Ablago 0.335.0 (dms #1723) liest ein Paket mit `dms:codes` die **QR-Codes und Barcodes** eines Dokuments – zum Beispiel *QR-Code lesen* aus dem Katalog. Ablago merkt sie sich am Dokument und trägt beim **Aus Dokument ausfüllen** den passenden Inhalt in Felder mit der Erkennungsart `code` ein (siehe [Pakete](pakete.md): `erkennung: { art: code, muster: … }`), etwa den Link zum Digitalen Untersuchungsbericht auf dem HU-Bericht.
+
+```yaml
+dms: ">=0.335.0"
+code:
+  ereignisse: []
+  rechte:
+    lesen: ["*"]
+    dokumente: lesen
+    schnittstellen: [dms:codes]
+  netz: []
+```
+
+```text
+Aufruf (Aktion):  { "aktion": "dms:codes", "datei": "<Id des Dokuments>", "mime": "application/pdf", "seiten": 2 }
+Antwort:          { "codes": [ { "art": "qr", "inhalt": "https://www.kba-online.de/dub/#/zugriffsdaten/A1B2C3D4E5F6/P0123456789/0815", "seite": 1 } ] }
+```
+
+- **Die Antwort ist genau die Ausgabe der Leistung `dokument.lesen.barcode@1`** ([Leistungen](leistungen.md)) und wird mit ihrem Schema geprüft: höchstens 200 Codes, `art` höchstens 40 Zeichen (z. B. `qr`, `ean13`, `code128`), `inhalt` höchstens 4000 Zeichen, `seite` ab 1 (darf fehlen). Weitere Angaben sind nicht erlaubt; eine ungültige Antwort verwirft Ablago (Protokoll ohne Inhalte), nichts wird gemerkt. Pakete können Leistungen noch nicht selbst anbieten (dms #1571/#1572); sobald es geht, ruft Ablago die Leistung statt `dms:codes` – die Form bleibt.
+- **Alle Codes liefern**, nicht nur die, die das Paket selbst auswertet: Welcher Code in welches Feld gehört, entscheidet das Feld (`muster`, `codeart`).
+- **Seiten lesen:** `datei` ist ein Dokument; die Seitenbilder holt das Paket mit seinen Rechten über `GET /dokumente/{id}/seiten/{nr}/scan` (oder die Datei über `GET /dokumente/{id}/inhalt`). `seiten` fehlt, wenn Ablago die Zahl nicht kennt. Gefragt wird nur für PDF, JPEG, PNG, TIFF und WebP – nie für Anlagen und die Original-E-Mail.
+- **Wann:** einmal je Datei, im Hintergrund nach `volltext.fertig` (auch ohne Text), mit der Zeitgrenze der Leistung (120 s). Neu gelesen wird nur, wenn sich die Datei ändert (neue Fassung). Für ältere Dokumente fragt Ablago beim *Aus Dokument ausfüllen*, wenn für die Datei noch nichts gemerkt ist (30 s). Bei mehreren Paketen mit `dms:codes` liest das erste nach Id.
+- **Netz:** Ein Paket mit Netz liest nur, wenn es in der Werkbank als Erkennung gewählt ist, der Datenabfluss bestätigt ist und der Mappentyp des Dokuments für Dienste im Netz zugelassen ist – wie bei *Wohin gehört das?*. Codes lesen geht fast immer ohne Netz.
+- **Inhalte bleiben im Haus:** Ablago schreibt nur die Anzahl ins Protokoll, nie Inhalte; im Vollexport stehen die Codes nicht (eine Such-ID im Code ist ein Zugangsschlüssel).
 
 ## Ausprobieren anbieten { #ausprobieren-anbieten }
 
