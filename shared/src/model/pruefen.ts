@@ -230,6 +230,9 @@ export function pruefeMappentyp(mappentypDaten: MappentypDaten, ctx: TypKontext)
       const problem = musterProblem(f.muster);
       if (problem) m.push(musterText(problem));
     }
+    // Code-Muster (#1723): derselbe Schutz wie beim Prüfmuster.
+    const codeMuster = f.erkennung?.art === 'code' ? musterProblem(f.erkennung.muster ?? '') : null;
+    if (codeMuster) m.push(musterText(codeMuster));
     // Nummernkreis im Standardwert (#171): nur an Textfeldern, den Kreis muss es geben.
     const kreis = kreisImStandard(f.standard);
     if (kreis) {

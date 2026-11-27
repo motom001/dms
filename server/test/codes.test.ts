@@ -18,13 +18,14 @@ import { ApiSchluesselDienst, speicherApiSchluesselRepo } from '../src/anmeldung
 import { Paketlaeufer } from '../src/laeufer/verwaltung';
 import { openapi } from '../src/http/api-v1';
 import { liesCodeAntwort } from '../src/erkennung/codes';
-import { genutzteFunktionen } from '../src/pakete/erstellung/bau-dateien';
-import { mindestversion } from '../src/pakete/erstellung/mindestversion';
+import { genutzteFunktionen, mindestversion } from '../src/pakete/erstellung/index';
 import type { Repo } from '../src/repo';
 import { speicherRepo } from '../src/repo/speicher';
 import { eigeneDatenbank } from './hilfe-db';
 
 const DUB = 'https://www.kba-online.de/dub/#/zugriffsdaten/';
+/** Muster am Feld: regulärer Ausdruck auf den ganzen Inhalt. */
+const DUB_MUSTER = 'https://www\\.kba-online\\.de/dub/#/zugriffsdaten/[0-9A-Z]{12}/[0-9A-Z]+/[0-9]+';
 const LINK = `${DUB}A1B2C3D4E5F6/P0123456789/0815`;
 const LINK2 = `${DUB}Z9Y8X7W6V5U4/P9876543210/0815`;
 const DATENSCHUTZ = 'https://www.example.org/datenschutz';
@@ -48,39 +49,57 @@ describe('Erkennungsart code und Schnittstelle dms:codes (#1723)', () => {
     assert.ok(e.properties.muster && e.properties.codeart);
   });
 
-  it('Feld: muster und codeart nur mit art code, nur an Text und Langtext; Grenzen', () => {
-    assert.deepEqual(liesFeldErkennung({ art: 'code', muster: ` ${DUB} `, codeart: 'QR' }, 'text'), {
+  it('Feld: muster und codeart nur mit art code, nur an Text und Langtext; Codeart als kurzer Bezeichner', () => {
+    assert.deepEqual(liesFeldErkennung({ art: 'code', muster: ` ${DUB_MUSTER} `, codeart: 'QR' }, 'text'), {
       art: 'code',
-      muster: DUB,
+      muster: DUB_MUSTER,
       codeart: 'qr',
     });
-    assert.deepEqual(liesFeldErkennung({ art: 'code' }, 'langtext'), { art: 'code' });
-    assert.deepEqual(liesFeldErkennung({ art: 'nummer', muster: DUB }, 'text'), { art: 'nummer' }, 'Muster nur mit art code');
-    assert.deepEqual(liesFeldErkennung({ art: 'code', muster: DUB }, 'datum'), {}, 'nicht an Datumsfeldern');
-    assert.deepEqual(liesFeldErkennung({ art: 'code', muster: 'x'.repeat(201), codeart: 'QR Code!' }, 'text'), { art: 'code' });
+    assert.deepEqual(liesFeldErkennung({ art: 'code', codeart: 'aztec' }, 'langtext'), { art: 'code', codeart: 'aztec' });
+    assert.deepEqual(liesFeldErkennung({ art: 'nummer', muster: DUB_MUSTER }, 'text'), { art: 'nummer' }, 'Muster nur mit art code');
+    assert.deepEqual(liesFeldErkennung({ art: 'code', muster: DUB_MUSTER }, 'datum'), {}, 'nicht an Datumsfeldern');
+    for (const codeart of ['QR Code!', 'ean-13', 'x'.repeat(21)])
+      assert.deepEqual(liesFeldErkennung({ art: 'code', codeart }, 'text'), { art: 'code' }, codeart);
+  });
+
+  it('Muster: derselbe Schutz wie beim Prüfmuster an Textfeldern – der Mappentyp meldet es, passen kann es nie', async () => {
+    const d = new Dienst(speicherRepo(), speicherDateien(), { einstellungen: speicherEinstellungen() });
+    for (const muster of ['(a+)+$', 'x'.repeat(201), '[unvollständig'])
+      await assert.rejects(
+        d.mappentypen.legeTypAn({
+          name: 'Probe',
+          felder: [{ key: 'bericht', label: 'Bericht', typ: 'text', erkennung: { art: 'code', muster } }],
+          register: [{ key: 'allgemein', name: 'Allgemein', art: 'felder', felder: ['bericht'] }],
+        }),
+        muster.slice(0, 20),
+      );
+    assert.equal(passenderCode({ muster: '(a+)+' }, [{ art: 'qr', inhalt: 'aaaa' }]), null);
   });
 
   it('Paket erstellen: ein Feld mit art code hebt die Mindestversion', () => {
     const typ = (erkennung: unknown) => ({ felder: [{ key: 'bericht', label: 'Digitaler Bericht', typ: 'text', erkennung }] }) as never;
     const x = { dmsVerweise: false, beispielVerweise: false, dokumente: 0, fremdeTypen: false, wortlisten: 0, automatisierungen: 0 };
-    assert.ok(genutzteFunktionen({ ...x, paketTypen: [typ({ art: 'code', muster: DUB })] }).includes('codes'));
+    assert.ok(genutzteFunktionen({ ...x, paketTypen: [typ({ art: 'code', muster: DUB_MUSTER })] }).includes('codes'));
     assert.ok(!genutzteFunktionen({ ...x, paketTypen: [typ({ art: 'nummer' })] }).includes('codes'));
     assert.equal(mindestversion(['codes']).version, DMS_CODES_AB);
   });
 
-  it('passender Code: Anfang des Inhalts, Art, frühere Seite gewinnt', () => {
+  it('passender Code: ganzer Inhalt passt zum Muster, Art gleich, frühere Seite gewinnt', () => {
     const codes: GelesenerCode[] = [
       { art: 'qr', inhalt: DATENSCHUTZ, seite: 1 },
       { art: 'QR_CODE', inhalt: LINK2, seite: 2 },
       { art: 'qr', inhalt: LINK, seite: 1 },
       { art: 'code128', inhalt: 'ABLAGO-4711' },
     ];
-    assert.equal(passenderCode({ muster: DUB }, codes)?.inhalt, LINK);
-    assert.equal(passenderCode({ muster: DUB.toUpperCase(), codeart: 'qr' }, codes)?.inhalt, LINK, 'ohne Groß- und Kleinschreibung');
-    assert.equal(passenderCode({ codeart: 'code' }, codes)?.inhalt, 'ABLAGO-4711');
+    assert.equal(passenderCode({ muster: DUB_MUSTER }, codes)?.inhalt, LINK);
+    assert.equal(passenderCode({ muster: DUB_MUSTER, codeart: 'qr' }, codes)?.inhalt, LINK);
+    assert.equal(passenderCode({ muster: DUB_MUSTER, codeart: 'qr' }, codes.slice(0, 2))?.inhalt, undefined, 'QR_CODE ist nicht qr');
+    assert.equal(passenderCode({ codeart: 'code128' }, codes)?.inhalt, 'ABLAGO-4711');
+    assert.equal(passenderCode({ codeart: 'code' }, codes), null, 'Codeart ganz, nicht nur der Anfang');
     assert.equal(passenderCode({}, codes)?.inhalt, DATENSCHUTZ, 'ohne Angaben: der erste auf der frühesten Seite');
-    assert.equal(passenderCode({ muster: 'https://www.example.org/anderes' }, codes), null);
-    assert.equal(passenderCode({ muster: DUB, codeart: 'ean' }, codes), null);
+    assert.equal(passenderCode({ muster: 'https://www\\.kba-online\\.de/dub/' }, codes), null, 'Muster muss den ganzen Inhalt treffen');
+    assert.equal(passenderCode({ muster: DUB_MUSTER, codeart: 'ean13' }, codes), null);
+    assert.equal(passenderCode({ muster: '.+' }, [{ art: 'qr', inhalt: 'x'.repeat(1001) }]), null, 'Inhalte über 1000 Zeichen nicht');
   });
 
   it('Antwort des Pakets: Schema der Leistung dokument.lesen.barcode@1', () => {
@@ -129,7 +148,7 @@ async function aufbau(pg = false, hinweis?: string) {
         key: 'bericht',
         label: 'Digitaler Bericht',
         typ: 'text',
-        erkennung: { art: 'code', muster: DUB, codeart: 'qr', ...(hinweis ? { hinweis } : {}) },
+        erkennung: { art: 'code', muster: DUB_MUSTER, codeart: 'qr', ...(hinweis ? { hinweis } : {}) },
       },
     ],
     register,

@@ -4,7 +4,6 @@ import { SCHLUESSEL, TYP_KENNUNG } from '../../../../shared/src/kennungen';
 import { FELDTYPEN, ZIELTYPEN_MAX, REGISTERARTEN, ABSCHNITT_TITEL_MAX, HISTORIENGRUPPEN } from '../../../../shared/src/model';
 import { FELDART_BESCHREIBUNG, uuid, beschriftungen, ref, liste, zeit } from './schema-hilfen';
 import { ERKENNUNGSARTEN } from '../../../../shared/src/erkennung';
-import { CODE_MUSTER_MAX } from '../../../../shared/src/codes';
 import { FELDFORMATE } from '../../../../shared/src/feldformate';
 import { VORLAGE_MAX } from '../../../../shared/src/zusammengesetzt';
 import { ANZEIGE_BEDINGUNGEN_MAX } from '../../../../shared/src/anzeige';
@@ -152,15 +151,15 @@ export const SCHEMAS_TYPEN: Record<string, Schema> = {
           },
           muster: {
             type: 'string',
-            maxLength: CODE_MUSTER_MAX,
+            maxLength: 200,
             description:
-              'Nur mit art=code (#1723): Anfang des Inhalts, ohne Groß- und Kleinschreibung, z. B. „https://www.kba-online.de/dub/#/zugriffsdaten/“. Passen mehrere Codes, gewinnt der auf der früheren Seite; passt keiner, bleibt das Feld leer. Fehlt = jeder Code.',
+              'Nur mit art=code (#1723): regulärer Ausdruck, der auf den ganzen Inhalt passen muss, z. B. „https://www\\.kba-online\\.de/dub/#/zugriffsdaten/.+“ – mit denselben Grenzen wie das Prüfmuster an Textfeldern (höchstens 200 Zeichen, keine verschachtelten Wiederholungen, Inhalte bis 1000 Zeichen). Passen mehrere Codes, gewinnt der auf der früheren Seite; passt keiner, bleibt das Feld leer. Fehlt = jeder Code.',
           },
           codeart: {
             type: 'string',
-            pattern: '^[a-z0-9][a-z0-9_-]{0,39}$',
+            pattern: '^[a-z0-9]{1,20}$',
             description:
-              'Nur mit art=code (#1723): Art des Codes, z. B. qr, ean13 oder code128 – passt auf jede Art, die so beginnt. Fehlt = jede.',
+              'Nur mit art=code (#1723): Art des Codes als kurzer Bezeichner, z. B. qr, ean13, itf, aztec – so, wie das Paket, das Codes liest, sie nennt. Fehlt = jede.',
           },
         },
       },
