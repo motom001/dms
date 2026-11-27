@@ -1,5 +1,6 @@
-import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type RefObject } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ChangeEvent, type KeyboardEvent, type RefObject } from 'react';
 import { blaettere, istTag, kwDerZeile, monatVon, monatsraster, tagNachTaste } from '../../../../shared/src/kalender';
+import { leseMonat, monatText, monatsletzter } from '../../../../shared/src/monatsdatum';
 import { gebietsschema } from '../../../../shared/src/sprache';
 import { Symbol } from '../../Symbol';
 import { t } from '../../sprache';
@@ -23,6 +24,10 @@ import s from './Datum.module.css';
  *   über dem Assistenten; waagerecht bündig mit dem Feld, solange er ganz ins Fenster passt. Am Handy (schmal) ist er
  *   ein Blatt von unten.
  *
+ * - **Nur Monat** (`nurMonat`, #1722, Datumsfeld mit Genauigkeit „Monat“): Getippt werden Monat und Jahr („04/2028“),
+ *   ein Tag im Kalender wählt seinen Monat. Der Wert ist der Monatsletzte (2028-04-30); was sich nicht lesen lässt, geht
+ *   unverändert hinaus, damit die Prüfung es meldet.
+ *
  * Wert wie beim Datumsfeld des Browsers: JJJJ-MM-TT oder leer. Anleitung im Entwicklerhandbuch, „Gestaltung und
  * Bausteine → Datum“.
  */
@@ -37,6 +42,8 @@ export interface DatumEingabeProps extends Partial<FeldVerknuepfung> {
   className?: string;
   /** Kalender gleich offen (nur für Musterseite und Bilder). */
   offenZeigen?: boolean;
+  /** Nur Monat und Jahr (#1722): Eingabe „MM/JJJJ“, Wert der Monatsletzte. */
+  nurMonat?: boolean;
 }
 
 const klassen = (...k: Array<string | false | undefined | null>) => k.filter(Boolean).join(' ');
@@ -46,8 +53,9 @@ const heuteHier = () => new Intl.DateTimeFormat('sv-SE').format(new Date());
 /** Offen ohne Fokus (`zeigen`, nach einem Klick ins Feld) oder mit dem Fokus im Kalender (`fokus`). */
 type Offen = false | 'zeigen' | 'fokus';
 
-export function DatumEingabe({ wert, setze, id, min, max, disabled, className, offenZeigen, ...aria }: DatumEingabeProps) {
+export function DatumEingabe({ wert, setze, id, min, max, disabled, className, offenZeigen, nurMonat, ...aria }: DatumEingabeProps) {
   const [offen, setOffen] = useState<Offen>(offenZeigen ? 'zeigen' : false);
+  const monat = useMonatsText(wert, setze, !!nurMonat);
   const rahmen = useRef<HTMLSpanElement>(null);
   const eingabe = useRef<HTMLInputElement>(null);
   useAussenKlick(rahmen, !!offen && !offenZeigen, () => setOffen(false));
@@ -71,13 +79,9 @@ export function DatumEingabe({ wert, setze, id, min, max, disabled, className, o
         <input
           ref={eingabe}
           id={id}
-          type="date"
-          value={wert}
-          min={min}
-          max={max}
+          {...(monat ?? { type: 'date', value: wert, min, max, onChange: (e: ChangeEvent<HTMLInputElement>) => setze(e.target.value) })}
           disabled={disabled}
           {...aria}
-          onChange={(e) => setze(e.target.value)}
           onPointerDown={(e) => {
             if (e.pointerType === 'mouse' && !disabled && !offen) setOffen('zeigen');
           }}
@@ -102,7 +106,7 @@ export function DatumEingabe({ wert, setze, id, min, max, disabled, className, o
           fokus={offen === 'fokus'}
           fest={offenZeigen}
           waehle={(iso) => {
-            setze(iso);
+            setze(nurMonat ? (monatsletzter(iso) ?? iso) : iso);
             zurueck();
           }}
           schliessen={zurueck}
@@ -110,6 +114,30 @@ export function DatumEingabe({ wert, setze, id, min, max, disabled, className, o
       )}
     </span>
   );
+}
+
+/**
+ * Eingabe „nur Monat“ (#1722): ein Textfeld mit „MM/JJJJ“. Der getippte Text bleibt stehen, solange er denselben Wert
+ * meint; kommt ein anderer Wert von außen (Kalender, Vorschlag aus dem Dokument), zeigt das Feld ihn als „04/2028“.
+ * null = Tag-genau, dann bleibt es das Datumsfeld des Browsers.
+ */
+function useMonatsText(wert: string, setze: (w: string) => void, an: boolean) {
+  const [text, setText] = useState(() => monatText(wert));
+  useEffect(() => {
+    if (an && wert !== text && (leseMonat(text) ?? '') !== wert) setText(monatText(wert));
+  }, [wert]); // eslint-disable-line react-hooks/exhaustive-deps -- nur ein neuer Wert von außen zählt, nicht das Tippen
+  if (!an) return null;
+  return {
+    type: 'text',
+    inputMode: 'numeric' as const,
+    autoComplete: 'off',
+    placeholder: t('oberflaeche.datum.monat-platzhalter'),
+    value: text,
+    onChange: (e: ChangeEvent<HTMLInputElement>) => {
+      setText(e.target.value);
+      setze(e.target.value.trim() ? (leseMonat(e.target.value) ?? e.target.value) : '');
+    },
+  };
 }
 
 /** Klick (Maus oder Finger) außerhalb des Rahmens schließt. */

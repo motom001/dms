@@ -18,6 +18,7 @@ import { t } from '../texte';
 import { alleBetraege, ausschnitt, istIban, type Sicherheit } from './angaben';
 import type { Erkennungsart } from './arten';
 import { feldWoerter } from './beschriftet';
+import { monatsletzter, nurMonat } from '../monatsdatum';
 
 /** Was die Prüfung an einem Vorschlag liest und ändert (Teil von `Vorschlag`, ohne Import – sonst ein Kreis). */
 interface PlausiVorschlag {
@@ -79,7 +80,9 @@ function pruefeDatumRahmen(v: Record<string, PlausiVorschlag>, lage: PlausiLage)
   for (const { feld } of lage.felder) {
     const x = v[feld.key];
     if (feld.typ !== 'datum' || !x || typeof x.wert !== 'string') continue;
-    if (x.wert > spaetestens) senke(x, t('gemeinsam.erkennung.plausibel-zukunft'));
+    // Genauigkeit Monat (#1722): Der Monat in zwei Jahren zählt ganz – „nächste HU 11/2028“ im November 2026.
+    const grenze = nurMonat(feld) ? (monatsletzter(spaetestens.slice(0, 7)) ?? spaetestens) : spaetestens;
+    if (x.wert > grenze) senke(x, t('gemeinsam.erkennung.plausibel-zukunft'));
     else if (x.wert < FRUEHESTENS) senke(x, t('gemeinsam.erkennung.plausibel-frueh'));
   }
 }

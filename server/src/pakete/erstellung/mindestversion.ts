@@ -6,6 +6,7 @@ import { type PaketEntwurf, type PaketErstellenEingabe } from '../../../../share
 import { t } from '../../sprache/sprache';
 import { DMS_VERWEISE_AB, FREMDE_TYPEN_AB } from '../verwaltung/format';
 import { DMS_TABELLE_AB } from '../../../../shared/src/tabelle';
+import { DMS_DATUM_MONAT_AB } from '../../../../shared/src/monatsdatum';
 import { DMS_VORBELEGEN_AB } from '../../../../shared/src/vorbelegen';
 import { DMS_TEILE_AB } from '../../../../shared/src/teile';
 import { DMS_ARCHIV_PAKET_AB } from '../../../../shared/src/archiv';
@@ -35,6 +36,7 @@ export const MINDEST_FUNKTIONEN = {
   feldformate: { ab: '0.121.0', grund: t('meldungen.paketerstellung.feldformate-und-datumsgrenzen') },
   feldarten: { ab: FELDARTEN_AB, grund: t('meldungen.paketerstellung.feldarten') },
   tabelle: { ab: DMS_TABELLE_AB, grund: t('meldungen.paketerstellung.tabelle') },
+  datumMonat: { ab: DMS_DATUM_MONAT_AB, grund: t('meldungen.paketerstellung.datum-monat') },
   vorbelegen: { ab: DMS_VORBELEGEN_AB, grund: t('meldungen.paketerstellung.vorbelegen') },
   teile: { ab: DMS_TEILE_AB, grund: t('meldungen.paketerstellung.teile') },
   zusammengesetzt: { ab: DMS_ZUSAMMENGESETZT_AB, grund: t('meldungen.paketerstellung.zusammengesetzt') },

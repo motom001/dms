@@ -143,6 +143,7 @@
   "paketerstellung.berechnet-weg": "{wo}: Another package calculates this field. In your own package it comes along as an ordinary field – a package without code calculates nothing.",
   "paketerstellung.ansicht-merkmal": "View “{name}”: the package format for views does not know conditions on the library attribute; they are left out of the package.",
   "paketerstellung.tabelle": "Field type table",
+  "paketerstellung.datum-monat": "Date field with month precision",
   "paketerstellung.vorbelegen": "“Copy when selected” on reference fields",
   "paketerstellung.vorgaben": "“Show if … refers to the preset …”",
   "paketerstellung.tabelle-liste": "{wo}: the table shows another results list of “{name}” – only the default results list goes into the package; there the table shows its columns.",

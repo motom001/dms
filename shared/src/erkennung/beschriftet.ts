@@ -13,6 +13,7 @@
 import type { Betrag, Feld } from '../model';
 import { alleBetraege, alleDaten, ausschnitt, type Fund } from './angaben';
 import { esc } from './abgleich';
+import { monatsletzter } from '../monatsdatum';
 
 /** Klein und ohne Umlaute – Zeichen für Zeichen, damit die Stellen im Text gleich bleiben. */
 const klein = (s: string) => s.toLowerCase().replace(/ä/g, 'a').replace(/ö/g, 'o').replace(/ü/g, 'u').replace(/ß/g, 's');
@@ -97,6 +98,22 @@ function neben<T>(text: string, woerter: readonly string[], werte: Array<{ wert:
 /** Datum neben der Bezeichnung des Felds (ISO). */
 export const datumNeben = (text: string, woerter: readonly string[]): Fund | null => neben(text, woerter, alleDaten(text));
 
+/**
+ * Monat neben der Bezeichnung eines Felds mit Genauigkeit „Monat“ (#1722): „Nächste HU fällig April 2028“, „gültig
+ * bis 04/2028“; ein ganzes Datum zählt für seinen Monat. Ohne Erkennungswort nie „042028“ – sonst wäre jede
+ * sechsstellige Zahl ein Monat. Wert ist der Monatsletzte.
+ */
+export function monatNeben(text: string, woerter: readonly string[]): Fund | null {
+  const werte = [
+    ...alleDaten(text).map((d) => ({ ...d, wert: monatsletzter(d.wert) ?? d.wert })),
+    ...[...text.matchAll(new RegExp(`(?<![\\p{L}\\p{N}./])${MONAT.source}`, 'giu'))].flatMap((m) => {
+      const wert = monatAus(m);
+      return wert ? [{ wert, i: m.index, laenge: m[0].length }] : [];
+    }),
+  ].sort((a, b) => a.i - b.i);
+  return neben(text, woerter, werte);
+}
+
 /** Betrag neben der Bezeichnung des Felds. */
 export const betragNeben = (text: string, woerter: readonly string[]): Fund<Betrag> | null => neben(text, woerter, alleBetraege(text));
 
@@ -160,6 +177,39 @@ export function wertHinter<T>(text: string, woerter: readonly string[], lies: (r
 /** Monat ohne Tag („April 2028“, „OKT. 2028“, „04/2028“): Das Datumsfeld kennt keinen Monat allein (#1714). */
 const NUR_MONAT =
   /^(?:(?:Januar|Februar|März|Maerz|April|Mai|Juni|Juli|August|September|Oktober|November|Dezember|Jan|Feb|Mär|Mrz|Apr|Jun|Jul|Aug|Sep|Sept|Okt|Nov|Dez)\.?|\d{1,2}[./])[ \t]?\d{4}(?!\d)/i;
+
+/** Monatsnamen (#1722) nach ihren ersten drei Buchstaben, klein und ohne Umlaute („mär“ → „mar“, „Mrz“). */
+const MONATSANFANG = ['jan', 'feb', 'mar', 'apr', 'mai', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dez'];
+/** Monat ohne Tag (#1722): „April 2028“, „Apr. 2028“, „04/2028“, „04.2028“ – Monat in Gruppe 1 (Name) oder 2 (Zahl). */
+const MONAT =
+  /(?:(Januar|Februar|März|Maerz|April|Mai|Juni|Juli|August|September|Oktober|November|Dezember|Jan|Feb|Mär|Mrz|Apr|Jun|Jul|Aug|Sep|Sept|Okt|Nov|Dez)\.?[ \t]?|(\d{1,2})[./][ \t]?)(\d{4})(?!\d)/;
+/** Monatsletzter aus einem Treffer von MONAT. */
+function monatAus(m: RegExpExecArray | RegExpMatchArray): string | null {
+  const nr = m[1]
+    ? MONATSANFANG.indexOf(
+        klein(m[1])
+          .replace(/^(?:mae|mrz)/, 'mar')
+          .slice(0, 3),
+      ) + 1
+    : Number(m[2]);
+  return monatsletzter(`${m[3]}-${String(nr).padStart(2, '0')}`);
+}
+
+/**
+ * Monat direkt am Anfang, für ein Feld mit Genauigkeit „Monat“ (#1722): „April 2028“, „Apr. 2028“, „04/2028“,
+ * „04.2028“ und – nur hier, hinter einem Erkennungswort – „042028“. Ein ganzes Datum zählt für seinen Monat. Wert ist
+ * der Monatsletzte.
+ */
+export function liesMonatAmAnfang(rest: string): Gelesen<string> {
+  const d = alleDaten(rest)[0];
+  if (d && d.i === 0) return { wert: monatsletzter(d.wert) ?? d.wert, laenge: d.laenge };
+  const m = new RegExp(`^${MONAT.source}`, 'i').exec(rest);
+  const wert = m ? monatAus(m) : null;
+  if (m && wert) return { wert, laenge: m[0].length };
+  const z = /^(\d{2})(\d{4})(?!\d)/.exec(rest);
+  const sechs = z ? monatsletzter(`${z[2]}-${z[1]}`) : null;
+  return z && sechs ? { wert: sechs, laenge: 6 } : null;
+}
 
 /** Datum direkt am Anfang (ISO); ein Monat ohne Tag passt nicht – lieber leer als ein erfundener Tag. */
 export function liesDatumAmAnfang(rest: string): Gelesen<string> {

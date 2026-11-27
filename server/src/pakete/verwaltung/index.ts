@@ -5,7 +5,7 @@
  */
 export { ARCHIV_MAX, liesZip } from './zip-lesen';
 export { beispielDateiart, beispielName } from './beispiele';
-export { berechnetAenderung, beschriftungenNeu } from './update-neu';
+export { berechnetAenderung, beschriftungenNeu, formatNeu } from './update-neu';
 export { holeDaten } from './abruf';
 export { KLEIN_MAX, liesSammelVerzeichnis, SAMMEL_MAX, type Sammeldatei } from './sammeldatei';
 export { liesPaket } from './lesen';

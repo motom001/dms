@@ -22,6 +22,7 @@ import { DatumEingabe, Feld } from '../bausteine';
 | `min`, `max` | limits; days outside are disabled in the calendar (struck through) |
 | `disabled` | disabled: field and calendar button |
 | `aria-label` | name when no visible label points to the input |
+| `nurMonat` | month and year only (#1722, date field with `genauigkeit: monat`): a text field "MM/YYYY" instead of the browser's date field, same calendar button; a day in the calendar picks its month. `setze` gets the last day of the month (`2028-04-30`) or – as long as the text can't be read – the text, so that validation reports it |
 
 **Decision (#1496): the calendar opens on a click into the field, the keyboard stays direct.**
 
