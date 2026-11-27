@@ -13,6 +13,7 @@ import { DMS_ARCHIV_PAKET_AB } from '../../../../shared/src/archiv';
 import { DMS_ZUSAMMENGESETZT_AB } from '../../../../shared/src/zusammengesetzt';
 import { DMS_VORGABEN_AB } from '../../../../shared/src/vorgaben';
 import { DMS_ORGANISATION_AB } from '../../../../shared/src/organisation';
+import { DMS_CODES_AB } from '../../../../shared/src/codes';
 
 /**
  * Ab dieser Version kennt Ablago die Feldarten Zeitraum und Prozent und negative Beträge (#1035). Beim Einreihen auf die
@@ -35,6 +36,8 @@ export const MINDEST_FUNKTIONEN = {
   erkennung: { ab: '0.113.0', grund: t('meldungen.paketerstellung.erkennung-an-feldern-aus') },
   feldformate: { ab: '0.121.0', grund: t('meldungen.paketerstellung.feldformate-und-datumsgrenzen') },
   feldarten: { ab: FELDARTEN_AB, grund: t('meldungen.paketerstellung.feldarten') },
+  // Erkennungsart „Code auf dem Dokument“ (#1723): Ältere Ablago übergehen die Art, das Feld bliebe ohne Vorschlag.
+  codes: { ab: DMS_CODES_AB, grund: t('meldungen.paketerstellung.code-felder') },
   tabelle: { ab: DMS_TABELLE_AB, grund: t('meldungen.paketerstellung.tabelle') },
   datumMonat: { ab: DMS_DATUM_MONAT_AB, grund: t('meldungen.paketerstellung.datum-monat') },
   vorbelegen: { ab: DMS_VORBELEGEN_AB, grund: t('meldungen.paketerstellung.vorbelegen') },

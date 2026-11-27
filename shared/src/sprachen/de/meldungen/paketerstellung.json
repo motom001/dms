@@ -139,6 +139,7 @@
   "paketerstellung.version-von-ist-nicht": "Version {version} von „{id}“ ist nicht mehr gespeichert. Erstelle eine neue Version.",
   "paketerstellung.das-paket-laesst-sich": "Das Paket lässt sich so nicht exportieren.",
   "paketerstellung.feldarten": "Feldarten Zeitraum und Prozent, negative Beträge",
+  "paketerstellung.code-felder": "Felder aus einem Code auf dem Dokument (QR-Code, Barcode)",
   "paketerstellung.anzeige-mappe": "{wo}: Eine Anzeige-Bedingung nennt eine Mappe dieser Installation und kommt nicht ins Paket.",
   "paketerstellung.berechnet-weg": "{wo}: Das Feld berechnet ein anderes Paket. Im eigenen Paket kommt es als gewöhnliches Feld mit – ein Paket ohne Code rechnet nichts.",
   "paketerstellung.ansicht-merkmal": "Ansicht „{name}“: Bedingungen auf das Merkmal der Ablage kennt das Paketformat der Ansichten nicht; sie fehlen im Paket.",

@@ -144,6 +144,7 @@ function liesRechte(r: Record<string, unknown>, liste: ListenLeser, fehler: stri
   if (!(dokumente in DOKUMENT_RECHTE)) fehler.push(t('gemeinsam.pakete.code-rechte-dokumente-keine'));
   const schnittstellen = liste(r.schnittstellen, 'code.rechte.schnittstellen');
   pruefeSchnittstellen({ lesen, schreiben, dokumente, schnittstellen }, fehler);
+  pruefeCodes({ lesen, schreiben, dokumente, schnittstellen }, fehler);
   return { lesen, schreiben, dokumente, schnittstellen };
 }
 
@@ -163,6 +164,12 @@ function pruefeSchnittstellen({ lesen, schreiben, dokumente, schnittstellen }: C
   const post = (l: string[]) => l.some((v) => v === 'dms:post' || v === ALLE_TYPEN);
   if (schnittstellen.includes('dms:anlagen') && (dokumente !== 'schreiben' || !post(lesen) || !post(schreiben)))
     fehler.push(t('gemeinsam.pakete.code-anlagen-braucht-post'));
+}
+
+/** Codes lesen (#1723): Das Paket liest die Seitenbilder selbst – nur von Dokumenten, die es lesen darf. */
+function pruefeCodes({ lesen, dokumente, schnittstellen }: CodeRechte, fehler: string[]) {
+  if (schnittstellen.includes('dms:codes') && (dokumente === 'keine' || !lesen.length))
+    fehler.push(t('gemeinsam.pakete.code-codes-braucht-dokumente'));
 }
 
 /** Dateien umwandeln (#577): zuständige Dateitypen, nur mit dms:umwandeln, Lesen von Dokumenten und dem Ereignis. */

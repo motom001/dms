@@ -139,6 +139,7 @@
   "paketerstellung.version-von-ist-nicht": "Version {version} of “{id}” is no longer stored. Create a new version.",
   "paketerstellung.das-paket-laesst-sich": "The package can’t be exported like this.",
   "paketerstellung.feldarten": "Field types period and percentage, negative amounts",
+  "paketerstellung.code-felder": "Fields from a code on the document (QR code, barcode)",
   "paketerstellung.anzeige-mappe": "{wo}: A display condition names a folder in this installation and is not included in the package.",
   "paketerstellung.berechnet-weg": "{wo}: Another package calculates this field. In your own package it comes along as an ordinary field – a package without code calculates nothing.",
   "paketerstellung.ansicht-merkmal": "View “{name}”: the package format for views does not know conditions on the library attribute; they are left out of the package.",

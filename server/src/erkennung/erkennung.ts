@@ -45,6 +45,7 @@ import { type ERechnung, erechnungText, vorschlaegeAusERechnung } from '../../..
 import { ohneErkennung } from '../../../shared/src/anlagen';
 import { Vorberechnung } from './vorberechnung';
 import { istXmlDatei } from './erechnung';
+import { DokumentCodes } from './codes';
 
 export { sichereZuordnung, type PostErkennung } from './erkennung-hilfen';
 
@@ -66,6 +67,7 @@ export class Erkennung extends ErkennungPost {
       repo,
       einst,
     );
+    this.codes = new DokumentCodes(d, repo, () => this.standard());
   }
 
   /** „Wohin gehört das?“ mehrstufig (#939): Pakete mit dms:klassifizieren, Kern-Erkennung und Abgleich. */
@@ -74,6 +76,8 @@ export class Erkennung extends ErkennungPost {
   readonly gelerntes: Gelerntes;
   /** Erkennung im Hintergrund vorberechnen (#1567): Beim Öffnen der Post wird nur gelesen. */
   readonly vorberechnung: Vorberechnung;
+  /** Codes auf Dokumenten (#1723): von einem Paket mit dms:codes gelesen, für Felder mit der Erkennungsart „code“. */
+  readonly codes: DokumentCodes;
 
   /** Wird gesetzt, sobald der Paket-Läufer läuft (index.ts). */
   anbieter?: ErkennAnbieter;
@@ -283,6 +287,8 @@ export class Erkennung extends ErkennungPost {
         roh[k] = { wert: v.wert, sicherheit: 'hoch', fundstelle: v.fundstelle };
         hinweise.set(k, v.hinweis);
       }
+    // Codes auf dem Dokument (#1723): exakt gelesen – gehen in Feldern mit der Erkennungsart „code“ vor Text, Paket und Gelerntem.
+    await this.codes.trageEin(typ, dokIds, erlaubt, roh, hinweise);
     // Jede Antwort – eingebaut oder vom Paket – geht durch die Prüfung gegen die Feldtypen; verworfen wird mit Grund protokolliert (ohne Werte).
     const { vorschlaege, verworfen } = pruefeVorschlaege(typ, roh, erlaubt);
     for (const [k, v] of Object.entries(vorschlaege)) {

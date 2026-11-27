@@ -81,6 +81,8 @@ export const ERKENNUNGSARTEN = {
   auswahl: t('gemeinsam.erkennung.auswahlwert-der-im-text'),
   // Erkennungswörter einer Auswahlliste (#1689): schwaches Merkmal für den verweisenden Typ, nie selbst gefüllt.
   woerter: t('gemeinsam.erkennung.erkennungswoerter'),
+  // Code auf dem Dokument (#1723): QR-Code oder Barcode, den ein Paket mit dms:codes gelesen hat – nie aus dem Text.
+  code: t('gemeinsam.erkennung.code-auf-dem-dokument'),
 } as const;
 export type Erkennungsart = keyof typeof ERKENNUNGSARTEN;
 
@@ -96,6 +98,12 @@ export interface FeldErkennung {
    * Datum und dieses Feld das zweite. Fehlt = aus Kennung und Bezeichnung (Beginn/Ende, Von/Bis …).
    */
   endeVon?: string;
+  /**
+   * Nur mit `art: 'code'` (#1723, shared/src/codes.ts): regulärer Ausdruck auf den ganzen Inhalt und die Art des Codes
+   * (z. B. `qr`). Fehlt beides, passt jeder gelesene Code.
+   */
+  muster?: string;
+  codeart?: string;
   /** Erkennungswörter aus dem Paket (#1714): Wörter vor dem Wert und – bei Auswahl – weitere Wörter je Option. */
   woerter?: Erkennungswoerter;
 }

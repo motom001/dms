@@ -81,6 +81,7 @@
   "verwaltung.verlauf-schreiben-gescheitert": "Schreiben abgelehnt: {liste}",
   "verwaltung.verlauf-zeichen": "{anzahl} Zeichen",
   "verwaltung.felder-erkannt": "Felder erkannt",
+  "verwaltung.codes-gelesen": "Codes gelesen",
   "verwaltung.typ-vorgeschlagen": "Mappentyp vorgeschlagen",
   "verwaltung.der-paket-laeufer-wurde": "Der Paket-Läufer wurde beendet.",
   "verwaltung.der-paket-laeufer-ist": "Der Paket-Läufer ist abgestürzt ({wert}){wert2}.",

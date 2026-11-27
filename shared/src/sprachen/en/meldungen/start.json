@@ -81,6 +81,7 @@
   "verwaltung.verlauf-schreiben-gescheitert": "Write rejected: {liste}",
   "verwaltung.verlauf-zeichen": "{anzahl} characters",
   "verwaltung.felder-erkannt": "Fields recognised",
+  "verwaltung.codes-gelesen": "Codes read",
   "verwaltung.typ-vorgeschlagen": "Folder type suggested",
   "verwaltung.der-paket-laeufer-wurde": "The package runner has been stopped.",
   "verwaltung.der-paket-laeufer-ist": "The package runner crashed ({wert}){wert2}.",

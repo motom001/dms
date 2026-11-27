@@ -552,6 +552,8 @@ export class Dienst extends DienstBauteile {
       () => this.kurzzustand,
     );
     this.ereignisse.abonniere('uebersetzung', (e) => this.uebersetzung.nachEreignis(e));
+    // Codes auf Dokumenten (#1723): nach „Volltext fertig“ im Hintergrund lesen – auch ohne Text (reine Bilder).
+    this.ereignisse.abonniere('codes', (e) => this.erkennung.codes.nachEreignis(e));
     this.volltexte.beiVolltextFertig(async (e) => {
       await this.erkennung.nachVolltext(e);
     });
