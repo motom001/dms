@@ -252,6 +252,10 @@ Geeignet sind Text, Langtext, Zahl, Betrag, Datum, Auswahlliste, Verweis, Zeitra
 
 **Zeiträume:** Steht im Dokument ein Zeitraum aus zwei Daten – „vom 01.07.2012 – 31.07.2012“, „01.01.2026 bis 28.02.2026“, „Zeitraum 01.07. - 31.07.2012“, auch über einen Zeilenumbruch –, bekommt das Datumsfeld für den Beginn das erste und das für das Ende das zweite Datum (seit Version 0.321; vorher bekamen beide dasselbe). Welche Datumsfelder ein Paar bilden, schließt Ablago aus Kennung und Bezeichnung: *Beginn*/*Ende*, *Von*/*Bis*, *Start*/*Ende*, *Mietbeginn*/*Mietende*, *Zeitraum von*/*Zeitraum bis*. Passt das nicht, stellst du am Feld für das Ende unter **Ende des Zeitraums ab** das Feld für den Beginn ein; in der Auswahl steht hinter *automatisch*, was Ablago sonst annimmt. In Paketen heißt die Angabe `erkennung: { endeVon: beginn }`.
 
+**Auswahlfelder** (seit Version 0.335): Kommen mehrere Auswahlwerte im Dokument vor, nimmt die Erkennung den, der **zuerst** steht – nicht den, der in der Liste zuerst kommt. Eine Stelle auf Seite 1 schlägt also jede auf späteren Seiten, etwa im Kleingedruckten. Stellen in Sätzen, die nur eine Bedingung beschreiben („Weist das Ergebnis geringe Mängel aus, …“, „Wenn …“, „Falls …“), zählen nicht.
+
+**Erkennungswörter aus Paketen** (seit Version 0.335): Ein Paket kann an einem Feld Wörter mitbringen, hinter denen der Wert steht („(4) km-St. 9363“ → Kilometerstand), und bei Auswahlfeldern weitere Wörter je Wert („ohne festgestellte Mängel“ → „ohne Mängel“). Der Wert hinter den Wörtern gewinnt dann vor anderen Stellen. Passt er nicht zum Feld – „8867 Betriebsstunden“ im Feld Kilometerstand, nur ein Strich oder ein Monat ohne Tag („April 2028“) –, bleibt das Feld leer. In der Werkbank stellst du diese Wörter nicht ein; nimmst du den Haken **Aus Dokument füllen** weg, fallen sie weg, bis ein Update des Pakets sie wiederbringt.
+
 Die Pakete der Registry (z. B. *Basis*) setzen den Haken selbst. Bei einem Update übernimmt Ablago ihn nur an Feldern, an denen du noch nichts eingestellt hast; die Vorschau nennt sie unter „Aus Dokument füllen“.
 
 **Was die Erkennung von sich aus beachtet** (#1043):

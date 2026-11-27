@@ -8,7 +8,7 @@
  * Es ist ein schwaches Merkmal: Es macht einen Typ weder zum Absender noch füllt „Aus Dokument ausfüllen“ das Feld.
  */
 import type { Feld, Mappentyp } from '../model';
-import { artVon, merkmalsfelder } from './arten';
+import { artVon, ERKENNUNGSWORT_MIN, merkmalsfelder } from './arten';
 import { esc } from './abgleich';
 
 /** Höchstens so viele Einträge einer Auswahlliste werden im Text gesucht. */
@@ -16,7 +16,7 @@ export const AUSWAHL_EINTRAEGE_MAX = 500;
 /** Höchstens so viele Wörter je Eintrag (Name und Erkennungswörter zusammen). */
 const AUSWAHL_WOERTER_MAX = 50;
 /** Kürzere Wörter zählen nicht – „KV“ oder „Gas“ ja, „ab“ nicht. */
-const AUSWAHL_WORT_MIN = 3;
+const AUSWAHL_WORT_MIN = ERKENNUNGSWORT_MIN;
 
 /**
  * Ist der Typ eine Auswahlliste? Nie aus Post angelegt (`ausPost: false`), kein Systemtyp, kein Teil und ohne Felder zum

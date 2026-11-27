@@ -4,6 +4,7 @@ import { SCHLUESSEL, TYP_KENNUNG } from '../../../../shared/src/kennungen';
 import { FELDTYPEN, ZIELTYPEN_MAX, REGISTERARTEN, ABSCHNITT_TITEL_MAX, HISTORIENGRUPPEN } from '../../../../shared/src/model';
 import { FELDART_BESCHREIBUNG, uuid, beschriftungen, ref, liste, zeit } from './schema-hilfen';
 import { ERKENNUNGSARTEN } from '../../../../shared/src/erkennung';
+import { ERKENNUNGSWOERTER_MAX, ERKENNUNGSWORT_MAX, ERKENNUNGSWORT_MIN } from '../../grundlagen/grenzen';
 import { FELDFORMATE } from '../../../../shared/src/feldformate';
 import { VORLAGE_MAX } from '../../../../shared/src/zusammengesetzt';
 import { ANZEIGE_BEDINGUNGEN_MAX } from '../../../../shared/src/anzeige';
@@ -148,6 +149,28 @@ export const SCHEMAS_TYPEN: Record<string, Schema> = {
             type: 'string',
             description:
               'Nur am Datumsfeld für das Ende eines Zeitraums (#1646): Kennung des Datumsfelds für den Beginn. Steht im Dokument ein Zeitraum („vom 01.07.2012 – 31.07.2012“), bekommt der Beginn das erste und dieses Feld das zweite Datum. Fehlt = aus Kennung und Bezeichnung (Beginn/Ende, Von/Bis, Mietbeginn/Mietende …).',
+          },
+          woerter: {
+            type: 'object',
+            description:
+              'Erkennungswörter (#1714), ein Eintrag für Werte und Optionen. vor: Wörter, hinter denen der Wert in derselben Zeile steht („(4)“, „km-Stand“, „Kd.-Nr.“) – nicht an Verweisfeldern; mehrere hintereinander zählen wie eines. Der Wert muss zur Feldart passen: eine Zahl mit fremder Einheit („8867 Betriebsstunden“ im Feld Kilometerstand), ein Platzhalter („–“) oder ein Monat ohne Tag („April 2028“) lassen das Feld leer, statt einen Wert von anderswo zu nehmen. jeOption: nur bei Auswahl, je fester Option weitere Wörter, an denen sie erkannt wird; Optionen, die das Feld nicht hat, fallen weg. Gesetzt wird immer der feste Wert. Je Liste höchstens ' +
+              `${ERKENNUNGSWOERTER_MAX} Wörter mit ${ERKENNUNGSWORT_MIN} bis ${ERKENNUNGSWORT_MAX} Zeichen; kürzere und längere fallen weg, ebenso Doppelte (Groß- und Kleinschreibung egal).`,
+            properties: {
+              vor: {
+                type: 'array',
+                maxItems: ERKENNUNGSWOERTER_MAX,
+                items: { type: 'string', minLength: ERKENNUNGSWORT_MIN, maxLength: ERKENNUNGSWORT_MAX },
+              },
+              jeOption: {
+                type: 'object',
+                description: 'Fester Wert der Option → Wörter, z. B. { "ohne Mängel": ["ohne festgestellte Mängel", "keine Mängel"] }',
+                additionalProperties: {
+                  type: 'array',
+                  maxItems: ERKENNUNGSWOERTER_MAX,
+                  items: { type: 'string', minLength: ERKENNUNGSWORT_MIN, maxLength: ERKENNUNGSWORT_MAX },
+                },
+              },
+            },
           },
         },
       },

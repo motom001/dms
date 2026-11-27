@@ -1,9 +1,20 @@
 /** Erkennung (#1278 aus erkennung.ts): Vorschläge für die Felder eines Mappentyps, eigene Organisation und Haushalt. */
-import { betragNeben, datumNeben, feldWoerter } from './beschriftet';
+import {
+  betragNeben,
+  datumNeben,
+  feldWoerter,
+  feldWorteFuerEinheit,
+  type Gelesen,
+  liesBetragAmAnfang,
+  liesDatumAmAnfang,
+  liesNummerAmAnfang,
+  liesZahlAmAnfang,
+  wertHinter,
+} from './beschriftet';
 import type { Wert, Mappentyp, Betrag, Feld } from '../model';
 import { type Sicherheit, type Fund, ausschnitt, type Angaben, findeAngaben } from './angaben';
 import { t } from '../texte';
-import { type Erkennungsart, ERKENNUNG_FELDTYPEN, artVon, klein } from './arten';
+import { type Erkennungsart, ERKENNUNG_FELDTYPEN, ERKENNUNGSWORT_MIN, artVon, klein } from './arten';
 import { vonAussenFuellbar } from '../berechnet';
 import { esc, domainVon, wertMuster } from './abgleich';
 import { formatFehler } from '../feldformate';
@@ -79,7 +90,8 @@ export function fuellfelder(
   const markiert = geeignet.filter((f) => f.erkennung);
   return (
     (markiert.length ? markiert : geeignet)
-      .map((f) => ({ feld: f, art: artVon(f) }))
+      // Erkennungswörter vor dem Wert (#1714) an einem Feld ohne erkennbare Art („Kilometerstand“, Zahl): als Nummer.
+      .map((f) => ({ feld: f, art: artVon(f) ?? (f.erkennung?.woerter?.vor?.length ? ('nummer' as const) : null) }))
       // Erkennungswörter (#1689) beschreiben die Mappe, sie stehen nicht im Dokument – nie aus dem Dokument füllen.
       .filter((x): x is { feld: Feld; art: Erkennungsart } => !!x.art && x.art !== 'woerter')
   );
@@ -210,17 +222,15 @@ export function vorschlaegeAus(
     erstes: new Map([...felder].reverse().map((x) => [x.art, x.feld.key] as const)),
     typName: t.name,
   };
+  // Erkennungshinweis mit Muster (#391) gewinnt vor allem anderen, danach die Erkennungswörter vor dem Wert aus dem
+  // Paket (#1714) – auch vor Zeiträumen. „Fertig“ heißt auch: Die Wörter stehen da, aber ohne passenden Wert – leer.
+  const fertig = new Set(felder.filter(({ feld: f, art }) => nachMuster(f, lauf) || nachWoertern(f, art, lauf)).map((x) => x.feld.key));
   // Zeitraum (#1646): Datumspaare („vom 01.07.2012 – 31.07.2012“) gehen an Beginn und Ende – vor dem einzelnen Datum.
-  // Ein Erkennungshinweis mit Muster (#391) gewinnt auch hier.
   for (const [k, x] of Object.entries(zeitraumVorschlaege(t, text, felder))) {
     const f = t.felder.find((y) => y.key === k);
-    if (f && !musterAusHinweis(f.erkennung?.hinweis)?.test(text)) lauf.setze(f, x.wert, x);
+    if (f && !fertig.has(k)) lauf.setze(f, x.wert, x);
   }
-  for (const { feld: f, art } of felder) {
-    // Erkennungshinweis mit Muster (#391): gewinnt vor allem anderen.
-    if (nachMuster(f, lauf)) continue;
-    vorschlagFuer(f, art, lauf);
-  }
+  for (const { feld: f, art } of felder) if (!fertig.has(f.key)) vorschlagFuer(f, art, lauf);
   // Plausibilität (#1693, Teil 2): Passen die Werte zusammen? Hebt oder senkt die Sicherheit – vor der Gutschrift, die
   // das Vorzeichen nur in manchen Feldern dreht.
   pruefePlausibel(v, {
@@ -241,6 +251,56 @@ function nachMuster(f: Feld, l: VorschlagLauf): boolean {
   if (!m) return false;
   l.setze(f, m[0], { sicherheit: 'hoch', fundstelle: ausschnitt(l.text, m.index, m[0].length) });
   return true;
+}
+
+/** Arten, deren Wert hinter einem Erkennungswort als Nummer steht (#1714): Text als Kennung, Zahl als Zahl. */
+const NUMMER_ARTEN: readonly Erkennungsart[] = ['nummer', 'plz', 'hausnummer'];
+
+/** Leser für den Wert hinter einem Erkennungswort (#1714), je Art; null = die Art kennt keine Erkennungswörter vor dem Wert. */
+function leserFuer(f: Feld, art: Erkennungsart): ((rest: string) => Gelesen<Wert>) | null {
+  const anfang = (re: RegExp) => new RegExp(`^(?:${re.source})`, re.flags.replace('g', ''));
+  switch (art) {
+    case 'datum':
+      return liesDatumAmAnfang;
+    case 'betrag':
+      return (r) => {
+        const b = liesBetragAmAnfang(r);
+        return b && b !== 'passtNicht' && f.typ === 'zahl' ? { wert: b.wert.betrag, laenge: b.laenge } : b;
+      };
+    case 'zeitraum':
+      return (r) => {
+        const m = anfang(ZEITRAUM_IM_TEXT).exec(r);
+        const z = m ? leseZeitraum(`${m[1]} ${m[2]}`) : null;
+        return m && z ? { wert: z, laenge: m[0].length } : null;
+      };
+    case 'prozent':
+      return (r) => {
+        const m = anfang(PROZENT_IM_TEXT).exec(r);
+        const n = m ? leseProzent(m[1]) : null;
+        return m && n != null && Number.isFinite(n) && n <= 100 ? { wert: n, laenge: m[0].length } : null;
+      };
+    case 'auswahl':
+      return (r) => {
+        const o = optionAmAnfang(f, r);
+        return o ? { wert: f.mehrfach ? [o.wert] : o.wert, laenge: o.laenge } : null;
+      };
+    default:
+      if (!NUMMER_ARTEN.includes(art)) return null;
+      return f.typ === 'zahl' ? (r) => liesZahlAmAnfang(r, feldWorteFuerEinheit(f)) : liesNummerAmAnfang;
+  }
+}
+
+/**
+ * Erkennungswörter vor dem Wert (#1714, `erkennung.woerter.vor`): Steht der Wert hinter einem der Wörter, gilt er
+ * (Sicherheit hoch). true = erledigt – auch, wenn hinter den Wörtern nur ein Platzhalter oder ein unpassender Wert
+ * steht („(4) km-Stand: 8867 Betriebsstunden“): Dann bleibt das Feld leer, statt eine andere Zahl zu nehmen.
+ */
+function nachWoertern(f: Feld, art: Erkennungsart, l: VorschlagLauf): boolean {
+  const vor = f.erkennung?.woerter?.vor ?? [];
+  const lies = vor.length ? leserFuer(f, art) : null;
+  const x = lies ? wertHinter<Wert>(l.text, vor, lies) : null;
+  if (x && x !== 'leer') l.setze(f, x.wert, x);
+  return !!x;
 }
 
 const KONTAKT_ARTEN = ['email', 'internet', 'iban', 'ustid', 'telefon', 'mobil', 'fax'] as const;
@@ -402,25 +462,58 @@ function vorschlagNummer(f: Feld, l: VorschlagLauf) {
   if (n) l.setze(f, f.typ === 'zahl' ? Number(n.wert.replace(/\D/g, '')) || '' : n.wert, n);
 }
 
-/** Auswahl (#728): fester Wert oder eine seiner Beschriftungen im Text; gesetzt wird immer der feste Wert. */
+/** Ganzes Wort im Text, Groß- und Kleinschreibung egal (Auswahl, #728). */
+const wortMuster = (x: string, flags = 'i') => new RegExp(`(?<![\\wÄÖÜäöüß])${esc(x)}(?![\\wÄÖÜäöüß])`, flags);
+
+/**
+ * Texte, an denen eine Option erkannt wird: fester Wert, Beschriftungen (#728) und Erkennungswörter je Option aus dem
+ * Paket (#1714) – kürzere als 3 Zeichen nie.
+ */
+const optionsTexte = (f: Feld, o: string) =>
+  [o, ...optionTexte(f, o), ...(f.erkennung?.woerter?.jeOption?.[o] ?? [])].filter((y) => y.length >= ERKENNUNGSWORT_MIN);
+
+/** Option direkt am Anfang (hinter einem Erkennungswort vor dem Wert, #1714) – der längste passende Text. */
+function optionAmAnfang(f: Feld, rest: string): { wert: string; laenge: number } | null {
+  let best: { wert: string; laenge: number } | null = null;
+  for (const o of f.optionen ?? [])
+    for (const x of optionsTexte(f, o))
+      if ((!best || x.length > best.laenge) && new RegExp(`^${esc(x)}(?![\\wÄÖÜäöüß])`, 'i').test(rest))
+        best = { wert: o, laenge: x.length };
+  return best;
+}
+
+/**
+ * Bedingter Satz (#1714, Punkt 3): „Weist das Prüfungsergebnis geringe Mängel aus, …“, „Wenn …“, „Falls …“ – dort ist
+ * eine Option ein Hinweis, kein Ergebnis. Zählt der Anfang des Satzes (nach „.“, „!“, „?“, „:“, „;“ oder einer
+ * Leerzeile, höchstens 200 Zeichen zurück) oder der Anfang der Zeile – über einem Satz steht oft eine Überschrift ohne
+ * Punkt. Nur großgeschrieben, damit ein umbrochenes „werden“ mitten im Satz nicht zählt. „Bei …“ zählt nicht dazu: „Bei
+ * der Untersuchung wurden … festgestellt“ ist ein Ergebnis.
+ */
+function imBedingtenSatz(text: string, i: number): boolean {
+  const BEDINGT = /^(?:Wenn|Falls|Sofern|Soweit|Weist|Wurden|Werden|Sollten?)(?![\wäöüß])/;
+  const ab = Math.max(0, i - 200);
+  const teile = text.slice(ab, i).split(/[.!?:;](?=\s)|\n[ \t]*\n|\f/);
+  // Ohne Satzanfang im Ausschnitt ist das erste Wort nur ein Wort mitten im Satz.
+  const satz = teile.length > 1 || ab === 0 ? teile[teile.length - 1].trimStart() : '';
+  const zeile = text.slice(Math.max(text.lastIndexOf('\n', i - 1) + 1, text.lastIndexOf('\f', i - 1) + 1), i).trimStart();
+  return BEDINGT.test(satz) || BEDINGT.test(zeile);
+}
+
+/**
+ * Auswahl (#728, #1714): Kommen mehrere Optionen im Text vor, gewinnt die früheste Stelle – nicht die Reihenfolge der
+ * Liste. Die Seiten stehen im Volltext hintereinander, so schlägt Seite 1 jede spätere. Gleiche Stelle: der längere
+ * Text. Stellen in bedingten Sätzen zählen nicht. Gesetzt wird immer der feste Wert.
+ */
 function vorschlagAuswahl(f: Feld, l: VorschlagLauf) {
   const { text } = l;
-  const wort = (x: string) => new RegExp(`(?<![\\wÄÖÜäöüß])${esc(x)}(?![\\wÄÖÜäöüß])`, 'i');
-  let treffer: { wert: string; text: string } | undefined;
-  for (const o of f.optionen ?? []) {
-    const x = [o, ...optionTexte(f, o)].find((y) => y.length >= 3 && wort(y).test(text));
-    if (x) {
-      treffer = { wert: o, text: x };
-      break;
+  let best: { wert: string; i: number; laenge: number } | undefined;
+  for (const o of f.optionen ?? [])
+    for (const x of optionsTexte(f, o)) {
+      const m = [...text.matchAll(wortMuster(x, 'gi'))].find((y) => !imBedingtenSatz(text, y.index));
+      if (m && (!best || m.index < best.i || (m.index === best.i && x.length > best.laenge)))
+        best = { wert: o, i: m.index, laenge: x.length };
     }
-  }
-  if (treffer) {
-    const m = wort(treffer.text).exec(text)!;
-    l.setze(f, f.mehrfach ? [treffer.wert] : treffer.wert, {
-      sicherheit: 'niedrig',
-      fundstelle: ausschnitt(text, m.index, treffer.text.length),
-    });
-  }
+  if (best) l.setze(f, f.mehrfach ? [best.wert] : best.wert, { sicherheit: 'niedrig', fundstelle: ausschnitt(text, best.i, best.laenge) });
 }
 
 /* ---------- Eigene Organisation und Haushalt (#995, #1043) ---------- */

@@ -96,6 +96,18 @@ export interface FeldErkennung {
    * Datum und dieses Feld das zweite. Fehlt = aus Kennung und Bezeichnung (Beginn/Ende, Von/Bis …).
    */
   endeVon?: string;
+  /** Erkennungswörter aus dem Paket (#1714): Wörter vor dem Wert und – bei Auswahl – weitere Wörter je Option. */
+  woerter?: Erkennungswoerter;
+}
+
+/**
+ * Erkennungswörter am Feld (#1714), ein Eintrag für Werte und Optionen: `vor` – Wörter, hinter denen der Wert steht
+ * („(4)“, „km-Stand“); `jeOption` – nur bei Auswahl, je fester Option weitere Wörter, an denen sie erkannt wird
+ * („ohne Mängel“: „ohne festgestellte Mängel“). Gesetzt wird immer der feste Wert der Option.
+ */
+export interface Erkennungswoerter {
+  vor?: string[];
+  jeOption?: Record<string, string[]>;
 }
 
 /**
