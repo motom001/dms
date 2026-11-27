@@ -50,6 +50,8 @@ import { t } from '../sprache/sprache';
 import { ohneErkennung } from '../../../shared/src/anlagen';
 import { namenVon, perAbsender, perAuswahl, perErkennbar, type Kurzform } from './klassifizierung-wege';
 import type { Gelerntes } from './gelerntes';
+import type { DokumentCodes } from './codes';
+import { codeBelege } from '../../../shared/src/klassifizierung-code';
 
 const log = protokoll.modul('ablage');
 
@@ -79,7 +81,7 @@ export class Klassifizierung {
   constructor(
     private d: ErkennungDienst,
     /** Nur Standard-Weg, Abgleich und Schwelle (#1278, Schritt 5b: statt der ganzen Klasse `Erkennung`). */
-    private erkennung: Pick<ErkennungPositionen, 'standard' | 'abgleich' | 'schwelle'>,
+    private erkennung: Pick<ErkennungPositionen, 'standard' | 'abgleich' | 'schwelle'> & { codes?: Pick<DokumentCodes, 'gemerkte'> },
     private repo: () => Repo,
     /** Aus Korrekturen gelernt (#1681). */
     private gelerntes?: Pick<Gelerntes, 'typBelege'>,
@@ -135,6 +137,8 @@ export class Klassifizierung {
     // Namen mit Mehrzahl und gleichbedeutenden Wörtern (#1673): „Police“ als Überschrift spricht für „Vertrag“.
     const namen = new Map(ziele.map((x) => [x.id, namenVon(x, gruppen)] as const));
     const erkennbar = perErkennbar(text, ziele);
+    // Code auf dem Dokument (#1728): nur gemerkte Codes – fehlen sie, liest Ablago im Hintergrund nach und rechnet die Vorberechnung neu.
+    const code = await this.perCode(ziele, ids);
     const belege: Array<Klassbeleg & { typId: string }> = [
       ...paketWege.belege,
       ...abgleich.belege,
@@ -142,6 +146,7 @@ export class Klassifizierung {
       ...erkennbar,
       ...gelernt.belege,
       ...auswahl.belege,
+      ...code,
     ];
     const kern = typAusText(text, [...namen.values()].flat());
     if (kern) belege.push({ typId: kern.typId, weg: 'kern', sicherheit: KERN_SICHERHEIT, wort: kern.wort, fundstelle: kern.fundstelle });
@@ -151,7 +156,7 @@ export class Klassifizierung {
       { weg: 'abgleich', stand: stand(abgleich.belege.length) },
       { weg: 'absender', stand: stand(absender.belege.length) },
       { weg: 'erkennbar', stand: stand(erkennbar.length) },
-      ...nurMitBelegen({ gelernt: gelernt.belege.length, auswahl: auswahl.belege.length }),
+      ...nurMitBelegen({ gelernt: gelernt.belege.length, auswahl: auswahl.belege.length, code: code.length }),
     ];
     const schwelle = await this.erkennung.schwelle();
     // Wie sicher ist Ablago? (#1645): je möglichem Typ, was fehlte – nur Kennungen und Zahlen, nichts davon ins Protokoll.
@@ -171,6 +176,11 @@ export class Klassifizierung {
       ms: Date.now() - start,
     });
     return { vorschlag, typen, wege, ohneText, bezuege, schwelle, gruende };
+  }
+
+  /** Weg `code` (#1728): gemerkte Codes der Dokumente gegen die Code-Muster der Felder. */
+  private async perCode(ziele: Mappentyp[], ids: string[]): Promise<Array<Klassbeleg & { typId: string }>> {
+    return codeBelege(ziele, (await this.erkennung.codes?.gemerkte(ids)) ?? []);
   }
 
   /**
@@ -409,8 +419,8 @@ function gesenkt(gruende: Record<string, Typgrund[]>, schwelle: number) {
 }
 
 /** Wege, die nur mit Belegen erscheinen (Gelerntes #1681, Auswahllisten #1689) – ohne bleiben sie unsichtbar. */
-const nurMitBelegen = (n: Partial<Record<'gelernt' | 'auswahl', number>>): Wegstand[] =>
-  (['gelernt', 'auswahl'] as const).filter((w) => n[w]).map((weg) => ({ weg, stand: 'ok' as const }));
+const nurMitBelegen = (n: Partial<Record<'gelernt' | 'auswahl' | 'code', number>>): Wegstand[] =>
+  (['gelernt', 'auswahl', 'code'] as const).filter((w) => n[w]).map((weg) => ({ weg, stand: 'ok' as const }));
 
 /** Stand eines eingebauten Wegs: etwas gefunden oder leer. */
 const stand = (x: unknown): Wegstand['stand'] => (x ? 'ok' : 'leer');

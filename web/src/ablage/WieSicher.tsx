@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { datumText } from '../../../shared/src/archiv';
+import { istQrCode } from '../../../shared/src/codes';
 import { feldLabel, typName } from '../../../shared/src/beschriftung';
 import { merkmalsfelder } from '../../../shared/src/erkennung';
 import {
@@ -42,6 +43,9 @@ export function belegText(b: Klassbeleg, bezuege: Bezuege): string {
         titel: titelOder(b.mappeId ? bezuege[b.mappeId]?.titel : ''),
         merkmal: b.merkmal ?? '',
       });
+    // Code auf dem Dokument (#1728): „Erkannt an QR-Code auf Seite 1 (passt zu „Digitaler Bericht“)“.
+    case 'code':
+      return codeBeleg(b);
     default:
       // Absender, „Woran man ihn erkennt“, Gelerntes, Auswahlliste.
       return belegNeu(b, bezuege);
@@ -68,6 +72,13 @@ function belegNeu(b: Klassbeleg, bezuege: Bezuege): string {
   return titel
     ? t('ablage.uebernehmen.beleg-absender', { absender: titel, anzahl: b.anzahl ?? 0 })
     : t('ablage.uebernehmen.beleg-absender-ohne', { anzahl: b.anzahl ?? 0 });
+}
+
+/** Beleg des Wegs `code` (#1728): Art des Codes (QR-Code oder ein anderer), Seite und das Feld mit dem Muster. */
+function codeBeleg(b: Klassbeleg): string {
+  const feld = b.feld ?? '';
+  if (typeof b.seite !== 'number') return t('ablage.uebernehmen.beleg-code-ohne-seite', { feld });
+  return t(istQrCode(b.wort ?? '') ? 'ablage.uebernehmen.beleg-code-qr' : 'ablage.uebernehmen.beleg-code', { seite: b.seite, feld });
 }
 
 /** Was fehlte bzw. dafür sprach (#1645) als Satz – ohne Fachbegriffe. */

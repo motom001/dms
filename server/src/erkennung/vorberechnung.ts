@@ -79,6 +79,19 @@ export class Vorberechnung {
     });
   }
 
+  /**
+   * Codes eines Dokuments kamen erst nach der Vorberechnung (#1728): neu rechnen – ein Code kann den Mappentyp und die
+   * Felder ändern. Ohne Vorberechnung an der Post nichts; die erste Rechnung sieht die Codes dann schon.
+   */
+  async nachCodes(postId: string): Promise<void> {
+    const e = (
+      await this.repo()
+        .erkennungLies(postId)
+        .catch(() => null)
+    )?.ergebnis as { vorberechnet?: unknown } | undefined;
+    if (e?.vorberechnet) this.anstossen(postId);
+  }
+
   /** Wartet, bis alle angestoßenen Rechnungen fertig sind (Tests, Herunterfahren). */
   async fertig(): Promise<void> {
     while (this.laeuft.size) await Promise.allSettled([...this.laeuft.values()]);

@@ -68,6 +68,8 @@ function codeFundstelle(c: GelesenerCode): string {
 export class DokumentCodes {
   /** Wird gesetzt, sobald der Paket-Läufer läuft (laeufer/verwaltung.ts, im Verbund laeufer/fern.ts). */
   anbieter?: CodeAnbieter;
+  /** Neue Codes gemerkt (#1728): die Vorberechnung der Post neu anstoßen (setzt die Erkennung). */
+  gelesen?: (mappeId: string) => void;
   /** Je Dokument höchstens ein Lesen zugleich (Hintergrund und Ausfüllen können sich treffen). */
   private laufend = new Map<string, Promise<GelesenerCode[] | null>>();
 
@@ -120,6 +122,7 @@ export class DokumentCodes {
     }
     await this.repo().merkeCodes(id, dok.sha256, a.codes);
     log.info('Codes gelesen', { paket: p.id, dokument: id, anzahl: a.codes.length });
+    if (a.codes.length) this.gelesen?.(dok.mappeId);
     return a.codes;
   }
 
@@ -137,6 +140,22 @@ export class DokumentCodes {
       if (w.paket === p.id && w.abfluss && typ && !(await this.d.ki.kiSperreFuer(p.id))(typ)) return p;
     }
     return null;
+  }
+
+  /**
+   * Nur die gemerkten Codes (#1728, „Wohin gehört das?“ wartet nicht auf ein Paket). Fehlen sie für eine Datei, liest Ablago
+   * im Hintergrund nach; kommen dabei Codes, rechnet die Vorberechnung neu (`gelesen`).
+   */
+  async gemerkte(dokIds: string[]): Promise<CodeImDokument[]> {
+    const alle: CodeImDokument[] = [];
+    for (const id of dokIds) {
+      const dok = await this.repo().holeDokument(id);
+      if (!dok || ohneErkennung(dok)) continue;
+      const g = await this.repo().liesCodes(id);
+      if (g?.sha256 === dok.sha256) alle.push(...g.codes.map((c) => ({ ...c, dokument: id })));
+      else if (this.anbieter?.pakete().length) void this.lies(id, CODES_HINTERGRUND_MS).catch(() => null);
+    }
+    return alle;
   }
 
   /** Gelesene Codes mehrerer Dokumente, in ihrer Reihenfolge; liest nach, wo für die Datei noch nichts gemerkt ist. */

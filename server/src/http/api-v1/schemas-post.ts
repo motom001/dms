@@ -177,7 +177,10 @@ export const SCHEMAS_POST: Record<string, Schema> = {
         items: {
           type: 'object',
           properties: {
-            weg: { type: 'string', enum: ['ki', 'aehnlichkeit', 'kern', 'abgleich', 'absender', 'erkennbar', 'gelernt', 'auswahl'] },
+            weg: {
+              type: 'string',
+              enum: ['ki', 'aehnlichkeit', 'kern', 'abgleich', 'absender', 'erkennbar', 'gelernt', 'auswahl', 'code'],
+            },
             stand: {
               type: 'string',
               enum: ['ok', 'leer', 'fehler', 'gesperrt', 'aus'],
@@ -238,15 +241,22 @@ export const SCHEMAS_POST: Record<string, Schema> = {
         items: {
           type: 'object',
           properties: {
-            weg: { type: 'string', enum: ['ki', 'aehnlichkeit', 'kern', 'abgleich', 'absender', 'erkennbar', 'gelernt', 'auswahl'] },
+            weg: {
+              type: 'string',
+              enum: ['ki', 'aehnlichkeit', 'kern', 'abgleich', 'absender', 'erkennbar', 'gelernt', 'auswahl', 'code'],
+            },
             sicherheit: { type: 'number' },
             paket: { type: 'object', properties: { id: { type: 'string' }, name: { type: 'string' } } },
             begruendung: { type: 'string', description: 'Kurze Begründung des Pakets (reiner Text)' },
             zitat: { type: 'string', description: 'Wörtlich aus dem Dokument (geprüft)' },
-            wort: { type: 'string', description: 'kern: Name des Typs im Text' },
+            wort: { type: 'string', description: 'kern: Name des Typs im Text; code (#1728): Art des Codes, z. B. qr' },
+            seite: { type: 'integer', description: 'code (#1728): Seite des Codes, der auf das Code-Muster eines Felds passt' },
             fundstelle: { type: 'string' },
             mappeId: { ...uuid, description: 'abgleich: wiedergefundene Mappe; absender: der Absender (nur, wenn lesbar)' },
-            feld: { type: 'string', description: 'abgleich: Verweisfeld des Typs, das auf sie zeigt' },
+            feld: {
+              type: 'string',
+              description: 'abgleich: Verweisfeld des Typs, das auf sie zeigt; code (#1728): Feld mit dem Code-Muster',
+            },
             merkmal: { type: 'string', description: 'abgleich: Feld und Wert, an dem sie erkannt wurde' },
             anzahl: { type: 'integer', description: 'absender: so oft lag Post des Absenders bisher in diesem Typ (#1680)' },
             gefunden: { type: 'integer', description: 'erkennbar: Wörter aus „Woran man ihn erkennt“ im Dokument (#1673)' },
