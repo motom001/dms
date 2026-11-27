@@ -68,6 +68,8 @@ export class Erkennung extends ErkennungPost {
       einst,
     );
     this.codes = new DokumentCodes(d, repo, () => this.standard());
+    // Mappentyp am Code (#1728): Codes nach der Vorberechnung rechnen sie neu.
+    this.codes.gelesen = (mappe) => void this.vorberechnung.nachCodes(mappe);
   }
 
   /** „Wohin gehört das?“ mehrstufig (#939): Pakete mit dms:klassifizieren, Kern-Erkennung und Abgleich. */

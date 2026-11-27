@@ -1,0 +1,5 @@
+art: minor
+
+## Neu
+
+- **Mappentyp am Code erkennen** (#1728): Passt ein QR-Code oder Barcode auf dem Dokument zum Code-Muster eines Felds (z. B. der Link zum Digitalen Untersuchungsbericht), schlägt „Wohin gehört das?“ diesen Mappentyp mit großer Sicherheit vor – unter „Wie sicher ist Ablago?“ steht „Erkannt an QR-Code auf Seite 1“. Kommen die Codes erst nach der Vorberechnung, rechnet Ablago neu.

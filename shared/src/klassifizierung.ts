@@ -11,6 +11,7 @@
  *   ein Verweisfeld des Kandidaten zeigt (Rechnung → Vertrag).
  * - **Absender** (#1680) – in welchen Mappentypen die Post des erkannten Absenders bisher lag.
  * - **Gelernt** (#1681) – aus einer Korrektur bei Post desselben Absenders (shared/src/gelerntes.ts).
+ * - **Code** (#1728) – ein gemerkter Code passt auf das Code-Muster eines Felds (shared/src/klassifizierung-code.ts).
  * - **Woran man ihn erkennt** (#1673) – viele Wörter daraus im Dokument; so kommt auch ein Typ ohne abgelegte Mappen in
  *   die Vorschläge.
  *
@@ -130,7 +131,7 @@ export interface Typvorschlag {
 }
 
 /** Woher ein Beleg kommt. */
-export type Weg = 'aehnlichkeit' | 'ki' | 'kern' | 'abgleich' | 'absender' | 'erkennbar' | 'gelernt' | 'auswahl';
+export type Weg = 'aehnlichkeit' | 'ki' | 'kern' | 'abgleich' | 'absender' | 'erkennbar' | 'gelernt' | 'auswahl' | 'code';
 
 /** Ein Beleg für einen Typ, wie die Oberfläche ihn zeigt. */
 export interface Klassbeleg {
@@ -157,6 +158,8 @@ export interface Klassbeleg {
   von?: number;
   /** Gelernt aus einer Korrektur (#1681): wann und von wem; `mappeId` ist die Mappe, aus der gelernt wurde (nur lesbar). */
   gelernt?: { am: string; von: string | null };
+  /** Code auf dem Dokument (#1728): Seite des passenden Codes (`wort` ist seine Art, `feld` das Feld mit dem Muster). */
+  seite?: number;
 }
 
 /** Ein Typ im Ergebnis: verbundene Sicherheit und alle Belege. */
