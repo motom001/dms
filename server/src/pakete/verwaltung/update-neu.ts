@@ -47,7 +47,7 @@ export function erkennungNeu(
 ): Array<{ key: string; label: string; erkennung: FeldErkennung }> {
   return t.felder.flatMap((f) => {
     const g = vorhanden.felder.find((x) => x.key === f.key && x.typ === f.typ);
-    const e = liesFeldErkennung(f.erkennung, f.typ);
+    const e = liesFeldErkennung(f.erkennung, f.typ, f.optionen);
     return g && e && !g.erkennung ? [{ key: g.key, label: g.label, erkennung: e }] : [];
   });
 }

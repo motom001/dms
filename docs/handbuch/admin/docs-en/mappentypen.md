@@ -252,6 +252,10 @@ Recognition finds **numbers** by their label ("Invoice number: 2026/0815", "Rech
 
 **Periods:** if the document shows a period made of two dates – "vom 01.07.2012 – 31.07.2012", "01.01.2026 bis 28.02.2026", "1 January 2026 to 31 March 2026", also across a line break –, the date field for the start gets the first date and the one for the end the second (since version 0.321; before, both got the same). Ablago infers which date fields form a pair from key and label: *Start*/*End*, *From*/*To*, *Beginn*/*Ende*, *Von*/*Bis*, *Rent start*/*Rent end*. If that doesn't fit, choose the start field on the end field under **End of the period starting at**; the selection shows after *automatic* what Ablago would assume otherwise. In packages the entry is `erkennung: { endeVon: beginn }`.
 
+**Choice fields** (since version 0.335): if several values of a choice list appear in the document, the recognition takes the one that comes **first** – not the one first in the list. A place on page 1 therefore beats any on later pages, for instance in the small print. Places in sentences that only describe a condition ("Weist das Ergebnis geringe Mängel aus, …", "Wenn …", "Falls …") don't count.
+
+**Recognition words from packages** (since version 0.335): a package can bring words on a field after which the value stands ("(4) km-St. 9363" → mileage) and, for choice fields, further words per value ("ohne festgestellte Mängel" → "ohne Mängel"). The value after the words then wins over other places. If it doesn't fit the field – "8867 Betriebsstunden" in the mileage field, only a dash or a month without a day ("April 2028") –, the field stays empty. You don't set these words in the workbench; if you remove the tick **Fill from document**, they are gone until an update of the package brings them back.
+
 The registry's packages (e.g. *Basis*) set the tick themselves. On an update, Ablago only takes it over on fields where you haven't set anything yet; the preview names them under "Fill from document".
 
 **What recognition takes into account by itself** (#1043):
