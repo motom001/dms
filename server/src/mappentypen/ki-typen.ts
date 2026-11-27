@@ -128,7 +128,10 @@ export class KiTypen {
       const ueberKern =
         (l.rechte.schnittstellen ?? []).some(
           (s) => s === 'dms:antworten' || s === 'dms:erkennen' || s === 'dms:klassifizieren' || s === 'dms:uebersetzen',
-        ) || l.ereignisse.some((e) => INHALT_EREIGNISSE.includes(e) && !MAPPEN_EREIGNISSE.includes(e));
+        ) ||
+        l.ereignisse.some((e) => INHALT_EREIGNISSE.includes(e) && !MAPPEN_EREIGNISSE.includes(e)) ||
+        // Angebote beim Ausfüllen (#1724): Code vom Dokument, über den Kern.
+        !!l.angebote?.length;
       const darf = lesbar(l.rechte.lesen);
       const bekommt = liste
         .filter((x) => kiErlaubt(k, x.id) && (ueberKern || (darf.has(x.id) && !verwehrt[x.id]?.includes(p.id))))

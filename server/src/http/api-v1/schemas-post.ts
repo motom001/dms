@@ -402,8 +402,64 @@ export const SCHEMAS_POST: Record<string, Schema> = {
           },
         },
       },
+      angebote: {
+        type: 'array',
+        description:
+          'Angebote von Paketen (#1724): Steht auf einem der Dokumente ein Code, zu dem ein Paket unter code.angebote Daten holen kann, je Angebot Paket, Schlüssel, Text (mit beschriftungen je Sprache), Knopf und das Dokument mit dem Code. Nur mit Bearbeiten an der Mappe bzw. Anlegen im Typ, nur von laufenden, nicht angehaltenen Paketen; abgerufen wird erst mit POST /typen/{id}/angebote/{paket}/{angebot}.',
+        items: {
+          type: 'object',
+          properties: {
+            paket: { type: 'object', properties: { id: { type: 'string' }, name: { type: 'string' } } },
+            schluessel: { type: 'string' },
+            text: { type: 'string' },
+            knopf: { type: 'string' },
+            beschriftungen: { type: 'object', additionalProperties: true },
+            dokument: uuid,
+          },
+        },
+      },
       text: { type: 'string', description: 'Nur bei /datei: der gelesene Text' },
       info: { type: 'string', description: 'Nur bei /datei: wie gelesen wurde' },
+    },
+  },
+  AngebotEingabe: {
+    type: 'object',
+    required: ['dokument'],
+    properties: {
+      dokument: { ...uuid, description: 'Das Dokument mit dem Code (aus angebote[].dokument)' },
+      mappe: { ...uuid, description: 'Die Mappe, die bearbeitet wird; fehlt bei einer neuen Mappe' },
+      lauf: { ...uuid, description: 'Nur nach einem Dialog des Pakets: die Kennung aus der Antwort' },
+      antworten: {
+        type: 'object',
+        additionalProperties: true,
+        description: 'Nur mit lauf: Antworten auf den Dialog wie bei den Paket-Aktionen',
+      },
+    },
+  },
+  AngebotErgebnis: {
+    type: 'object',
+    properties: {
+      paket: { type: 'object', properties: { id: { type: 'string' }, name: { type: 'string' } } },
+      vorschlaege: {
+        type: 'object',
+        additionalProperties: true,
+        description:
+          'Wie bei TypVorschlaege, Fundstelle „abgerufen über …“; Verweise nur als Id einer lesbaren Mappe, die Ablago über Felder mit eindeutig gefunden hat',
+      },
+      bezuege: { type: 'object', additionalProperties: true, description: 'Titel und Typ der vorgeschlagenen Mappen' },
+      neu: {
+        type: 'object',
+        additionalProperties: true,
+        description: 'Verweisfeld ohne passende Mappe: „neue Mappe anlegen“ mit den gelieferten Werten (wie bei TypVorschlaege)',
+      },
+      hinweis: { type: 'string', description: 'Wenn das Paket nichts Passendes geliefert hat' },
+      lauf: { ...uuid, description: 'Nur bei einem Dialog des Pakets: Kennung für den nächsten Aufruf' },
+      schritt: { type: 'integer' },
+      dialog: {
+        type: 'object',
+        additionalProperties: true,
+        description: 'Dialog-Beschreibung wie bei den Paket-Aktionen (höchstens zwei je Abruf)',
+      },
     },
   },
   JsonSchema: { type: 'object', description: 'JSON Schema 2020-12', additionalProperties: true },

@@ -18,10 +18,17 @@ import type { OrganisationStand } from '../../../shared/src/organisation';
 import { erreichbarkeit, NICHT_ERREICHBAR } from '../erreichbarkeit';
 import { istAusfall } from '../../../shared/src/erreichbarkeit';
 import { t } from '../sprache';
+import type { AngebotBeimAusfuellen } from '../../../shared/src/angebote';
+import type { AktionsDialog } from '../../../shared/src/paketaktionen';
 import { sprache } from '../../../shared/src/sprache';
 import type { Abdeckung, SprachpaketInfo } from '../../../shared/src/sprachpaket';
 import { ApiFehler, anfrage, sendeDatei } from './anfrage';
 import type { Bezuege } from './mappen';
+
+/** Antwort auf ein Angebot (#1724): ein Dialog des Pakets oder Vorschläge wie bei „Aus Dokument ausfüllen“. */
+export type AngebotsAntwort =
+  | { paket: { id: string; name: string }; lauf: string; schritt: number; dialog: AktionsDialog }
+  | ({ paket: { id: string; name: string }; hinweis?: string } & Pick<TypVorschlaege, 'vorschlaege' | 'bezuege' | 'neu'>);
 
 /** „Aus Dokument ausfüllen“ (#391), wie POST /api/typen/:id/vorschlaege sie liefert. */
 export interface TypVorschlaege {
@@ -38,6 +45,8 @@ export interface TypVorschlaege {
   hinweis?: string;
   /** Das Paket hat nur einen Teil des Dokumenttexts gelesen (#564). */
   gekuerzt?: true;
+  /** Angebote von Paketen zu einem Code auf dem Dokument (#1724): Knopf im Hinweis, Abruf erst nach Klick. */
+  angebote?: AngebotBeimAusfuellen[];
   /** Aus einer E-Rechnung gelesen (#1043). */
   erechnung?: { syntax: 'ubl' | 'cii'; gutschrift: boolean; profil?: string; nummer?: string };
   /** Positionen der E-Rechnung (#1043): Mappen des Teiltyps, die beim Speichern angelegt werden. */
@@ -237,6 +246,16 @@ export const werkbankApi = {
   // positionen (#1043): Die Oberfläche fragt ausdrücklich nach Positionen einer E-Rechnung und entscheidet selbst, ob der Haken an ist.
   vorschlaege: (typId: string, e: { text?: string; dokumente?: string[]; mappe?: string }) =>
     anfrage<TypVorschlaege>('POST', `/api/typen/${typId}/vorschlaege`, { ...e, positionen: true }),
+  /** Angebot eines Pakets abrufen (#1724): Vorschläge – oder ein Dialog des Pakets, dann mit lauf und antworten noch einmal. */
+  angebotAbrufen: (
+    typId: string,
+    a: Pick<AngebotBeimAusfuellen, 'paket' | 'schluessel' | 'dokument'>,
+    e: { mappe?: string; lauf?: string; antworten?: Record<string, unknown> },
+  ) =>
+    anfrage<AngebotsAntwort>('POST', `/api/typen/${typId}/angebote/${encodeURIComponent(a.paket.id)}/${encodeURIComponent(a.schluessel)}`, {
+      dokument: a.dokument,
+      ...e,
+    }),
   vorschlaegeDatei: (typId: string, datei: Blob, name: string, mappe?: string) =>
     sendeDatei(
       `/api/typen/${typId}/vorschlaege/datei?${new URLSearchParams({ name, typ: datei.type || 'application/octet-stream', ...(mappe ? { mappe } : {}), positionen: '1' })}`,

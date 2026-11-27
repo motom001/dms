@@ -5,6 +5,7 @@ import { titelOder } from '../../seiten';
 import { t } from '../../sprache';
 import { AusDokument, type AusDokumentErgebnis } from '../AusDokument';
 import type { Kern } from './kern';
+import { AngebotZeile } from './angebote';
 
 /**
  * „Aus Dokument ausfüllen“ (#391) an einer neuen Mappe: der Knopf über dem Formular – bzw. der Dialog (Foto, Datei),
@@ -48,10 +49,14 @@ export function AusDokumentErgebnisse({
   const alternativen = Object.entries(z.vorschlaege)
     .filter(([, v]) => v.art === 'alternative')
     .map(([k]) => k);
-  if (!(z.adMeldung || Object.keys(z.adNeu).length > 0 || z.adPositionen || z.adDazu.length > 0)) return null;
+  if (!(z.adMeldung || Object.keys(z.adNeu).length > 0 || z.adPositionen || z.adDazu.length > 0 || z.adAngebote.length > 0)) return null;
   return (
     <div className="hinweis info ad-ergebnis" role="status">
       {z.adMeldung && <p>{z.adMeldung}</p>}
+      {/* Angebote von Paketen (#1724): ein Knopf im vorhandenen Hinweis, Abruf erst nach Klick. */}
+      {z.adAngebote.map((a) => (
+        <AngebotZeile key={`${a.paket.id}:${a.schluessel}`} z={z} a={a} />
+      ))}
       <Danach z={z} />
       {Object.entries(z.adNeu).map(([k, n]) => {
         const f = typ.felder.find((x) => x.key === k);
@@ -82,6 +87,7 @@ export function AusDokumentErgebnisse({
             onClick={() => {
               Object.keys(z.vorschlaege).forEach(vorschlagZuruecknehmen);
               z.setAdMeldung(undefined);
+              z.setAdAngebote([]);
               z.setAdNeu({});
               z.setAdPositionen(null);
               z.setAdDazu([]);

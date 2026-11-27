@@ -105,7 +105,7 @@ export function PaketAktion({
 }
 
 /** Ein Dialog aus der Beschreibung des Pakets – nur Bausteine, Texte als Text, Hauptknopf unten. */
-function Dialog({ dialog, absenden }: { dialog: AktionsDialog; absenden(w: Record<string, unknown>): Promise<void> }) {
+export function Dialog({ dialog, absenden }: { dialog: AktionsDialog; absenden(w: Record<string, unknown>): Promise<void> }) {
   const [werte, setWerte] = useState<Record<string, unknown>>(() =>
     Object.fromEntries(
       dialog.felder

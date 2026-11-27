@@ -63,6 +63,7 @@ export function speichernWege(z: Kern) {
     z.setVorschlaege({});
     z.setAdNeu({});
     z.setAdMeldung(undefined);
+    z.setAdAngebote([]);
     z.setGefolgt({});
     z.setVorbelegt({});
     await abschluss(z, gespeichert, offen.length + nichtEntfernt.length > 0, post);

@@ -23,6 +23,7 @@ import { ARCHIV_TYPEN_MAX } from '../archivfassung';
 import type { PaketKarte } from '../automatisierung';
 
 import { istPaketdatenBereich, PAKETDATEN_BEREICHE, NACHWEIS_BEREICHE } from '../paketdaten';
+import { liesAngebote } from '../angebote';
 
 /** Liest eine Liste von Texten; sonst ein Fehler mit der Stelle und eine leere Liste. Doppelte fallen weg. */
 type ListenLeser = (v: unknown, wo: string) => string[];
@@ -73,6 +74,8 @@ export function liesCode(c: unknown, dateien: Array<{ name: string; groesse: num
   const adressen = adressenAus(x);
   // Eigene Dann-Karten (#680): ausgeführt über das Ereignis zeitplan.ausgefuehrt.
   const karten = liesKarten(x.karten, ereignisse, fehler);
+  // Angebote beim Ausfüllen (#1724): Paket holt zu einem Code auf dem Dokument Daten – erst nach Klick.
+  const angebote = liesAngebote(x.angebote, fehler);
   // Einrichtung und Nachweise lesen (#1054): bekannte Bereiche, Nachweise nur, wo es welche gibt, nie mit Netz.
   const paketdaten = paketdatenRechte(r, liste, fehler, netz.length > 0 || adressen.length > 0);
   // Schreiben setzt Lesen voraus.
@@ -99,6 +102,7 @@ export function liesCode(c: unknown, dateien: Array<{ name: string; groesse: num
           ...(archivfassung && schnittstellen.includes('dms:archivfassung') ? { archivfassung } : {}),
           ...(mappentypen.length ? { mappentypen } : {}),
           ...(karten.length ? { karten } : {}),
+          ...angebote,
         },
     fehler,
   };

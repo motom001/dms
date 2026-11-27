@@ -212,3 +212,46 @@ rauchtest('Werkbank: Übersicht „Gelerntes“ aufklappen, mit Filter, ohne axe
   await inhalt.getByLabel('Filtern nach Absender, Mappentyp oder Wort').fill('Stadtwerke');
   assert.deepEqual(await axePruefen(s, ['#gelerntes']), []);
 });
+
+rauchtest('Neue Post: Angebot eines Pakets als Knopf im Hinweis, Werte erst nach Klick als Vorschlag (#1724)', { als: LENA }, async (s) => {
+  const brief = await eigenePost('HU Beispiel', ['Rechnung R-2027-1121\nMotorrad Werkstatt Beispiel\nGesamtbetrag 99,00 EUR']);
+  // Ein Paket mit Angebot ist im Rauchtest nicht installiert: Angebot und Antwort des Pakets nachgestellt, der Rest ist echt.
+  let abgerufen = 0;
+  await s.route('**/api/typen/*/vorschlaege', async (r) => {
+    const echt = await r.fetch();
+    const j = await echt.json();
+    const dokument = (r.request().postDataJSON()?.dokumente ?? [])[0];
+    const angebot = {
+      paket: { id: 'beispiel.abruf', name: 'Beispiel-Abruf' },
+      schluessel: 'probe',
+      text: 'Code erkannt. Daten abrufen und eintragen?',
+      knopf: 'Daten abrufen',
+      dokument,
+    };
+    await r.fulfill({ response: echt, json: dokument ? { ...j, angebote: [angebot] } : j });
+  });
+  await s.route('**/api/typen/*/angebote/**', (r) => {
+    abgerufen++;
+    return r.fulfill({
+      json: {
+        paket: { id: 'beispiel.abruf', name: 'Beispiel-Abruf' },
+        vorschlaege: { rechnungsnummer: { wert: 'R-2027-9999', sicherheit: 'hoch', fundstelle: 'abgerufen über „Beispiel-Abruf“' } },
+        bezuege: {},
+        neu: {},
+      },
+    });
+  });
+  await s.goto(BASIS + `/ablage/eingang/${brief.id}/uebernehmen`);
+  const mappe = s.getByRole('region', { name: 'Mappe' });
+  await s.waitForFunction(() => document.querySelector('#feld-rechnungsnummer')?.value === 'R-2027-1121');
+  const hinweis = mappe.locator('.ad-ergebnis');
+  await hinweis.getByText('Code erkannt. Daten abrufen und eintragen?').waitFor();
+  await hinweis.getByText('(Paket „Beispiel-Abruf“)').waitFor();
+  assert.equal(abgerufen, 0, 'kein Abruf ohne Klick');
+  assert.deepEqual(await axePruefen(s, ['.ad-ergebnis']), []);
+  await hinweis.getByRole('button', { name: 'Daten abrufen' }).click();
+  await hinweis.getByText('„Beispiel-Abruf“: 1 Feld als Vorschlag eingetragen – bitte prüfen.').waitFor();
+  await s.waitForFunction(() => document.querySelector('#feld-rechnungsnummer')?.value === 'R-2027-9999');
+  assert.equal(abgerufen, 1);
+  assert.equal(await hinweis.getByRole('button', { name: 'Daten abrufen' }).count(), 0, 'ein Abruf je Klick');
+});

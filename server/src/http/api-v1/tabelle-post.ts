@@ -337,6 +337,23 @@ export const V1_POST: V1[] = [
     antwort: 'TextGesetzt',
     status: 201,
   },
+  // Angebote beim Ausfüllen (#1724): Abruf erst auf ausdrücklichen Wunsch, die Antwort sind Vorschläge.
+  {
+    methode: 'POST',
+    pfad: '/typen/{id}/angebote/{paket}/{angebot}',
+    gruppe: 'Ablage',
+    zusammenfassung: 'Angebot eines Pakets beim Ausfüllen abrufen',
+    beschreibung:
+      'Ruft ein Angebot aus TypVorschlaege.angebote ab (#1724): Ablago prüft wieder Recht (mit mappe Bearbeiten, sonst Anlegen im Typ), Lesen am Dokument, den passenden Code (aus den gemerkten Codes des Dokuments, #1723), das Paket (installiert, nicht angehalten, läuft) und die Freigabe für Dienste im Netz (#796), und ruft das Paket als Paket-Aktion mit Zeitgrenze auf (dms:angebot, Netz nur zu den angemeldeten Adressen). Antwort: Vorschläge wie bei POST /typen/{id}/vorschlaege mit Fundstelle „abgerufen über …“; Verweise löst Ablago selbst über Felder mit eindeutig auf (sonst neu = „mit diesen Angaben anlegen“), nie als Id vom Paket. Schickt das Paket einen Dialog (höchstens zwei), kommen lauf, schritt und dialog – dann denselben Aufruf mit lauf und antworten wiederholen. Gespeichert wird nichts. 404 ohne passendes Angebot, 429 wenn schon ein Abruf läuft, 502/503 bei einem Fehler des Pakets (Meldung mit Grund). Kein Abruf im Hintergrund; nie für Pakete selbst (403).',
+    intern: { methode: 'POST', pfad: '/api/typen/:id/angebote/:paket/:angebot' },
+    parameter: [
+      id('des Mappentyps'),
+      { name: 'paket', wo: 'path', typ: 'string', pflicht: true, beschreibung: 'Id des Pakets' },
+      { name: 'angebot', wo: 'path', typ: 'string', pflicht: true, beschreibung: 'Schlüssel des Angebots' },
+    ],
+    body: 'AngebotEingabe',
+    antwort: 'AngebotErgebnis',
+  },
   // Paket-Aktionen im Menü „Mappe“ (#1039): für Menschen (API-Schlüssel), nie für Pakete selbst (403).
   {
     methode: 'GET',

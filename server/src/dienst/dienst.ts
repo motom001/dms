@@ -65,7 +65,7 @@ import { TextsatzDienst } from '../textsatz';
 import { LeistungenDienst, eingebauteAnbieter, pruefeEinschraenkung } from '../leistungen';
 import { leseERechnungDatei } from '../erkennung/erechnung';
 import { eingebetteteERechnung } from '../pdf';
-import { PaketAktionen } from '../paketaktionen';
+import { AusfuellAngebote, PaketAktionen } from '../paketaktionen';
 import type { MailText } from '../mail/mail';
 import type { Repo } from '../repo';
 import type { Dateispeicher } from '../dateien/dateispeicher';
@@ -321,6 +321,24 @@ export class Dienst extends DienstBauteile {
       ausgabe: (mappeId, d, ich) => this.ausgang.dateiFuerAusgabe(mappeId, d, ich),
       kurzzustand: () => this.kurzzustand,
     }));
+  }
+  private angeboteDienst?: AusfuellAngebote;
+  /** Angebote beim Ausfüllen (#1724): ein Paket holt zu einem Code auf dem Dokument Daten – als Paket-Aktion, erst nach Klick. */
+  get ausfuellAngebote(): AusfuellAngebote {
+    return (this.angeboteDienst ??= new AusfuellAngebote(
+      this.kern,
+      this.rechtepruefung,
+      {
+        paketZugriff: async (paketId) => {
+          const konto = [...this.kern.paketKonten].find(([, p]) => p === paketId)?.[0];
+          return konto ? this.rechtepruefung.zugriff({ id: konto, rolle: 'mitglied', art: 'dienst', paketId }) : null;
+        },
+        kiSperre: (paketId) => this.ki.kiSperreFuer(paketId),
+        codes: (ids) => this.erkennung.codes.vonDokumenten(ids),
+        kurzzustand: () => this.kurzzustand,
+      },
+      () => this.paketaktionen.laeufer,
+    ));
   }
   /** Mail an die Verwaltenden eines Bereichs (#995) – beim Start verbunden (start/dienst.ts), sonst keine. */
   protected verwaltungsmail?: (bereich: string) => (betreff: MailText, text: MailText) => Promise<void>;

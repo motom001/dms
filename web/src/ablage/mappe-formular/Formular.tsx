@@ -204,6 +204,7 @@ function verwerfen(z: Kern, runde: ReturnType<typeof useVorschlagStart>) {
   z.setVorschlaege({});
   z.setAdNeu({});
   z.setAdMeldung(undefined);
+  z.setAdAngebote([]);
   z.setGefolgt({});
   z.setVorbelegt({});
   // Seite „Dokument übernehmen“ (#934): zurück auf die Vorschläge aus dem Dokument.
