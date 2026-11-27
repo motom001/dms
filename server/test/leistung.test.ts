@@ -73,8 +73,10 @@ describe('Leistung mit PostgreSQL (#367)', { skip: url ? false : 'TEST_DATABASE_
     // Jede andere Spalte der Tabelle steht in der Liste – neue Spalten fallen hier auf. Auch den Suchindex (#356)
     // lesen Listen nie.
     assert.ok(!(DOKUMENT_SPALTEN as readonly string[]).includes('suchindex'));
+    // Codes auf dem Dokument (#1723) ebenso nie: bis 200 × 4000 Zeichen, gelesen nur über liesCodes.
+    assert.ok(!(DOKUMENT_SPALTEN as readonly string[]).includes('codes'));
     const spalten = (
-      await sql`SELECT column_name FROM information_schema.columns WHERE table_name = 'dokumente' AND column_name NOT IN ('volltext', 'suchindex')`
+      await sql`SELECT column_name FROM information_schema.columns WHERE table_name = 'dokumente' AND column_name NOT IN ('volltext', 'suchindex', 'codes')`
     ).map((z) => z.column_name as string);
     assert.deepEqual([...spalten].sort(), [...DOKUMENT_SPALTEN].sort());
   });
