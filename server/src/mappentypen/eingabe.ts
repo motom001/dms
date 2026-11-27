@@ -147,6 +147,8 @@ export function bereinigeFeld(e: unknown): Feld {
     verweisart: f.verweisart === 'zugehoerigkeit' ? 'zugehoerigkeit' : 'bezug',
     // Fristen (#129): nur an Datumsfeldern.
     ...(typ === 'datum' && bereinigeFrist(f.frist) ? { frist: bereinigeFrist(f.frist) } : {}),
+    // Genauigkeit Monat (#1722): nur an Datumsfeldern und nur gespeichert, wenn gesetzt – `tag` ist die Vorgabe.
+    ...(typ === 'datum' && f.genauigkeit === 'monat' ? { genauigkeit: 'monat' as const } : {}),
     // Aus Dokument füllen (#336, #938; früher „Für die Erkennung nutzen“): Art und Erkennungshinweis; nur bei geeigneten
     // Feldarten. Erkennungswörter je Option (#1714) nur für Optionen, die das Feld hat.
     ...(liesFeldErkennung(f.erkennung, typ, optionen) ? { erkennung: liesFeldErkennung(f.erkennung, typ, optionen) } : {}),

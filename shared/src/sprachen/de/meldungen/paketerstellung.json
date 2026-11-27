@@ -144,6 +144,7 @@
   "paketerstellung.berechnet-weg": "{wo}: Das Feld berechnet ein anderes Paket. Im eigenen Paket kommt es als gewöhnliches Feld mit – ein Paket ohne Code rechnet nichts.",
   "paketerstellung.ansicht-merkmal": "Ansicht „{name}“: Bedingungen auf das Merkmal der Ablage kennt das Paketformat der Ansichten nicht; sie fehlen im Paket.",
   "paketerstellung.tabelle": "Feldart Tabelle",
+  "paketerstellung.datum-monat": "Datumsfeld mit Genauigkeit Monat",
   "paketerstellung.vorbelegen": "„Beim Auswählen übernehmen“ an Verweisfeldern",
   "paketerstellung.vorgaben": "„Anzeigen, wenn … zeigt auf die Vorgabe …“",
   "paketerstellung.tabelle-liste": "{wo}: Die Tabelle zeigt eine andere Trefferliste von „{name}“ – ins Paket kommt nur die Standard-Trefferliste, die Tabelle zeigt dort deren Spalten.",

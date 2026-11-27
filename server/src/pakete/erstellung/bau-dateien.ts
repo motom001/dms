@@ -45,6 +45,8 @@ export function genutzteFunktionen(x: {
     genutzt.push('feldarten');
   if (paketTypen.some((t) => (t.felder as Felder).some((f) => f.typ === 'tabelle'))) genutzt.push('tabelle');
   if (JSON.stringify(paketTypen).includes('"art":"code"')) genutzt.push('codes');
+  // Genauigkeit Monat (#1722): Ältere Ablago zeigen den Monatsletzten als Tag und lesen „April 2028“ nicht.
+  if (paketTypen.some((t) => (t.felder as Felder).some((f) => f.genauigkeit === 'monat'))) genutzt.push('datumMonat');
   if (paketTypen.some((t) => (t.felder as Felder).some((f) => Array.isArray(f.vorbelegen) && f.vorbelegen.length)))
     genutzt.push('vorbelegen');
   if (paketTypen.some((t) => 'gehoertZu' in t)) genutzt.push('teile');

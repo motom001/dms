@@ -125,8 +125,8 @@ function einfacheEingabe({ feld: f, roh, setze }: FeldEingabeProps, { rahmen, un
               aria-invalid={v['aria-invalid']}
             />
           )}
-          {/* Datum (#1496): Kalender mit Kalenderwochen, Tippen bleibt direkt. */}
-          {f.typ === 'datum' && <DatumEingabe {...v} wert={String(roh ?? '')} setze={setze} />}
+          {/* Datum (#1496): Kalender mit Kalenderwochen, Tippen bleibt direkt; Genauigkeit Monat (#1722): „MM/JJJJ“. */}
+          {f.typ === 'datum' && <DatumEingabe {...v} wert={String(roh ?? '')} setze={setze} nurMonat={f.genauigkeit === 'monat'} />}
           {f.typ === 'janein' && (
             <label className="haken">
               <input {...v} type="checkbox" checked={!!roh} onChange={(e) => setze(e.target.checked)} />

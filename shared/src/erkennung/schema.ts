@@ -8,6 +8,7 @@ import type { Vorschlaege } from './vorschlaege';
 import { datumIso } from './angaben';
 import { wertZuOption } from '../beschriftung';
 import { formatFehler } from '../feldformate';
+import { monatsletzter, nurMonat } from '../monatsdatum';
 
 /* ---------- Schema und Prüfung (für Engines, #391 und #511) ---------- */
 
@@ -126,7 +127,10 @@ export function pruefeVorschlaege(
       case 'datum':
         gut =
           typeof w === 'string' && ISO.test(w) && datumIso(Number(w.slice(8, 10)), Number(w.slice(5, 7)), Number(w.slice(0, 4))) === w
-            ? w
+            ? // Genauigkeit Monat (#1722): auch Antworten aus Paketen werden zum Monatsletzten.
+              nurMonat(f)
+              ? (monatsletzter(w) ?? w)
+              : w
             : undefined;
         break;
       case 'betrag': {

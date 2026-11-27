@@ -59,6 +59,7 @@ const FELD = [
   'nachkomma',
   'waehrung',
   'negativ',
+  'genauigkeit',
   'optionen',
   'mehrfach',
   'ziel',

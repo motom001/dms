@@ -14,6 +14,7 @@ import { optionText } from '../beschriftung';
 import { alsText } from '../markdown';
 import { ibanGruppen } from '../feldformate';
 import { telefonanzeige } from '../telefon-anzeige';
+import { monatText } from '../monatsdatum';
 
 /** Platzhalter `{feld}` bzw. `{feld|filter…}` (#170). */
 const PLATZHALTER = PLATZHALTER_MIT_FILTERN;
@@ -214,6 +215,8 @@ export function formatiere(
       }
     }
     case 'datum': {
+      // Genauigkeit Monat (#1722): nur der Monat, „04/2028“ – gespeichert ist der Monatsletzte.
+      if (f.genauigkeit === 'monat') return monatText(String(v));
       const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(v));
       return m
         ? regionDatum(new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])), { day: '2-digit', month: '2-digit', year: 'numeric' }, 'UTC')

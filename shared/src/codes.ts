@@ -12,7 +12,7 @@
 import { MUSTER_EINGABE_MAX, musterProblem } from './muster';
 
 /** Ab dieser Version kennt Ablago `dms:codes` und die Erkennungsart `code` (#1723); ältere lehnen beides ab bzw. übergehen es. */
-export const DMS_CODES_AB = '0.336.0';
+export const DMS_CODES_AB = '0.337.0';
 /** `codeart` am Feld: ein kurzer Bezeichner aus Kleinbuchstaben und Ziffern, z. B. `qr`, `ean13`, `itf`, `aztec`. */
 const CODEART = /^[a-z0-9]{1,20}$/;
 

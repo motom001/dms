@@ -87,7 +87,7 @@ Welche Felder die Erkennung füllt, legt der Administrator am Mappentyp fest; Pa
 | Betrag | Zahl und Währung, z. B. `98,00 EUR`; eine Gutschrift oder Erstattung mit Minus (`-25,00`) – das geht, wo unter dem Feld „Mit Minus eintragen“ steht |
 | Zeitraum | Zahl und Einheit, z. B. `3` und *Monate* für eine Kündigungsfrist |
 | Prozent | die Zahl, z. B. `19` oder `7,5` – „19 %“ geht auch |
-| Datum | tippen (Tag, Monat, Jahr) oder im Kalender wählen – ein Klick ins Feld oder auf das Kalendersymbol öffnet ihn, vor jeder Woche steht die Kalenderwoche |
+| Datum | tippen (Tag, Monat, Jahr) oder im Kalender wählen – ein Klick ins Feld oder auf das Kalendersymbol öffnet ihn, vor jeder Woche steht die Kalenderwoche. Manche Datumsfelder brauchen nur **Monat und Jahr**, etwa *Nächste HU*: Dort tippst du `04/2028` (auch `4/2028` oder `04.2028`), im Kalender wählt jeder Tag seinen Monat, und angezeigt wird „04/2028“. Für Erinnerungen und Listen zählt der letzte Tag des Monats. |
 | Ja/Nein | Haken setzen |
 | Auswahlliste | einen Wert (oder mehrere) aus der Liste wählen |
 | Verweis | eine andere Mappe suchen und wählen (siehe unten) |

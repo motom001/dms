@@ -9,6 +9,7 @@ import { type Beschriftungen, type TypTeile } from '../../../../shared/src/besch
 import { paketArchivFehler, type PaketArchiv } from '../../../../shared/src/archiv';
 import { SCHLUESSEL, TYP_KENNUNG } from '../../../../shared/src/kennungen';
 import { musterProblem, musterText } from '../../../../shared/src/muster';
+import { DATUM_GENAUIGKEITEN } from '../../../../shared/src/monatsdatum';
 import { t } from '../../sprache/sprache';
 import { type FremderTyp, istObjekt, type PaketFeld, type PaketRegister, type PaketSicht, type PaketTyp, paketZiele, str } from './format';
 import {
@@ -79,7 +80,7 @@ function typAus(t: Record<string, unknown>, felder: PaketFeld[], register: Paket
   };
 }
 
-/** Ein Feld: Kennung, Ziel, Feldart, negativ, berechnet, merkmal, schreibschutz, Tabelle, zusammengesetzt, aus_text. */
+/** Ein Feld: Kennung, Ziel, Feldart, negativ, genauigkeit, berechnet, merkmal, schreibschutz, Tabelle, zusammengesetzt, aus_text. */
 function pruefeFeld(l: LeseLauf, f: PaketFeld, felder: PaketFeld[], wo: string) {
   const { fehler } = l;
   if (!SCHLUESSEL.test(str(f.key))) fehler.push(`${wo}: Feld mit ungültiger Kennung „${str(f.key)}“.`);
@@ -89,6 +90,7 @@ function pruefeFeld(l: LeseLauf, f: PaketFeld, felder: PaketFeld[], wo: string) 
     fehler.push(`${wo}: Feld „${f.key}“ hat die unbekannte Feldart „${str(f.typ)}“ (möglich: ${Object.keys(FELDTYPEN).join(', ')}).`);
   if (f.negativ !== undefined && (f.typ !== 'betrag' || typeof f.negativ !== 'boolean'))
     fehler.push(`${wo}: Feld „${f.key}“: negativ gibt es nur bei Beträgen (typ: betrag), als true oder false.`);
+  fehler.push(...genauigkeitFehler(f, wo));
   // Berechnet (#1034): true oder false; nie Pflicht, nie Passwort. Das Schreibrecht prüft der Abschnitt zum Code.
   if (f.berechnet !== undefined && typeof f.berechnet !== 'boolean') fehler.push(`${wo}: Feld „${f.key}“: berechnet ist true oder false.`);
   else if (f.berechnet === true && f.pflicht)
@@ -105,6 +107,13 @@ function pruefeFeld(l: LeseLauf, f: PaketFeld, felder: PaketFeld[], wo: string) 
   fehler.push(...zusammengesetztFehler(f, felder, `${wo}: Feld „${f.key}“`));
   fehler.push(...musterFehler(f, wo));
   pruefeAusText(l, f, felder, wo);
+}
+
+/** Genauigkeit (#1722): nur am Datumsfeld, tag oder monat – Unbekanntes nicht still zum Tag machen. */
+function genauigkeitFehler(f: PaketFeld, wo: string): string[] {
+  if (f.genauigkeit === undefined) return [];
+  if (f.typ === 'datum' && (DATUM_GENAUIGKEITEN as readonly unknown[]).includes(f.genauigkeit)) return [];
+  return [`${wo}: Feld „${f.key}“: genauigkeit gibt es nur bei Datumsfeldern (typ: datum), möglich: ${DATUM_GENAUIGKEITEN.join(', ')}.`];
 }
 
 /** Prüfmuster (#1315): wie beim Anlegen des Mappentyps, aber schon beim Lesen – ein unsicheres Muster kommt nicht herein. */
