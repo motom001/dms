@@ -147,8 +147,9 @@ export function bereinigeFeld(e: unknown): Feld {
     verweisart: f.verweisart === 'zugehoerigkeit' ? 'zugehoerigkeit' : 'bezug',
     // Fristen (#129): nur an Datumsfeldern.
     ...(typ === 'datum' && bereinigeFrist(f.frist) ? { frist: bereinigeFrist(f.frist) } : {}),
-    // Aus Dokument füllen (#336, #938; früher „Für die Erkennung nutzen“): Art und Erkennungshinweis; nur bei geeigneten Feldarten.
-    ...(liesFeldErkennung(f.erkennung, typ) ? { erkennung: liesFeldErkennung(f.erkennung, typ) } : {}),
+    // Aus Dokument füllen (#336, #938; früher „Für die Erkennung nutzen“): Art und Erkennungshinweis; nur bei geeigneten
+    // Feldarten. Erkennungswörter je Option (#1714) nur für Optionen, die das Feld hat.
+    ...(liesFeldErkennung(f.erkennung, typ, optionen) ? { erkennung: liesFeldErkennung(f.erkennung, typ, optionen) } : {}),
     // Zum Wiederfinden nutzen (#938): nur Text, Zahl und Verweis.
     ...(liesWiederfinden(f.wiederfinden, typ) ? { wiederfinden: true } : {}),
     // Paket-Update (#534): Verweisfeld, das sich aus einem alten Textfeld füllen lässt.

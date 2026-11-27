@@ -4,6 +4,7 @@ import {
   ERKENNUNGSARTEN,
   type AusDokument,
   type Erkennungsart,
+  type Erkennungswoerter,
   type Feld,
   type FeldErkennung,
   type Feldformat,
@@ -16,6 +17,12 @@ import { liesCodeAngaben } from '../codes';
 export { ERKENNUNGSARTEN, type AusDokument, type Erkennungsart, type FeldErkennung } from '../model/basis';
 
 export const ERKENNUNG_HINWEIS_MAX = 300;
+/** Erkennungswörter (#1714): höchstens so viele je Liste (vor dem Wert bzw. je Option). */
+export const ERKENNUNGSWOERTER_MAX = 20;
+/** Erkennungswörter (#1714, wie Auswahllisten #1689): kürzere zählen nicht – „(4)“ oder „km-St.“ ja, „GM“ nicht. */
+export const ERKENNUNGSWORT_MIN = 3;
+/** Erkennungswörter (#1714): längere fallen weg (gekürzt wären sie ein anderes Wort). */
+export const ERKENNUNGSWORT_MAX = 60;
 
 /** Feldarten, die sich für die Erkennung eignen (Passwörter nie, Ja/Nein und formatierter Text nicht). */
 export const ERKENNUNG_FELDTYPEN: readonly Feldtyp[] = [
@@ -46,8 +53,11 @@ export function artenFuer(typ: Feldtyp): Erkennungsart[] {
   return [];
 }
 
-/** Eigenschaft aus einer Eingabe (Werkbank, API, Paket) lesen; null = aus bzw. ungeeignet. */
-export function liesFeldErkennung(v: unknown, typ: Feldtyp): FeldErkennung | null {
+/**
+ * Eigenschaft aus einer Eingabe (Werkbank, API, Paket) lesen; null = aus bzw. ungeeignet. `optionen`: die festen Werte
+ * eines Auswahlfelds – Erkennungswörter je Option (#1714) zählen nur für sie.
+ */
+export function liesFeldErkennung(v: unknown, typ: Feldtyp, optionen?: readonly string[]): FeldErkennung | null {
   if (!v || !ERKENNUNG_FELDTYPEN.includes(typ)) return null;
   const o = (v === true ? {} : typeof v === 'object' ? v : null) as Record<string, unknown> | null;
   if (!o) return null;
@@ -59,7 +69,46 @@ export function liesFeldErkennung(v: unknown, typ: Feldtyp): FeldErkennung | nul
   if (typ === 'datum' && typeof o.endeVon === 'string' && SCHLUESSEL.test(o.endeVon)) e.endeVon = o.endeVon;
   // Code auf dem Dokument (#1723): Muster und Codeart gibt es nur mit dieser Art.
   if (e.art === 'code') Object.assign(e, liesCodeAngaben(o));
+  const w = liesWoerter(o.woerter, typ, optionen);
+  if (w) e.woerter = w;
   return e;
+}
+
+/** Liste von Erkennungswörtern (#1714): Texte, getrimmt, ohne Doppelte (Groß/klein egal), in den Grenzen. */
+function wortliste(v: unknown): string[] {
+  if (!Array.isArray(v)) return [];
+  const gesehen = new Set<string>();
+  const erg: string[] = [];
+  for (const x of v) {
+    const w = typeof x === 'string' ? x.trim().replace(/\s+/g, ' ') : '';
+    const k = w.toLocaleLowerCase('de-DE');
+    if (w.length < ERKENNUNGSWORT_MIN || w.length > ERKENNUNGSWORT_MAX || gesehen.has(k)) continue;
+    gesehen.add(k);
+    erg.push(w);
+    if (erg.length >= ERKENNUNGSWOERTER_MAX) break;
+  }
+  return erg;
+}
+
+/**
+ * Erkennungswörter (#1714): `vor` an allen Feldarten der Erkennung außer Verweis, `jeOption` nur bei Auswahl und nur für
+ * Optionen, die das Feld hat (`optionen`; ohne Angabe keine). Leer = null.
+ */
+function liesWoerter(v: unknown, typ: Feldtyp, optionen: readonly string[] = []): Erkennungswoerter | null {
+  if (!v || typeof v !== 'object' || Array.isArray(v) || typ === 'referenz') return null;
+  const o = v as Record<string, unknown>;
+  const vor = wortliste(o.vor);
+  const jeOption: Record<string, string[]> = {};
+  const roh = typ === 'auswahl' && o.jeOption && typeof o.jeOption === 'object' ? (o.jeOption as Record<string, unknown>) : {};
+  for (const opt of optionen) {
+    const l = Object.hasOwn(roh, opt) ? wortliste(roh[opt]) : [];
+    if (l.length) jeOption[opt] = l;
+  }
+  const w: Erkennungswoerter = {
+    ...(vor.length ? { vor } : {}),
+    ...(Object.keys(jeOption).length ? { jeOption } : {}),
+  };
+  return Object.keys(w).length ? w : null;
 }
 
 export const klein = (s: string) => s.toLowerCase().replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss');

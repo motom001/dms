@@ -13,6 +13,7 @@ import { FASSUNG_MAX_BYTES, UMWANDELN_MAX_BYTES, VORSCHAUBILD_MAX_BYTES } from '
 import { CODE_MAX, PAKET_MAX } from '../../../shared/src/pakete';
 import { VOLLTEXT_KOERPER_MAX, VOLLTEXT_PAKET_MAX_BYTES } from '../../../shared/src/paketvolltext';
 import { AUFRUF_GRENZEN, AUTOMATISIERUNG_GRENZEN } from '../../../shared/src/automatisierung';
+import { ERKENNUNGSWOERTER_MAX, ERKENNUNGSWORT_MAX, ERKENNUNGSWORT_MIN } from '../../../shared/src/erkennung';
 
 /* ---------- Einheiten ---------- */
 
@@ -25,6 +26,10 @@ export const GB = 1024 * MB;
 export {
   ARCHIVFASSUNG_MAX_BYTES,
   CODE_MAX,
+  // Erkennungswörter am Feld (#1714): Anzahl je Liste und Länge eines Worts (Zeichen); prüft liesFeldErkennung.
+  ERKENNUNGSWOERTER_MAX,
+  ERKENNUNGSWORT_MAX,
+  ERKENNUNGSWORT_MIN,
   FASSUNG_MAX_BYTES,
   MAX_DATEIGROESSE,
   PAKET_MAX,

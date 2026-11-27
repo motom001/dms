@@ -62,7 +62,7 @@ const zustand = (jetzt: Record<string, unknown> | undefined, stand: Record<strin
 
 /** Wert einer Feld-Eigenschaft im Paket, vergleichbar mit dem in Ablago (Erkennung wie beim Lesen). */
 const paketWert = (f: Pick<Feld, 'typ'> & Partial<Pick<Feld, (typeof FELD_UPDATE)[number]>>, k: (typeof FELD_UPDATE)[number]) =>
-  k === 'erkennung' ? (f.erkennung === undefined ? undefined : liesFeldErkennung(f.erkennung, f.typ)) : f[k];
+  k === 'erkennung' ? (f.erkennung === undefined ? undefined : liesFeldErkennung(f.erkennung, f.typ, f.optionen)) : f[k];
 
 /**
  * Reihenfolge der Felder eines Registers – unverändert heißt: die Felder aus dem Paketstand in derselben Reihenfolge;
