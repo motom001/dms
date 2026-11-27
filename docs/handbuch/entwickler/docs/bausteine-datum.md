@@ -22,6 +22,7 @@ import { DatumEingabe, Feld } from '../bausteine';
 | `min`, `max` | Grenzen; Tage außerhalb sind im Kalender gesperrt (durchgestrichen) |
 | `disabled` | gesperrt: Feld und Kalenderknopf |
 | `aria-label` | Name, wenn keine sichtbare Beschriftung auf die Eingabe zeigt |
+| `nurMonat` | nur Monat und Jahr (#1722, Datumsfeld mit `genauigkeit: monat`): ein Textfeld „MM/JJJJ“ statt des Datumsfelds des Browsers, gleicher Kalenderknopf; ein Tag im Kalender wählt seinen Monat. `setze` bekommt den Monatsletzten (`2028-04-30`) oder – solange sich der Text nicht lesen lässt – den Text, damit die Prüfung ihn meldet |
 
 **Entscheidung (#1496): Der Kalender geht beim Klick ins Feld auf, die Tastatur bleibt direkt.**
 

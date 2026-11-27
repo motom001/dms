@@ -87,7 +87,7 @@ Which fields recognition fills in is set by the administrator on the folder type
 | Amount | number and currency, e.g. `98,00 EUR`; a credit note or refund with a minus (`-25,00`) – this works where the field says "Enter it with a minus" |
 | Period | number and unit, e.g. `3` and *months* for a notice period |
 | Percentage | the number, e.g. `19` or `7,5` – "19%" works too |
-| Date | type it (day, month, year) or pick it in the calendar – a click into the field or on the calendar icon opens it, with the week number before each week |
+| Date | type it (day, month, year) or pick it in the calendar – a click into the field or on the calendar icon opens it, with the week number before each week. Some date fields only need **month and year**, e.g. *Next inspection*: there you type `04/2028` (also `4/2028` or `04.2028`), in the calendar any day picks its month, and it shows as "04/2028". Reminders and lists use the last day of the month. |
 | Yes/no | tick the box |
 | Choice list | choose a value (or several) from the list |
 | Link | search for and choose another folder (see below) |

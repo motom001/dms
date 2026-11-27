@@ -103,8 +103,8 @@ export function typAngabenNeu(
 }
 
 /**
- * Formate und Datumsgrenzen (#535), die das Paket an Feldern vorgibt und die im DMS (gleiche Kennung, gleiche Feldart)
- * noch fehlen – nur, wo der Administrator weder Format noch Grenzen eingestellt hat. Gespeicherte Werte bleiben gültig.
+ * Formate, Datumsgrenzen (#535) und die Genauigkeit Monat (#1722), die das Paket an Feldern vorgibt und die im DMS
+ * (gleiche Kennung, gleiche Feldart) noch fehlen – nur, wo der Administrator weder Format noch Grenzen eingestellt hat. Gespeicherte Werte bleiben gültig.
  */
 export function formatNeu(
   t: PaketTyp,
@@ -123,19 +123,23 @@ export function formatNeu(
           : {};
       return [{ key: g.key, label: g.label, vorgaben: { format: f.format, ...land } }];
     }
-    if (f.typ === 'datum' && (istDatumsgrenze(f.min) || istDatumsgrenze(f.max)) && g.min == null && g.max == null) {
-      return [
-        {
-          key: g.key,
-          label: g.label,
-          vorgaben: { ...(istDatumsgrenze(f.min) ? { min: f.min } : {}), ...(istDatumsgrenze(f.max) ? { max: f.max } : {}) },
-        },
-      ];
-    }
+    if (f.typ === 'datum') return datumNeu(f, g);
     // Negative Beträge (#1035): Ein Update darf sie erlauben (lockert nur), nie wieder verbieten.
     if (f.typ === 'betrag' && f.negativ === true && !g.negativ) return [{ key: g.key, label: g.label, vorgaben: { negativ: true } }];
     return [];
   });
+}
+
+/** Datumsfeld: Grenzen (#535), wenn noch keine eingestellt sind, und die Genauigkeit Monat (#1722). */
+function datumNeu(f: PaketFeld, g: Feld): Array<{ key: string; label: string; vorgaben: Partial<Feld> }> {
+  const grenzen = (istDatumsgrenze(f.min) || istDatumsgrenze(f.max)) && g.min == null && g.max == null;
+  const vorgaben: Partial<Feld> = {
+    ...(grenzen && istDatumsgrenze(f.min) ? { min: f.min } : {}),
+    ...(grenzen && istDatumsgrenze(f.max) ? { max: f.max } : {}),
+    // Genauigkeit Monat (#1722, „nächste HU“): Gespeicherte Daten bleiben, angezeigt wird ihr Monat.
+    ...(f.genauigkeit === 'monat' && g.genauigkeit !== 'monat' ? { genauigkeit: 'monat' as const } : {}),
+  };
+  return Object.keys(vorgaben).length ? [{ key: g.key, label: g.label, vorgaben }] : [];
 }
 
 /**

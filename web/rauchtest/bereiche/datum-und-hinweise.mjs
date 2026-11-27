@@ -1,6 +1,6 @@
 /**
  * Rauchtests des Oberflächen-Bündels KW48 (Teil 2): Kalender nach der Lage-Regel der Menüs, auch am rechten Rand
- * (#1556, #1532), Symbolsuche mit gleichbedeutenden Wörtern (#1548), Betrag mit zwei Nachkommastellen (#1608), kein
+ * (#1556, #1532), Datumsfeld nur mit Monat (#1722), Symbolsuche mit gleichbedeutenden Wörtern (#1548), Betrag mit zwei Nachkommastellen (#1608), kein
  * MD5-Hinweis bei SCRAM (#1612) und die Zahl im Titel des Tabs (#922).
  * Allein starten (frisch gestartetes Ablago, siehe rauchtest.mjs): node web/rauchtest/bereiche/datum-und-hinweise.mjs [fehlerordner]
  */
@@ -91,6 +91,57 @@ rauchtest('Profil am Handy: Kalender der Abwesenheit als Blatt von unten (#1532)
   assert.ok(Math.abs(b.y + b.height - f.hoehe) <= 1, 'Blatt liegt unten');
   assert.ok(b.width >= f.breite - 1, 'über die volle Breite');
 });
+
+/* ---------- Datumsfeld nur mit Monat (#1722) ---------- */
+
+rauchtest(
+  'Mappe: Datumsfeld mit Genauigkeit Monat zeigt „04/2028“, nimmt „11/2029“ an und speichert den Monatsletzten (#1722)',
+  { als: LENA },
+  async (s) => {
+    const c = await sitzung(LENA);
+    await api('POST', '/api/konto/verwaltung', { cookie: c, body: { passwort: LENA.passwort } });
+    const typ = (
+      await api('POST', '/api/typen', {
+        cookie: c,
+        body: {
+          name: 'Prüftermin',
+          schluessel: 'prueftermin',
+          titelVorlage: '{kennzeichen}',
+          felder: [
+            { key: 'kennzeichen', label: 'Kennzeichen', typ: 'text', pflicht: true },
+            { key: 'naechste_hu', label: 'Nächste HU', typ: 'datum', genauigkeit: 'monat' },
+          ],
+        },
+      })
+    ).daten;
+    const mappe = (
+      await api('POST', '/api/mappen', { cookie: c, body: { typId: typ.id, werte: { kennzeichen: 'MU-LM 1722', naechste_hu: '2028-04' } } })
+    ).daten;
+    assert.equal(mappe.werte.naechste_hu, '2028-04-30', 'gespeichert: Monatsletzter');
+    await s.goto(BASIS + `/ablage/${typ.id}/${mappe.id}`);
+    const hu = s.getByRole('textbox', { name: /^Nächste HU/ });
+    await hu.waitFor();
+    assert.equal(await hu.inputValue(), '04/2028');
+    assert.equal(await hu.getAttribute('placeholder'), 'MM/JJJJ');
+    // Kalender: derselbe Knopf, ein Tag wählt seinen Monat.
+    await s.locator('[data-anker="mappe.feld:naechste_hu"]').getByRole('button', { name: 'Kalender öffnen' }).click();
+    const kalender = s.getByRole('dialog', { name: 'Kalender' });
+    await kalender.getByText('April 2028').waitFor();
+    await kalender.locator('[data-tag="2028-04-12"]').click();
+    assert.equal(await hu.inputValue(), '04/2028', 'ein Tag im April bleibt April');
+    await hu.fill('11/2029');
+    await s.getByRole('button', { name: 'Mappe speichern' }).click();
+    await assert.doesNotReject(async () => {
+      for (let i = 0; i < 50; i++) {
+        const w = (await api('GET', `/api/mappen/${mappe.id}`, { cookie: c })).daten.mappe.werte.naechste_hu;
+        if (w === '2029-11-30') return;
+        await s.waitForTimeout(100);
+      }
+      throw new Error('nicht als 2029-11-30 gespeichert');
+    });
+    await api('DELETE', `/api/mappen/${mappe.id}?grund=nicht_noetig`, { cookie: c });
+  },
+);
 
 /* ---------- Symbolsuche mit gleichbedeutenden Wörtern (#1548) ---------- */
 

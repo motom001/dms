@@ -55,6 +55,12 @@ export interface Feld {
   system?: boolean;
   /** Datumsfeld (#129): Erinnerung als Aufgabe „Frist“ im Eingang; fehlt/null = keine. */
   frist?: import('./angaben').FristEinstellung | null;
+  /**
+   * Datumsfeld (#1722): `monat` – nur Monat und Jahr („nächste HU 04/2028“). Gespeichert wird der Monatsletzte, damit
+   * Fristen, Kalender, Filter und Sortierung ohne Sonderfall stimmen; angezeigt und eingegeben wird nur der Monat
+   * (monatsdatum.ts). Fehlt = `tag`, wie bisher.
+   */
+  genauigkeit?: import('../monatsdatum').DatumGenauigkeit;
   /** Referenzfeld (#172): nur Mappen des Zieltyps, die alle Bedingungen erfüllen. */
   auswahlFilter?: import('../sichten/bedingungen').Feldbedingung[];
   /**

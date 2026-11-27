@@ -53,6 +53,7 @@ import { t } from '../sprache/sprache';
 import type { ZugriffDienst } from '../zugriff';
 import { keinSchluessel, passwortWert } from './passwortfelder';
 import { ausDatumWert } from './ausdatum';
+import { monatsletzter, nurMonat } from '../../../shared/src/monatsdatum';
 
 /** Auswahlfilter (#172) zählen nichts – nur Bedingungen auf Felder. */
 
@@ -80,7 +81,7 @@ export function bereinigeWerte(
       continue;
     }
     const v = f.key in roh ? roh[f.key] : bisher[f.key];
-    werte[f.key] = istLeer(v) ? (f.typ === 'janein' ? false : null) : gleicheArtAn(f, v as Werte[string]);
+    werte[f.key] = istLeer(v) ? (f.typ === 'janein' ? false : null) : gleicheArtAn(f, v as Werte[string], f.key in roh);
   }
   // Feldformate (#535): geänderte Eingaben angleichen (https:// ergänzen, IBAN in Vierergruppen).
   const angeglichen = gleicheFormateAn(typ, werte, bisher);
@@ -93,8 +94,11 @@ export function bereinigeWerte(
  * Zeitraum und Prozent (#1035) in die gespeicherte Form bringen: „3 Monate“, „P3M“ oder `{ anzahl: "3", … }` →
  * `{ anzahl: 3, einheit: 'monate' }`; „19 %“ oder „19,0“ → 19. Was sich nicht lesen lässt, bleibt – die Prüfung meldet es.
  */
-function gleicheArtAn(f: Feld, v: Wert): Wert {
+function gleicheArtAn(f: Feld, v: Wert, gesendet: boolean): Wert {
   if (f.typ === 'zeitraum') return leseZeitraum(v) ?? v;
+  // Genauigkeit Monat (#1722): Gesendetes wird zum Monatsletzten; Gespeichertes bleibt, wie es ist (keine Änderung in
+  // der Historie, nur weil eine Mappe gespeichert wird). Was sich nicht lesen lässt, meldet die Prüfung.
+  if (gesendet && nurMonat(f) && typeof v === 'string') return monatsletzter(v) ?? v;
   if (f.typ === 'prozent' && typeof v === 'string') {
     const n = leseProzent(v);
     return n != null && Number.isFinite(n) ? n : v;

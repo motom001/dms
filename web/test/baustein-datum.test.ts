@@ -64,6 +64,18 @@ describe('Baustein Datum (#1496)', () => {
     assert.match(html, /aria-selected="true"><button[^>]*data-tag="2026-12-11"/);
   });
 
+  // #1722: Genauigkeit Monat – dasselbe Feld mit Kalenderknopf, getippt werden Monat und Jahr.
+  it('nur Monat: Textfeld „MM/JJJJ“ mit dem Monat des gespeicherten Monatsletzten, Kalender markiert ihn', () => {
+    const html = renderToStaticMarkup(h(DatumEingabe, { id: 'hu', wert: '2028-04-30', setze() {}, nurMonat: true }));
+    assert.match(html, /<input id="hu" type="text" inputMode="numeric" autoComplete="off" placeholder="MM\/JJJJ" value="04\/2028"/);
+    assert.match(html, /aria-label="Kalender öffnen"/);
+    assert.doesNotMatch(html, /type="date"/);
+    const offen = renderToStaticMarkup(h(DatumEingabe, { wert: '2028-04-30', setze() {}, nurMonat: true, offenZeigen: true }));
+    assert.match(offen, /aria-selected="true"><button[^>]*data-tag="2028-04-30"/);
+    const leer = renderToStaticMarkup(h(DatumEingabe, { wert: '', setze() {}, nurMonat: true }));
+    assert.match(leer, /value=""/);
+  });
+
   // #1532: Überall derselbe Baustein – kein eigenes Datumsfeld des Browsers außerhalb von bausteine/datum.
   it('kein <input type="date"> außerhalb des Bausteins', async () => {
     const { readdirSync, readFileSync } = await import('node:fs');

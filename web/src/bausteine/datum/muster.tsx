@@ -6,7 +6,7 @@ import s from '../muster.module.css';
 
 /**
  * Datum auf der Musterseite (#1496): leer, gefüllt, mit offenem Kalender samt Kalenderwochen und gesperrt; dazu ein Feld
- * am rechten Rand (#1556), dessen Kalender rechtsbündig öffnet.
+ * am rechten Rand (#1556), dessen Kalender rechtsbündig öffnet, und eines mit Genauigkeit Monat (#1722).
  */
 
 function Karte({ zustand, titel, children }: { zustand: string; titel: string; children: ReactNode }) {
@@ -23,6 +23,7 @@ export function DatumMuster() {
   const [frist, setFrist] = useState('2026-12-11');
   const [offen, setOffen] = useState('2026-12-11');
   const [rechts, setRechts] = useState('2026-12-11');
+  const [monat, setMonat] = useState('2028-04-30');
   const breit = typeof matchMedia !== 'function' || !matchMedia('(max-width: 600px)').matches;
   return (
     <div className={s.raster}>
@@ -47,6 +48,12 @@ export function DatumMuster() {
       <Karte zustand="datum-gesperrt" titel={t('oberflaeche.muster.zustand.gesperrt')}>
         <Feld beschriftung={t('oberflaeche.muster.beschriftung.faellig')}>
           {(v) => <DatumEingabe {...v} wert="2026-11-30" setze={() => {}} disabled />}
+        </Feld>
+      </Karte>
+      {/* #1722: nur Monat und Jahr – „nächste HU 04/2028“, gespeichert der Monatsletzte. */}
+      <Karte zustand="datum-monat" titel={t('oberflaeche.muster.datum.monat')}>
+        <Feld beschriftung={t('oberflaeche.muster.beschriftung.naechste-hu')}>
+          {(v) => <DatumEingabe {...v} wert={monat} setze={setMonat} nurMonat />}
         </Feld>
       </Karte>
       {/* #1556: Feld am rechten Rand – der Kalender ist breiter als das Feld und öffnet rechtsbündig, nie über den Rand. */}

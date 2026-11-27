@@ -7,6 +7,7 @@ import { ERKENNUNGSARTEN } from '../../../../shared/src/erkennung';
 import { ERKENNUNGSWOERTER_MAX, ERKENNUNGSWORT_MAX, ERKENNUNGSWORT_MIN } from '../../grundlagen/grenzen';
 import { FELDFORMATE } from '../../../../shared/src/feldformate';
 import { VORLAGE_MAX } from '../../../../shared/src/zusammengesetzt';
+import { DATUM_GENAUIGKEITEN } from '../../../../shared/src/monatsdatum';
 import { ANZEIGE_BEDINGUNGEN_MAX } from '../../../../shared/src/anzeige';
 import { MERKMALE } from '../../../../shared/src/merkmale';
 
@@ -60,6 +61,12 @@ export const SCHEMAS_TYPEN: Record<string, Schema> = {
       negativ: {
         type: 'boolean',
         description: 'Nur bei typ=betrag (#1035): negative Beträge erlaubt (Gutschrift, Erstattung). Fehlt = nein – dann gilt ≥ 0.',
+      },
+      genauigkeit: {
+        type: 'string',
+        enum: [...DATUM_GENAUIGKEITEN],
+        description:
+          'Nur bei typ=datum (#1722, ab 0.335.0): monat – nur Monat und Jahr („nächste HU 04/2028“). Der Wert ist immer der Monatsletzte (JJJJ-MM-TT, z. B. 2028-04-30); beim Schreiben gilt auch JJJJ-MM oder ein Tag des Monats, gespeichert wird der Monatsletzte. Fehlt = tag (wie bisher).',
       },
       standard: {
         oneOf: [{ type: 'string' }, { type: 'boolean' }],

@@ -7,10 +7,13 @@ import {
   type Gelesen,
   liesBetragAmAnfang,
   liesDatumAmAnfang,
+  liesMonatAmAnfang,
   liesNummerAmAnfang,
   liesZahlAmAnfang,
+  monatNeben,
   wertHinter,
 } from './beschriftet';
+import { monatsletzter, nurMonat } from '../monatsdatum';
 import type { Wert, Mappentyp, Betrag, Feld } from '../model';
 import { type Sicherheit, type Fund, ausschnitt, type Angaben, findeAngaben } from './angaben';
 import { t } from '../texte';
@@ -207,7 +210,9 @@ export function vorschlaegeAus(
     hatArt,
     personTyp: hatArt('vorname') || hatArt('nachname'),
     benutzt: new Set<string>(),
-    setze: (f, wert, fund) => {
+    setze: (f, w, fund) => {
+      // Genauigkeit Monat (#1722): jedes Datum (Zeitraum, Bezeichnung) wird zum Monatsletzten.
+      const wert = nurMonat(f) && typeof w === 'string' ? (monatsletzter(w) ?? w) : w;
       if (wert !== '' && wert != null && !v[f.key] && passt(f, wert))
         v[f.key] = { wert, sicherheit: fund.sicherheit, fundstelle: fund.fundstelle };
     },
@@ -260,8 +265,9 @@ const NUMMER_ARTEN: readonly Erkennungsart[] = ['nummer', 'plz', 'hausnummer'];
 function leserFuer(f: Feld, art: Erkennungsart): ((rest: string) => Gelesen<Wert>) | null {
   const anfang = (re: RegExp) => new RegExp(`^(?:${re.source})`, re.flags.replace('g', ''));
   switch (art) {
+    // Genauigkeit Monat (#1722): „April 2028“, „04/2028“, „042028“ … – an Tag-genauen Feldern bleibt ein Monat leer.
     case 'datum':
-      return liesDatumAmAnfang;
+      return nurMonat(f) ? liesMonatAmAnfang : liesDatumAmAnfang;
     case 'betrag':
       return (r) => {
         const b = liesBetragAmAnfang(r);
@@ -381,6 +387,7 @@ function vorschlagWert(f: Feld, art: (typeof WERT_ARTEN)[number], l: VorschlagLa
 /** Datum (#1693): neben der eigenen Bezeichnung, sonst das Briefdatum – für weitere Datumsfelder nur unsicher. */
 function vorschlagDatum(f: Feld, l: VorschlagLauf) {
   const { a, text } = l;
+  if (nurMonat(f)) return vorschlagMonat(f, l);
   // Neben der eigenen Bezeichnung („Fällig am“, „zahlbar bis“); ist es das Briefdatum, mit dessen Sicherheit.
   const nah = datumNeben(text, feldWoerter(f, l.gruppen));
   if (nah) return l.setze(f, nah.wert, nah.wert === a.datum?.wert ? a.datum : nah);
@@ -392,6 +399,12 @@ function vorschlagDatum(f: Feld, l: VorschlagLauf) {
   // Zeitraum, den Ablago nicht als Paar lesen konnte (#1669): lieber leer als das Ende in „Von“.
   if (p && !andere && ungeklaerterZeitraum(a.datum.fundstelle)) return;
   l.setze(f, a.datum.wert, l.erstes.get('datum') === f.key ? a.datum : { ...a.datum, sicherheit: 'niedrig' });
+}
+
+/** Genauigkeit Monat (#1722): nur neben der eigenen Bezeichnung – ein Briefdatum ist tagesgenau, nie „nächste HU“. */
+function vorschlagMonat(f: Feld, l: VorschlagLauf) {
+  const m = monatNeben(l.text, feldWoerter(f, l.gruppen));
+  if (m) l.setze(f, m.wert, m);
 }
 
 /**
