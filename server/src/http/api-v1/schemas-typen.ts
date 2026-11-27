@@ -66,7 +66,7 @@ export const SCHEMAS_TYPEN: Record<string, Schema> = {
         type: 'string',
         enum: [...DATUM_GENAUIGKEITEN],
         description:
-          'Nur bei typ=datum (#1722, ab 0.335.0): monat – nur Monat und Jahr („nächste HU 04/2028“). Der Wert ist immer der Monatsletzte (JJJJ-MM-TT, z. B. 2028-04-30); beim Schreiben gilt auch JJJJ-MM oder ein Tag des Monats, gespeichert wird der Monatsletzte. Fehlt = tag (wie bisher).',
+          'Nur bei typ=datum (#1722, ab 0.336.0): monat – nur Monat und Jahr („nächste HU 04/2028“). Der Wert ist immer der Monatsletzte (JJJJ-MM-TT, z. B. 2028-04-30); beim Schreiben gilt auch JJJJ-MM oder ein Tag des Monats, gespeichert wird der Monatsletzte. Fehlt = tag (wie bisher).',
       },
       standard: {
         oneOf: [{ type: 'string' }, { type: 'boolean' }],

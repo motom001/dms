@@ -16,7 +16,7 @@ export const DATUM_GENAUIGKEITEN = ['tag', 'monat'] as const;
 export type DatumGenauigkeit = (typeof DATUM_GENAUIGKEITEN)[number];
 
 /** Ab dieser Version kennt Ablago die Genauigkeit Monat (#1722). Beim Einreihen auf die Version setzen, mit der sie erscheint. */
-export const DMS_DATUM_MONAT_AB = '0.335.0';
+export const DMS_DATUM_MONAT_AB = '0.336.0';
 
 /** Ein Datumsfeld, das nur den Monat kennt. */
 export const nurMonat = (f: { typ?: string; genauigkeit?: string | null } | undefined): boolean =>
