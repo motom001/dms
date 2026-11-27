@@ -60,6 +60,26 @@ export function paketaktionenRouten(k: RoutenKontext): Route[] {
         return { datei: { inhalt: d.inhalt, name: d.name, mime: d.mime, anzeigen: false, groesse: d.inhalt.length } };
       },
     },
+    // Angebote beim Ausfüllen (#1724): Abruf erst nach Klick; die Antwort sind Vorschläge, gespeichert wird nichts.
+    {
+      methode: 'POST',
+      pfad: '/api/typen/:id/angebote/:paket/:angebot',
+      zugang: 'angemeldet',
+      handler: async (a) => {
+        const x = (a.body ?? {}) as { dokument?: unknown; mappe?: unknown; lauf?: unknown; antworten?: unknown };
+        if (typeof x.dokument !== 'string') throw new Fachfehler(422, t('meldungen.paketaktionen.angebot-dokument'));
+        return ok(
+          await dienst.ausfuellAngebote.abrufen(await wer(a), a.params.id, {
+            paket: a.params.paket,
+            angebot: a.params.angebot,
+            dokument: x.dokument,
+            ...(typeof x.mappe === 'string' && x.mappe ? { mappe: x.mappe } : {}),
+            // Zweiter Schritt nach einem Dialog des Pakets: Lauf und Antworten (wie bei den Aktionen im Menü „Mappe“).
+            ...(typeof x.lauf === 'string' ? { lauf: x.lauf, antworten: x.antworten } : {}),
+          }),
+        );
+      },
+    },
     { methode: 'GET', pfad: '/api/werkbank/pakete/mappenaktionen', zugang: 'admin', handler: async () => ok(await pa().einstellung()) },
     {
       methode: 'PUT',

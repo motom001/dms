@@ -516,6 +516,46 @@ Ablago answers everything else with 403; `speicher_schreiben` does not work, `sp
 
 **Traceable:** Every run is listed in the folder's history (person and package) and in the package runner's history. At most one run per person and package at a time. You can test an action via API v1 (`POST /mappen/{id}/paketaktionen/{paket}/{aktion}`, `POST /paketaktionen/laeufe/{lauf}`) with a person's key.
 
+## Offers while filling in { #angebote }
+
+Since Ablago 0.339.0 (dms #1724) a package can declare under `code.angebote` that it can fetch data for a certain **code on the document** ([Reading codes](#codes)) – e.g. `fahrzeuge.kba` for the QR code of the German digital inspection report. If such a code is on the document, Ablago shows the package's text, its name and a button in the existing note of **Fill in from document** and **Take over document** ("3 fields filled in as suggestions – please check"). **Only the click** calls the package – never in the background, in an automation or a batch; one fetch per click.
+
+```yaml
+dms: ">=0.339.0"
+code:
+  rechte: { lesen: [], schreiben: [], dokumente: keine }
+  netz: [https://www.kba-online.de]
+  angebote:
+    - schluessel: dub
+      mappentypen: [fahrzeuge:hauptuntersuchung]       # own key or paket:typ
+      code: { codeart: qr, muster: 'https://www\.kba-online\.de/dub/#/zugriffsdaten/.+' }
+      text: QR-Code zum Digitalen Untersuchungsbericht erkannt. Daten beim KBA abrufen und eintragen?
+      knopf: Daten beim KBA abrufen                    # optional, otherwise "Fetch and fill in"
+      beschriftungen:
+        en: { text: QR code of the digital inspection report found. Fetch the data from the KBA?, knopf: Fetch from the KBA }
+```
+
+- **Entries:** at most 10 offers; `schluessel` as everywhere; at least one of `mappentypen`; `code.muster` is required and follows the same rules as on a field (regular expression on the whole content, limits as for the check pattern), `code.codeart` optional; `text` 1–200 characters, `knopf` up to 40; translations under `beschriftungen.<language>`. The button text should say that data goes out.
+- **When the button appears:** a matching code on one of the documents, the package installed, not paused and loaded by the runner, the person may edit the folder (for a new folder: create it) and read the document. Like every package that receives content, a package with network access only gets codes from folder types allowed for services on the network – target and the document's folder (usually post). A package with `code.angebote` and network access therefore counts as "may go to services on the network".
+- **Call** as with [Actions in the “Folder” menu](#aktionen-im-menue-mappe) (`dms_aktion` with an answer, time limit 30 s, history with the person, at most one fetch per person and package):
+
+  ```json
+  { "aktion": "dms:angebot", "angebot": "dub", "typ": "fahrzeuge:hauptuntersuchung", "schema": { … },
+    "code": { "art": "qr", "inhalt": "https://www.kba-online.de/dub/#/zugriffsdaten/A1B2C3D4E5F6/P0123456789/0815", "seite": 1 },
+    "dokument": { "id": "…", "name": "…", "mime": "application/pdf" }, "kennung": "…", "schritt": 1 }
+  ```
+
+  There is no folder (often it is new post). `dokument` only if the package may read documents and can read the document's folder; it then reads it with `GET /dokumente/<id>`. Ablago takes the code from the kept codes, never from the request.
+- **Answer** as JSON:
+
+  ```json
+  { "vorschlaege": { "geprueft_am": "2026-04-16", "kilometerstand": { "wert": 9363, "sicherheit": "hoch" } },
+    "verweise": { "fahrzeug": { "fin": "WVWZZZ1KZAW000001", "kennzeichen": "DD-LM 123" } } }
+  ```
+
+  `vorschlaege` per field a value or `{ wert, sicherheit }`, checked against the field kind like any recognition; links never as an id. For link fields `verweise`: values for fields of the target type – Ablago looks for the folder via the fields with `eindeutig: true` (only what the person may read) and suggests it; if there is none, it offers "create with these details". Instead of values, `{ "fehler": "text" }` is possible (the person sees ""package" reports: …") or – rarely needed, as the button already asks – a **dialog** as with actions (at most two; then `antworten`, `stand` and `schritt` 2 follow).
+- **In the interface:** the values appear as suggestions with the source "fetched via "package"" and **Undo**. Per field they come before the values of recognition, but never over what the person has already changed (then as an alternative). Fields not delivered stay. Nothing is saved until taking over or saving.
+
 ## Building with C (wasi-sdk) { #bauen-mit-c-wasi-sdk }
 
 ```c

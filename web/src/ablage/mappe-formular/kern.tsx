@@ -143,6 +143,8 @@ function useAusDokument() {
   const [vorschlaege, setVorschlaege] = useState<Record<string, FeldVorschlag>>({});
   const [adNeu, setAdNeu] = useState<TypVorschlaege['neu']>({});
   const [adMeldung, setAdMeldung] = useState<string>();
+  // Angebote von Paketen (#1724): Knopf im Hinweis; Abruf erst nach Klick.
+  const [adAngebote, setAdAngebote] = useState<NonNullable<TypVorschlaege['angebote']>>([]);
   // Nach dem Speichern (#1043): Positionen der E-Rechnung anlegen, Mappen, die dazugehören, verknüpfen – abwählbar.
   const [adPositionen, setAdPositionen] = useState<(NonNullable<TypVorschlaege['positionen']> & { an: boolean }) | null>(null);
   const [adDazu, setAdDazu] = useState<Array<NonNullable<TypVorschlaege['dazu']>[number] & { an: boolean }>>([]);
@@ -152,7 +154,7 @@ function useAusDokument() {
   const vomDokument = useRef(new Set<string>());
   return {
     ...{ adOffen, setAdOffen, vorschlaege, setVorschlaege, adNeu, setAdNeu, adMeldung, setAdMeldung },
-    ...{ adPositionen, setAdPositionen, adDazu, setAdDazu, angelegtAus, vomDokument },
+    ...{ adPositionen, setAdPositionen, adDazu, setAdDazu, angelegtAus, vomDokument, adAngebote, setAdAngebote },
   };
 }
 

@@ -169,7 +169,9 @@ export const istKiPaket = (c: PaketCode | undefined): boolean =>
   (c.rechte.lesen.length > 0 ||
     c.rechte.dokumente !== 'keine' ||
     (c.rechte.schnittstellen ?? []).some((s) => INHALT_SCHNITTSTELLEN.includes(s)) ||
-    c.ereignisse.some((e) => INHALT_EREIGNISSE.includes(e)));
+    c.ereignisse.some((e) => INHALT_EREIGNISSE.includes(e)) ||
+    // Angebote beim Ausfüllen (#1724): Das Paket bekommt einen Code vom Dokument (z. B. Zugangsdaten) – das ist Inhalt.
+    !!c.angebote?.length);
 
 /** Werkbank (#796): Mappentypen mit „für KI-Dienste zugelassen“, KI-Pakete und welche Mappentypen jedes bekommt. */
 export interface KiUebersicht {
@@ -245,6 +247,8 @@ export interface PaketCode {
    * Ausgeführt nur nach Zeitplan, als Ereignis `zeitplan.ausgefuehrt` mit `aufgabe` = Schlüssel der Karte und `werte`.
    */
   karten?: PaketKarte[];
+  /** Angebote beim Ausfüllen (#1724, `code.angebote`): zu einem Code auf dem Dokument Daten holen – erst nach Klick. */
+  angebote?: import('../angebote').AusfuellAngebot[];
   /** Das WebAssembly-Modul (code/modul.wasm) und Daten (code/daten/…), nur im installierten Paket. */
   modul?: { sha256: string; groesse: number };
   daten?: string[];

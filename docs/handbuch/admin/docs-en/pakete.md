@@ -406,6 +406,10 @@ Packages can add actions to the **Folder ▾** menu of matching folders, e.g. **
 
 At most one action per person and package runs at a time; a step waits at most 30 seconds for the package. The switches are part of the backup (setting `mappenaktionen`).
 
+### Offers while filling in { #angebote-beim-ausfuellen }
+
+Since version 0.339 a package can offer something during **Fill in from document** if a certain code is on the document – such as *Fahrzeuge – KBA*: "QR code of the digital inspection report found. Fetch the data from the KBA?". This needs an installed package that [reads codes](#recht-codes). The offer appears as a button in the note above the form, with the package's name; only people who may edit or create the folder and read the document see it. **Only the click** gives the package the code (and, if it may read documents, the document) – never in the background or in an automation. A package with network access only gets codes from folder types allowed for [services on the network](mappentypen.md#ki-dienste). The values appear as suggestions; nothing is saved until taking over. Every fetch is in the package's history (with the person); a paused package offers nothing.
+
 ## Packages with code { #pakete-mit-code }
 
 Some packages bring **code** – for instance their own text recognition or rules that assign new post. The code reacts to events (new post, uploaded document, finished text recognition, finished full text, changed settings) and to the **actions** in the tab "Settings". Ablago runs it in the **package runner**:

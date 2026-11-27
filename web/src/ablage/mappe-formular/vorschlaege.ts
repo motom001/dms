@@ -46,6 +46,7 @@ export function ausDokumentWege(z: Kern, setze: (k: string, v: Roh) => void) {
     if (ablegen && dateien.length)
       z.setNeueDateien((x) => [...x, ...dateien.map((datei) => ({ uid: neueUid(), datei, register: ablegen }))]);
     z.setAdMeldung(meldungZu(r, neu, Object.keys(marken).length));
+    z.setAdAngebote(r.angebote ?? []);
     z.setAdOffen(false);
     // Zum ersten Feldregister mit einem Vorschlag.
     const ziel = z.register.find((x) => x.art === 'felder' && z.felderAuf(x).some((f) => neu[f.key]));

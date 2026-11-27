@@ -10,8 +10,11 @@ Schicht 3 (nicht in `SCHICHTEN` genannt).
   abholen, Kern-Dialog „Brief aus Vorlage“ (`vorlageLauf`, `vorlageErledigt`), Einstellungen.
 - `manifest.ts` – `mappenaktionen` im Manifest lesen (für `liesPaket`).
 - `dialog.ts` – Antwort eines Pakets lesen und prüfen (Dialog, Ergebnis), Antworten der Person prüfen.
+- `angebote.ts` – `AusfuellAngebote` (#1724): Angebote beim Ausfüllen (`code.angebote`) zu einem Code auf dem Dokument –
+  Knopf im Hinweis, Abruf erst nach Klick über denselben Läufer-Aufruf, dieselbe Sperre, Zeitgrenze und denselben Verlauf wie
+  die Aktionen; ohne Mappe, mit höchstens zwei Dialogen. `angebote-ergebnis.ts` liest die Antwort und löst Verweise auf.
 - `paketaktionen.routen.ts` – `/api/mappen/:id/paketaktionen…`, `/api/paketaktionen/laeufe/:lauf…`,
-  `/api/werkbank/pakete/(…/)mappenaktionen`.
+  `/api/werkbank/pakete/(…/)mappenaktionen`, `/api/typen/:id/angebote/:paket/:angebot` (#1724).
 - `index.ts` – die einzige Tür.
 
 **Abhängigkeiten**

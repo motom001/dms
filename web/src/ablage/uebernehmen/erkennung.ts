@@ -145,6 +145,8 @@ function ausErkennung(erkannt: Erkannt): TypVorschlaege {
     ...(v.positionen ? { positionen: v.positionen } : {}),
     ...(v.dazu ? { dazu: v.dazu } : {}),
     ...(v.erechnung ? { erechnung: v.erechnung } : {}),
+    // Angebote von Paketen (#1724): Knopf im Hinweis.
+    ...(v.angebote?.length ? { angebote: v.angebote } : {}),
   };
 }
 

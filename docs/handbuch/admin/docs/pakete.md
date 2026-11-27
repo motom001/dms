@@ -407,6 +407,10 @@ Pakete können Aktionen ins Menü **Mappe ▾** passender Mappen bringen, z. B. 
 
 Höchstens eine Aktion je Person und Paket läuft gleichzeitig; ein Schritt wartet höchstens 30 Sekunden auf das Paket. Die Schalter sind Teil der Sicherung (Einstellung `mappenaktionen`).
 
+### Angebote beim Ausfüllen { #angebote-beim-ausfuellen }
+
+Seit Version 0.339 kann ein Paket beim **Aus Dokument ausfüllen** etwas anbieten, wenn ein bestimmter Code auf dem Dokument steht – etwa *Fahrzeuge – KBA*: „QR-Code zum Digitalen Untersuchungsbericht erkannt. Daten beim KBA abrufen und eintragen?“. Dafür muss ein Paket installiert sein, das [Codes liest](#recht-codes). Das Angebot steht als Knopf im Hinweis über dem Formular, mit dem Namen des Pakets; nur, wer die Mappe bearbeiten bzw. anlegen und das Dokument lesen darf, sieht es. **Erst der Klick** gibt dem Paket den Code (und, wenn es Dokumente lesen darf, das Dokument) – nie im Hintergrund, in keiner Automatisierung. Ein Paket mit Netz bekommt Codes nur aus Mappentypen, die für [Dienste im Netz](mappentypen.md#ki-dienste) zugelassen sind. Die Werte erscheinen als Vorschläge; gespeichert wird erst beim Übernehmen. Jeder Abruf steht im Verlauf des Pakets (mit der Person); ein angehaltenes Paket bietet nichts an.
+
 ## Pakete mit Code
 
 Manche Pakete bringen **Code** mit – etwa eine eigene Texterkennung oder Regeln, die neue Post zuordnen. Der Code reagiert auf Ereignisse (neue Post, hochgeladenes Dokument, fertige Texterkennung, fertiger Volltext, geänderte Einstellungen) und auf die **Aktionen** im Reiter „Einstellungen“. Ablago führt ihn im **Paket-Läufer** aus:

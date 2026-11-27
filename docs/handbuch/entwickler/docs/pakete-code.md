@@ -515,6 +515,46 @@ Alles andere beantwortet Ablago mit 403; `speicher_schreiben` geht nicht, `speic
 
 **Nachvollziehbar:** Jede Ausführung steht in der Historie der Mappe (Person und Paket) und im Verlauf des Paket-Läufers. Höchstens ein Ablauf je Person und Paket gleichzeitig. Testen lässt sich eine Aktion über die API v1 (`POST /mappen/{id}/paketaktionen/{paket}/{aktion}`, `POST /paketaktionen/laeufe/{lauf}`) mit dem Schlüssel einer Person.
 
+## Angebote beim Ausfüllen { #angebote }
+
+Seit Ablago 0.339.0 (dms #1724) meldet ein Paket unter `code.angebote` an, dass es zu einem bestimmten **Code auf dem Dokument** ([Codes lesen](#codes)) Daten holen kann – z. B. `fahrzeuge.kba` zum QR-Code des Digitalen Untersuchungsberichts. Steht so ein Code auf dem Dokument, zeigt Ablago beim **Aus Dokument ausfüllen** und auf **Dokument übernehmen** im vorhandenen Hinweis („3 Felder als Vorschlag eingetragen – bitte prüfen“) den Text des Pakets, seinen Namen und einen Knopf. **Erst der Klick** ruft das Paket – nie im Hintergrund, in keiner Automatisierung, nicht im Stapel, ein Abruf je Klick.
+
+```yaml
+dms: ">=0.339.0"
+code:
+  rechte: { lesen: [], schreiben: [], dokumente: keine }
+  netz: [https://www.kba-online.de]
+  angebote:
+    - schluessel: dub
+      mappentypen: [fahrzeuge:hauptuntersuchung]       # eigener Schlüssel oder paket:typ
+      code: { codeart: qr, muster: 'https://www\.kba-online\.de/dub/#/zugriffsdaten/.+' }
+      text: QR-Code zum Digitalen Untersuchungsbericht erkannt. Daten beim KBA abrufen und eintragen?
+      knopf: Daten beim KBA abrufen                    # optional, sonst „Abrufen und eintragen“
+      beschriftungen:
+        en: { text: QR code of the digital inspection report found. Fetch the data from the KBA?, knopf: Fetch from the KBA }
+```
+
+- **Angaben:** höchstens 10 Angebote; `schluessel` wie überall; `mappentypen` mindestens einer; `code.muster` ist Pflicht und folgt denselben Regeln wie an einem Feld (regulärer Ausdruck auf den ganzen Inhalt, Grenzen wie beim Prüfmuster), `code.codeart` optional; `text` 1–200 Zeichen, `knopf` bis 40; Übersetzungen unter `beschriftungen.<sprache>`. Der Knopftext soll sagen, dass Daten hinausgehen.
+- **Wann der Knopf erscheint:** passender Code auf einem der Dokumente, Paket installiert, nicht angehalten und vom Läufer geladen, die Person darf die Mappe bearbeiten (bei einer neuen Mappe: anlegen) und das Dokument lesen. Ein Paket mit Netz bekommt Codes wie jedes Paket mit Inhalten nur aus Mappentypen, die für Dienste im Netz zugelassen sind – Ziel und Mappe des Dokuments (meist Post). Ein Paket mit `code.angebote` und Netz zählt deshalb als „Darf an Dienste im Netz gehen“.
+- **Aufruf** wie bei den [Aktionen im Menü „Mappe“](#aktionen-im-menue-mappe) (`dms_aktion` mit Antwort, Zeitgrenze 30 s, Verlauf mit Person, höchstens ein Abruf je Person und Paket):
+
+  ```json
+  { "aktion": "dms:angebot", "angebot": "dub", "typ": "fahrzeuge:hauptuntersuchung", "schema": { … },
+    "code": { "art": "qr", "inhalt": "https://www.kba-online.de/dub/#/zugriffsdaten/A1B2C3D4E5F6/P0123456789/0815", "seite": 1 },
+    "dokument": { "id": "…", "name": "…", "mime": "application/pdf" }, "kennung": "…", "schritt": 1 }
+  ```
+
+  Es gibt keine Mappe (oft ist es neue Post). `dokument` nur, wenn das Paket Dokumente lesen darf und die Mappe des Dokuments lesen kann; lesen dann mit `GET /dokumente/<id>`. Den Code nimmt Ablago aus den gemerkten Codes, nie aus der Anfrage.
+- **Antwort** als JSON:
+
+  ```json
+  { "vorschlaege": { "geprueft_am": "2026-04-16", "kilometerstand": { "wert": 9363, "sicherheit": "hoch" } },
+    "verweise": { "fahrzeug": { "fin": "WVWZZZ1KZAW000001", "kennzeichen": "DD-LM 123" } } }
+  ```
+
+  `vorschlaege` je Feld ein Wert oder `{ wert, sicherheit }`, geprüft gegen die Feldart wie jede Erkennung; Verweise nie als Id. Für Verweisfelder `verweise`: Werte für Felder des Zieltyps – Ablago sucht damit die Mappe über die Felder mit `eindeutig: true` (nur, was die Person lesen darf) und schlägt sie vor; gibt es keine, bietet es „mit diesen Angaben anlegen“ an. Statt Werten geht `{ "fehler": "Text" }` (die Person sieht „„Paket“ meldet: …“) oder – selten nötig, weil der Knopf schon fragt – ein **Dialog** wie bei den Aktionen (höchstens zwei; danach kommen `antworten`, `stand` und `schritt` 2).
+- **In der Oberfläche:** Die Werte erscheinen als Vorschläge mit der Fundstelle „abgerufen über „Paket““ und **Zurücknehmen**. Sie gehen je Feld vor den Werten der Erkennung, aber nie über das, was die Person schon selbst geändert hat (dann als Alternative). Nicht gelieferte Felder bleiben. Gespeichert wird erst beim Übernehmen bzw. Speichern.
+
 ## Bauen mit C (wasi-sdk)
 
 ```c

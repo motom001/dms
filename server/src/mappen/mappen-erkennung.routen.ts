@@ -35,7 +35,10 @@ export function erkennungRouten(k: RoutenKontext): Route[] {
         const z = await zg(a);
         // Vorberechnet (#1567) für die drei wahrscheinlichsten Typen; Rechte prüft fuerTyp beim Rechnen, hier die Post.
         const v = await dienst.erkennung.vorberechnung.felder(a.params.id, b(a), z);
-        return ok(v ?? (await dienst.erkennung.fuerTyp(a.params.id, b(a), z)));
+        const r = v ?? (await dienst.erkennung.fuerTyp(a.params.id, b(a), z));
+        // Angebote von Paketen beim Ausfüllen (#1724): je Person, nie vorberechnet.
+        const angebote = await dienst.ausfuellAngebote.fuer(z, a.params.id, b(a));
+        return ok(angebote.length ? { ...r, angebote } : r);
       },
     },
     {
