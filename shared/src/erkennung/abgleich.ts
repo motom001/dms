@@ -324,16 +324,80 @@ export interface TypFund {
   fundstelle: string;
 }
 
+/** So viele Zeichen vom Anfang des Texts durchsucht `typAusText` immer (bis #1713 das ganze Fenster). */
+export const TYP_FUND_ZEICHEN = 1500;
+/**
+ * Ohne Seitenangabe gilt als erste Seite (#1713): der Text bis zu so vielen Wörtern, Wasserzeichen-Wörter nicht
+ * mitgezählt – etwa eine volle Briefseite. Wörter statt Zeichen, weil die Textebene (pdftotext -layout) zweispaltige
+ * Köpfe mit langen Leerraum-Strecken auffüllt.
+ */
+export const TYP_FUND_WOERTER = 400;
+/** Ein Wasserzeichen-Wort (#1713) steht in mindestens diesem Anteil der Zeilen, bei mindestens `WZ_ZEILEN` Zeilen. */
+const WZ_ANTEIL = 0.6;
+const WZ_ZEILEN = 10;
+/** Höchstens so viele Zeichen der ersten Seite (mit Seitenvorschub) bzw. für die Suche nach Wasserzeichen. */
+const SEITE_MAX = 20_000;
+/** Seitenvorschub wie `SEITENVORSCHUB` in seitensprachen.ts – hier ohne Import, damit die Erkennung die Spracherkennung nicht mitzieht. */
+const VORSCHUB = '\f';
+
+/**
+ * Wasserzeichen (#1713): Die Texterkennung liest z. B. den Namen einer Prüforganisation über die ganze Seite mit, sodass
+ * dasselbe Wort in fast jeder Zeile steht. Solche Wörter (ab 4 Buchstaben, klein geschrieben) sollen das Suchfenster
+ * nicht verbrauchen und eine Überschrift am Zeilenanfang nicht verdecken.
+ */
+function wasserzeichen(seite: string): Set<string> {
+  const zeilen = seite.split('\n').filter((z) => z.trim());
+  if (zeilen.length < WZ_ZEILEN) return new Set();
+  const zaehler = new Map<string, number>();
+  for (const z of zeilen) for (const w of new Set(z.toLowerCase().match(/\p{L}{4,}/gu) ?? [])) zaehler.set(w, (zaehler.get(w) ?? 0) + 1);
+  return new Set([...zaehler].filter(([, n]) => n >= zeilen.length * WZ_ANTEIL).map(([w]) => w));
+}
+
+/** Endet der Bereich ohne Seitenangabe nach `TYP_FUND_WOERTER` Wörtern ohne Wasserzeichen (#1713). */
+function nachWoertern(t: string, wz: ReadonlySet<string>): number {
+  let woerter = 0;
+  for (const m of t.matchAll(/\S+/g)) {
+    // „PRÜFDIENST·“ oder „(Prüfdienst)“ zählen wie das Wasserzeichen-Wort selbst.
+    const w = m[0].toLowerCase().match(/\p{L}{4,}/u)?.[0];
+    if (w && wz.has(w) && w.length >= m[0].length - 2) continue;
+    if (++woerter >= TYP_FUND_WOERTER) return m.index + m[0].length;
+  }
+  return t.length;
+}
+
+/**
+ * Der Bereich, in dem `typAusText` Überschriften sucht (#1713): die erste Seite mit Text (Seiten getrennt durch
+ * Seitenvorschub \f, wie bei pdftotext und Paketen), ohne Seitenangabe die ersten `TYP_FUND_WOERTER` Wörter ohne
+ * Wasserzeichen – mindestens aber die ersten `TYP_FUND_ZEICHEN` Zeichen wie bisher, damit kein früherer Fund wegfällt.
+ * Fund und Gegenanzeichen „Überschrift fehlt“ nutzen beide `typAusText`, also denselben Bereich.
+ */
+function fundbereich(text: string): { bereich: string; wz: Set<string> } {
+  const t = text.replace(/\u00a0/g, ' ');
+  const seiten = t.includes(VORSCHUB) ? t.split(VORSCHUB) : null;
+  // Leere Seiten vorn (Deckblatt, Scan ohne Text) überspringen; der Bereich beginnt trotzdem am Anfang des Texts.
+  const n = seiten
+    ? Math.max(
+        0,
+        seiten.findIndex((s) => s.replace(/\s/g, '').length >= 20),
+      )
+    : -1;
+  const seite1 = seiten ? seiten.slice(0, n + 1).join(VORSCHUB) : null;
+  const wz = wasserzeichen((seite1 ?? t).slice(0, SEITE_MAX));
+  const ende = seite1 != null ? Math.min(seite1.length, SEITE_MAX) : nachWoertern(t, wz);
+  return { bereich: t.slice(0, Math.max(ende, TYP_FUND_ZEICHEN)), wz };
+}
+
 /**
  * „Wohin gehört das?“ (#934) ohne KI: Der Mappentyp, dessen Name (oder eine Übersetzung) als Überschrift im Text steht –
  * am Anfang einer Zeile oder nach „Betreff:“, als eigenes Wort: „Rechnung“, „Rechnungen“, nicht aber „Rechnungsnummer“
- * und nicht „Ihr Vertrag …“ mitten im Satz. Es zählt die früheste Stelle in den ersten `TYP_FUND_ZEICHEN` Zeichen;
- * kürzere Namen als 4 Zeichen nie. Nur ein Vorschlag mit Fundstelle – die Klassifizierung aus Paketen (#939) ersetzt
- * ihn später. Reine Funktion.
+ * und nicht „Ihr Vertrag …“ mitten im Satz. Es zählt die früheste Stelle auf der ersten Seite (#1713, `fundbereich`);
+ * Wasserzeichen-Wörter vor dem Namen am Zeilenanfang stören nicht. Kürzere Namen als 4 Zeichen nie. Nur ein Vorschlag
+ * mit Fundstelle – die Klassifizierung aus Paketen (#939) ersetzt ihn später. Reine Funktion.
  */
-export const TYP_FUND_ZEICHEN = 1500;
 export function typAusText(text: string, typen: Array<Pick<Mappentyp, 'id' | 'name' | 'beschriftungen'>>): TypFund | null {
-  const kopf = (text ?? '').slice(0, TYP_FUND_ZEICHEN).replace(/\u00a0/g, ' ');
+  const { bereich: kopf, wz } = fundbereich(text ?? '');
+  // Am Zeilenanfang dürfen Wasserzeichen-Wörter (mit Satzzeichen dazwischen) vor dem Namen stehen (#1713).
+  const vor = wz.size ? `(?:(?:${[...wz].map(esc).join('|')})[^\\p{L}\\p{N}\\n]*)*` : '';
   let best: (TypFund & { i: number }) | null = null;
   for (const x of typen) {
     const namen = [
@@ -344,12 +408,35 @@ export function typAusText(text: string, typen: Array<Pick<Mappentyp, 'id' | 'na
       ),
     ];
     for (const n of namen) {
-      const m = new RegExp(`(^[ \\t]*|(?:betreff|betr\\.|subject|re)\\s*:\\s*)(${esc(n)}(?:en|e|n|s)?)(?![\\p{L}\\p{N}])`, 'imu').exec(
-        kopf,
-      );
-      const i = m ? m.index + m[1].length : -1;
-      if (m && (!best || i < best.i)) best = { typId: x.id, wort: m[2], fundstelle: ausschnitt(kopf, i, m[2].length), i };
+      const f = ersterFund(kopf, n, vor);
+      if (f && (!best || f.i < best.i)) best = { typId: x.id, wort: f.wort, fundstelle: ausschnitt(kopf, f.i, f.wort.length), i: f.i };
     }
   }
   return best ? { typId: best.typId, wort: best.wort, fundstelle: best.fundstelle } : null;
+}
+
+/** Die früheste Stelle, an der `n` als Überschrift steht (Zeilenanfang oder nach „Betreff:“). */
+function ersterFund(kopf: string, n: string, vor: string): { i: number; wort: string } | null {
+  const re = new RegExp(`(^[ \\t]*${vor}|(?:betreff|betr\\.|subject|re)\\s*:\\s*)(${esc(n)}(?:en|e|n|s)?)(?![\\p{L}\\p{N}])`, 'gimu');
+  for (let m = re.exec(kopf); m; m = re.exec(kopf)) {
+    const i = m.index + m[1].length;
+    if (i < TYP_FUND_ZEICHEN || m[1].includes(':') || wieUeberschrift(kopf, i)) return { i, wort: m[2] };
+    re.lastIndex = m.index + 1;
+  }
+  return null;
+}
+
+/**
+ * Hinter den ersten `TYP_FUND_ZEICHEN` Zeichen (#1713) steht mehr Fließtext und mehr Tabelle als oben im Brief. Dort zählt
+ * ein Name am Zeilenanfang nur, wenn die Zeile davor keinen Satz fortsetzt („… nicht Bestandteil dieser⏎Rechnung.“) und
+ * die Zeile nicht mit einem Betrag endet (Tabellenzeile „Fahrzeug und Ausstattung   29.450,00 €“). Davor bleibt alles
+ * wie bisher.
+ */
+function wieUeberschrift(kopf: string, i: number): boolean {
+  const anfang = kopf.lastIndexOf('\n', i - 1) + 1;
+  const ende = kopf.indexOf('\n', i);
+  if (/\d,\d{2}[ \t]*(?:€|EUR)?[ \t]*$/iu.test(kopf.slice(anfang, ende < 0 ? kopf.length : ende))) return false;
+  const davor = kopf.slice(kopf.lastIndexOf('\n', anfang - 2) + 1, Math.max(0, anfang - 1)).trim();
+  // Fließtext: lange Zeile ohne Spaltenlücke, die mit kleinem Buchstaben, Komma oder Bindestrich endet.
+  return !(davor.length >= 40 && !/\S {3,}\S/.test(davor) && /[\p{Ll},;-]$/u.test(davor));
 }

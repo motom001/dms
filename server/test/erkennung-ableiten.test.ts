@@ -1,5 +1,5 @@
 /**
- * Erkennung (KW49): Verweisfeld aus einem Datum ableiten (#1648) und „Wie sicher ist Ablago?“ (#1645).
+ * Erkennung (KW49): Verweisfeld aus einem Datum ableiten (#1648) und „Wie sicher ist Ablago?“ (#1645, #1713).
  * Kontoauszüge von Lena Muster bei einer erfundenen Bank; Nummern, IBAN und Daten sind erfunden.
  */
 import assert from 'node:assert/strict';
@@ -7,6 +7,7 @@ import { describe, it } from 'node:test';
 import { SCHWELLE_STANDARD, erkennbarImText } from '../../shared/src/klassifizierung';
 import type { Register } from '../../shared/src/model';
 import { jahrPasst } from '../../shared/src/ausdatum';
+import { TYP_FUND_ZEICHEN } from '../../shared/src/erkennung';
 import { speicherDateien } from '../src/dateien/dateispeicher';
 import { Dienst } from '../src/dienst/dienst';
 import { speicherEinstellungen } from '../src/einstellungen/einstellungen';
@@ -212,6 +213,38 @@ describe('Wie sicher ist Ablago? (#1645)', () => {
       undefined,
     );
     assert.equal(r.typen[0]?.typId, x.kontoauszug.id);
+  });
+
+  it('Überschrift weiter unten auf Seite 1 (#1713): Wasserzeichen und zweispaltiger Kopf, kein Gegenanzeichen', async () => {
+    const x = await aufbau();
+    const hu = await x.d.mappentypen.legeTypAn({
+      name: 'Hauptuntersuchung',
+      erkennbarAn: 'Prüfbericht mit Kennzeichen, Ergebnis und Prüfplakette',
+      felder: [{ key: 'km', label: 'km-Stand', typ: 'text' }],
+      register: [{ ...FELDER, felder: ['km'] }, DOKS],
+    });
+    // Erfundene Prüforganisation; das Wasserzeichen liest die Texterkennung in jeder Zeile mit (wie pdftotext -layout).
+    const z = (links: string, rechts = '') => `${links.padEnd(48)}BEISPIELPRÜF   BEISPIELPRÜF${' '.repeat(14)}${rechts}`.trimEnd();
+    const kopf = ['Beispielprüf GmbH · Prüfstraße 1', 'Lena Muster', 'Musterweg 2', '01069 Musterstadt'].map((l) => z(l));
+    const daten = ['Kennzeichen: MU-LM 123', 'Prüfort: Musterstadt', 'km-Stand: 91.870', 'Hersteller: Beispielwerke'];
+    const text = [
+      ...kopf,
+      ...[...daten, ...daten, ...daten].map((r) => z('', r)),
+      z('Hauptuntersuchung gemäß § 29 StVZO', 'Ergebnis: ohne festgestellte Mängel'),
+      z('Prüfplakette zugeteilt, nächste Untersuchung 05/2027'),
+    ].join('\n');
+    assert.ok(text.indexOf('Hauptuntersuchung') > TYP_FUND_ZEICHEN);
+    const A = await x.d.rechtepruefung.zugriff({ id: x.lena.id, rolle: 'admin' });
+    const r = await x.d.erkennung.klassifizierung.klassifiziere({ dokumente: [await x.post(text)] }, A);
+    assert.equal(r.typen[0]?.typId, hu.id);
+    assert.ok(r.typen[0].belege.some((b) => b.weg === 'kern'));
+    const g = r.gruende![hu.id];
+    assert.equal(
+      g.find((y) => y.art === 'ueberschrift-fehlt' || y.art === 'gesenkt'),
+      undefined,
+      JSON.stringify(g),
+    );
+    assert.deepEqual(r.gruende![x.rechnung.id][0], { art: 'ueberschrift-fehlt' });
   });
 
   it('Schwelle im Expertenmodus: einstellbar, geprüft, ohne die Wahl der Erkennung zu ändern', async () => {
