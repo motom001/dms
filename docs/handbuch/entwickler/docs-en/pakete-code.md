@@ -518,10 +518,10 @@ Ablago answers everything else with 403; `speicher_schreiben` does not work, `sp
 
 ## Offers while filling in { #angebote }
 
-Since Ablago 0.338.0 (dms #1724) a package can declare under `code.angebote` that it can fetch data for a certain **code on the document** ([Reading codes](#codes)) – e.g. `fahrzeuge.kba` for the QR code of the German digital inspection report. If such a code is on the document, Ablago shows the package's text, its name and a button in the existing note of **Fill in from document** and **Take over document** ("3 fields filled in as suggestions – please check"). **Only the click** calls the package – never in the background, in an automation or a batch; one fetch per click.
+Since Ablago 0.339.0 (dms #1724) a package can declare under `code.angebote` that it can fetch data for a certain **code on the document** ([Reading codes](#codes)) – e.g. `fahrzeuge.kba` for the QR code of the German digital inspection report. If such a code is on the document, Ablago shows the package's text, its name and a button in the existing note of **Fill in from document** and **Take over document** ("3 fields filled in as suggestions – please check"). **Only the click** calls the package – never in the background, in an automation or a batch; one fetch per click.
 
 ```yaml
-dms: ">=0.338.0"
+dms: ">=0.339.0"
 code:
   rechte: { lesen: [], schreiben: [], dokumente: keine }
   netz: [https://www.kba-online.de]

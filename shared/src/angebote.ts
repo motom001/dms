@@ -14,7 +14,7 @@ import { AUSGANGSSPRACHE, sprache } from './sprache';
 import { t } from './texte';
 
 /** Ab dieser Version kennt Ablago `code.angebote` (#1724); ältere übergehen die Angabe (kein Knopf). */
-export const DMS_ANGEBOTE_AB = '0.338.0';
+export const DMS_ANGEBOTE_AB = '0.339.0';
 /** Höchstens so viele Angebote je Paket, so lang Text und Knopf (Zeichen). */
 const ANGEBOTE_MAX = 10;
 const ANGEBOT_TEXT_MAX = 200;

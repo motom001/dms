@@ -517,10 +517,10 @@ Alles andere beantwortet Ablago mit 403; `speicher_schreiben` geht nicht, `speic
 
 ## Angebote beim Ausfüllen { #angebote }
 
-Seit Ablago 0.338.0 (dms #1724) meldet ein Paket unter `code.angebote` an, dass es zu einem bestimmten **Code auf dem Dokument** ([Codes lesen](#codes)) Daten holen kann – z. B. `fahrzeuge.kba` zum QR-Code des Digitalen Untersuchungsberichts. Steht so ein Code auf dem Dokument, zeigt Ablago beim **Aus Dokument ausfüllen** und auf **Dokument übernehmen** im vorhandenen Hinweis („3 Felder als Vorschlag eingetragen – bitte prüfen“) den Text des Pakets, seinen Namen und einen Knopf. **Erst der Klick** ruft das Paket – nie im Hintergrund, in keiner Automatisierung, nicht im Stapel, ein Abruf je Klick.
+Seit Ablago 0.339.0 (dms #1724) meldet ein Paket unter `code.angebote` an, dass es zu einem bestimmten **Code auf dem Dokument** ([Codes lesen](#codes)) Daten holen kann – z. B. `fahrzeuge.kba` zum QR-Code des Digitalen Untersuchungsberichts. Steht so ein Code auf dem Dokument, zeigt Ablago beim **Aus Dokument ausfüllen** und auf **Dokument übernehmen** im vorhandenen Hinweis („3 Felder als Vorschlag eingetragen – bitte prüfen“) den Text des Pakets, seinen Namen und einen Knopf. **Erst der Klick** ruft das Paket – nie im Hintergrund, in keiner Automatisierung, nicht im Stapel, ein Abruf je Klick.
 
 ```yaml
-dms: ">=0.338.0"
+dms: ">=0.339.0"
 code:
   rechte: { lesen: [], schreiben: [], dokumente: keine }
   netz: [https://www.kba-online.de]
